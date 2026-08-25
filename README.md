@@ -4,6 +4,7 @@ Démo jouable en navigateur : React + TypeScript + Three.js (React Three Fiber),
 physique Rapier, état zustand.
 
 **Suivi du projet, décisions et reste à faire : [ROADMAP.md](./ROADMAP.md).**
+**Reprise du projet par un autre agent : [HANDOFF.md](./HANDOFF.md).**
 
 ```bash
 npm install
