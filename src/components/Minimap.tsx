@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { BIOMES, MINIMAP_WATER } from '../config/biomes'
+import { ENEMIES } from '../config/enemies'
 import { WORLD, classifyBiome, sampleHeight } from '../config/world'
+import { enemyRegistry } from '../state/enemyRegistry'
 import { playerTransform } from '../state/playerTransform'
 import type { BiomeId } from '../types/game'
 
@@ -133,6 +135,17 @@ export function Minimap({ markers = [] }: MinimapProps) {
 
       context.clearRect(0, 0, size, size)
       context.drawImage(worldMap, 0, 0, size, size)
+
+      // Ennemis : lus directement dans le registre, qui est mis à jour par
+      // chaque ennemi dans son propre useFrame. Aucun state React n'est
+      // impliqué, donc aucun re-render à 60 fps.
+      for (const enemy of enemyRegistry.values()) {
+        const { px, py } = toPixels(enemy.x, enemy.z)
+        context.fillStyle = ENEMIES[enemy.kind].minimapColor
+        context.beginPath()
+        context.arc(px, py, 2.6, 0, Math.PI * 2)
+        context.fill()
+      }
 
       for (const marker of markersRef.current) {
         const { px, py } = toPixels(marker.x, marker.z)

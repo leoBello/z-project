@@ -4,7 +4,7 @@ import type { GamePhase } from '../types/game'
 /** Nombre de cœurs de départ (façon Zelda : 3 cœurs). */
 export const MAX_HEARTS = 3
 /** Durée d'invincibilité après un coup reçu, en millisecondes. */
-export const INVULNERABILITY_MS = 1000
+export const INVULNERABILITY_MS = 1100
 
 export interface GameState {
   phase: GamePhase
@@ -12,12 +12,19 @@ export interface GameState {
   maxHearts: number
   /** Timestamp (performance.now) du dernier dégât subi. */
   lastHitAt: number
-  /** Compteur d'ennemis tués — servira de base à un futur système de score/quêtes. */
+  /** Ennemis tués sur la partie en cours. */
   kills: number
+  /**
+   * Identifiant de la partie. Sert de `key` React sur le joueur et les ennemis :
+   * l'incrémenter démonte et remonte tout le monde, ce qui remet positions,
+   * points de vie et machines à états à zéro sans logique de réinitialisation
+   * à écrire dans chaque composant.
+   */
+  runId: number
 
   /** Inflige des dégâts au joueur ; ignoré pendant l'invincibilité. */
   damagePlayer: (amount?: number) => void
-  /** Vrai tant que le joueur est en i-frames (sert au clignotement + hitbox). */
+  /** Vrai tant que le joueur est en i-frames (clignotement + immunité). */
   isInvulnerable: () => boolean
   registerKill: () => void
   /** Relance une partie depuis zéro. */
@@ -34,6 +41,7 @@ const initialState = {
 
 export const useGameStore = create<GameState>((set, get) => ({
   ...initialState,
+  runId: 0,
 
   damagePlayer: (amount = 1) => {
     const { phase, hearts, isInvulnerable } = get()
@@ -49,7 +57,13 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   isInvulnerable: () => performance.now() - get().lastHitAt < INVULNERABILITY_MS,
 
-  registerKill: () => set((s) => ({ kills: s.kills + 1 })),
+  registerKill: () => set((state) => ({ kills: state.kills + 1 })),
 
-  reset: () => set({ ...initialState }),
+  reset: () => set((state) => ({ ...initialState, runId: state.runId + 1 })),
 }))
+
+// Exposé en développement pour piloter et inspecter une partie depuis la
+// console ou un test navigateur.
+if (import.meta.env.DEV) {
+  ;(window as unknown as Record<string, unknown>).__store = useGameStore
+}

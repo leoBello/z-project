@@ -34,7 +34,7 @@ canvas {
   pointer-events: none;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding: 16px;
 }
 
@@ -112,4 +112,114 @@ canvas {
   font-size: 11px;
   letter-spacing: 0.02em;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* --- Cœurs, dégâts, game over ---------------------------------------------- */
+
+.hud__top {
+  display: flex;
+  justify-content: center;
+  padding-top: 4px;
+}
+
+.hud__hearts {
+  display: flex;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--hud-bg);
+  backdrop-filter: blur(4px);
+}
+
+.heart {
+  width: 26px;
+  height: 26px;
+  fill: #e8443c;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+  /* Le cœur qui se vide rétrécit légèrement : la perte se lit même du coin
+     de l'œil, sans dépendre uniquement de la couleur. */
+  transition: fill 160ms ease, transform 160ms ease;
+}
+
+.heart--empty {
+  fill: rgba(255, 255, 255, 0.18);
+  transform: scale(0.86);
+}
+
+/* Flash rouge sur les bords à chaque coup encaissé. */
+.hud__damage {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(200, 30, 30, 0) 45%,
+    rgba(200, 30, 30, 0.55) 100%
+  );
+  animation: damage-flash 520ms ease-out forwards;
+}
+
+@keyframes damage-flash {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud__damage { animation-duration: 1ms; }
+}
+
+.gameover {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(10, 16, 12, 0.62);
+  backdrop-filter: blur(3px);
+  /* Seul écran qui reprend la main sur les clics. */
+  pointer-events: auto;
+}
+
+.gameover__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 32px 44px;
+  border-radius: 16px;
+  background: rgba(18, 26, 20, 0.85);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  color: var(--hud-fg);
+  text-align: center;
+}
+
+.gameover__panel h1 {
+  margin: 0;
+  font-size: 34px;
+  letter-spacing: 0.01em;
+}
+
+.gameover__panel p {
+  margin: 0 0 18px;
+  font-size: 14px;
+  opacity: 0.75;
+}
+
+.gameover__panel button {
+  font: inherit;
+  font-weight: 600;
+  padding: 11px 30px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: #3f9a4b;
+  color: #f6f2e4;
+  cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.gameover__panel button:hover { background: #4bb058; }
+.gameover__panel button:active { transform: scale(0.97); }
+
+.gameover__panel button:focus-visible {
+  outline: 2px solid #f6f2e4;
+  outline-offset: 3px;
 }

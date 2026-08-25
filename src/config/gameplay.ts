@@ -42,6 +42,18 @@ export const ATTACK = {
   /** Portée et rayon de la sphère de dégâts devant le joueur. */
   reach: 1.4,
   radius: 0.9,
+  /**
+   * Visée assistée : au déclenchement de l'attaque, le personnage s'aligne sur
+   * l'ennemi le plus proche dans ce rayon.
+   *
+   * Sans elle, on ne peut frapper que dans la direction du dernier déplacement.
+   * Le ciblage est volontairement circulaire (demi-angle = π) : il n'y a ni
+   * souris ni caméra libre dans ce jeu, donc aucun moyen de se retourner sur
+   * place — un ennemi passé dans le dos deviendrait littéralement increvable.
+   * Mesuré : sans ciblage circulaire, dix coups d'affilée dans le vide.
+   */
+  aimAssistRange: 3.4,
+  aimAssistArc: Math.PI,
 } as const
 
 export const CAMERA = {

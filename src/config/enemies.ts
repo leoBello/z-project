@@ -1,0 +1,131 @@
+import type { EnemyKind, EnemySpawn } from '../types/game'
+import { PLAYER } from './gameplay'
+import { WORLD, classifyBiome, sampleHeight, sampleSlope, seededRandom } from './world'
+
+/**
+ * Caractéristiques d'une famille d'ennemis.
+ *
+ * Tout le comportement est piloté par ces valeurs : ajouter un type d'ennemi,
+ * c'est ajouter une entrée ici, un modèle 3D, et rien d'autre — la machine à
+ * états d'`Enemy.tsx` est commune.
+ */
+export interface EnemyStats {
+  kind: EnemyKind
+  label: string
+  /** Coups d'épée nécessaires pour l'abattre. */
+  hp: number
+  /** Vitesse de poursuite, en unités/seconde. */
+  speed: number
+  /** Vitesse de patrouille, plus lente que la poursuite. */
+  patrolSpeed: number
+  /** Distance à laquelle il repère le joueur. */
+  detectRadius: number
+  /** Distance à laquelle il peut frapper ou tirer. */
+  attackRange: number
+  /** Délai entre deux attaques, en millisecondes. */
+  attackCooldownMs: number
+  /** Cœurs retirés au joueur. */
+  damage: number
+  /** Rayon du collider et demi-hauteur de la capsule. */
+  radius: number
+  halfHeight: number
+  /** Couleur du point sur la minimap. */
+  minimapColor: string
+  /** Vrai si l'ennemi attaque à distance (projectile) plutôt qu'au contact. */
+  ranged: boolean
+}
+
+export const ENEMIES: Record<EnemyKind, EnemyStats> = {
+  octorok: {
+    kind: 'octorok',
+    label: 'Octorok',
+    hp: 2,
+    speed: 1.6,
+    patrolSpeed: 1.2,
+    detectRadius: 24,
+    attackRange: 22,
+    attackCooldownMs: 2000,
+    damage: 1,
+    radius: 0.45,
+    halfHeight: 0.3,
+    minimapColor: '#e0574f',
+    ranged: true,
+  },
+  moblin: {
+    kind: 'moblin',
+    label: 'Moblin',
+    hp: 3,
+    speed: 4.4,
+    patrolSpeed: 1.6,
+    detectRadius: 17,
+    attackRange: 2,
+    attackCooldownMs: 1200,
+    damage: 1,
+    radius: 0.45,
+    halfHeight: 0.55,
+    minimapColor: '#c8892f',
+    ranged: false,
+  },
+}
+
+/** Durée de l'effondrement à la mort, avant disparition. */
+export const DEATH_FADE_MS = 500
+/**
+ * Recul imprimé à un ennemi touché.
+ * Volontairement modéré : mesuré à 5,5, l'ennemi sortait de portée d'épée et
+ * il fallait le poursuivre entre chaque coup.
+ */
+export const HIT_KNOCKBACK = 4
+/** Durée du flash blanc quand un ennemi encaisse un coup. */
+export const HIT_FLASH_MS = 160
+
+/** Nombre d'ennemis posés sur la carte. */
+const ENEMY_COUNT = 26
+/** Rayon sanctuarisé autour du point d'apparition du joueur. */
+const SPAWN_SAFE_RADIUS = 26
+/** Au-delà de cette pente, l'ennemi glisserait : on ne le pose pas là. */
+const MAX_SPAWN_SLOPE = 0.5
+
+/**
+ * Place les ennemis sur la carte.
+ *
+ * Même approche que la végétation : tirage uniforme, puis filtrage. Le biome
+ * décide de l'espèce — les Octoroks tiennent le littoral et les zones ouvertes,
+ * les Moblins la jungle et les terres arides.
+ */
+export function generateEnemySpawns(): EnemySpawn[] {
+  const random = seededRandom(0xb0c0)
+  const spawns: EnemySpawn[] = []
+  const margin = WORLD.half - 12
+
+  let attempts = 0
+  while (spawns.length < ENEMY_COUNT && attempts < 4000) {
+    attempts++
+    const x = (random() * 2 - 1) * margin
+    const z = (random() * 2 - 1) * margin
+
+    const height = sampleHeight(x, z)
+    if (height < WORLD.waterLevel + 0.3) continue
+    if (height > WORLD.mountainLevel) continue
+    if (sampleSlope(x, z) > MAX_SPAWN_SLOPE) continue
+    if (Math.hypot(x - PLAYER.spawn[0], z - PLAYER.spawn[2]) < SPAWN_SAFE_RADIUS) continue
+
+    // Deux ennemis collés se gênent et se poussent : on garde une distance.
+    if (spawns.some((s) => Math.hypot(s.position[0] - x, s.position[2] - z) < 14)) continue
+
+    const biome = classifyBiome(x, z, height)
+    let kind: EnemyKind
+    if (biome === 'beach' || biome === 'island') kind = 'octorok'
+    else if (biome === 'jungle' || biome === 'badlands') kind = random() < 0.7 ? 'moblin' : 'octorok'
+    else kind = random() < 0.5 ? 'moblin' : 'octorok'
+
+    spawns.push({
+      id: `${kind}-${spawns.length}`,
+      kind,
+      position: [x, height, z],
+      radius: 6 + random() * 5,
+    })
+  }
+
+  return spawns
+}

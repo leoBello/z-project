@@ -22,6 +22,7 @@ src/
   config/gameplay.ts          constantes réglables (vitesse, saut, caméra, map)
   config/world.ts             relief, mer, classification des biomes, bruit
   config/biomes.ts            palettes des sept biomes
+  config/enemies.ts           statistiques par espèce, placement
   types/game.ts               types métier (phase, ennemis, biomes)
   store/useGameStore.ts       état de partie zustand (vie, phase, kills)
   state/playerTransform.ts    transform du joueur partagé hors React (60 fps)
@@ -31,7 +32,11 @@ src/
     Environment.tsx           composition du décor (ciel, lumières, sol, végétation)
     PostFX.tsx                bloom + tilt-shift + vignette (rendu "diorama")
     HUD.tsx                   overlay 2D
-    Minimap.tsx               carte 2D, position du joueur, marqueurs
+    Minimap.tsx               carte 2D, position du joueur, ennemis
+    Enemy.tsx                 physique et machine à états d'un ennemi
+    Enemies.tsx               peuplement de la carte
+    Projectiles.tsx           pool de projectiles, un seul draw call
+    enemies/models.tsx        Octorok et Moblin, matériaux par instance
     environment/Terrain.tsx   relief, couleurs par sommet, collider heightfield
     environment/Water.tsx     mer translucide, houle en vertex shader
     environment/Vegetation.tsx  semis instancié des sept biomes

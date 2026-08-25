@@ -12,7 +12,9 @@ import { Group, Vector3 } from 'three'
 import type { Control } from '../config/controls'
 import { ATTACK, PLAYER } from '../config/gameplay'
 import { WORLD } from '../config/world'
+import { enemyRegistry } from '../state/enemyRegistry'
 import { playerTransform } from '../state/playerTransform'
+import { useGameStore } from '../store/useGameStore'
 import { LinkModel } from './models/LinkModel'
 
 // Vecteurs de travail alloués une seule fois : `useFrame` tourne ~60x/s,
@@ -27,6 +29,40 @@ const moveDir = new Vector3()
 const FEET_OFFSET = -(PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius)
 /** Longueur du rayon "suis-je au sol ?" : pieds + une petite marge. */
 const GROUND_RAY_LENGTH = PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius + 0.2
+
+/**
+ * Aligne le personnage sur l'ennemi le plus proche au moment de frapper.
+ *
+ * Le cap est écrit directement, sans lissage : au moment du coup on veut que
+ * l'épée parte exactement là où le joueur regarde, pas 200 ms plus tard.
+ * L'ennemi n'est retenu que s'il est déjà à peu près devant — sinon le
+ * personnage ferait volte-face tout seul, ce qui se sentirait comme une perte
+ * de contrôle plutôt que comme une aide.
+ */
+function aimAtNearestEnemy(x: number, z: number) {
+  let bestYaw = playerTransform.yaw
+  // Annotation explicite : `ATTACK` est `as const`, sans elle TypeScript
+  // infère le type littéral 3.2 et refuse toute autre valeur.
+  let bestDistance: number = ATTACK.aimAssistRange
+
+  for (const enemy of enemyRegistry.values()) {
+    const dx = enemy.x - x
+    const dz = enemy.z - z
+    const distance = Math.hypot(dx, dz)
+    if (distance > bestDistance) continue
+
+    const yaw = Math.atan2(dx, dz)
+    let offset = (yaw - playerTransform.yaw) % (Math.PI * 2)
+    if (offset > Math.PI) offset -= Math.PI * 2
+    if (offset < -Math.PI) offset += Math.PI * 2
+    if (Math.abs(offset) > ATTACK.aimAssistArc) continue
+
+    bestDistance = distance
+    bestYaw = yaw
+  }
+
+  playerTransform.yaw = bestYaw
+}
 
 /** Rapproche un angle d'un autre par le chemin le plus court (évite le tour complet). */
 function dampAngle(current: number, target: number, lambda: number, dt: number) {
@@ -154,6 +190,7 @@ export function Player() {
       // Pas d'enchaînement tant que le coup précédent n'est pas terminé.
       if (attackElapsed >= ATTACK.durationMs) {
         playerTransform.attackStartedAt = performance.now()
+        aimAtNearestEnemy(position.x, position.z)
       }
     }
 
@@ -170,6 +207,12 @@ export function Player() {
         )
       }
       visual.current.rotation.y = playerTransform.yaw
+
+      // Clignotement pendant les i-frames. On lit le store via `getState()` et
+      // non via le hook : un abonnement re-rendrait le composant à chaque coup
+      // reçu, alors qu'on ne veut que basculer une visibilité par frame.
+      const invulnerable = useGameStore.getState().isInvulnerable()
+      visual.current.visible = !invulnerable || Math.floor(performance.now() / 90) % 2 === 0
     }
 
     // --- 6. Publication de l'état pour les autres systèmes ------------------
