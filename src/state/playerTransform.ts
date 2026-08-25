@@ -15,4 +15,14 @@ export const playerTransform = {
   yaw: 0,
   /** Vrai quand le raycast sol touche quelque chose sous le joueur. */
   grounded: false,
+  /** Vitesse horizontale en unités/seconde — pilote le cycle de marche. */
+  speed: 0,
+  /** Timestamp du dernier coup lancé ; -Infinity = aucune attaque en cours. */
+  attackStartedAt: -Infinity,
+}
+
+// Exposé en développement pour inspecter l'état du joueur depuis la console
+// (ou depuis un test navigateur) sans avoir à instrumenter les composants.
+if (import.meta.env.DEV) {
+  ;(window as unknown as Record<string, unknown>).playerTransform = playerTransform
 }

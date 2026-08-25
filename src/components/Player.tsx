@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useKeyboardControls } from '@react-three/drei'
 import {
@@ -7,9 +7,9 @@ import {
   useRapier,
   type RapierRigidBody,
 } from '@react-three/rapier'
-import { Group, MathUtils, Vector3 } from 'three'
+import { Group, Vector3 } from 'three'
 import type { Control } from '../config/controls'
-import { PLAYER } from '../config/gameplay'
+import { ATTACK, PLAYER } from '../config/gameplay'
 import { playerTransform } from '../state/playerTransform'
 import { LinkModel } from './models/LinkModel'
 
@@ -37,12 +37,39 @@ function dampAngle(current: number, target: number, lambda: number, dt: number) 
 export function Player() {
   const body = useRef<RapierRigidBody>(null)
   const visual = useRef<Group>(null)
-  /** Mémorise l'état de la touche saut pour ne déclencher qu'au front montant. */
-  const jumpWasHeld = useRef(false)
+  /**
+   * Actions ponctuelles mises en file d'attente par les abonnements clavier.
+   *
+   * Saut et attaque ne peuvent pas être sondés dans `useFrame` : un appui plus
+   * court qu'une frame (fréquent à 30 fps, ou sur un clavier rapide) tomberait
+   * entre deux sondages et serait perdu. On s'abonne donc aux transitions de
+   * touche, on lève un drapeau, et la frame suivante le consomme.
+   */
+  const jumpRequested = useRef(false)
+  const attackRequested = useRef(false)
 
-  const [, getKeys] = useKeyboardControls<Control>()
+  const [subscribeKeys, getKeys] = useKeyboardControls<Control>()
   const { world, rapier } = useRapier()
   const camera = useThree((state) => state.camera)
+
+  useEffect(() => {
+    const unsubscribeJump = subscribeKeys(
+      (state) => state.jump,
+      (pressed) => {
+        if (pressed) jumpRequested.current = true
+      },
+    )
+    const unsubscribeAttack = subscribeKeys(
+      (state) => state.attack,
+      (pressed) => {
+        if (pressed) attackRequested.current = true
+      },
+    )
+    return () => {
+      unsubscribeJump()
+      unsubscribeAttack()
+    }
+  }, [subscribeKeys])
 
   useFrame((_, rawDelta) => {
     const rb = body.current
@@ -94,10 +121,12 @@ export function Player() {
     const linvel = rb.linvel()
     let velocityY = linvel.y
 
-    if (keys.jump && grounded && !jumpWasHeld.current) {
-      velocityY = PLAYER.jumpSpeed
+    if (jumpRequested.current) {
+      // La demande est consommée même si le saut est refusé : sans ça, un appui
+      // en l'air se déclencherait à l'atterrissage.
+      jumpRequested.current = false
+      if (grounded) velocityY = PLAYER.jumpSpeed
     }
-    jumpWasHeld.current = keys.jump
 
     rb.setLinvel(
       {
@@ -108,7 +137,19 @@ export function Player() {
       true,
     )
 
-    // --- 4. Orientation du modèle -------------------------------------------
+    // --- 4. Attaque ----------------------------------------------------------
+    // Ici on ne fait que déclencher l'animation ; la hitbox qui inflige les
+    // dégâts viendra se brancher sur cette même fenêtre temporelle.
+    if (attackRequested.current) {
+      attackRequested.current = false
+      const attackElapsed = performance.now() - playerTransform.attackStartedAt
+      // Pas d'enchaînement tant que le coup précédent n'est pas terminé.
+      if (attackElapsed >= ATTACK.durationMs) {
+        playerTransform.attackStartedAt = performance.now()
+      }
+    }
+
+    // --- 5. Orientation du modèle -------------------------------------------
     // Les rotations du rigid body sont verrouillées (le personnage ne doit
     // jamais basculer) : on tourne uniquement le groupe visuel enfant.
     if (visual.current) {
@@ -121,18 +162,14 @@ export function Player() {
         )
       }
       visual.current.rotation.y = playerTransform.yaw
-
-      // Étirement léger en l'air : suffit à lire le saut sans animation riggée.
-      const stretch = grounded ? 1 : 1.1
-      visual.current.scale.y = MathUtils.damp(visual.current.scale.y, stretch, 12, delta)
-      const squash = 1 / visual.current.scale.y
-      visual.current.scale.x = squash
-      visual.current.scale.z = squash
     }
 
-    // --- 5. Publication du transform pour les autres systèmes ---------------
+    // --- 6. Publication de l'état pour les autres systèmes ------------------
+    // La vitesse réelle (et non la vitesse voulue) pilote le cycle de marche :
+    // si le joueur pousse contre un mur, les jambes s'arrêtent aussi.
     playerTransform.position.set(position.x, position.y, position.z)
     playerTransform.grounded = grounded
+    playerTransform.speed = Math.hypot(linvel.x, linvel.z)
 
     // Filet de sécurité si le joueur passe sous la map.
     if (position.y < -20) {

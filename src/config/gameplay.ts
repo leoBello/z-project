@@ -22,6 +22,19 @@ export const PLAYER = {
   spawn: [0, 2, 0] as [number, number, number],
 } as const
 
+export const ATTACK = {
+  /** Durée totale de l'animation de coup d'épée, en millisecondes. */
+  durationMs: 450,
+  /**
+   * Fenêtre (en fraction de la durée) pendant laquelle la lame blesse.
+   * Sert à l'animation aujourd'hui, à la hitbox à l'étape combat.
+   */
+  hitWindow: [0.25, 0.55] as [number, number],
+  /** Portée et rayon de la sphère de dégâts devant le joueur. */
+  reach: 1.4,
+  radius: 0.9,
+} as const
+
 export const CAMERA = {
   /** Décalage de la caméra par rapport au joueur (vue 3e personne 3/4). */
   offset: [0, 9, 13] as [number, number, number],

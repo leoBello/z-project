@@ -27,13 +27,20 @@ src/
     Environment.tsx           sol, murs, lumières, ciel
     HUD.tsx                   overlay 2D
     models/SafeModel.tsx      fallback si un .glb est absent
-    models/LinkModel.tsx      modèle du joueur + placeholder
+    models/LinkModel.tsx      modèle du joueur (.glb ou personnage procédural)
+    models/HeroPlaceholder.tsx  personnage articulé + animation procédurale
+    models/toonGradient.ts    rampe de cel-shading partagée
 ```
 
 ## Assets 3D
 
 Tous les modèles sont chargés depuis `public/models/`. Tant qu'un fichier est
-absent, une primitive de remplacement s'affiche : le jeu reste jouable.
+absent, un modèle de remplacement s'affiche : le jeu reste jouable.
+
+Le joueur a un personnage procédural complet (`HeroPlaceholder`) : silhouette
+chibi en primitives, `meshToonMaterial` + contour `Outlines` pour le
+cel-shading, et animation à la main (marche synchronisée à la vitesse réelle,
+pose aérienne, coup d'épée). Il reste le fallback même une fois le `.glb` posé.
 
 **Convention : l'avant d'un modèle est +Z.** Si un `.glb` regarde dans l'autre
 sens, ajouter `rotation-y={Math.PI}` sur son `<primitive>`.

@@ -1,9 +1,10 @@
 import { useMemo } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { Mesh, type Group } from 'three'
+import { HeroPlaceholder } from './HeroPlaceholder'
 import { SafeModel } from './SafeModel'
 
-/** Déposer le fichier ici pour remplacer le placeholder. */
+/** Déposer le fichier ici pour remplacer le personnage procédural. */
 export const LINK_MODEL_URL = '/models/link.glb'
 
 function LinkGltf() {
@@ -25,36 +26,11 @@ function LinkGltf() {
   return <primitive object={model} />
 }
 
-/** Silhouette de remplacement : tunique verte, tête, bonnet, épée. */
-function LinkPlaceholder() {
-  return (
-    <group>
-      {/* corps */}
-      <mesh castShadow position={[0, 0.55, 0]}>
-        <capsuleGeometry args={[0.32, 0.5, 6, 16]} />
-        <meshStandardMaterial color="#3f9d4a" />
-      </mesh>
-      {/* tête */}
-      <mesh castShadow position={[0, 1.18, 0]}>
-        <sphereGeometry args={[0.26, 20, 20]} />
-        <meshStandardMaterial color="#f2c9a0" />
-      </mesh>
-      {/* bonnet pointu, incliné vers l'arrière (l'avant du modèle est +Z) */}
-      <mesh castShadow position={[0, 1.5, -0.06]} rotation={[-0.35, 0, 0]}>
-        <coneGeometry args={[0.26, 0.5, 16]} />
-        <meshStandardMaterial color="#2f8039" />
-      </mesh>
-      {/* épée tenue sur le côté droit */}
-      <mesh castShadow position={[-0.36, 0.7, 0.05]} rotation={[-0.2, 0, 0.25]}>
-        <boxGeometry args={[0.07, 0.8, 0.07]} />
-        <meshStandardMaterial color="#d6e3ef" metalness={0.4} roughness={0.3} />
-      </mesh>
-    </group>
-  )
-}
-
 /**
  * Modèle du joueur.
+ *
+ * Tant que `/models/link.glb` est absent, on affiche le personnage procédural
+ * de HeroPlaceholder — animé, cel-shadé, et donc parfaitement présentable.
  *
  * Convention du projet : **l'avant du modèle est +Z**. C'est ce qu'attend le
  * calcul de rotation de Player.tsx (`atan2(dir.x, dir.z)`). Si le .glb que tu
@@ -63,7 +39,7 @@ function LinkPlaceholder() {
  */
 export function LinkModel() {
   return (
-    <SafeModel fallback={<LinkPlaceholder />}>
+    <SafeModel fallback={<HeroPlaceholder />}>
       <LinkGltf />
     </SafeModel>
   )
