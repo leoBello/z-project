@@ -6,6 +6,7 @@ import { CameraRig } from './components/CameraRig'
 import { Environment } from './components/Environment'
 import { HUD } from './components/HUD'
 import { Player } from './components/Player'
+import { PostFX } from './components/PostFX'
 import { controlMap } from './config/controls'
 import { CAMERA, PLAYER } from './config/gameplay'
 
@@ -21,10 +22,12 @@ export default function App() {
         shadows="percentage"
         // `far` doit dépasser la taille du dôme de <Sky> (scale 1000),
         // sinon le ciel est entièrement clippé par le frustum.
-        camera={{ fov: 55, near: 0.1, far: 2000, position: CAMERA.offset }}
+        camera={{ fov: CAMERA.fov, near: 0.1, far: 2000, position: CAMERA.offset }}
       >
         {/* Brume assortie au ciel : donne la profondeur et masque les bords de map. */}
-        <fog attach="fog" args={['#dbe8ec', 30, 110]} />
+        {/* La brume commence au-delà du joueur et sature avant le bord de la
+            carte : elle masque les limites du terrain et donne la profondeur. */}
+        <fog attach="fog" args={['#dbe8ec', 45, 145]} />
 
         <Suspense fallback={null}>
           <Physics gravity={[0, PLAYER.gravity, 0]} debug={DEBUG_PHYSICS}>
@@ -34,6 +37,7 @@ export default function App() {
         </Suspense>
 
         <CameraRig />
+        <PostFX />
       </Canvas>
 
       <HUD />

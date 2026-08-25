@@ -18,14 +18,19 @@ src/
   App.tsx                     Canvas, Physics, KeyboardControls
   config/controls.ts          mapping clavier (codes physiques → WASD + ZQSD)
   config/gameplay.ts          constantes réglables (vitesse, saut, caméra, map)
+  config/biomes.ts            frontière des biomes, palettes, semis déterministe
   types/game.ts               types métier (phase, ennemis, biomes)
   store/useGameStore.ts       état de partie zustand (vie, phase, kills)
   state/playerTransform.ts    transform du joueur partagé hors React (60 fps)
   components/
     Player.tsx                contrôleur physique du personnage
     CameraRig.tsx             caméra 3e personne lissée
-    Environment.tsx           sol, murs, lumières, ciel
+    Environment.tsx           composition du décor (ciel, lumières, sol, végétation)
+    PostFX.tsx                bloom + tilt-shift + vignette (rendu "diorama")
     HUD.tsx                   overlay 2D
+    environment/Terrain.tsx   sol peint par sommet, murs de carte
+    environment/Vegetation.tsx  semis instancié des deux biomes
+    environment/windMaterial.ts  matériau toon + vent en vertex shader
     models/SafeModel.tsx      fallback si un .glb est absent
     models/LinkModel.tsx      modèle du joueur (.glb ou personnage procédural)
     models/HeroPlaceholder.tsx  personnage articulé + animation procédurale
@@ -49,8 +54,15 @@ sens, ajouter `rotation-y={Math.PI}` sur son `<primitive>`.
 | --------------------------- | ----- | ------------------- |
 | `public/models/link.glb`    | 1     | Quaternius *Ultimate Modular Characters* / Kenney *Blocky Characters* |
 
-Les fichiers des étapes suivantes (arbres, rochers, ennemis) seront listés ici
-au fur et à mesure.
+**La végétation ne passe pas par des `.glb`** : arbres, rochers, touffes
+d'herbe et fleurs sont générés en primitives dans `Vegetation.tsx`, puis rendus
+en `InstancedMesh` avec une couleur par instance. Ça garantit une palette
+cohérente par biome et zéro octet à télécharger. Pour brancher des modèles
+téléchargés à la place, il suffit de remplacer les entrées de l'objet
+`geometries` par les géométries extraites du `.glb` — le semis, les couleurs,
+le vent et les colliders restent inchangés.
+
+Les fichiers des ennemis seront listés ici à l'étape suivante.
 
 Sources : [Kenney](https://kenney.nl/assets), [Quaternius](https://quaternius.com/),
 [Poly Pizza](https://poly.pizza/).

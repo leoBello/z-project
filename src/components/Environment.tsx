@@ -1,85 +1,54 @@
 import { Sky } from '@react-three/drei'
-import { CuboidCollider, RigidBody } from '@react-three/rapier'
-import { MAP_HALF, MAP_SIZE } from '../config/gameplay'
-
-/** Hauteur des murs invisibles qui ferment la carte. */
-const WALL_HEIGHT = 12
+import { MAP_HALF } from '../config/gameplay'
+import { Terrain } from './environment/Terrain'
+import { Vegetation } from './environment/Vegetation'
 
 /**
- * Sol + bordures de la carte.
+ * Éclairage "fin d'après-midi".
  *
- * Un seul rigid body statique porte tous les colliders : le sol (une boîte
- * plate plutôt qu'un plan infini, plus prévisible pour les raycasts) et quatre
- * murs invisibles qui empêchent de sortir de la zone jouable.
+ * Trois sources, et c'est volontaire : une seule lumière blanche aplatit
+ * n'importe quel style. La clé chaude sculpte, le rebond froid du ciel évite
+ * les ombres noires et mortes, et la contre-jour détache les silhouettes du
+ * fond — c'est elle qui fait "lire" le personnage sur la végétation.
  */
-function Terrain() {
-  return (
-    <RigidBody type="fixed" colliders={false} friction={1}>
-      {/* Collider du sol : sa face supérieure est exactement à y = 0. */}
-      <CuboidCollider args={[MAP_HALF, 0.5, MAP_HALF]} position={[0, -0.5, 0]} />
-
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[MAP_SIZE, MAP_SIZE]} />
-        <meshStandardMaterial color="#79b95c" roughness={1} />
-      </mesh>
-
-      {/* Murs invisibles : pas de mesh, uniquement des colliders. */}
-      <CuboidCollider
-        args={[MAP_HALF, WALL_HEIGHT, 0.5]}
-        position={[0, WALL_HEIGHT, -MAP_HALF]}
-      />
-      <CuboidCollider
-        args={[MAP_HALF, WALL_HEIGHT, 0.5]}
-        position={[0, WALL_HEIGHT, MAP_HALF]}
-      />
-      <CuboidCollider
-        args={[0.5, WALL_HEIGHT, MAP_HALF]}
-        position={[-MAP_HALF, WALL_HEIGHT, 0]}
-      />
-      <CuboidCollider
-        args={[0.5, WALL_HEIGHT, MAP_HALF]}
-        position={[MAP_HALF, WALL_HEIGHT, 0]}
-      />
-    </RigidBody>
-  )
-}
-
-/** Éclairage type "fin d'après-midi à Hyrule" : soleil chaud + rebond froid. */
 function Lighting() {
   return (
     <>
-      <hemisphereLight args={['#cfe9ff', '#5b7a3a', 0.65]} />
-      <ambientLight intensity={0.35} />
+      <hemisphereLight args={['#d6ecff', '#6a7a42', 0.7]} />
+      <ambientLight intensity={0.28} />
+
+      {/* Clé chaude : la seule à projeter des ombres. */}
       <directionalLight
         castShadow
         position={[40, 55, 25]}
-        intensity={2.2}
-        color="#ffe6b8"
+        intensity={2.1}
+        color="#ffe3ad"
         shadow-mapSize={[2048, 2048]}
-        shadow-bias={-0.0005}
-        // La shadow camera est orthographique : on la cadre sur la zone jouable,
-        // sinon les ombres deviennent trop basse résolution ou disparaissent.
+        shadow-bias={-0.0006}
+        // Shadow camera orthographique cadrée sur la zone jouable : trop large,
+        // les ombres deviennent basse résolution ; trop étroite, elles coupent.
         shadow-camera-left={-MAP_HALF}
         shadow-camera-right={MAP_HALF}
         shadow-camera-top={MAP_HALF}
         shadow-camera-bottom={-MAP_HALF}
         shadow-camera-near={1}
-        shadow-camera-far={160}
+        shadow-camera-far={180}
       />
+
+      {/* Contre-jour froid, sans ombre : purement du détourage. */}
+      <directionalLight position={[-30, 18, -35]} intensity={0.5} color="#9fc7ff" />
     </>
   )
 }
 
-/**
- * Décor de la scène.
- * La végétation et les biomes viendront s'ajouter ici à l'étape suivante.
- */
+/** Décor complet : ciel, lumières, sol des deux biomes et végétation. */
 export function Environment() {
   return (
     <>
       <Sky sunPosition={[60, 30, 40]} turbidity={6} rayleigh={2} />
       <Lighting />
       <Terrain />
+      <Vegetation />
     </>
   )
 }

@@ -36,8 +36,16 @@ export const ATTACK = {
 } as const
 
 export const CAMERA = {
+  /**
+   * Champ de vision réduit — c'est le réglage clé du rendu "diorama".
+   * Un FOV étroit aplatit la perspective tout en gardant la profondeur : les
+   * lignes de fuite s'atténuent et la scène se lit comme une maquette. C'est
+   * exactement ce que fait la caméra du HD-2D. En contrepartie il faut
+   * s'éloigner d'autant pour cadrer la même zone, d'où l'offset ci-dessous.
+   */
+  fov: 35,
   /** Décalage de la caméra par rapport au joueur (vue 3e personne 3/4). */
-  offset: [0, 9, 13] as [number, number, number],
+  offset: [0, 12, 17] as [number, number, number],
   /** Hauteur visée sur le joueur (à peu près la tête). */
   lookAtHeight: 1.2,
   /** Réactivité du suivi ; plus haut = plus collé au joueur. */

@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useKeyboardControls } from '@react-three/drei'
 import {
   CapsuleCollider,
+  CoefficientCombineRule,
   RigidBody,
   useRapier,
   type RapierRigidBody,
@@ -192,12 +193,24 @@ export function Player() {
       // physiques et on gère nous-mêmes le cap (yaw) sur le groupe visuel.
       lockRotations
       mass={1}
-      // Friction nulle : la vélocité est imposée à chaque frame, une friction
-      // ferait "accrocher" le joueur aux murs.
-      friction={0}
       ccd
     >
-      <CapsuleCollider args={[PLAYER.capsuleHalfHeight, PLAYER.capsuleRadius]} />
+      {/*
+        Friction nulle — et surtout règle de combinaison `Min`.
+
+        Par défaut Rapier *moyenne* les coefficients des deux corps en contact :
+        un joueur à 0 sur un sol à 1 donne 0,5, pas 0. Le sol freinait donc le
+        joueur pendant les sous-pas physiques enchaînés entre deux frames, et la
+        vitesse réelle se mettait à dépendre du framerate (mesuré : 2 u/s au lieu
+        de 7 sur une machine lente). `Min` garantit que le 0 du joueur l'emporte.
+
+        Le déplacement étant piloté en vélocité, la friction n'apporte rien ici.
+      */}
+      <CapsuleCollider
+        args={[PLAYER.capsuleHalfHeight, PLAYER.capsuleRadius]}
+        friction={0}
+        frictionCombineRule={CoefficientCombineRule.Min}
+      />
       <group ref={visual} position={[0, FEET_OFFSET, 0]}>
         <LinkModel />
       </group>
