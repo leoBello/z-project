@@ -39,6 +39,7 @@ src/
     enemies/models.tsx        Octorok et Moblin, matériaux par instance
     environment/Terrain.tsx   relief, couleurs par sommet, collider heightfield
     environment/Water.tsx     mer translucide, houle en vertex shader
+    environment/StarrySky.tsx  ciel procédural : Voie lactée, étoiles, nébuleuses
     environment/Vegetation.tsx  semis instancié des sept biomes
     environment/windMaterial.ts  matériau toon + vent en vertex shader
     models/SafeModel.tsx      fallback si un .glb est absent

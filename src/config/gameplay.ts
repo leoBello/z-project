@@ -64,11 +64,33 @@ export const CAMERA = {
    * exactement ce que fait la caméra du HD-2D. En contrepartie il faut
    * s'éloigner d'autant pour cadrer la même zone, d'où l'offset ci-dessous.
    */
-  fov: 35,
-  /** Décalage de la caméra par rapport au joueur (vue 3e personne 3/4). */
-  offset: [0, 12, 17] as [number, number, number],
-  /** Hauteur visée sur le joueur (à peu près la tête). */
-  lookAtHeight: 1.2,
+  fov: 48,
+  /**
+   * Décalage de la caméra par rapport au joueur.
+   *
+   * La hauteur est un arbitrage direct : la caméra plonge de
+   * `atan(y / z)` degrés, et le cadre ne montre du ciel que si cette plongée
+   * reste inférieure à la moitié du FOV. À 12 de haut pour 17 de recul, on
+   * plongeait de 35° pour un demi-FOV de 17° — l'horizon ne rentrait jamais
+   * dans l'image, et le ciel était invisible quelle que soit sa beauté.
+   * Réglage retenu : caméra haute (11 pour 21 de recul, la perspective reste
+   * plongeante et l'effet maquette tient), mais **visée relevée** — voir
+   * `lookAtHeight`. C'est la visée, pas la position, qui décide de ce qui entre
+   * dans le cadre : on garde donc le point de vue en surplomb tout en faisant
+   * entrer l'horizon et le ciel dans le haut de l'image.
+   * Remonter la hauteur renforce le diorama et referme le ciel.
+   */
+  offset: [0, 11, 21] as [number, number, number],
+  /**
+   * Hauteur visée au-dessus du joueur.
+   *
+   * Relever ce point fait pivoter l'axe de visée vers le haut sans bouger la
+   * caméra : le joueur descend dans le cadre et le ciel apparaît au-dessus.
+   * À 4,5 pour un recul de 21, l'axe plonge de 17° pour un demi-FOV de 24° :
+   * il reste 7° de ciel (environ un septième de l'image) et le joueur se pose
+   * aux trois quarts de la hauteur, sans jamais toucher le bord bas.
+   */
+  lookAtHeight: 4.5,
   /** Réactivité du suivi ; plus haut = plus collé au joueur. */
   damping: 5,
 } as const

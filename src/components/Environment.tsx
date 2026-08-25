@@ -1,10 +1,10 @@
 import { useMemo, useRef } from 'react'
-import { Sky } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { Object3D, type DirectionalLight } from 'three'
 import { playerTransform } from '../state/playerTransform'
 import { Terrain } from './environment/Terrain'
 import { Vegetation } from './environment/Vegetation'
+import { StarrySky } from './environment/StarrySky'
 import { Water } from './environment/Water'
 
 /** Position du soleil relative au joueur. */
@@ -73,11 +73,16 @@ function SunLight() {
 function Lighting() {
   return (
     <>
-      <hemisphereLight args={['#d6ecff', '#6a7a42', 0.7]} />
+      {/*
+        Le ciel est violet, mais l'éclairage garde exactement les mêmes
+        intensités qu'avant : seules les teintes basculent vers le parme. Le
+        monde reste donc aussi lumineux, il est juste éclairé par un autre ciel.
+      */}
+      <hemisphereLight args={['#d2dcf4', '#6a7a42', 0.7]} />
       <ambientLight intensity={0.28} />
       <SunLight />
-      {/* Contre-jour froid, sans ombre : purement du détourage. */}
-      <directionalLight position={[-30, 18, -35]} intensity={0.5} color="#9fc7ff" />
+      {/* Contre-jour parme, sans ombre : purement du détourage. */}
+      <directionalLight position={[-30, 18, -35]} intensity={0.5} color="#9fb0e8" />
     </>
   )
 }
@@ -86,7 +91,7 @@ function Lighting() {
 export function Environment() {
   return (
     <>
-      <Sky sunPosition={[60, 30, 40]} turbidity={6} rayleigh={2} />
+      <StarrySky />
       <Lighting />
       <Terrain />
       <Water />

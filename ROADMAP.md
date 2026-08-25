@@ -4,7 +4,7 @@ Mini-jeu 3D navigateur inspiré de Zelda, pour portfolio front-end.
 Direction artistique : **diorama low-poly cozy** — cel-shading, FOV étroit,
 tilt-shift. La recette caméra + post-traitement du HD-2D, appliquée à de la 3D.
 
-Dernière mise à jour : 25 août 2026 — la boucle de jeu est complète.
+Dernière mise à jour : 26 août 2026 — boucle de jeu complète, ciel étoilé procédural.
 
 ---
 
@@ -40,6 +40,15 @@ Dernière mise à jour : 25 août 2026 — la boucle de jeu est complète.
 - Colliders sur les troncs et les gros rochers uniquement
 
 ### Rendu
+- **Ciel étoilé procédural** : dégradé bleu à quatre paliers, halo
+  atmosphérique, nébuleuses, Voie lactée avec voies sombres et bulbe galactique,
+  quatre couches d'étoiles scintillantes avec extinction près de l'horizon.
+  Entièrement calculé dans le fragment shader, aucune texture
+- Couleur de brume **accordée à celle du ciel à l'horizon** : sans cet accord,
+  le terrain lointain s'estompe vers une autre teinte que le ciel et l'image se
+  coupe en deux sur la ligne d'horizon
+- Le monde reste éclairé de jour : seules les teintes des lumières basculent
+  vers le parme, les intensités sont inchangées
 - Cel-shading `meshToonMaterial` + rampe de dégradé partagée
 - Sol peint par sommet, transitions de biome continues
 - FOV 35 + bloom + tilt-shift + vignette
@@ -113,6 +122,26 @@ frame sur deux tombait à côté. Le coup est maintenant évalué **une seule fo
 par swing**, dès la première frame suivant l'ouverture de la fenêtre, et marqué
 consommé qu'il touche ou non. Exactement le même piège que le sondage clavier.
 
+**Étoiles invisibles.** Le rayon des étoiles était exprimé en unités de cellule
+du champ procédural, pas en angle : à l'échelle utilisée, chaque étoile faisait
+moins d'un pixel. Le ciel paraissait vide malgré des milliers d'étoiles
+calculées. Corrigé en donnant le rayon en radians, converti en unités de cellule
+dans le shader.
+
+**Ciel coupé en deux.** Le terrain lointain s'estompait vers une brume claire
+tandis que le ciel restait sombre juste au-dessus : la ligne d'horizon formait
+une frontière nette. Ce n'était pas un défaut du ciel mais un désaccord entre
+deux couleurs — celle de la brume et celle du ciel à l'horizon doivent être
+appariées à la main. Les transitions du dégradé ont aussi été étalées : la
+bande de ciel visible ne fait que 7°, tout palier plus court s'y lit comme une
+cassure.
+
+**Ciel invisible, deuxième fois.** La caméra plongeait de 35° pour un demi-FOV
+de 17° : l'horizon ne pouvait mathématiquement pas entrer dans le cadre. C'est
+la **visée** (`lookAtHeight`), pas la position de la caméra, qui décide du
+cadrage — la relever fait apparaître le ciel sans renoncer au point de vue en
+surplomb.
+
 **Ennemis increvables dans le dos.** Sans souris ni caméra libre, il n'existe
 aucun moyen de se retourner sur place : un ennemi passé derrière le joueur ne
 pouvait plus jamais être touché. Mesuré : dix coups d'affilée dans le vide.
@@ -136,6 +165,10 @@ Corrigé par une visée assistée circulaire.
       position du joueur en uniform. Pas de tri de transparence à gérer.
 - [ ] Points d'intérêt sur l'île, pour lui donner une raison d'exister
 - [ ] Écume au bord de l'eau
+- [ ] Corps céleste dans le ciel : la planète annelée a été retirée (anneau mal
+      raccordé au globe, seule la moitié arrière était dessinée). À reprendre
+      en dessinant l'anneau devant **et** derrière le globe, ou remplacer par
+      une lune simple
 - [ ] Son : ambiance, pas, épée
 
 ### Priorité 3 — performance et livraison
@@ -179,6 +212,7 @@ animations.
 | Couleurs d'un biome | `src/config/biomes.ts` |
 | Densité et nature de la végétation | `src/components/environment/Vegetation.tsx` |
 | Bloom, tilt-shift, vignette | `src/components/PostFX.tsx` |
+| Ciel, Voie lactée, étoiles | `src/components/environment/StarrySky.tsx` |
 | Lumières, ombres | `src/components/Environment.tsx` |
 | Animation du personnage | `src/components/models/HeroPlaceholder.tsx` |
 | Minimap | `src/components/Minimap.tsx` |

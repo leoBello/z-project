@@ -24,7 +24,9 @@ export function PostFX() {
         luminanceSmoothing={0.3}
         mipmapBlur
       />
-      <TiltShift2 blur={0.18} taper={0.55} />
+      {/* Flou réduit : le tilt-shift floute le haut du cadre, c'est-à-dire
+          exactement la bande de ciel étoilé. */}
+      <TiltShift2 blur={0.09} taper={0.6} />
       <Vignette offset={0.32} darkness={0.5} />
     </EffectComposer>
   )

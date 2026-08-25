@@ -38,7 +38,13 @@ export default function App() {
         {/* Brume assortie au ciel : donne la profondeur et masque les bords de map. */}
         {/* La brume commence au-delà du joueur et sature avant le bord de la
             carte : elle masque les limites du terrain et donne la profondeur. */}
-        <fog attach="fog" args={['#dbe8ec', 55, 190]} />
+        {/*
+          La couleur de brume est accordée à celle du ciel juste au-dessus de
+          l'horizon (mélange de `horizon` et `glow` dans StarrySky). Sans cet
+          accord, le terrain lointain s'estompe vers une teinte différente de
+          celle du ciel et l'image se coupe en deux sur la ligne d'horizon.
+        */}
+        <fog attach="fog" args={['#6b7cba', 60, 200]} />
 
         <Suspense fallback={null}>
           <Physics gravity={[0, PLAYER.gravity, 0]} debug={DEBUG_PHYSICS}>
