@@ -3,8 +3,11 @@
  * sans fouiller dans les composants.
  */
 
-export const MAP_SIZE = 120
-export const MAP_HALF = MAP_SIZE / 2
+import { WORLD, sampleHeight } from './world'
+
+/** Alias historiques — la source de vérité est `WORLD` dans `world.ts`. */
+export const MAP_SIZE = WORLD.size
+export const MAP_HALF = WORLD.half
 
 export const PLAYER = {
   /** Vitesse horizontale, en unités/seconde. */
@@ -18,8 +21,14 @@ export const PLAYER = {
   capsuleRadius: 0.35,
   /** Vitesse de rotation du modèle vers la direction de déplacement. */
   turnDamping: 12,
-  /** Position de réapparition (et point de départ). */
-  spawn: [0, 2, 0] as [number, number, number],
+  /** Vitesse conservée dans l'eau : patauger doit se sentir. */
+  waterSpeedFactor: 0.55,
+  /**
+   * Position de réapparition, posée sur le relief réel : le terrain n'est plus
+   * plat, une constante en dur ferait apparaître le joueur sous la montagne ou
+   * en l'air selon les réglages de génération.
+   */
+  spawn: [0, sampleHeight(0, 0) + 2.5, 0] as [number, number, number],
 } as const
 
 export const ATTACK = {

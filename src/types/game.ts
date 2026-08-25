@@ -24,5 +24,12 @@ export interface EnemySpawn {
   radius?: number
 }
 
-/** Identifiant de biome, sert au peuplement de la végétation. */
-export type BiomeId = 'meadow' | 'badlands'
+/** Identifiant de biome. Pilote le sol, la végétation et la minimap. */
+export type BiomeId =
+  | 'shallows'
+  | 'beach'
+  | 'meadow'
+  | 'jungle'
+  | 'badlands'
+  | 'mountain'
+  | 'island'

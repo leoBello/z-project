@@ -3,6 +3,8 @@
 Démo jouable en navigateur : React + TypeScript + Three.js (React Three Fiber),
 physique Rapier, état zustand.
 
+**Suivi du projet, décisions et reste à faire : [ROADMAP.md](./ROADMAP.md).**
+
 ```bash
 npm install
 npm run dev      # http://localhost:5173
@@ -18,7 +20,8 @@ src/
   App.tsx                     Canvas, Physics, KeyboardControls
   config/controls.ts          mapping clavier (codes physiques → WASD + ZQSD)
   config/gameplay.ts          constantes réglables (vitesse, saut, caméra, map)
-  config/biomes.ts            frontière des biomes, palettes, semis déterministe
+  config/world.ts             relief, mer, classification des biomes, bruit
+  config/biomes.ts            palettes des sept biomes
   types/game.ts               types métier (phase, ennemis, biomes)
   store/useGameStore.ts       état de partie zustand (vie, phase, kills)
   state/playerTransform.ts    transform du joueur partagé hors React (60 fps)
@@ -28,8 +31,10 @@ src/
     Environment.tsx           composition du décor (ciel, lumières, sol, végétation)
     PostFX.tsx                bloom + tilt-shift + vignette (rendu "diorama")
     HUD.tsx                   overlay 2D
-    environment/Terrain.tsx   sol peint par sommet, murs de carte
-    environment/Vegetation.tsx  semis instancié des deux biomes
+    Minimap.tsx               carte 2D, position du joueur, marqueurs
+    environment/Terrain.tsx   relief, couleurs par sommet, collider heightfield
+    environment/Water.tsx     mer translucide, houle en vertex shader
+    environment/Vegetation.tsx  semis instancié des sept biomes
     environment/windMaterial.ts  matériau toon + vent en vertex shader
     models/SafeModel.tsx      fallback si un .glb est absent
     models/LinkModel.tsx      modèle du joueur (.glb ou personnage procédural)

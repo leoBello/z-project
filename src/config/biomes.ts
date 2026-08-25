@@ -1,21 +1,22 @@
 import type { BiomeId } from '../types/game'
-import { MAP_HALF } from './gameplay'
 
 /**
- * Définition des biomes.
+ * Palettes des biomes.
  *
- * La carte est coupée en deux par une frontière ondulante orientée sur X :
- * prairie à l'ouest, terres arides à l'est, avec un chemin de terre le long
- * de la couture. Tout — couleur du sol, densité de végétation, choix des
- * props — est dérivé de `sampleBiome`, donc changer la frontière suffit à
- * redessiner la carte.
+ * La géographie (où se trouve quel biome) vit dans `world.ts` ; ce fichier ne
+ * décrit que l'apparence. Ajouter un biome = une entrée ici + une branche dans
+ * `classifyBiome`, rien d'autre à toucher.
  */
 
 export interface BiomeStyle {
   id: BiomeId
-  /** Couleur du sol au cœur du biome. */
+  /** Nom affiché, notamment dans la minimap. */
+  label: string
+  /** Couleur du sol. */
   ground: string
-  /** Teintes de la végétation, échantillonnées aléatoirement. */
+  /** Couleur montrée sur la minimap (souvent plus saturée pour la lisibilité). */
+  minimap: string
+  /** Teintes de feuillage, tirées au hasard par le semis. */
   foliage: string[]
   trunk: string
   rock: string
@@ -23,72 +24,81 @@ export interface BiomeStyle {
 }
 
 export const BIOMES: Record<BiomeId, BiomeStyle> = {
+  shallows: {
+    id: 'shallows',
+    label: 'Haut-fond',
+    ground: '#c9b98c',
+    minimap: '#4f9dc4',
+    foliage: ['#5e8f7a'],
+    trunk: '#7a6a4a',
+    rock: '#9aa39b',
+    grass: ['#8fae86'],
+  },
+  beach: {
+    id: 'beach',
+    label: 'Plage',
+    ground: '#e2d3a3',
+    minimap: '#e8d9a8',
+    foliage: ['#7fa86a', '#6f9a5c'],
+    trunk: '#9a7c52',
+    rock: '#b3ab97',
+    grass: ['#c9c489', '#b7bd7c'],
+  },
   meadow: {
     id: 'meadow',
+    label: 'Prairie',
     ground: '#7cb85f',
+    minimap: '#79bd5c',
     foliage: ['#4e9c4a', '#3f8a41', '#67b055'],
     trunk: '#7a5230',
     rock: '#8f9a92',
     grass: ['#589f45', '#69b053'],
   },
+  jungle: {
+    id: 'jungle',
+    label: 'Jungle',
+    ground: '#4e7f42',
+    minimap: '#2f6b39',
+    foliage: ['#2f7038', '#276030', '#3d8442'],
+    trunk: '#5c422a',
+    rock: '#6f7f6a',
+    grass: ['#357a3c', '#2c6b34'],
+  },
   badlands: {
     id: 'badlands',
+    label: 'Terres arides',
     ground: '#c2a06a',
+    minimap: '#c9a468',
     foliage: ['#7d8a52', '#6d7a48'],
     trunk: '#6b4a30',
     rock: '#8d8479',
     grass: ['#a08d52', '#8f7d47'],
   },
+  mountain: {
+    id: 'mountain',
+    label: 'Montagne',
+    ground: '#8b8b8f',
+    minimap: '#9b9ba2',
+    foliage: ['#4a6b52'],
+    trunk: '#5a4a3c',
+    rock: '#a3a3a8',
+    grass: ['#7d8578'],
+  },
+  island: {
+    id: 'island',
+    label: 'Île',
+    ground: '#d8c890',
+    minimap: '#d9c98e',
+    foliage: ['#3f9464', '#348556'],
+    trunk: '#8a6b42',
+    rock: '#b0a894',
+    grass: ['#57a06a', '#4a8f5e'],
+  },
 }
 
-/** Couleur du chemin de terre qui court le long de la frontière. */
-export const PATH_COLOR = '#b8926a'
-/** Demi-largeur du chemin, en unités monde. */
-export const PATH_HALF_WIDTH = 3.5
-
-/**
- * Frontière entre les deux biomes : une sinusoïde en Z, pour éviter la
- * ligne droite qui trahit immédiatement la génération procédurale.
- */
-export function biomeBoundaryX(z: number) {
-  return Math.sin(z * 0.055) * 14 + Math.sin(z * 0.017 + 1.3) * 7
-}
-
-/**
- * Échantillonne la carte en (x, z).
- *
- * `blend` vaut 0 en pleine prairie et 1 en plein désert, avec une transition
- * douce autour de la frontière — c'est lui qui pilote à la fois la couleur du
- * sol et la probabilité de faire pousser tel ou tel prop.
- * `onPath` marque le chemin de terre.
- */
-export function sampleBiome(x: number, z: number) {
-  const distance = x - biomeBoundaryX(z)
-  // Transition étalée sur ~16 unités, centrée sur la frontière.
-  const blend = Math.min(1, Math.max(0, distance / 16 + 0.5))
-  return {
-    blend,
-    onPath: Math.abs(distance) < PATH_HALF_WIDTH,
-    /** Biome dominant, pour choisir une famille de props. */
-    id: (blend > 0.5 ? 'badlands' : 'meadow') as BiomeId,
-  }
-}
-
-/**
- * Générateur pseudo-aléatoire déterministe (mulberry32).
- *
- * Indispensable ici : sans graine fixe, la végétation se replacerait à chaque
- * rechargement — et à chaque re-render en développement.
- */
-export function seededRandom(seed: number) {
-  let state = seed >>> 0
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0
-    let t = Math.imul(state ^ (state >>> 15), 1 | state)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
-
-/** Marge gardée libre sur les bords de la carte, pour ne pas planter dans les murs. */
-export const SCATTER_HALF = MAP_HALF - 4
+/** Couleur de la mer sur la minimap. */
+export const MINIMAP_WATER = '#3d86ad'
+/** Couleur de la neige, appliquée au-dessus de `WORLD.snowLevel`. */
+export const SNOW_COLOR = '#e8eef2'
+/** Sable mouillé, juste au-dessus de la ligne de rivage. */
+export const WET_SAND = '#c2ab77'

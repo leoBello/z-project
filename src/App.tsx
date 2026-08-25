@@ -5,6 +5,7 @@ import { Physics } from '@react-three/rapier'
 import { CameraRig } from './components/CameraRig'
 import { Environment } from './components/Environment'
 import { HUD } from './components/HUD'
+import { Minimap } from './components/Minimap'
 import { Player } from './components/Player'
 import { PostFX } from './components/PostFX'
 import { controlMap } from './config/controls'
@@ -27,7 +28,7 @@ export default function App() {
         {/* Brume assortie au ciel : donne la profondeur et masque les bords de map. */}
         {/* La brume commence au-delà du joueur et sature avant le bord de la
             carte : elle masque les limites du terrain et donne la profondeur. */}
-        <fog attach="fog" args={['#dbe8ec', 45, 145]} />
+        <fog attach="fog" args={['#dbe8ec', 55, 190]} />
 
         <Suspense fallback={null}>
           <Physics gravity={[0, PLAYER.gravity, 0]} debug={DEBUG_PHYSICS}>
@@ -40,6 +41,7 @@ export default function App() {
         <PostFX />
       </Canvas>
 
+      <Minimap />
       <HUD />
       <Loader />
     </KeyboardControls>

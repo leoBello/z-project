@@ -16,8 +16,15 @@ import {
   type Material,
 } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import { BIOMES, SCATTER_HALF, sampleBiome, seededRandom } from '../../config/biomes'
+import { BIOMES } from '../../config/biomes'
 import { PLAYER } from '../../config/gameplay'
+import {
+  WORLD,
+  classifyBiome,
+  sampleHeight,
+  sampleSlope,
+  seededRandom,
+} from '../../config/world'
 import { toonGradient } from '../models/toonGradient'
 import { createWindMaterial, tickWind } from './windMaterial'
 
@@ -30,22 +37,27 @@ interface ScatterItem {
 }
 
 /** Familles de props semées sur la carte. */
-type PropKind = 'trunk' | 'canopy' | 'bush' | 'rock' | 'grass' | 'flower' | 'deadTrunk'
+type PropKind =
+  | 'trunk'
+  | 'canopy'
+  | 'palmTrunk'
+  | 'palmCrown'
+  | 'bush'
+  | 'rock'
+  | 'grass'
+  | 'flower'
+  | 'deadTrunk'
 
-/** Nombre de points candidats tirés sur la carte. */
-const SAMPLE_COUNT = 1900
-/**
- * Rayon dégagé autour du point d'apparition — uniquement pour les gros props.
- * L'herbe et les fleurs continuent d'y pousser : sans ça le joueur démarre au
- * milieu d'un rond de terre nue, ce qui se voit immédiatement.
- */
-const SPAWN_CLEARANCE = 6
+/** Points candidats tirés sur la carte. Beaucoup sont rejetés (mer, falaises). */
+const SAMPLE_COUNT = 14000
+/** Rayon dégagé de gros props autour du point d'apparition. */
+const SPAWN_CLEARANCE = 7
+/** Pente au-delà de laquelle plus rien ne pousse : c'est une falaise. */
+const MAX_SLOPE = 0.85
 /** Au-delà de cette échelle, un rocher devient un obstacle physique. */
 const ROCK_COLLIDER_SCALE = 1.25
 
 // --- Géométries partagées ---------------------------------------------------
-// Chaque géométrie est translatée pour que son **origine soit à sa base** :
-// les instances peuvent alors être posées à y = 0 sans calcul de décalage.
 
 /**
  * Force des normales par face pour obtenir le rendu low-poly facetté.
@@ -54,9 +66,6 @@ const ROCK_COLLIDER_SCALE = 1.25
  * Lambert), donc l'effet doit être cuit dans la géométrie : on dé-indexe, puis
  * on recalcule les normales — chaque triangle obtient alors les siennes au lieu
  * de les moyenner avec ses voisins.
- *
- * Les polyèdres (icosaèdre, dodécaèdre) sont déjà non indexés et facettés :
- * seuls les cylindres ont besoin du traitement.
  */
 function faceted<T extends BufferGeometry>(geometry: T) {
   const flat = geometry.toNonIndexed()
@@ -66,10 +75,8 @@ function faceted<T extends BufferGeometry>(geometry: T) {
 
 /**
  * Touffe d'herbe : trois brins inclinés, fusionnés en **une seule géométrie**.
- *
- * Un brin isolé est invisible à la distance de la caméra. Fusionner en amont
- * plutôt qu'instancier trois fois divise par trois le nombre d'instances à
- * dessiner pour le même résultat visuel.
+ * Un brin isolé est invisible à la distance de la caméra ; fusionner en amont
+ * plutôt qu'instancier trois fois divise par trois le nombre d'instances.
  */
 function grassTuft() {
   const blades = [0, 2.1, 4.2].map((angle, index) => {
@@ -83,8 +90,8 @@ function grassTuft() {
   return mergeGeometries(blades)!
 }
 
-/** Petite fleur : une tige et une corolle, fusionnées. */
-function flower() {
+/** Petite fleur : une tige et une corolle. */
+function flowerGeometry() {
   const stem = faceted(new CylinderGeometry(0.012, 0.02, 0.26, 4))
   stem.translate(0, 0.13, 0)
   const head = new IcosahedronGeometry(0.075, 0)
@@ -96,7 +103,6 @@ function flower() {
 function deadTree() {
   const trunk = faceted(new CylinderGeometry(0.11, 0.24, 1.9, 6))
   trunk.translate(0, 0.95, 0)
-
   const branches = [-1, 1].map((side, index) => {
     const branch = faceted(new CylinderGeometry(0.05, 0.1, 1.05, 5))
     branch.translate(0, 0.5, 0)
@@ -107,13 +113,30 @@ function deadTree() {
   return mergeGeometries([trunk, ...branches])!
 }
 
+/** Couronne de palmier : sept palmes aplaties qui rayonnent et retombent. */
+function palmCrown() {
+  const fronds: BufferGeometry[] = []
+  for (let i = 0; i < 7; i++) {
+    const angle = (i / 7) * Math.PI * 2
+    const frond = faceted(new CylinderGeometry(0.02, 0.2, 1.6, 4))
+    frond.scale(1, 1, 0.35)
+    frond.translate(0, 0.8, 0)
+    frond.rotateZ(1.15 + (i % 2) * 0.18)
+    frond.rotateY(angle)
+    fronds.push(frond)
+  }
+  return mergeGeometries(fronds)!
+}
+
 const geometries: Record<PropKind, BufferGeometry> = {
   trunk: faceted(new CylinderGeometry(0.16, 0.26, 1.8, 6)).translate(0, 0.9, 0),
   canopy: new IcosahedronGeometry(1, 0),
+  palmTrunk: faceted(new CylinderGeometry(0.12, 0.2, 3, 6)).translate(0, 1.5, 0),
+  palmCrown: palmCrown(),
   bush: new IcosahedronGeometry(0.5, 0).translate(0, 0.42, 0),
   rock: new DodecahedronGeometry(0.6, 0).translate(0, 0.28, 0),
   grass: grassTuft(),
-  flower: flower(),
+  flower: flowerGeometry(),
   deadTrunk: deadTree(),
 }
 
@@ -130,6 +153,8 @@ function staticMaterial() {
 const materials: Record<PropKind, Material> = {
   trunk: staticMaterial(),
   canopy: createWindMaterial({ color: '#ffffff', strength: 0.14, height: 0.8 }),
+  palmTrunk: staticMaterial(),
+  palmCrown: createWindMaterial({ color: '#ffffff', strength: 0.2, height: 0.7 }),
   bush: createWindMaterial({ color: '#ffffff', strength: 0.06, height: 0.6 }),
   rock: staticMaterial(),
   grass: createWindMaterial({ color: '#ffffff', strength: 0.12, height: 0.85 }),
@@ -140,18 +165,22 @@ const materials: Record<PropKind, Material> = {
 /** Teintes des fleurs de prairie. */
 const FLOWER_COLORS = ['#fbf6e6', '#f4c6d9', '#f7e17c', '#dfe9ff', '#f6b28a']
 
+type Buckets = Record<PropKind, ScatterItem[]>
+
 /**
- * Sème la végétation sur la carte.
+ * Sème la végétation sur toute la carte.
  *
- * Tirage rejeté sur trois critères : rien sur le chemin, rien près du point
- * d'apparition, et la famille de prop dépend du biome échantillonné. Le
- * générateur est initialisé par une graine fixe — sans ça la carte se
- * redessinerait à chaque rechargement.
+ * Un seul tirage uniforme, filtré ensuite : rien sous l'eau, rien sur une
+ * falaise, pas de gros props près du point d'apparition. Le biome du point
+ * décide de ce qui pousse. Le générateur est initialisé par une graine fixe —
+ * sans ça la carte se redessinerait à chaque rechargement.
  */
-function generateScatter() {
-  const buckets: Record<PropKind, ScatterItem[]> = {
+function generateScatter(): Buckets {
+  const buckets: Buckets = {
     trunk: [],
     canopy: [],
+    palmTrunk: [],
+    palmCrown: [],
     bush: [],
     rock: [],
     grass: [],
@@ -161,100 +190,148 @@ function generateScatter() {
 
   const random = seededRandom(0x5eed)
   const pick = (list: string[]) => list[Math.floor(random() * list.length)]
+  const margin = WORLD.half - 3
 
   for (let i = 0; i < SAMPLE_COUNT; i++) {
-    const x = (random() * 2 - 1) * SCATTER_HALF
-    const z = (random() * 2 - 1) * SCATTER_HALF
+    const x = (random() * 2 - 1) * margin
+    const z = (random() * 2 - 1) * margin
     const roll = random()
     const spin = random() * Math.PI * 2
     const size = 0.75 + random() * 0.6
 
-    const { blend, onPath, id } = sampleBiome(x, z)
-    if (onPath) continue
+    const height = sampleHeight(x, z)
+    // Rien ne pousse dans l'eau ni sur une paroi.
+    if (height < WORLD.waterLevel + 0.05) continue
+    if (sampleSlope(x, z) > MAX_SLOPE) continue
 
-    const style = BIOMES[id]
+    const biome = classifyBiome(x, z, height)
+    const style = BIOMES[biome]
     const tilt = (random() - 0.5) * 0.12
-    // Les gros props sont interdits près du spawn ; le sol y reste couvert
-    // d'herbe et de fleurs, qui elles n'ont jamais gêné personne.
     const allowLarge =
       Math.hypot(x - PLAYER.spawn[0], z - PLAYER.spawn[2]) > SPAWN_CLEARANCE
 
+    const at = (lift = 0): [number, number, number] => [x, height + lift, z]
+
+    const addTree = (trunkScale: number, canopyScale: number, canopyLift: number) => {
+      buckets.trunk.push({
+        position: at(),
+        rotation: [tilt, spin, 0],
+        scale: [trunkScale, trunkScale, trunkScale],
+        color: style.trunk,
+      })
+      buckets.canopy.push({
+        position: at(canopyLift * trunkScale),
+        rotation: [tilt, spin, random() * 0.4],
+        scale: [canopyScale, canopyScale * 0.9, canopyScale],
+        color: pick(style.foliage),
+      })
+    }
+
+    const addPalm = () => {
+      const scale = size * (1 + random() * 0.35)
+      const lean = (random() - 0.5) * 0.28
+      buckets.palmTrunk.push({
+        position: at(),
+        rotation: [lean, spin, lean * 0.6],
+        scale: [scale, scale, scale],
+        color: style.trunk,
+      })
+      buckets.palmCrown.push({
+        position: at(2.85 * scale),
+        rotation: [lean, spin, lean * 0.6],
+        scale: [scale, scale, scale],
+        color: pick(style.foliage),
+      })
+    }
+
+    const addRock = (factor: number) =>
+      buckets.rock.push({
+        position: at(),
+        rotation: [tilt, spin, tilt],
+        scale: [size * factor, size * factor * 0.85, size * factor],
+        color: style.rock,
+      })
+
     const addGrass = (factor: number) =>
       buckets.grass.push({
-        position: [x, 0, z],
+        position: at(),
         rotation: [0, spin, 0],
         scale: [size * factor, size * factor * (0.9 + random() * 0.6), size * factor],
         color: pick(style.grass),
       })
 
-    if (blend < 0.5) {
-      // --- Prairie ---
-      if (roll < 0.12 && allowLarge) {
-        const scale = size * (1 + random() * 0.5)
-        buckets.trunk.push({
-          position: [x, 0, z],
-          rotation: [tilt, spin, 0],
-          scale: [scale, scale, scale],
-          color: style.trunk,
-        })
-        buckets.canopy.push({
-          position: [x, 1.75 * scale, z],
-          rotation: [tilt, spin, random() * 0.4],
-          scale: [scale * 1.15, scale * 0.95, scale * 1.15],
-          color: pick(style.foliage),
-        })
-      } else if (roll < 0.28 && allowLarge) {
-        buckets.bush.push({
-          position: [x, 0, z],
-          rotation: [0, spin, 0],
-          scale: [size, size * 0.8, size],
-          color: pick(style.foliage),
-        })
-      } else if (roll < 0.36 && allowLarge) {
-        buckets.rock.push({
-          position: [x, 0, z],
-          rotation: [tilt, spin, tilt],
-          scale: [size, size * 0.8, size],
-          color: style.rock,
-        })
-      } else if (roll < 0.52) {
-        buckets.flower.push({
-          position: [x, 0, z],
-          rotation: [0, spin, 0],
-          scale: [size, size * (0.9 + random() * 0.5), size],
-          color: FLOWER_COLORS[Math.floor(random() * FLOWER_COLORS.length)],
-        })
-      } else {
-        addGrass(1.3)
-      }
-    } else {
-      // --- Terres arides ---
-      if (roll < 0.05 && allowLarge) {
-        const scale = size * 1.1
-        buckets.deadTrunk.push({
-          position: [x, 0, z],
-          rotation: [tilt * 2, spin, tilt * 2],
-          scale: [scale, scale, scale],
-          color: style.trunk,
-        })
-      } else if (roll < 0.16 && allowLarge) {
-        buckets.bush.push({
-          position: [x, 0, z],
-          rotation: [0, spin, 0],
-          scale: [size * 0.8, size * 0.6, size * 0.8],
-          color: pick(style.foliage),
-        })
-      } else if (roll < 0.52 && allowLarge) {
-        const scale = size * (1 + random() * 0.8)
-        buckets.rock.push({
-          position: [x, 0, z],
-          rotation: [tilt, spin, tilt],
-          scale: [scale, scale * 0.85, scale],
-          color: style.rock,
-        })
-      } else {
-        addGrass(1)
-      }
+    const addBush = (factor: number) =>
+      buckets.bush.push({
+        position: at(),
+        rotation: [0, spin, 0],
+        scale: [size * factor, size * factor * 0.8, size * factor],
+        color: pick(style.foliage),
+      })
+
+    switch (biome) {
+      case 'beach':
+        // Plage : très clairsemée, c'est ce qui la fait lire comme une plage.
+        if (roll < 0.05 && allowLarge) addPalm()
+        else if (roll < 0.13) addRock(0.8)
+        else if (roll < 0.38) addGrass(0.9)
+        break
+
+      case 'island':
+        if (roll < 0.16 && allowLarge) addPalm()
+        else if (roll < 0.28) addBush(0.9)
+        else if (roll < 0.34) addRock(0.9)
+        else if (roll < 0.7) addGrass(1.1)
+        break
+
+      case 'jungle':
+        // Jungle : dense, hauts fûts, feuillage large et sombre.
+        if (roll < 0.24 && allowLarge) addTree(size * 1.7, size * 1.5, 1.9)
+        else if (roll < 0.55) addBush(1.25)
+        else addGrass(1.35)
+        break
+
+      case 'meadow':
+        if (roll < 0.12 && allowLarge) addTree(size * 1.25, size * 1.35, 1.75)
+        else if (roll < 0.28 && allowLarge) addBush(1)
+        else if (roll < 0.36 && allowLarge) addRock(1)
+        else if (roll < 0.52)
+          buckets.flower.push({
+            position: at(),
+            rotation: [0, spin, 0],
+            scale: [size, size * (0.9 + random() * 0.5), size],
+            color: FLOWER_COLORS[Math.floor(random() * FLOWER_COLORS.length)],
+          })
+        else addGrass(1.3)
+        break
+
+      case 'badlands':
+        if (roll < 0.05 && allowLarge)
+          buckets.deadTrunk.push({
+            position: at(),
+            rotation: [tilt * 2, spin, tilt * 2],
+            scale: [size * 1.1, size * 1.1, size * 1.1],
+            color: style.trunk,
+          })
+        else if (roll < 0.16 && allowLarge) addBush(0.8)
+        else if (roll < 0.52 && allowLarge) addRock(1 + random() * 0.8)
+        else addGrass(1)
+        break
+
+      case 'mountain':
+        // Montagne : de la roche, et plus rien qui pousse au-dessus de la neige.
+        if (roll < 0.4) addRock(1.1 + random() * 1.1)
+        else if (roll < 0.48 && height < WORLD.snowLevel - 2)
+          buckets.deadTrunk.push({
+            position: at(),
+            rotation: [tilt * 2, spin, tilt * 2],
+            scale: [size, size, size],
+            color: style.trunk,
+          })
+        else if (roll < 0.6 && height < WORLD.snowLevel - 2) addGrass(0.8)
+        break
+
+      default:
+        break
     }
   }
 
@@ -327,29 +404,41 @@ function WindClock() {
  * Colliders des obstacles.
  *
  * Un unique rigid body statique porte tous les colliders : troncs et gros
- * rochers. L'herbe, les buissons et les petits cailloux sont traversables —
- * les doter de colliders coûterait cher pour un gain de jeu nul.
+ * rochers. L'herbe, les fleurs, les buissons et les petits cailloux sont
+ * traversables — les doter de colliders coûterait cher pour un gain nul.
  */
-function Obstacles({ trunks, deadTrunks, rocks }: Record<'trunks' | 'deadTrunks' | 'rocks', ScatterItem[]>) {
+function Obstacles({ buckets }: { buckets: Buckets }) {
+  const trunks = useMemo(
+    () => [...buckets.trunk, ...buckets.palmTrunk, ...buckets.deadTrunk],
+    [buckets],
+  )
   const bigRocks = useMemo(
-    () => rocks.filter((rock) => rock.scale[0] >= ROCK_COLLIDER_SCALE),
-    [rocks],
+    () => buckets.rock.filter((rock) => rock.scale[0] >= ROCK_COLLIDER_SCALE),
+    [buckets],
   )
 
   return (
     <RigidBody type="fixed" colliders={false}>
-      {[...trunks, ...deadTrunks].map((trunk, index) => (
+      {trunks.map((trunk, index) => (
         <CylinderCollider
           key={`trunk-${index}`}
           args={[trunk.scale[1] * 0.9, 0.3 * trunk.scale[0]]}
-          position={[trunk.position[0], trunk.scale[1] * 0.9, trunk.position[2]]}
+          position={[
+            trunk.position[0],
+            trunk.position[1] + trunk.scale[1] * 0.9,
+            trunk.position[2],
+          ]}
         />
       ))}
       {bigRocks.map((rock, index) => (
         <BallCollider
           key={`rock-${index}`}
           args={[0.55 * rock.scale[0]]}
-          position={[rock.position[0], 0.3 * rock.scale[1], rock.position[2]]}
+          position={[
+            rock.position[0],
+            rock.position[1] + 0.3 * rock.scale[1],
+            rock.position[2],
+          ]}
         />
       ))}
     </RigidBody>
@@ -357,25 +446,30 @@ function Obstacles({ trunks, deadTrunks, rocks }: Record<'trunks' | 'deadTrunks'
 }
 
 export function Vegetation() {
-  const scatter = useMemo(generateScatter, [])
+  const buckets = useMemo(generateScatter, [])
+
+  if (import.meta.env.DEV) {
+    // Compteur d'instances : le poste de coût dominant du décor, et le premier
+    // chiffre à regarder si le framerate décroche.
+    ;(window as unknown as Record<string, unknown>).vegetationCounts =
+      Object.fromEntries(Object.entries(buckets).map(([k, v]) => [k, v.length]))
+  }
 
   return (
     <>
       <WindClock />
-      <ScatterMesh kind="trunk" items={scatter.trunk} castShadow />
-      <ScatterMesh kind="canopy" items={scatter.canopy} castShadow />
-      <ScatterMesh kind="deadTrunk" items={scatter.deadTrunk} castShadow />
-      <ScatterMesh kind="bush" items={scatter.bush} castShadow />
-      <ScatterMesh kind="rock" items={scatter.rock} castShadow />
-      {/* L'herbe ne projette pas d'ombre : des centaines de brins dans la
-          shadow map coûteraient cher pour un résultat illisible. */}
-      <ScatterMesh kind="grass" items={scatter.grass} />
-      <ScatterMesh kind="flower" items={scatter.flower} />
-      <Obstacles
-        trunks={scatter.trunk}
-        deadTrunks={scatter.deadTrunk}
-        rocks={scatter.rock}
-      />
+      <ScatterMesh kind="trunk" items={buckets.trunk} castShadow />
+      <ScatterMesh kind="canopy" items={buckets.canopy} castShadow />
+      <ScatterMesh kind="palmTrunk" items={buckets.palmTrunk} castShadow />
+      <ScatterMesh kind="palmCrown" items={buckets.palmCrown} castShadow />
+      <ScatterMesh kind="deadTrunk" items={buckets.deadTrunk} castShadow />
+      <ScatterMesh kind="bush" items={buckets.bush} castShadow />
+      <ScatterMesh kind="rock" items={buckets.rock} castShadow />
+      {/* L'herbe et les fleurs ne projettent pas d'ombre : des milliers de
+          brins dans la shadow map coûteraient cher pour un résultat illisible. */}
+      <ScatterMesh kind="grass" items={buckets.grass} />
+      <ScatterMesh kind="flower" items={buckets.flower} />
+      <Obstacles buckets={buckets} />
     </>
   )
 }

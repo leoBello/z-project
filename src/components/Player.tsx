@@ -11,6 +11,7 @@ import {
 import { Group, Vector3 } from 'three'
 import type { Control } from '../config/controls'
 import { ATTACK, PLAYER } from '../config/gameplay'
+import { WORLD } from '../config/world'
 import { playerTransform } from '../state/playerTransform'
 import { LinkModel } from './models/LinkModel'
 
@@ -115,6 +116,12 @@ export function Player() {
     // Normaliser évite le classique "diagonale plus rapide".
     if (isMoving) moveDir.normalize()
 
+    // Patauger ralentit. On teste la hauteur des pieds, pas celle du centre de
+    // la capsule : c'est le contact avec l'eau qui compte, pas la silhouette.
+    const feetHeight = position.y + FEET_OFFSET
+    const wading = feetHeight < WORLD.waterLevel
+    const speed = wading ? PLAYER.speed * PLAYER.waterSpeedFactor : PLAYER.speed
+
     // --- 3. Application de la vélocité --------------------------------------
     // On pilote directement la vélocité linéaire plutôt que d'appliquer des
     // forces : réponse immédiate, pas d'inertie parasite. La composante Y est
@@ -131,9 +138,9 @@ export function Player() {
 
     rb.setLinvel(
       {
-        x: moveDir.x * PLAYER.speed,
+        x: moveDir.x * speed,
         y: velocityY,
-        z: moveDir.z * PLAYER.speed,
+        z: moveDir.z * speed,
       },
       true,
     )
@@ -173,7 +180,7 @@ export function Player() {
     playerTransform.speed = Math.hypot(linvel.x, linvel.z)
 
     // Filet de sécurité si le joueur passe sous la map.
-    if (position.y < -20) {
+    if (position.y < WORLD.maxDepth - 20) {
       rb.setTranslation(
         { x: PLAYER.spawn[0], y: PLAYER.spawn[1], z: PLAYER.spawn[2] },
         true,
