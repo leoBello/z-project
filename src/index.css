@@ -1,0 +1,68 @@
+:root {
+  --hud-fg: #f6f2e4;
+  --hud-bg: rgba(18, 26, 20, 0.55);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #cfe4f5;
+}
+
+canvas {
+  display: block;
+  /* Empêche le scroll/zoom tactile de voler les gestes au jeu. */
+  touch-action: none;
+  outline: none;
+}
+
+/* --- HUD ------------------------------------------------------------------ */
+
+.hud {
+  position: fixed;
+  inset: 0;
+  /* Le HUD ne doit jamais intercepter les clics destinés au Canvas ;
+     les éléments interactifs réactivent `pointer-events` localement. */
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 16px;
+}
+
+.hud__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--hud-fg);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.hud__hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--hud-bg);
+  backdrop-filter: blur(4px);
+}
+
+.hud__hint kbd {
+  font: inherit;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
