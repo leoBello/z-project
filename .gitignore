@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Brainstorming companion mockups (local scratch, not for commit)
+.superpowers/
