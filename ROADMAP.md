@@ -244,6 +244,11 @@ signal pour l'appliquer.
 
 ## 4. Ce qu'il reste à faire
 
+> Le chantier **points d'intérêt interactifs** (dialogue portfolio au temple,
+> socle i18n, horloge de jeu unique, phase `paused`) a son plan détaillé dans
+> [`docs/plan-poi-portfolio.md`](docs/plan-poi-portfolio.md) — tâches, code des
+> parties porteuses, vérifications, et informations manquantes à trancher.
+
 ### Priorité 1 — équilibrage et lisibilité du combat — **fait**
 - [x] Barres de vie au-dessus des ennemis engagés
 - [x] Indicateur de direction quand on se fait tirer dessus hors écran
