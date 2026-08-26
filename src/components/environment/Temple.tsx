@@ -13,9 +13,11 @@ import {
   type Mesh,
 } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import { TEMPLE } from '../../config/landmarks'
+import { TEMPLE, TEMPLE_MARKER_Z } from '../../config/landmarks'
+import { now as gameNow } from '../../state/gameClock'
 import { toonGradient } from '../models/toonGradient'
 import { faceted } from './faceted'
+import { InteractionMarker } from './InteractionMarker'
 
 /**
  * Temple du Sommet.
@@ -262,8 +264,11 @@ function Crystal({ y }: { y: number }) {
   const mesh = useRef<Mesh>(null)
   const glow = useRef<Group>(null)
 
-  useFrame((state) => {
-    const t = state.clock.elapsedTime
+  useFrame(() => {
+    // Horloge de jeu et non celle de r3f : cette dernière continue de courir
+    // pendant la pause, et le cristal tournait donc derrière le panneau ouvert
+    // alors que tout le reste du monde était figé.
+    const t = gameNow() / 1000
     if (!mesh.current) return
     mesh.current.rotation.y = t * 0.55
     mesh.current.position.y = y + Math.sin(t * 1.15) * 0.14
@@ -398,6 +403,14 @@ export function Temple() {
         />
       </mesh>
       <Crystal y={FLOOR_Y + 2.55} />
+
+      {/*
+        Le marqueur d'interaction, sur le parvis, dans l'axe de l'escalier. Sa
+        position est celle qui sert aussi d'ancre à la détection de proximité
+        (`TEMPLE.interact`), les deux dérivant de la même constante : un
+        marqueur posé ailleurs que la zone qui l'active mentirait au joueur.
+      */}
+      <InteractionMarker landmarkId={TEMPLE.id} position={[0, 0, TEMPLE_MARKER_Z]} />
       <TempleColliders />
     </group>
   )

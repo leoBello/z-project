@@ -55,7 +55,12 @@ horloge de jeu unique.
 - Terrasse **creusée dans le relief** et non posée dessus : le mesh, le
   collider, le semis et la minimap voient tous la même plate-forme
 - Bandeau « Lieu découvert » quand le joueur entre dans le rayon du monument
-- **Interaction** : à l'autel, `F` ouvre un panneau qui présente les projets —
+- **Marqueur d'interaction** : une braise bleue sur le parvis, devant
+  l'escalier. Seule teinte froide de la scène, face aux deux braseros orange du
+  temple ; elle grossit et s'intensifie quand le joueur entre à portée. C'est
+  elle qui porte l'ancre d'interaction — pas le centre du monument, sans quoi le
+  marqueur promettrait quelque chose là où il ne se passe rien
+- **Interaction** : devant la braise, `F` ouvre un panneau qui présente les projets —
   illustration générée, titre, description, tags, navigation aux flèches et
   stepper. L'ouverture met la partie en pause
 - **Illustrations générées** : emblèmes isométriques en SVG, un solide = trois
@@ -157,6 +162,7 @@ horloge de jeu unique.
 | Registre d'ennemis mutable | La minimap lit les positions à chaque frame. Un state React re-rendrait tout le HUD 60 fois par seconde. |
 | Calque de combat en canvas 2D, hors du Canvas 3D | Un billboard par ennemi ajouterait un draw call et un matériau transparent par ennemi, donc du tri de transparence ; `<Html>` de drei reprojetterait des nœuds DOM à chaque frame. Ici tout tient dans un canvas et une boucle. Même raisonnement que la minimap. |
 | Terrasse d'un monument creusée dans `sampleHeight`, jamais posée sous le modèle | Le mesh, le collider Rapier, le semis et la minimap interrogent tous `sampleHeight`. Y mettre la plate-forme garantit qu'ils voient la même. Un socle côté modèle 3D aurait été une seconde source de vérité : le joueur aurait marché à côté du sol qu'il voit. |
+| L'ancre d'interaction est portée par le marqueur, pas par le centre du monument | Un marqueur lumineux promet au joueur que quelque chose est possible *ici*. Si la zone qui déclenche l'invite était ailleurs, il mentirait : on se plante devant la flamme et rien ne se passe. `Landmark.interact` est donc calculé depuis la position locale du marqueur, une seule constante pour les deux. |
 | Collider d'escalier en **rampe**, pas en marches | Le personnage est piloté en vélocité, sans autostep. Sur l'arête d'une marche la normale de contact est quasi horizontale : elle repousse, elle ne soulève pas — mesuré, le joueur restait bloqué contre un gradin de 0,22. Une rampe donne une normale verticale, et la résolution de pénétration le fait monter, comme sur le flanc de la montagne. |
 | Matrice view-projection publiée dans `cameraView` | Le calque doit reprojeter des points monde alors qu'il vit hors de React. On publie la seule chose dont il a besoin, pas la caméra entière. |
 | Projection écrite à la main plutôt que `Vector3.applyMatrix4` | Cette dernière divise par `w` sans en garder le signe : un point **derrière** la caméra ressort projeté devant, en miroir. C'est justement le cas qui compte — un tireur hors cadre est presque toujours dans le dos du joueur. |
@@ -387,6 +393,8 @@ animations.
 | Géométrie, cotes et colliders du temple | `src/components/environment/Temple.tsx` |
 | Ajouter un monument | `src/config/landmarks.ts` + un composant, monté dans `src/components/environment/Landmarks.tsx` |
 | Bandeau « Lieu découvert » | `src/components/HUD.tsx` + `.discovery` dans `src/index.css` |
+| Apparence du marqueur d'interaction | `src/components/environment/InteractionMarker.tsx` |
+| Emplacement du marqueur et zone d'interaction | `TEMPLE_MARKER_Z` et `interact` dans `src/config/landmarks.ts` |
 | Textes affichés, dans les deux langues | `src/i18n/fr.json` et `src/i18n/en.json` |
 | Projets montrés par le temple | `featured` dans `src/i18n/*.json` |
 | Apparence des illustrations de projet | `src/components/portfolio/illustration/` |

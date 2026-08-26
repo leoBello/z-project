@@ -42,10 +42,22 @@ export interface Landmark {
   /** Le lieu est « découvert » quand le joueur entre dans ce rayon. */
   discoverRadius: number
   /**
-   * Rayon d'interaction, mesuré au centre du monument.
+   * Point d'interaction, en coordonnées **monde**.
+   *
+   * Volontairement distinct du centre du monument. Un marqueur lumineux annonce
+   * au joueur que quelque chose est possible *ici* ; si la zone qui déclenche
+   * l'invite était ailleurs, le marqueur mentirait. L'ancre suit donc le
+   * marqueur, et non l'inverse.
+   *
+   * Se calcule avec `localToWorld` : on raisonne dans le repère du bâtiment,
+   * où l'avant est +Z, et le cap fait le reste.
+   */
+  interact: { x: number; z: number }
+  /**
+   * Rayon d'interaction autour de `interact`.
    *
    * Nettement plus serré que `discoverRadius` : on découvre un lieu de loin,
-   * on ne l'ouvre qu'en étant *dedans*.
+   * on ne l'ouvre qu'en étant devant.
    */
   interactRadius: number
   /**
@@ -73,6 +85,37 @@ export interface Landmark {
  * trois autres passent 1,2 et forment une falaise. Le parvis et l'escalier
  * donnent donc sur la seule voie d'accès à pied.
  */
+/**
+ * Position locale du marqueur d'interaction du temple, sur l'axe de l'escalier.
+ *
+ * L'escalier commence à 7,9 et les braseros sont à 7,4 : à 9,8 la braise se
+ * pose sur le parvis, devant la première marche, sans rien recouvrir. Exportée
+ * parce que `Temple.tsx` pose la géométrie au même endroit — une seule valeur,
+ * pas deux qui se désynchronisent.
+ */
+export const TEMPLE_MARKER_Z = 9.8
+
+/**
+ * Passe du repère d'un monument au repère monde.
+ *
+ * L'avant d'un bâtiment est +Z, comme tout modèle du projet, donc la rotation
+ * est la même que celle appliquée au `<group>` qui le porte.
+ */
+function localToWorld(
+  centerX: number,
+  centerZ: number,
+  yaw: number,
+  localX: number,
+  localZ: number,
+) {
+  const cos = Math.cos(yaw)
+  const sin = Math.sin(yaw)
+  return {
+    x: centerX + localX * cos + localZ * sin,
+    z: centerZ - localX * sin + localZ * cos,
+  }
+}
+
 export const TEMPLE: Landmark = {
   id: 'temple',
   x: -22,
@@ -83,13 +126,14 @@ export const TEMPLE: Landmark = {
   altitude: 17.4,
   clearRadius: 13,
   discoverRadius: 17,
+  interact: localToWorld(-22, -46, -1.03, 0, TEMPLE_MARKER_Z),
   /**
-   * 4,5 place l'invite quand le joueur est **à l'autel** : le collider de
-   * l'assise l'arrête déjà à 2,75 du centre (2,4 de rayon plus 0,35 de
-   * capsule), donc l'invite s'allume au moment précis où il ne peut plus
-   * avancer. Plus large, elle aurait clignoté depuis la terrasse.
+   * 3 unités autour de la braise. Assez large pour que l'invite s'allume en
+   * arrivant sur le parvis et reste allumée sur les premières marches, assez
+   * serré pour qu'elle s'éteigne une fois le joueur monté dans la cour — là où
+   * il n'y a plus de marqueur pour la justifier.
    */
-  interactRadius: 4.5,
+  interactRadius: 3,
   section: 'projects',
   minimapColor: '#f5dc95',
 }

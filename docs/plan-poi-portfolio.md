@@ -79,6 +79,26 @@ Deux ajouts hors plan, tous deux des défauts constatés :
   de traverser l'écran derrière le panneau. Ils ont désormais leur propre garde
   de phase.
 
+**Ajout post-livraison : le marqueur d'interaction.** Rien dans le panneau ne
+disait au joueur qu'il *pouvait* ouvrir quelque chose : l'invite du HUD
+n'apparaît qu'une fois déjà à portée, donc trop tard pour guider. Une braise
+bleue est posée sur le parvis, devant l'escalier
+(`src/components/environment/InteractionMarker.tsx`).
+
+Cet ajout a déplacé une décision du plan : la zone d'interaction était centrée
+sur l'autel, or le marqueur est à l'escalier. Les laisser dissociés aurait fait
+mentir le marqueur. `Landmark.interact` porte désormais une ancre en
+coordonnées monde, dérivée de la même constante que la géométrie du marqueur ;
+le rayon passe de 4,5 à 3. Conséquence de jeu à assumer : **on consulte les
+projets depuis le parvis, sans monter**. L'autel et son cristal restent la
+récompense visuelle de la montée, plus le déclencheur.
+
+Deux détails mesurés au passage : la première version de la braise arrivait au
+genou du héros et se perdait dans le champ de rochers du sommet — agrandie de
+moitié et remontée à hauteur de poitrine. Et le cristal de l'autel tournait
+encore pendant la pause, parce qu'il lisait l'horloge de r3f et non celle du
+jeu ; corrigé, c'était le dernier survivant de la bascule.
+
 Enfin, le typage croisé des dictionnaires s'est révélé **asymétrique** : une clé
 manquante dans `en.json` casse la compilation, une clé **en trop** y passait
 inaperçue (`en` est un binding importé, pas un littéral frais, donc pas de

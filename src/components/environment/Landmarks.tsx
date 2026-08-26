@@ -32,9 +32,16 @@ function LandmarkProximity() {
       if (distance < landmark.discoverRadius && !store.discovered.includes(landmark.id)) {
         store.discoverLandmark(landmark.id)
       }
-      if (distance < landmark.interactRadius && distance < nearestDistance) {
+      // L'interaction se mesure sur son **ancre** et non sur le centre du
+      // monument : c'est le marqueur lumineux qui promet quelque chose au
+      // joueur, donc c'est autour de lui que la promesse doit être tenue.
+      const toAnchor = Math.hypot(
+        position.x - landmark.interact.x,
+        position.z - landmark.interact.z,
+      )
+      if (toAnchor < landmark.interactRadius && toAnchor < nearestDistance) {
         nearest = landmark.id
-        nearestDistance = distance
+        nearestDistance = toAnchor
       }
     }
 

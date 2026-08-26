@@ -59,6 +59,7 @@ src/
     environment/Vegetation.tsx  semis instancié des sept biomes
     environment/Landmarks.tsx  monuments, proximité et touche d'interaction
     environment/Temple.tsx    Temple du Sommet, géométrie fusionnée et colliders
+    environment/InteractionMarker.tsx  braise bleue : « on peut agir ici »
     environment/faceted.ts    normales par face, partagé par le décor
     environment/windMaterial.ts  matériau toon + vent en vertex shader
     GameClock.tsx             avance l'horloge de jeu, avant tout le monde
