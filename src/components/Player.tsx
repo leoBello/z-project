@@ -15,6 +15,7 @@ import { WORLD } from '../config/world'
 import { enemyRegistry } from '../state/enemyRegistry'
 import { now as gameNow } from '../state/gameClock'
 import { playerTransform } from '../state/playerTransform'
+import { playerBody } from '../state/playerBody'
 import { useGameStore } from '../store/useGameStore'
 import { LinkModel } from './models/LinkModel'
 
@@ -109,6 +110,15 @@ export function Player() {
       unsubscribeAttack()
     }
   }, [subscribeKeys])
+
+  // Pont vers l'extérieur de React : `TeleportOverlay` a besoin de déplacer
+  // directement le `RigidBody` du joueur, sans passer par du state React.
+  useEffect(() => {
+    playerBody.current = body.current
+    return () => {
+      playerBody.current = null
+    }
+  }, [])
 
   useFrame((_, rawDelta) => {
     const rb = body.current

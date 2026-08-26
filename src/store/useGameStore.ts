@@ -45,6 +45,14 @@ export interface GameState {
    */
   nearbyLandmark: LandmarkId | null
   /**
+   * Lieu vers lequel une téléportation est en cours, ou `null`.
+   *
+   * Distinct de `activeLandmark` : tant qu'il est non-nul, l'overlay de
+   * braises est à l'écran et la modale n'a pas encore commencé son fondu
+   * d'ouverture — elle ne démarre qu'au "warp", via `resolveTeleport`.
+   */
+  teleporting: LandmarkId | null
+  /**
    * Identifiant de la partie. Sert de `key` React sur le joueur et les ennemis :
    * l'incrémenter démonte et remonte tout le monde, ce qui remet positions,
    * points de vie et machines à états à zéro sans logique de réinitialisation
@@ -67,6 +75,16 @@ export interface GameState {
   closeLandmark: () => void
   /** Signale le lieu à portée d'interaction, ou `null` s'il n'y en a plus. */
   setNearbyLandmark: (id: LandmarkId | null) => void
+  /**
+   * Démarre une téléportation vers `id` : gèle la partie et déclenche
+   * l'overlay. Sans effet si une téléportation est déjà en cours, si la
+   * partie est terminée, ou si `id` est déjà le lieu affiché.
+   */
+  teleportTo: (id: LandmarkId) => void
+  /** Ouvre la modale du lieu en cours de téléportation, à mi-animation. */
+  resolveTeleport: () => void
+  /** Efface l'état de téléportation, en fin d'animation. */
+  finishTeleport: () => void
   /** Relance une partie depuis zéro. */
   reset: () => void
 }
@@ -80,6 +98,7 @@ const initialState = {
   discovered: [] as LandmarkId[],
   activeLandmark: null as LandmarkId | null,
   nearbyLandmark: null as LandmarkId | null,
+  teleporting: null as LandmarkId | null,
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -138,6 +157,24 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   /** Écrit uniquement sur transition — voir l'appelant dans `Landmarks.tsx`. */
   setNearbyLandmark: (id) => set({ nearbyLandmark: id }),
+
+  /**
+   * Refusée dans trois cas : partie terminée, téléportation déjà en cours
+   * (anti-spam-clic), ou lieu déjà affiché. Sinon, gèle tout immédiatement —
+   * qu'on parte de `playing` (en pleine balade) ou de `paused` (en train de
+   * lire un autre lieu : sa modale se ferme aussitôt, cachée par les
+   * braises qui montent).
+   */
+  teleportTo: (id) => {
+    const { phase, activeLandmark, teleporting } = get()
+    if (phase === 'gameover' || teleporting !== null) return
+    if (phase === 'paused' && activeLandmark === id) return
+    set({ phase: 'paused', activeLandmark: null, teleporting: id })
+  },
+
+  resolveTeleport: () => set((state) => ({ activeLandmark: state.teleporting })),
+
+  finishTeleport: () => set({ teleporting: null }),
 
   // `discovered` est réécrit explicitement : `initialState` est un objet unique
   // partagé par toutes les parties, et en réutiliser le tableau ferait qu'une
