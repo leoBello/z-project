@@ -4,7 +4,7 @@ Mini-jeu 3D navigateur inspiré de Zelda, pour portfolio front-end.
 Direction artistique : **diorama low-poly cozy** — cel-shading, FOV étroit,
 tilt-shift. La recette caméra + post-traitement du HD-2D, appliquée à de la 3D.
 
-Dernière mise à jour : 26 août 2026 — équilibrage et lisibilité du combat.
+Dernière mise à jour : 26 août 2026 — points d'intérêt, Temple du Sommet.
 
 ---
 
@@ -42,6 +42,18 @@ Dernière mise à jour : 26 août 2026 — équilibrage et lisibilité du combat
   mesh visuel : alignement vérifié à 0,00 unité près
 - Végétation instanciée : ~7 600 props en 9 draw calls, vent en vertex shader
 - Colliders sur les troncs et les gros rochers uniquement
+
+### Points d'intérêt
+- Table déclarative dans `src/config/landmarks.ts`. Trois systèmes la lisent
+  sans se connaître : `sampleHeight` y creuse la terrasse du monument, le semis
+  de végétation s'y interdit de pousser, la minimap y pose un repère
+- **Temple du Sommet**, sur le point culminant de la crête nord-ouest.
+  Péristyle ouvert de seize colonnes, entablement, deux frontons, escalier de
+  façade, braseros, autel à cristal, colonnes couchées. Fusionné en trois
+  géométries — un draw call par teinte de pierre
+- Terrasse **creusée dans le relief** et non posée dessus : le mesh, le
+  collider, le semis et la minimap voient tous la même plate-forme
+- Bandeau « Lieu découvert » quand le joueur entre dans le rayon du monument
 
 ### Rendu
 - **Ciel étoilé procédural** : dégradé bleu à quatre paliers, halo
@@ -92,13 +104,16 @@ Dernière mise à jour : 26 août 2026 — équilibrage et lisibilité du combat
 - Flash rouge à chaque coup encaissé, clignotement du joueur pendant les i-frames
 - Écran de Game Over avec nombre d'ennemis vaincus et bouton de relance
 - **Minimap** en haut à gauche : fond de carte pré-rendu avec ombrage de relief,
-  position et cap du joueur, **ennemis vivants**, nom du biome courant
+  position et cap du joueur, **ennemis vivants**, **monuments** (losange doré,
+  affiché avant d'être découvert : c'est ce qui donne une destination), nom du
+  biome courant
 - **Calque de combat** en canvas 2D par-dessus la scène :
   - barres de vie segmentées (un segment = un coup d'épée) au-dessus des ennemis
     engagés ou récemment blessés, dimensionnées par la perspective ;
   - chevrons d'alerte au sol pour les tirs venus de hors cadre, posés du côté
     d'où vient la menace et pointant vers le joueur
 - Cinq cœurs au lieu de trois
+- Bandeau de découverte d'un lieu, animé en CSS pur, sans état piloté depuis React
 
 ---
 
@@ -118,6 +133,8 @@ Dernière mise à jour : 26 août 2026 — équilibrage et lisibilité du combat
 | `runId` comme `key` React | Relancer une partie remonte joueur et ennemis : positions, PV et machines à états repartent de zéro sans code de réinitialisation. |
 | Registre d'ennemis mutable | La minimap lit les positions à chaque frame. Un state React re-rendrait tout le HUD 60 fois par seconde. |
 | Calque de combat en canvas 2D, hors du Canvas 3D | Un billboard par ennemi ajouterait un draw call et un matériau transparent par ennemi, donc du tri de transparence ; `<Html>` de drei reprojetterait des nœuds DOM à chaque frame. Ici tout tient dans un canvas et une boucle. Même raisonnement que la minimap. |
+| Terrasse d'un monument creusée dans `sampleHeight`, jamais posée sous le modèle | Le mesh, le collider Rapier, le semis et la minimap interrogent tous `sampleHeight`. Y mettre la plate-forme garantit qu'ils voient la même. Un socle côté modèle 3D aurait été une seconde source de vérité : le joueur aurait marché à côté du sol qu'il voit. |
+| Collider d'escalier en **rampe**, pas en marches | Le personnage est piloté en vélocité, sans autostep. Sur l'arête d'une marche la normale de contact est quasi horizontale : elle repousse, elle ne soulève pas — mesuré, le joueur restait bloqué contre un gradin de 0,22. Une rampe donne une normale verticale, et la résolution de pénétration le fait monter, comme sur le flanc de la montagne. |
 | Matrice view-projection publiée dans `cameraView` | Le calque doit reprojeter des points monde alors qu'il vit hors de React. On publie la seule chose dont il a besoin, pas la caméra entière. |
 | Projection écrite à la main plutôt que `Vector3.applyMatrix4` | Cette dernière divise par `w` sans en garder le signe : un point **derrière** la caméra ressort projeté devant, en miroir. C'est justement le cas qui compte — un tireur hors cadre est presque toujours dans le dos du joueur. |
 | Chevron d'alerte posé dans le monde, pas en 2D | Placé au sol sur un cercle autour du joueur puis projeté, il hérite de la perspective sans qu'on ait à calculer l'ellipse qu'un cercle devient à l'écran. |
@@ -187,6 +204,17 @@ l'interception : un joueur qui charge le tireur est touché à tous les coups.
 Mesuré sur le vrai code de tir, 800 tirs par cas — voir le tableau plus bas.
 Corrigé par une dispersion angulaire de ±5°, qui s'ouvre avec la distance.
 
+**Marches infranchissables.** Le stylobate du temple avait des gradins de 0,22,
+soit moins que le rayon de la capsule du joueur (0,35) : on pouvait croire
+qu'elle roulerait par-dessus. Mesuré en pilotant le jeu, elle n'en franchissait
+aucune — le joueur restait collé au socle, vitesse nulle. La hauteur n'est pas
+en cause : c'est le mode de déplacement. Vélocité imposée en XZ, Y laissé à la
+gravité, aucun autostep — la normale de contact sur une arête est presque
+horizontale, donc elle repousse au lieu de soulever. Corrigé en remplaçant les
+marches de l'entrée par une volée fine dont le collider est **une seule rampe à
+9,5°**. À retenir pour tout futur décor praticable : dans ce jeu, une marche est
+un mur, seule une pente se monte.
+
 **Ennemis increvables dans le dos.** Sans souris ni caméra libre, il n'existe
 aucun moyen de se retourner sur place : un ennemi passé derrière le joueur ne
 pouvait plus jamais être touché. Mesuré : dix coups d'affilée dans le vide.
@@ -245,7 +273,18 @@ Reste ouvert sur ce chantier, à trancher en jouant :
       la caméra et le joueur. Solution prévue : fondu par tramage
       (*screen-door*) dans le fragment shader des canopées, en passant la
       position du joueur en uniform. Pas de tri de transparence à gérer.
-- [ ] Points d'intérêt sur l'île, pour lui donner une raison d'exister
+- [x] **Point d'intérêt au sommet de la montagne** — Temple du Sommet, fait
+- [ ] Points d'intérêt sur l'île, pour lui donner une raison d'exister.
+      L'infrastructure est posée : ajouter une entrée dans `config/landmarks.ts`
+      et un composant de géométrie suffit, terrasse, exclusion de végétation,
+      repère de minimap et bandeau de découverte suivent tout seuls
+- [ ] Donner une **récompense** au temple. Il est aujourd'hui purement
+      contemplatif : on y monte, le bandeau s'affiche, et il ne se passe rien.
+      Un cœur maximal supplémentaire posé sur l'autel serait le geste le plus
+      court, et `MAX_HEARTS` est déjà dans le store
+- [ ] Vérifier **manette en main** que le sommet vaut le déplacement : l'accès
+      n'a été mesuré que par la pente (0,24 à 0,36 sur la crête sud-ouest, contre
+      1,25 sur les trois autres flancs), jamais joué
 - [ ] Écume au bord de l'eau
 - [ ] Corps céleste dans le ciel : la planète annelée a été retirée (anneau mal
       raccordé au globe, seule la moitié arrière était dessinée). À reprendre
@@ -269,6 +308,12 @@ Reste ouvert sur ce chantier, à trancher en jouant :
       (densité de végétation, résolution d'ombres, post-traitement)
 - [ ] Les ennemis coûtent ~150 draw calls à 26 unités : instancier les parties
       communes si le framerate décroche
+- [ ] Le cristal du temple ajoute **la seule lumière ponctuelle de la scène**,
+      donc une passe d'éclairage supplémentaire dans *tous* les shaders,
+      végétation instanciée comprise. Gardée parce que c'est elle qui détache la
+      colonnade sur la neige, mais c'est le premier candidat à sauter sur GPU
+      intégré : la retirer ne change rien à la lisibilité du lieu
+      (`src/components/environment/Temple.tsx`, composant `Crystal`)
 - [ ] Écran de chargement : la génération du monde bloque ~1 s au démarrage
 
 ### Plus tard
@@ -302,6 +347,10 @@ animations.
 | Touches | `src/config/controls.ts` |
 | Relief, position de la montagne, de l'île, du gué | `src/config/world.ts` |
 | Couleurs d'un biome | `src/config/biomes.ts` |
+| Position, cap, terrasse et rayon de découverte d'un monument | `src/config/landmarks.ts` |
+| Géométrie, cotes et colliders du temple | `src/components/environment/Temple.tsx` |
+| Ajouter un monument | `src/config/landmarks.ts` + un composant, monté dans `src/components/environment/Landmarks.tsx` |
+| Bandeau « Lieu découvert » | `src/components/HUD.tsx` + `.discovery` dans `src/index.css` |
 | Densité et nature de la végétation | `src/components/environment/Vegetation.tsx` |
 | Bloom, tilt-shift, vignette | `src/components/PostFX.tsx` |
 | Ciel, Voie lactée, étoiles | `src/components/environment/StarrySky.tsx` |

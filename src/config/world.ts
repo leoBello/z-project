@@ -1,3 +1,4 @@
+import { LANDMARKS } from './landmarks'
 import type { BiomeId } from '../types/game'
 
 /**
@@ -156,6 +157,20 @@ export function sampleHeight(x: number, z: number) {
   if (causewayDistance < CAUSEWAY.halfWidth) {
     const shelf = lerp(-0.3, -1.2, smoothstep(2, CAUSEWAY.halfWidth, causewayDistance))
     height = Math.max(height, shelf)
+  }
+
+  // Terrasses des points d'intérêt, appliquées en dernier : un monument doit
+  // effacer le relief qu'il occupe, pas s'y ajouter. Le fondu par smoothstep
+  // raccorde la plate-forme à la pente naturelle sans marche visible.
+  for (const landmark of LANDMARKS) {
+    const weight =
+      1 -
+      smoothstep(
+        landmark.radius,
+        landmark.radius + landmark.blend,
+        Math.hypot(x - landmark.x, z - landmark.z),
+      )
+    if (weight > 0) height = lerp(height, landmark.altitude, weight)
   }
 
   // Plancher : l'océan reste guéable, le joueur n'est jamais submergé.

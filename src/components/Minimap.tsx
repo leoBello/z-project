@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { BIOMES, MINIMAP_WATER } from '../config/biomes'
 import { ENEMIES } from '../config/enemies'
+import { LANDMARKS } from '../config/landmarks'
 import { WORLD, classifyBiome, sampleHeight } from '../config/world'
 import { enemyRegistry } from '../state/enemyRegistry'
 import { playerTransform } from '../state/playerTransform'
@@ -145,6 +146,23 @@ export function Minimap({ markers = [] }: MinimapProps) {
         context.beginPath()
         context.arc(px, py, 2.6, 0, Math.PI * 2)
         context.fill()
+      }
+
+      // Monuments : un losange, pas un point. La forme suffit à les distinguer
+      // des ennemis sans avoir à mémoriser un code couleur — et ils restent
+      // affichés avant d'être découverts, parce que c'est ce qui donne au
+      // joueur une destination.
+      for (const landmark of LANDMARKS) {
+        const { px, py } = toPixels(landmark.x, landmark.z)
+        context.save()
+        context.translate(px, py)
+        context.rotate(Math.PI / 4)
+        context.fillStyle = landmark.minimapColor
+        context.strokeStyle = 'rgba(20, 30, 24, 0.85)'
+        context.lineWidth = 1.2
+        context.fillRect(-2.6, -2.6, 5.2, 5.2)
+        context.strokeRect(-2.6, -2.6, 5.2, 5.2)
+        context.restore()
       }
 
       for (const marker of markersRef.current) {

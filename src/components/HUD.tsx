@@ -1,4 +1,5 @@
 import { controlHints } from '../config/controls'
+import { landmarkById } from '../config/landmarks'
 import { clearPickups } from '../state/pickups'
 import { clearProjectiles } from '../state/projectiles'
 import { useGameStore } from '../store/useGameStore'
@@ -28,7 +29,12 @@ export function HUD() {
   const lastHitAt = useGameStore((state) => state.lastHitAt)
   const kills = useGameStore((state) => state.kills)
   const phase = useGameStore((state) => state.phase)
+  const discovered = useGameStore((state) => state.discovered)
   const reset = useGameStore((state) => state.reset)
+
+  // Seul le dernier lieu trouvé s'affiche : le bandeau annonce une découverte,
+  // il ne tient pas un journal.
+  const lastDiscovery = discovered[discovered.length - 1]
 
   const restart = () => {
     // Projectiles en vol et cœurs au sol survivraient au redémarrage : ils
@@ -54,6 +60,16 @@ export function HUD() {
           ))}
         </div>
       </div>
+
+      {/* Même astuce de `key` que le flash de dégâts : changer la clé recrée
+          l'élément, donc rejoue l'animation CSS. Sans ça, le bandeau du
+          deuxième lieu découvert resterait figé sur sa dernière image. */}
+      {lastDiscovery && (
+        <div key={lastDiscovery} className="discovery">
+          <span className="discovery__kicker">Lieu découvert</span>
+          <strong className="discovery__name">{landmarkById(lastDiscovery)?.label}</strong>
+        </div>
+      )}
 
       <div className="hud__controls">
         {controlHints.map((hint) => (

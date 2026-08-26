@@ -24,6 +24,7 @@ src/
   config/world.ts             relief, mer, classification des biomes, bruit
   config/biomes.ts            palettes des sept biomes
   config/enemies.ts           statistiques par espèce, placement
+  config/landmarks.ts         points d'intérêt : position, terrasse, découverte
   types/game.ts               types métier (phase, ennemis, biomes)
   store/useGameStore.ts       état de partie zustand (vie, phase, kills)
   state/playerTransform.ts    transform du joueur partagé hors React (60 fps)
@@ -49,6 +50,9 @@ src/
     environment/Water.tsx     mer translucide, houle en vertex shader
     environment/StarrySky.tsx  ciel procédural : Voie lactée, étoiles, nébuleuses
     environment/Vegetation.tsx  semis instancié des sept biomes
+    environment/Landmarks.tsx  monuments + détection de découverte
+    environment/Temple.tsx    Temple du Sommet, géométrie fusionnée et colliders
+    environment/faceted.ts    normales par face, partagé par le décor
     environment/windMaterial.ts  matériau toon + vent en vertex shader
     models/SafeModel.tsx      fallback si un .glb est absent
     models/LinkModel.tsx      modèle du joueur (.glb ou personnage procédural)

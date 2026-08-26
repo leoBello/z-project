@@ -17,6 +17,7 @@ import {
 } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { BIOMES } from '../../config/biomes'
+import { LANDMARKS } from '../../config/landmarks'
 import { PLAYER } from '../../config/gameplay'
 import {
   WORLD,
@@ -26,6 +27,7 @@ import {
   seededRandom,
 } from '../../config/world'
 import { toonGradient } from '../models/toonGradient'
+import { faceted } from './faceted'
 import { createWindMaterial, tickWind } from './windMaterial'
 
 /** Une instance posée sur la carte. */
@@ -58,20 +60,6 @@ const MAX_SLOPE = 0.85
 const ROCK_COLLIDER_SCALE = 1.25
 
 // --- Géométries partagées ---------------------------------------------------
-
-/**
- * Force des normales par face pour obtenir le rendu low-poly facetté.
- *
- * `MeshToonMaterial` n'expose pas `flatShading` (contrairement à Standard ou
- * Lambert), donc l'effet doit être cuit dans la géométrie : on dé-indexe, puis
- * on recalcule les normales — chaque triangle obtient alors les siennes au lieu
- * de les moyenner avec ses voisins.
- */
-function faceted<T extends BufferGeometry>(geometry: T) {
-  const flat = geometry.toNonIndexed()
-  flat.computeVertexNormals()
-  return flat
-}
 
 /**
  * Touffe d'herbe : trois brins inclinés, fusionnés en **une seule géométrie**.
@@ -203,6 +191,15 @@ function generateScatter(): Buckets {
     // Rien ne pousse dans l'eau ni sur une paroi.
     if (height < WORLD.waterLevel + 0.05) continue
     if (sampleSlope(x, z) > MAX_SLOPE) continue
+    // Le parvis d'un monument est dégagé. Le test de pente ne l'aurait jamais
+    // rejeté — une terrasse est plate par construction — et des buissons
+    // auraient poussé jusque sous les colonnes.
+    if (
+      LANDMARKS.some(
+        (landmark) => Math.hypot(x - landmark.x, z - landmark.z) < landmark.clearRadius,
+      )
+    )
+      continue
 
     const biome = classifyBiome(x, z, height)
     const style = BIOMES[biome]

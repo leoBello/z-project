@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { GamePhase } from '../types/game'
+import type { GamePhase, LandmarkId } from '../types/game'
 
 /**
  * Nombre de cœurs de départ.
@@ -23,6 +23,11 @@ export interface GameState {
   /** Ennemis tués sur la partie en cours. */
   kills: number
   /**
+   * Lieux déjà trouvés, dans l'ordre de découverte. Le dernier élément pilote
+   * le bandeau du HUD ; l'ordre est donc porteur d'information, pas décoratif.
+   */
+  discovered: LandmarkId[]
+  /**
    * Identifiant de la partie. Sert de `key` React sur le joueur et les ennemis :
    * l'incrémenter démonte et remonte tout le monde, ce qui remet positions,
    * points de vie et machines à états à zéro sans logique de réinitialisation
@@ -37,6 +42,8 @@ export interface GameState {
   /** Rend des cœurs au joueur. Ignoré si la barre est déjà pleine. */
   healPlayer: (amount?: number) => boolean
   registerKill: () => void
+  /** Marque un lieu comme trouvé. Sans effet s'il l'était déjà. */
+  discoverLandmark: (id: LandmarkId) => void
   /** Relance une partie depuis zéro. */
   reset: () => void
 }
@@ -47,6 +54,7 @@ const initialState = {
   maxHearts: MAX_HEARTS,
   lastHitAt: -Infinity,
   kills: 0,
+  discovered: [] as LandmarkId[],
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -78,7 +86,18 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   registerKill: () => set((state) => ({ kills: state.kills + 1 })),
 
-  reset: () => set((state) => ({ ...initialState, runId: state.runId + 1 })),
+  discoverLandmark: (id) =>
+    set((state) =>
+      state.discovered.includes(id)
+        ? state
+        : { discovered: [...state.discovered, id] },
+    ),
+
+  // `discovered` est réécrit explicitement : `initialState` est un objet unique
+  // partagé par toutes les parties, et en réutiliser le tableau ferait qu'une
+  // mutation en place fuiterait d'une partie à l'autre.
+  reset: () =>
+    set((state) => ({ ...initialState, discovered: [], runId: state.runId + 1 })),
 }))
 
 // Exposé en développement pour piloter et inspecter une partie depuis la

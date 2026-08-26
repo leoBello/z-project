@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Object3D, type DirectionalLight } from 'three'
 import { playerTransform } from '../state/playerTransform'
+import { Landmarks } from './environment/Landmarks'
 import { Terrain } from './environment/Terrain'
 import { Vegetation } from './environment/Vegetation'
 import { StarrySky } from './environment/StarrySky'
@@ -87,7 +88,7 @@ function Lighting() {
   )
 }
 
-/** Décor complet : ciel, lumières, relief, mer et végétation. */
+/** Décor complet : ciel, lumières, relief, mer, végétation et monuments. */
 export function Environment() {
   return (
     <>
@@ -96,6 +97,7 @@ export function Environment() {
       <Terrain />
       <Water />
       <Vegetation />
+      <Landmarks />
     </>
   )
 }
