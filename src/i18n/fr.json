@@ -32,15 +32,55 @@
       "temple": {
         "name": "Temple du Sommet",
         "action": "Voir les projets"
+      },
+      "pyramid": {
+        "name": "Pyramide de la Jungle",
+        "action": "Lire la présentation"
+      },
+      "stele": {
+        "name": "Grande Stèle",
+        "action": "Voir les compétences"
+      },
+      "statue": {
+        "name": "Idole des Terres Arides",
+        "action": "Voir le parcours"
+      },
+      "ruins": {
+        "name": "Ruines de l'Île",
+        "action": "Prendre contact"
       }
     },
+    "sections": {
+      "projects": "Projets",
+      "bio": "À propos",
+      "skills": "Compétences",
+      "background": "Parcours",
+      "contact": "Contact"
+    },
+    "skillGroups": {
+      "frontend": "Front-end",
+      "backend": "Back-end",
+      "cloud_devops": "Cloud et DevOps",
+      "data_ml": "Données et IA",
+      "tools_methods": "Outils et méthodes",
+      "soft_skills": "Savoir-être"
+    },
+    "background": {
+      "certifications": "Certifications",
+      "issuedBy": "Délivrée par {issuer}"
+    },
+    "contactLabels": {
+      "email": "E-mail",
+      "linkedin": "LinkedIn",
+      "github": "GitHub",
+      "website": "Site web",
+      "intro": "Basé à {location}. Ouvert aux missions front-end et full-stack."
+    },
     "portfolio": {
-      "kicker": "Projets",
-      "previous": "Projet précédent",
-      "next": "Projet suivant",
+      "previous": "Précédent",
+      "next": "Suivant",
       "close": "Fermer",
-      "position": "{current} sur {total}",
-      "current": "En cours"
+      "position": "{current} sur {total}"
     },
     "language": {
       "label": "Langue",

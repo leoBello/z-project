@@ -25,7 +25,7 @@ export interface EnemySpawn {
 }
 
 /** Identifiant de point d'intérêt. La table vit dans `config/landmarks.ts`. */
-export type LandmarkId = 'temple'
+export type LandmarkId = 'temple' | 'pyramid' | 'stele' | 'statue' | 'ruins'
 
 /** Identifiant de biome. Pilote le sol, la végétation et la minimap. */
 export type BiomeId =

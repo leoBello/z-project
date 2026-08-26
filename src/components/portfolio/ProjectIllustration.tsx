@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { seededRandom } from '../../config/world'
 import { boundsOf, isoBox, pointsAttribute, shadesFrom, type Facet } from './illustration/isometry'
-import { buildMotif, motifForTags } from './illustration/motifs'
+import { buildMotif, motifForTags, type MotifId } from './illustration/motifs'
 
 /**
  * Teintes d'accent, **toutes prélevées sur le jeu** : ardoise du toit du
@@ -85,20 +85,30 @@ function buildPlinth(recipe: Recipe): Facet[] {
 }
 
 interface ProjectIllustrationProps {
-  /** Identifiant du projet. Amorce le tirage : même projet, mêmes formes. */
+  /** Identifiant de la diapositive. Amorce le tirage : même contenu, mêmes formes. */
   id: string
-  tags: readonly string[]
-  /**
-   * Position du projet dans le tableau `experience` **complet**, et non dans la
-   * sélection affichée : sinon masquer un projet reteindrait tous les suivants.
-   */
+  /** Étiquettes du contenu. Elles décident du motif quand il n'est pas imposé. */
+  tags?: readonly string[]
+  /** Rang de la teinte d'accent, assigné par la section. */
   index: number
+  /**
+   * Motif imposé.
+   *
+   * Sert aux contenus sans étiquettes — une biographie, une fiche de contact —
+   * qui retomberaient sinon tous sur le motif par défaut et se ressembleraient.
+   */
+  motif?: MotifId
 }
 
 /** Air laissé autour de la composition, en unités de la projection. */
 const MARGIN = 16
 
-export function ProjectIllustration({ id, tags, index }: ProjectIllustrationProps) {
+export function ProjectIllustration({
+  id,
+  tags,
+  index,
+  motif,
+}: ProjectIllustrationProps) {
   const { facets, viewBox } = useMemo(() => {
     const random = seededRandom(hashString(id))
     const recipe: Recipe = {
@@ -110,7 +120,7 @@ export function ProjectIllustration({ id, tags, index }: ProjectIllustrationProp
     // de profondeur — voir la note dans `isoBox`.
     const built: Facet[] = [
       ...buildPlinth(recipe),
-      ...buildMotif(motifForTags(tags), random, shadesFrom(recipe.accent)),
+      ...buildMotif(motif ?? motifForTags(tags ?? []), random, shadesFrom(recipe.accent)),
     ]
 
     // Cadrage calculé sur les formes réellement produites, jamais écrit à la
@@ -127,7 +137,7 @@ export function ProjectIllustration({ id, tags, index }: ProjectIllustrationProp
         .map((value) => value.toFixed(1))
         .join(' '),
     }
-  }, [id, tags, index])
+  }, [id, tags, index, motif])
 
   return (
     <svg

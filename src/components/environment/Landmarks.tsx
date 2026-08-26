@@ -6,6 +6,10 @@ import { LANDMARKS } from '../../config/landmarks'
 import { playerTransform } from '../../state/playerTransform'
 import { useGameStore } from '../../store/useGameStore'
 import type { LandmarkId } from '../../types/game'
+import { Pyramid } from './Pyramid'
+import { Ruins } from './Ruins'
+import { Statue } from './Statue'
+import { Stele } from './Stele'
 import { Temple } from './Temple'
 
 /**
@@ -83,6 +87,10 @@ export function Landmarks() {
   return (
     <>
       <Temple />
+      <Pyramid />
+      <Stele />
+      <Statue />
+      <Ruins />
       <LandmarkProximity />
       <LandmarkInteraction />
     </>

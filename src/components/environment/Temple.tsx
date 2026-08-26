@@ -2,7 +2,6 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier'
 import {
-  BoxGeometry,
   CylinderGeometry,
   ExtrudeGeometry,
   IcosahedronGeometry,
@@ -13,10 +12,11 @@ import {
   type Mesh,
 } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import { TEMPLE, TEMPLE_MARKER_Z } from '../../config/landmarks'
+import { TEMPLE } from '../../config/landmarks'
 import { now as gameNow } from '../../state/gameClock'
 import { toonGradient } from '../models/toonGradient'
 import { faceted } from './faceted'
+import { box, cyl } from './solids'
 import { InteractionMarker } from './InteractionMarker'
 
 /**
@@ -92,24 +92,6 @@ const STAIR_LENGTH = Math.hypot(STAIR_RUN, FLOOR_Y)
 const RAMP_T = 0.2
 
 // --- Fabriques de géométrie -------------------------------------------------
-
-/** Pavé facetté, centré sur (x, y, z). */
-function box(w: number, h: number, d: number, x: number, y: number, z: number) {
-  return faceted(new BoxGeometry(w, h, d)).translate(x, y, z)
-}
-
-/** Cylindre facetté *posé* sur `y`, et non centré dessus : on empile des assises. */
-function cyl(
-  rTop: number,
-  rBottom: number,
-  h: number,
-  x: number,
-  y: number,
-  z: number,
-  segments = 8,
-) {
-  return faceted(new CylinderGeometry(rTop, rBottom, h, segments)).translate(x, y + h / 2, z)
-}
 
 /**
  * Bandeau rectangulaire creux, en quatre pavés.
@@ -410,7 +392,7 @@ export function Temple() {
         (`TEMPLE.interact`), les deux dérivant de la même constante : un
         marqueur posé ailleurs que la zone qui l'active mentirait au joueur.
       */}
-      <InteractionMarker landmarkId={TEMPLE.id} position={[0, 0, TEMPLE_MARKER_Z]} />
+      <InteractionMarker landmarkId={TEMPLE.id} position={[0, 0, TEMPLE.markerZ]} />
       <TempleColliders />
     </group>
   )

@@ -4,8 +4,8 @@ Mini-jeu 3D navigateur inspiré de Zelda, pour portfolio front-end.
 Direction artistique : **diorama low-poly cozy** — cel-shading, FOV étroit,
 tilt-shift. La recette caméra + post-traitement du HD-2D, appliquée à de la 3D.
 
-Dernière mise à jour : 26 août 2026 — panneau portfolio au temple, socle i18n,
-horloge de jeu unique.
+Dernière mise à jour : 26 août 2026 — cinq points d'intérêt, une section de
+portfolio chacun.
 
 ---
 
@@ -48,6 +48,16 @@ horloge de jeu unique.
 - Table déclarative dans `src/config/landmarks.ts`. Trois systèmes la lisent
   sans se connaître : `sampleHeight` y creuse la terrasse du monument, le semis
   de végétation s'y interdit de pousser, la minimap y pose un repère
+- **Cinq monuments**, un par section du portfolio, chacun dans un biome
+  différent et chacun avec sa braise d'interaction :
+  Temple du Sommet (montagne) → projets ; Pyramide de la Jungle → présentation ;
+  Grande Stèle (jungle) → compétences ; Idole des Terres Arides → parcours ;
+  Ruines de l'Île → contact
+- Sites choisis **par balayage de `sampleHeight`**, pas à vue : dénivelé naturel
+  et pureté de biome mesurés sur tout le rayon avant de poser quoi que ce soit
+- Le contenu de chaque section se ramène à une **forme unique** de diapositive
+  (`portfolio/sections.ts`) : un seul panneau à maintenir, une seule façon de
+  naviguer à apprendre
 - **Temple du Sommet**, sur le point culminant de la crête nord-ouest.
   Péristyle ouvert de seize colonnes, entablement, deux frontons, escalier de
   façade, braseros, autel à cristal, colonnes couchées. Fusionné en trois
@@ -162,6 +172,9 @@ horloge de jeu unique.
 | Registre d'ennemis mutable | La minimap lit les positions à chaque frame. Un state React re-rendrait tout le HUD 60 fois par seconde. |
 | Calque de combat en canvas 2D, hors du Canvas 3D | Un billboard par ennemi ajouterait un draw call et un matériau transparent par ennemi, donc du tri de transparence ; `<Html>` de drei reprojetterait des nœuds DOM à chaque frame. Ici tout tient dans un canvas et une boucle. Même raisonnement que la minimap. |
 | Terrasse d'un monument creusée dans `sampleHeight`, jamais posée sous le modèle | Le mesh, le collider Rapier, le semis et la minimap interrogent tous `sampleHeight`. Y mettre la plate-forme garantit qu'ils voient la même. Un socle côté modèle 3D aurait été une seconde source de vérité : le joueur aurait marché à côté du sol qu'il voit. |
+| La caméra est fixe et regarde le nord : un monument haut présente sa façade au **sud** | Le joueur qui aborde un monument par le nord l'a dans le dos, et le marqueur posé de ce côté disparaît derrière la pierre. La règle « la façade regarde le centre de la carte » cède devant celle-ci dès que le monument est assez haut pour se masquer lui-même. |
+| Un solide décoratif **mord** dans celui qu'il habille | Deux faces coplanaires de même orientation clignotent — le tampon de profondeur ne peut pas les départager. Affleurer est donc interdit ; `Z_FIGHT_LIFT` donne l'écart minimal. |
+| Une terrasse peut avoir un rayon **nul** | Le sommet de l'île est déjà plat à la valeur près (6,100 sur 5,2 unités de rayon, le masque d'île y sature). Y poser une terrasse *raidissait* le flanc de 1,00 à 1,50 : le fondu maintient la hauteur au-dessus de la pente naturelle, qui doit ensuite rattraper plus bas. Aplanir n'est donc pas toujours améliorer, et le cas se vérifie avant de trancher. |
 | L'ancre d'interaction est portée par le marqueur, pas par le centre du monument | Un marqueur lumineux promet au joueur que quelque chose est possible *ici*. Si la zone qui déclenche l'invite était ailleurs, il mentirait : on se plante devant la flamme et rien ne se passe. `Landmark.interact` est donc calculé depuis la position locale du marqueur, une seule constante pour les deux. |
 | Collider d'escalier en **rampe**, pas en marches | Le personnage est piloté en vélocité, sans autostep. Sur l'arête d'une marche la normale de contact est quasi horizontale : elle repousse, elle ne soulève pas — mesuré, le joueur restait bloqué contre un gradin de 0,22. Une rampe donne une normale verticale, et la résolution de pénétration le fait monter, comme sur le flanc de la montagne. |
 | Matrice view-projection publiée dans `cameraView` | Le calque doit reprojeter des points monde alors qu'il vit hors de React. On publie la seule chose dont il a besoin, pas la caméra entière. |
@@ -232,6 +245,33 @@ courante du joueur. Sur l'axe qui relie les deux, se déplacer ne change rien à
 l'interception : un joueur qui charge le tireur est touché à tous les coups.
 Mesuré sur le vrai code de tir, 800 tirs par cas — voir le tableau plus bas.
 Corrigé par une dispersion angulaire de ±5°, qui s'ouvre avec la distance.
+
+**Faces horizontales qui clignotent (z-fighting).** Sur la pyramide, le bandeau
+sombre qui ceinture chaque gradin avait sa face supérieure **exactement dans le
+plan** de celle du gradin. Deux surfaces à la même profondeur et de même
+orientation : le tampon de profondeur n'a pas de départage, et elles clignotent
+selon l'angle de vue. Mesuré en inspectant la géométrie fusionnée depuis la
+page — six paires de faces coplanaires qui se recouvrent, à y = 1,35 / 2,70 /
+4,05 / 5,40 / 6,75 / 8,10, soit les six sommets de gradins. Même situation sur
+les volées d'escalier, dont une marche sur deux tombait sur une cote de gradin.
+
+Corrigé par une règle générale : **un solide décoratif mord dans celui qu'il
+habille**, il n'affleure jamais avec lui (`Z_FIGHT_LIFT` dans `solids.ts`). Le
+contrôle est reproductible et vaut pour tout futur monument : lister les plans
+des faces tournées vers le haut, par teinte, et vérifier qu'aucun n'est partagé
+par deux teintes avec recouvrement en XZ. Les cinq monuments passent à zéro.
+
+À noter : **le symptôme ne se reproduit pas en rendu logiciel**. Comparaison de
+frames au même point de vue, avec et sans le correctif : 0,52 % contre 0,67 %
+de pixels instables, l'écart étant du bruit de bord sous-pixel — pour repère, la
+canopée agitée par le vent est à 9,1 % et le ciel fixe à 0,04 %. C'est la
+géométrie qui prouve le défaut, pas l'image.
+
+**Pièces d'un empilement qui flottent.** Trouvées en auditant la même classe
+d'erreur : les socles des fûts des ruines étaient 18 cm au-dessus du dallage, la
+dalle de l'autel 22 cm au-dessus de lui, et la tête de l'idole laissait un jour
+de 2,5 cm au cou. Cause commune : une arithmétique d'empilement recalculée de
+proche en proche à chaque ligne. Corrigé en nommant les cotes de sommet.
 
 **Marches infranchissables.** Le stylobate du temple avait des gradins de 0,22,
 soit moins que le rayon de la capsule du joueur (0,35) : on pouvait croire

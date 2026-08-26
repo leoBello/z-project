@@ -99,6 +99,24 @@ moitié et remontée à hauteur de poitrine. Et le cristal de l'autel tournait
 encore pendant la pause, parce qu'il lisait l'horloge de r3f et non celle du
 jeu ; corrigé, c'était le dernier survivant de la bascule.
 
+**Extension : les quatre autres points d'intérêt.** Pyramide (présentation),
+stèle (compétences), idole (parcours), ruines (contact). Le socle a tenu —
+terrasse, exclusion de végétation, repère de minimap, découverte et braise sont
+venus sans modification — mais deux choses ont dû bouger.
+
+Le panneau ne pouvait plus être « une liste de projets ». Cinq natures de
+contenu se ramènent désormais à une seule forme de diapositive dans
+`portfolio/sections.ts` : titre, ligne de contexte, paragraphes, étiquettes,
+liens, tous optionnels. Le panneau ne connaît que cette forme, et les flèches
+disparaîssent quand il n'y a qu'une diapositive.
+
+Et **l'île a refusé sa terrasse**. Son sommet vaut exactement 6,100 sur 5,2
+unités de rayon : y aplanir quoi que ce soit faisait passer la pente du flanc de
+1,00 à 1,50, parce que le fondu maintient la hauteur au-dessus de la pente
+naturelle. Le rayon nul est devenu un cas supporté par `sampleHeight`, et le
+dallage des ruines a été resserré de 5,2 à 4,0 pour que la braise tienne dans la
+zone strictement plate — mesuré, elle flottait de 21 cm à l'emplacement prévu.
+
 Enfin, le typage croisé des dictionnaires s'est révélé **asymétrique** : une clé
 manquante dans `en.json` casse la compilation, une clé **en trop** y passait
 inaperçue (`en` est un binding importé, pas un littéral frais, donc pas de

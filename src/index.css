@@ -251,6 +251,9 @@ canvas {
     'figure body'
     'nav    nav'
     'position position';
+  /* `auto` sur la dernière ligne : sans navigation, la grille ne doit pas
+     réserver sa hauteur. */
+  grid-template-rows: auto auto auto;
   gap: 0 26px;
   width: min(860px, 100%);
   max-height: 100%;
@@ -345,6 +348,36 @@ canvas {
   border-radius: 999px;
   font-size: 11px;
   opacity: 0.85;
+}
+
+/* Liens de contact : les seuls éléments du panneau qui mènent hors du jeu. */
+.portfolio__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.portfolio__link {
+  display: inline-block;
+  padding: 7px 16px;
+  border: 1px solid rgba(245, 220, 149, 0.4);
+  border-radius: 999px;
+  color: #f5dc95;
+  font-size: 12.5px;
+  text-decoration: none;
+  transition: background 140ms ease;
+}
+
+.portfolio__link:hover {
+  background: rgba(245, 220, 149, 0.14);
+}
+
+.portfolio__link:focus-visible {
+  outline: 2px solid #f5dc95;
+  outline-offset: 2px;
 }
 
 .portfolio__nav {

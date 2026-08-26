@@ -60,6 +60,11 @@ src/
     environment/Landmarks.tsx  monuments, proximité et touche d'interaction
     environment/Temple.tsx    Temple du Sommet, géométrie fusionnée et colliders
     environment/InteractionMarker.tsx  braise bleue : « on peut agir ici »
+    environment/Pyramid.tsx   Pyramide de la Jungle — la présentation
+    environment/Stele.tsx     Grande Stèle — les compétences
+    environment/Statue.tsx    Idole des Terres Arides — le parcours
+    environment/Ruins.tsx     Ruines de l'Île — le contact
+    environment/solids.ts     primitives partagées des monuments
     environment/faceted.ts    normales par face, partagé par le décor
     environment/windMaterial.ts  matériau toon + vent en vertex shader
     GameClock.tsx             avance l'horloge de jeu, avant tout le monde
@@ -68,6 +73,7 @@ src/
     portfolio/ProjectStepper.tsx   pastilles de progression
     portfolio/ProjectIllustration.tsx  illustration générée par projet
     portfolio/illustration/   projection isométrique et motifs
+    portfolio/sections.ts     contenu d'une section → diapositives
     models/SafeModel.tsx      fallback si un .glb est absent
     models/LinkModel.tsx      modèle du joueur (.glb ou personnage procédural)
     models/HeroPlaceholder.tsx  personnage articulé + animation procédurale

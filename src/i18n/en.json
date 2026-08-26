@@ -32,15 +32,55 @@
       "temple": {
         "name": "Summit Temple",
         "action": "View the projects"
+      },
+      "pyramid": {
+        "name": "Jungle Pyramid",
+        "action": "Read the bio"
+      },
+      "stele": {
+        "name": "Great Stele",
+        "action": "View the skills"
+      },
+      "statue": {
+        "name": "Badlands Idol",
+        "action": "View the background"
+      },
+      "ruins": {
+        "name": "Island Ruins",
+        "action": "Get in touch"
       }
     },
+    "sections": {
+      "projects": "Projects",
+      "bio": "About",
+      "skills": "Skills",
+      "background": "Background",
+      "contact": "Contact"
+    },
+    "skillGroups": {
+      "frontend": "Front-end",
+      "backend": "Back-end",
+      "cloud_devops": "Cloud and DevOps",
+      "data_ml": "Data and AI",
+      "tools_methods": "Tools and methods",
+      "soft_skills": "Soft skills"
+    },
+    "background": {
+      "certifications": "Certifications",
+      "issuedBy": "Issued by {issuer}"
+    },
+    "contactLabels": {
+      "email": "Email",
+      "linkedin": "LinkedIn",
+      "github": "GitHub",
+      "website": "Website",
+      "intro": "Based in {location}. Open to front-end and full-stack work."
+    },
     "portfolio": {
-      "kicker": "Projects",
-      "previous": "Previous project",
-      "next": "Next project",
+      "previous": "Previous",
+      "next": "Next",
       "close": "Close",
-      "position": "{current} of {total}",
-      "current": "Ongoing"
+      "position": "{current} of {total}"
     },
     "language": {
       "label": "Language",
