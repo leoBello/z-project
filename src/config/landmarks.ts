@@ -4,15 +4,17 @@ import type { LandmarkId } from '../types/game'
  * Points d'intérêt : les lieux construits de la carte.
  *
  * Ce fichier ne décrit que *où* et *comment* un monument s'inscrit dans le
- * monde. Sa géométrie vit dans son propre composant. Trois systèmes lisent
+ * monde. Sa géométrie vit dans son propre composant, et son nom affiché dans
+ * `src/i18n/*.json`, sous `ui.landmarks`. Trois systèmes lisent
  * cette table sans se connaître : `sampleHeight` y creuse la terrasse, le semis
  * de végétation s'y interdit de pousser, et la minimap y pose un repère.
  */
 
+/** Sections du portfolio adressables par un point d'intérêt. */
+export type PortfolioSection = 'projects'
+
 export interface Landmark {
   id: LandmarkId
-  /** Nom affiché à la découverte et sur la minimap. */
-  label: string
   /** Centre du monument, au sol. */
   x: number
   z: number
@@ -39,6 +41,21 @@ export interface Landmark {
   clearRadius: number
   /** Le lieu est « découvert » quand le joueur entre dans ce rayon. */
   discoverRadius: number
+  /**
+   * Rayon d'interaction, mesuré au centre du monument.
+   *
+   * Nettement plus serré que `discoverRadius` : on découvre un lieu de loin,
+   * on ne l'ouvre qu'en étant *dedans*.
+   */
+  interactRadius: number
+  /**
+   * Section du portfolio que ce lieu présente.
+   *
+   * L'union s'élargira avec la stèle et la pyramide. Le panneau s'en sert pour
+   * choisir quoi afficher : le lieu ne connaît pas l'interface, et l'interface
+   * ne connaît pas la géographie.
+   */
+  section: PortfolioSection
   /** Couleur du repère sur la minimap. */
   minimapColor: string
 }
@@ -58,7 +75,6 @@ export interface Landmark {
  */
 export const TEMPLE: Landmark = {
   id: 'temple',
-  label: 'Temple du Sommet',
   x: -22,
   z: -46,
   yaw: -1.03,
@@ -67,6 +83,14 @@ export const TEMPLE: Landmark = {
   altitude: 17.4,
   clearRadius: 13,
   discoverRadius: 17,
+  /**
+   * 4,5 place l'invite quand le joueur est **à l'autel** : le collider de
+   * l'assise l'arrête déjà à 2,75 du centre (2,4 de rayon plus 0,35 de
+   * capsule), donc l'invite s'allume au moment précis où il ne peut plus
+   * avancer. Plus large, elle aurait clignoté depuis la terrasse.
+   */
+  interactRadius: 4.5,
+  section: 'projects',
   minimapColor: '#f5dc95',
 }
 

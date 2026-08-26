@@ -1,40 +1,83 @@
+import { useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { useKeyboardControls } from '@react-three/drei'
+import type { Control } from '../../config/controls'
 import { LANDMARKS } from '../../config/landmarks'
 import { playerTransform } from '../../state/playerTransform'
 import { useGameStore } from '../../store/useGameStore'
+import type { LandmarkId } from '../../types/game'
 import { Temple } from './Temple'
 
 /**
- * Découverte des points d'intérêt.
+ * Découverte et mise à portée des points d'intérêt.
  *
- * Le test tourne à chaque frame mais ne touche au store que sur la transition :
- * `getState()` évite l'abonnement, donc ce composant ne se re-rend jamais, et
- * `discoverLandmark` est idempotent côté store. C'est la même règle que partout
- * ailleurs — rien de réactif à 60 fps.
+ * Le test tourne à chaque frame mais ne touche au store **que sur transition** :
+ * `getState()` évite l'abonnement, donc ce composant ne se re-rend jamais. Sans
+ * ce soin, on re-rendrait le HUD soixante fois par seconde pour réafficher la
+ * même invite.
  */
-function LandmarkDiscovery() {
+function LandmarkProximity() {
   useFrame(() => {
-    const { discovered, discoverLandmark } = useGameStore.getState()
+    const store = useGameStore.getState()
     const { position } = playerTransform
 
+    let nearest: LandmarkId | null = null
+    let nearestDistance = Infinity
+
     for (const landmark of LANDMARKS) {
-      if (discovered.includes(landmark.id)) continue
       // Distance au sol : on peut découvrir le temple sans être à son altitude,
       // sinon le lieu ne se déclencherait qu'une fois l'escalier gravi.
       const distance = Math.hypot(position.x - landmark.x, position.z - landmark.z)
-      if (distance < landmark.discoverRadius) discoverLandmark(landmark.id)
+
+      if (distance < landmark.discoverRadius && !store.discovered.includes(landmark.id)) {
+        store.discoverLandmark(landmark.id)
+      }
+      if (distance < landmark.interactRadius && distance < nearestDistance) {
+        nearest = landmark.id
+        nearestDistance = distance
+      }
     }
+
+    if (nearest !== store.nearbyLandmark) store.setNearbyLandmark(nearest)
   })
 
   return null
 }
 
-/** Tous les monuments de la carte, plus leur détection de découverte. */
+/** Ouverture et fermeture du panneau d'un lieu, à la touche d'interaction. */
+function LandmarkInteraction() {
+  const [subscribeKeys] = useKeyboardControls<Control>()
+
+  useEffect(
+    () =>
+      subscribeKeys(
+        (state) => state.interact,
+        (pressed) => {
+          if (!pressed) return
+          // Abonnement et non sondage dans `useFrame` : un appui plus court
+          // qu'une frame serait perdu. C'est le piège déjà payé sur le saut et
+          // sur l'attaque, et il ne coûte rien de ne pas le repayer.
+          const store = useGameStore.getState()
+          if (store.phase === 'playing' && store.nearbyLandmark) {
+            store.openLandmark(store.nearbyLandmark)
+          } else if (store.phase === 'paused') {
+            store.closeLandmark()
+          }
+        },
+      ),
+    [subscribeKeys],
+  )
+
+  return null
+}
+
+/** Tous les monuments de la carte, plus leur logique de proximité. */
 export function Landmarks() {
   return (
     <>
       <Temple />
-      <LandmarkDiscovery />
+      <LandmarkProximity />
+      <LandmarkInteraction />
     </>
   )
 }

@@ -28,6 +28,10 @@ src/
   config/biomes.ts            palettes des sept biomes
   config/enemies.ts           statistiques par espèce, placement
   config/landmarks.ts         points d'intérêt : position, terrasse, découverte
+  i18n/fr.json, en.json       dictionnaires (interface + contenu du portfolio)
+  i18n/index.ts               types, dictionnaires, format()
+  i18n/useI18n.ts             accès au dictionnaire courant
+  state/gameClock.ts          horloge de jeu : s'arrête en pause
   types/game.ts               types métier (phase, ennemis, biomes)
   store/useGameStore.ts       état de partie zustand (vie, phase, kills)
   state/playerTransform.ts    transform du joueur partagé hors React (60 fps)
@@ -53,10 +57,16 @@ src/
     environment/Water.tsx     mer translucide, houle en vertex shader
     environment/StarrySky.tsx  ciel procédural : Voie lactée, étoiles, nébuleuses
     environment/Vegetation.tsx  semis instancié des sept biomes
-    environment/Landmarks.tsx  monuments + détection de découverte
+    environment/Landmarks.tsx  monuments, proximité et touche d'interaction
     environment/Temple.tsx    Temple du Sommet, géométrie fusionnée et colliders
     environment/faceted.ts    normales par face, partagé par le décor
     environment/windMaterial.ts  matériau toon + vent en vertex shader
+    GameClock.tsx             avance l'horloge de jeu, avant tout le monde
+    LanguageToggle.tsx        sélecteur FR / EN
+    portfolio/PortfolioDialog.tsx  panneau des projets, navigation, focus
+    portfolio/ProjectStepper.tsx   pastilles de progression
+    portfolio/ProjectIllustration.tsx  illustration générée par projet
+    portfolio/illustration/   projection isométrique et motifs
     models/SafeModel.tsx      fallback si un .glb est absent
     models/LinkModel.tsx      modèle du joueur (.glb ou personnage procédural)
     models/HeroPlaceholder.tsx  personnage articulé + animation procédurale

@@ -5,8 +5,8 @@
  * viendront s'ajouter ici sans toucher aux composants.
  */
 
-/** Phase globale de la partie. Pilote le HUD et les écrans plein écran. */
-export type GamePhase = 'playing' | 'gameover'
+/** Phase globale de la partie. Pilote le HUD, les écrans plein écran, et le gel. */
+export type GamePhase = 'playing' | 'paused' | 'gameover'
 
 /** Machine à états de l'IA des ennemis (utilisée à l'étape "ennemis"). */
 export type EnemyState = 'idle' | 'patrol' | 'chase' | 'attack' | 'dead'

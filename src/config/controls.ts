@@ -1,4 +1,5 @@
 import type { KeyboardControlsEntry } from '@react-three/drei'
+import type { Dictionary } from '../i18n'
 
 /** Actions du joueur. Sert de clé typée pour `useKeyboardControls`. */
 export type Control =
@@ -8,6 +9,7 @@ export type Control =
   | 'right'
   | 'jump'
   | 'attack'
+  | 'interact'
 
 /**
  * Mapping clavier.
@@ -27,11 +29,23 @@ export const controlMap: KeyboardControlsEntry<Control>[] = [
   { name: 'right', keys: ['KeyD', 'ArrowRight'] },
   { name: 'jump', keys: ['Space'] },
   { name: 'attack', keys: ['KeyE'] },
+  // `KeyF` et non `KeyE`, déjà pris par l'attaque. `Enter` en second parce que
+  // c'est la touche que tout le monde essaie devant un panneau.
+  { name: 'interact', keys: ['KeyF', 'Enter'] },
 ]
 
-/** Libellés affichés dans le HUD (disposition AZERTY par défaut). */
-export const controlHints: { keys: string; label: string }[] = [
-  { keys: 'ZQSD / WASD', label: 'se déplacer' },
-  { keys: 'Espace', label: 'sauter' },
-  { keys: 'E', label: 'attaquer' },
-]
+/**
+ * Rappels de touches du HUD.
+ *
+ * Une fonction et non une constante : les libellés sont traduits, les codes de
+ * touche ne le sont pas. Ces derniers restent en dur — ce sont des positions
+ * physiques sur le clavier, pas du texte.
+ */
+export function getControlHints(dict: Dictionary): { keys: string; label: string }[] {
+  return [
+    { keys: 'ZQSD / WASD', label: dict.ui.hud.move },
+    { keys: 'Espace', label: dict.ui.hud.jump },
+    { keys: 'E', label: dict.ui.hud.attack },
+    { keys: 'F', label: dict.ui.hud.interact },
+  ]
+}

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { BIOMES, MINIMAP_WATER } from '../config/biomes'
+import { useI18n } from '../i18n/useI18n'
 import { ENEMIES } from '../config/enemies'
 import { LANDMARKS } from '../config/landmarks'
 import { WORLD, classifyBiome, sampleHeight } from '../config/world'
@@ -103,6 +104,7 @@ interface MinimapProps {
  * Sa boucle est indépendante de celle de R3F.
  */
 export function Minimap({ markers = [] }: MinimapProps) {
+  const { dict } = useI18n()
   const worldMap = useMemo(renderWorldMap, [])
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const markersRef = useRef(markers)
@@ -212,8 +214,8 @@ export function Minimap({ markers = [] }: MinimapProps) {
   return (
     <div className="minimap">
       <canvas ref={canvasRef} className="minimap__canvas" />
-      <span className="minimap__north">N</span>
-      <span className="minimap__label">{BIOMES[biome].label}</span>
+      <span className="minimap__north">{dict.ui.minimap.north}</span>
+      <span className="minimap__label">{dict.ui.biomes[biome]}</span>
     </div>
   )
 }

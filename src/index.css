@@ -189,6 +189,260 @@ canvas {
   }
 }
 
+/* --- Invite d'interaction --------------------------------------------------- */
+
+/*
+  Posée au-dessus des rappels de touches, qui restent visibles : l'invite dit
+  quoi faire *ici*, les rappels disent quoi faire partout.
+*/
+.hud__prompt {
+  position: absolute;
+  left: 50%;
+  bottom: 62px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 220, 149, 0.35);
+  background: var(--hud-bg);
+  backdrop-filter: blur(6px);
+  color: var(--hud-fg);
+  font-size: 13px;
+  white-space: nowrap;
+  animation: prompt-in 160ms ease-out;
+}
+
+@keyframes prompt-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* --- Panneau portfolio ------------------------------------------------------ */
+
+/*
+  Mêmes fond et flou que `.gameover` : ce sont les deux seuls écrans modaux du
+  jeu, ils doivent se ressembler pour être reconnus comme tels.
+*/
+.portfolio {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(10, 16, 12, 0.62);
+  backdrop-filter: blur(3px);
+  /* Seul écran, avec le Game Over, qui reprend la main sur les clics. */
+  pointer-events: auto;
+  animation: portfolio-in 180ms ease-out;
+}
+
+@keyframes portfolio-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.portfolio__panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(200px, 280px) 1fr;
+  grid-template-areas:
+    'figure body'
+    'nav    nav'
+    'position position';
+  gap: 0 26px;
+  width: min(860px, 100%);
+  max-height: 100%;
+  padding: 26px;
+  border-radius: 16px;
+  background: rgba(18, 26, 20, 0.9);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  color: var(--hud-fg);
+  overflow-y: auto;
+}
+
+.portfolio__close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--hud-fg);
+  font: inherit;
+  font-size: 20px;
+  line-height: 1;
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.portfolio__close:hover { opacity: 1; }
+
+/*
+  Fond de l'illustration : le dégradé du ciel du jeu, de la nuit haute au parme
+  d'horizon. C'est ce qui fait que l'image paraît prise dans le même monde que
+  la scène, et pas collée depuis ailleurs.
+*/
+.portfolio__illustration {
+  grid-area: figure;
+  align-self: start;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #2c3560 0%, #6b7cba 100%);
+}
+
+.portfolio__body {
+  grid-area: body;
+  min-width: 0;
+}
+
+.portfolio__kicker {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  opacity: 0.65;
+}
+
+.portfolio__title {
+  margin: 4px 0 0;
+  font-size: 26px;
+  letter-spacing: 0.01em;
+}
+
+.portfolio__meta {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  opacity: 0.7;
+}
+
+.portfolio__separator { margin: 0 7px; opacity: 0.5; }
+
+.portfolio__description {
+  margin: 14px 0 0;
+  font-size: 13.5px;
+  line-height: 1.62;
+  opacity: 0.92;
+}
+
+.portfolio__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.portfolio__tag {
+  padding: 3px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.portfolio__nav {
+  grid-area: nav;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.portfolio__arrow {
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--hud-fg);
+  font: inherit;
+  font-size: 17px;
+  cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.portfolio__arrow:hover { background: rgba(255, 255, 255, 0.1); }
+.portfolio__arrow:active { transform: scale(0.94); }
+
+.portfolio__stepper {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.portfolio__dot {
+  display: block;
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+  cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+/* Reprend la couleur du repère de monument sur la minimap : même objet, même
+   code couleur d'un bout à l'autre du jeu. */
+.portfolio__dot--active {
+  background: #f5dc95;
+  transform: scale(1.35);
+}
+
+.portfolio__dot:not(.portfolio__dot--active):hover {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+/* Doublon textuel du stepper, réservé aux lecteurs d'écran. Hors flux mais
+   jamais `display: none`, qui le retirerait aussi de l'arbre d'accessibilité. */
+.portfolio__position {
+  grid-area: position;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.portfolio__close:focus-visible,
+.portfolio__arrow:focus-visible,
+.portfolio__dot:focus-visible {
+  outline: 2px solid #f5dc95;
+  outline-offset: 2px;
+}
+
+/* Sous cette largeur, l'illustration passe au-dessus du texte : à deux
+   colonnes, la description tomberait à quatre mots par ligne. */
+@media (max-width: 720px) {
+  .portfolio__panel {
+    grid-template-columns: 1fr;
+    grid-template-areas: 'figure' 'body' 'nav' 'position';
+    gap: 18px 0;
+  }
+  .portfolio__illustration { max-width: 260px; justify-self: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portfolio,
+  .hud__prompt { animation-duration: 1ms; }
+  .portfolio__arrow,
+  .portfolio__dot { transition: none; }
+}
+
 /* --- Cœurs, dégâts, game over ---------------------------------------------- */
 
 .hud__top {
@@ -297,4 +551,52 @@ canvas {
 .gameover__panel button:focus-visible {
   outline: 2px solid #f6f2e4;
   outline-offset: 3px;
+}
+
+/* --- Sélecteur de langue -------------------------------------------------- */
+
+.language {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--hud-bg);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  /* Seul élément cliquable du HUD hors Game Over : il réactive les clics que
+     `.hud` neutralise, sinon le Canvas les recevrait à sa place. */
+  pointer-events: auto;
+}
+
+.language__button {
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--hud-fg);
+  /* La langue inactive reste lisible mais s'efface : l'opacité seule suffit à
+     désigner l'active, sans ajouter un fond qui alourdirait la pastille. */
+  opacity: 0.5;
+  cursor: pointer;
+  transition: opacity 140ms ease;
+}
+
+.language__button:not(.language__button--active):hover {
+  opacity: 0.8;
+}
+
+.language__button--active {
+  opacity: 1;
+}
+
+.language__button:focus-visible {
+  outline: 2px solid #f6f2e4;
+  outline-offset: 2px;
 }

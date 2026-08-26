@@ -17,6 +17,7 @@ import {
 import { ATTACK } from '../config/gameplay'
 import { playerTransform } from '../state/playerTransform'
 import { enemyRegistry, updateEnemyMarker } from '../state/enemyRegistry'
+import { now as gameNow } from '../state/gameClock'
 import { dropPickup } from '../state/pickups'
 import { fireProjectile } from '../state/projectiles'
 import { useGameStore } from '../store/useGameStore'
@@ -113,7 +114,7 @@ export function Enemy({ spawn }: EnemyProps) {
     if (!rb || !group || removed) return
 
     const delta = Math.min(rawDelta, 0.05)
-    const now = performance.now()
+    const now = gameNow()
     const state = runtime.current
     const store = useGameStore.getState()
     const position = rb.translation()

@@ -1,0 +1,182 @@
+{
+  "ui": {
+    "hud": {
+      "move": "move",
+      "jump": "jump",
+      "attack": "attack",
+      "interact": "interact"
+    },
+    "gameover": {
+      "title": "Game Over",
+      "noKills": "No enemies defeated.",
+      "killsOne": "{count} enemy defeated.",
+      "killsMany": "{count} enemies defeated.",
+      "restart": "Play again"
+    },
+    "discovery": {
+      "kicker": "Place discovered"
+    },
+    "minimap": {
+      "north": "N"
+    },
+    "biomes": {
+      "shallows": "Shallows",
+      "beach": "Beach",
+      "meadow": "Meadow",
+      "jungle": "Jungle",
+      "badlands": "Badlands",
+      "mountain": "Mountain",
+      "island": "Island"
+    },
+    "landmarks": {
+      "temple": {
+        "name": "Summit Temple",
+        "action": "View the projects"
+      }
+    },
+    "portfolio": {
+      "kicker": "Projects",
+      "previous": "Previous project",
+      "next": "Next project",
+      "close": "Close",
+      "position": "{current} of {total}",
+      "current": "Ongoing"
+    },
+    "language": {
+      "label": "Language",
+      "fr": "Français",
+      "en": "English"
+    }
+  },
+  "about": {
+    "name": "Léo Bello",
+    "title": "Full-Stack Developer — React, Next.js, TypeScript, PostgreSQL",
+    "location": "Marseille, Provence-Alpes-Côte d'Azur, France",
+    "bio": "Front-end developer specialized in React and TypeScript, I work on ambitious web applications where code readability, interface robustness, and execution quality are essential. I focus on front-end architecture, API integration, performance, testing, and maintainability, with a product-oriented and long-term mindset.\n\nI'm comfortable in environments where the front-end needs to stay reliable as the product grows in complexity: component architecture, state management, advanced forms, PostgreSQL/Supabase integration, code reviews, continuous improvement, and close collaboration with backend, design, and product teams. My goal is to build interfaces that are clear, stable, and durable, without unnecessary complexity.",
+    "website": "leobello.dev"
+  },
+  "experience": [
+    {
+      "id": "saisoneo",
+      "featured": true,
+      "company": "Saisoneo",
+      "role": "Full-Stack Developer React / Next.js / TypeScript — Freelance",
+      "period": "February 2026 — Present",
+      "location": "Marseille · Remote",
+      "description": "Designed and built a seasonal rental management application from scratch: requirements gathering, technical architecture, and data model definition. Full development using TDD: React/TypeScript front-end, Next.js back-end with Supabase and PostgreSQL. Set up a microservices and event-driven architecture focused on performance and scalability. Integrated third-party APIs (SharePoint, Yousign) and implemented OAuth 2.0/SSO authentication with token management. Designed UX/UI mockups, wrote unit tests and technical documentation, deployed via CI/CD pipelines.",
+      "tags": ["React", "Next.js", "TypeScript", "Supabase", "PostgreSQL", "TDD", "Microservices", "Event-Driven", "OAuth 2.0", "SSO", "CI/CD"]
+    },
+    {
+      "id": "bleu-tomate",
+      "featured": true,
+      "company": "Bleu Tomate",
+      "role": "React/TypeScript Frontend Developer — Freelance",
+      "period": "May 2025 — Present",
+      "location": "Marseille, Provence-Alpes-Côte d'Azur, France",
+      "description": "Integrated into an Agile team, developing and maintaining a large-scale business application for a major client. Contributed to complex features with React and TypeScript in a context of high demands on quality, stability, and code robustness. Wrote and maintained unit tests with Jest and React Testing Library. Participated in code reviews, cross-testing between developers, feature estimation, and Agile ceremonies.",
+      "tags": ["React", "TypeScript", "Jest", "React Testing Library", "Agile"]
+    },
+    {
+      "id": "sopra-steria",
+      "featured": true,
+      "company": "Française des Jeux / Sopra Steria",
+      "role": "Front-end Developer React/TypeScript — Permanent contract",
+      "period": "November 2023 — April 2025",
+      "location": "Aix-en-Provence, Provence-Alpes-Côte d'Azur, France",
+      "description": "Integrated into an Agile team, developing and maintaining a large-scale business application for a major client. Contributed to complex features with React and TypeScript in a context of high demands on quality, stability, and code robustness. Wrote and maintained unit tests, participated in code reviews and Agile ceremonies.",
+      "tags": ["React", "TypeScript", "Jest", "Agile", "Enterprise"]
+    },
+    {
+      "id": "freelance-2023",
+      "featured": false,
+      "company": "Freelance",
+      "role": "Web Developer — Freelance",
+      "period": "May 2023 — October 2023",
+      "location": "Remote",
+      "description": "Front-end development covering various needs in React and TypeScript. Form data validation, WordPress module implementation, and Google Sheets scripts to automate business tasks. Worked autonomously with strong adaptability, self-learning, and fast delivery.",
+      "tags": ["React", "TypeScript", "WordPress", "Google Sheets", "Automation"]
+    },
+    {
+      "id": "yooz",
+      "featured": true,
+      "company": "Yooz",
+      "role": "Web Developer — Freelance",
+      "period": "May 2022 — May 2023",
+      "location": "Aimargues, Occitanie, France",
+      "description": "Contributed to the maintenance and evolution of a web application. Developed new features in React and Node.js, fixed bugs, and progressively improved the existing production codebase. Wrote documentation, estimated requests, set up REST APIs, and wrote unit tests.",
+      "tags": ["React", "Node.js", "REST API", "Unit testing"]
+    },
+    {
+      "id": "freelance-2021",
+      "featured": false,
+      "company": "Freelance",
+      "role": "Full-Stack Developer React/Node.js — Freelance",
+      "period": "October 2021 — May 2022",
+      "location": "Remote",
+      "description": "Delivered client projects in React and Node.js. Contributed to the design and delivery of a POC, integrated mockups, and built websites focused on clean, fast production.",
+      "tags": ["React", "Node.js", "POC", "Integration"]
+    },
+    {
+      "id": "amiltone",
+      "featured": false,
+      "company": "Amiltone",
+      "role": "Full-Stack Web Developer — Apprenticeship",
+      "period": "September 2020 — September 2021",
+      "location": "Villeurbanne, Auvergne-Rhône-Alpes, France",
+      "description": "Contributed to application maintenance and change requests on an existing application. Fixed bugs, reviewed code, wrote documentation, and contributed to functional evolutions. Worked in an environment combining React and Java EE.",
+      "tags": ["React", "Java EE", "Maintenance", "Documentation"]
+    },
+    {
+      "id": "sully-group-dev",
+      "featured": false,
+      "company": "Sully Group",
+      "role": "Full-Stack Developer Java EE | Angular",
+      "period": "September 2019 — July 2020",
+      "location": "Grenoble, Auvergne-Rhône-Alpes, France",
+      "description": "Estimated and scoped requests, then delivered front-end and back-end development. Contributed to functional evolutions in a structured framework, writing user and technical documentation.",
+      "tags": ["Java EE", "Angular", "Estimation"]
+    },
+    {
+      "id": "sully-group-stage",
+      "featured": false,
+      "company": "Sully Group",
+      "role": "Web Development Intern",
+      "period": "June 2019 — September 2019",
+      "location": "Grenoble, Auvergne-Rhône-Alpes, France",
+      "description": "Delivered development requests and participated in code reviews. Technology monitoring, skill-building on project tools, and self-training on required topics.",
+      "tags": ["Web Development", "Technology Watch"]
+    },
+    {
+      "id": "lig",
+      "featured": true,
+      "company": "Grenoble Computer Science Laboratory (LIG)",
+      "role": "Research Intern in Computer Science",
+      "period": "May 2018 — August 2018",
+      "location": "Grenoble, Auvergne-Rhône-Alpes, France",
+      "description": "Worked on a machine learning, deep learning, and robotics topic. Built and trained a convolutional neural network with PyTorch, then integrated it into a Pepper robot. Wrote a wiki for researchers documenting the work.",
+      "tags": ["Machine Learning", "Deep Learning", "PyTorch", "Robotics"]
+    }
+  ],
+  "education": [
+    { "school": "Université Grenoble Alpes", "degree": "Master's, Computer Science (MIAGE)", "period": "2020 — 2021" },
+    { "school": "Université Grenoble Alpes", "degree": "Bachelor's, Computer Science — MIAGE track", "period": "2015 — 2018" },
+    { "school": "Lycée Berthollet", "degree": "Scientific Baccalaureate, Mathematics specialization (independent candidate)", "period": "" }
+  ],
+  "certifications": [{ "name": "ReactJS Quiz Medium", "issuer": "ReactJS" }],
+  "skills": {
+    "frontend": ["React", "TypeScript", "JavaScript", "Angular", "Unit Testing", "React Testing Library", "Jest", "Component Architecture"],
+    "backend": ["Node.js", "Java EE", "REST API", "Firebase Firestore", "PostgreSQL"],
+    "cloud_devops": ["Firebase", "Google Cloud", "Cloud Computing", "CI/CD"],
+    "data_ml": ["Machine Learning", "Deep Learning", "PyTorch", "Neural Networks", "Robotics"],
+    "tools_methods": ["Git", "Code Review", "Agile", "WordPress", "Google Sheets", "Google Analytics", "Technical Documentation"],
+    "soft_skills": ["Autonomy", "Rigor", "Self-Learning", "Technology Watch", "Entrepreneurship", "Cross-team Collaboration"]
+  },
+  "contact": {
+    "email": "leobello.wd@gmail.com",
+    "linkedin": "https://www.linkedin.com/in/leobellolinkedurl",
+    "github": "https://github.com/leoBello/",
+    "website": "leobello.dev",
+    "location": "Marseille, France"
+  },
+  "cv": { "label": "Download CV", "file": "/cv/leo-bello-cv-en.pdf" }
+}

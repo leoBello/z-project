@@ -23,6 +23,71 @@ du jeu.
 @react-three/fiber 9, @react-three/rapier 2. Les fichiers de traduction sont
 du JSON importé, typé à la compilation.
 
+## Journal d'exécution — 26 août 2026
+
+Tâches **1 à 7 faites**. Restent la 8 (documentation, en cours ici) et la 9
+(Vitest, optionnelle, non faite).
+
+Le plan s'est trompé sur quatre points, tous trouvés en exécutant. Ils sont
+corrigés dans le code ; ce journal les garde parce qu'un plan qu'on ne
+confronte jamais à son exécution ne s'améliore pas.
+
+**1. Le tableau de bascule vers l'horloge de jeu était incomplet — trois
+fichiers manquants, trois bugs réels.** `src/state/pickups.ts` et
+`src/state/projectiles.ts` écrivent `bornAt` **à la source**, pas dans les
+composants où le plan les situait ; les suivre à la lettre donnait
+`age = gameNow() - performance.now()`, très négatif, donc `age > LIFETIME`
+jamais vrai : **cœurs et projectiles immortels**. Et
+`src/components/models/HeroPlaceholder.tsx` comparait `attackStartedAt` (en
+temps de jeu) à `performance.now()`, ce qui rendait `attacking` toujours faux :
+**l'animation de coup d'épée ne se jouait plus**, sur le modèle justement
+affiché puisque `link.glb` est absent. Leçon : chercher les *écritures* d'un
+horodatage, pas seulement ses lectures.
+
+**2. L'exception « `HUD.tsx` garde `performance.now()` » n'existait pas.**
+`HUD.tsx` n'appelait jamais cette fonction ; il se sert de `lastHitAt` comme
+`key` React, et le passage à l'horloge de jeu y est transparent.
+
+**3. La justification de la priorité `-100` était fausse.** Le plan affirmait
+qu'une priorité positive laisserait l'écran noir. Contrôle fait en passant à
+`100` : la scène s'affiche normalement. `<PostFX />` monte un
+`<EffectComposer>` qui s'abonne déjà avec `renderPriority = 1`, donc r3f est
+**déjà** en rendu manuel et le composer dessine quoi qu'il arrive. La priorité
+négative reste le bon choix, mais pour la seule raison de l'**ordre** : les
+abonnés sont triés par priorité croissante, donc `100` ferait avancer l'horloge
+après tous ses consommateurs — une frame de retard sur chaque délai.
+
+**4. L'illustration a demandé deux correctifs, tous deux trouvés en mesurant.**
+La couleur d'accent était tirée au sort dans une palette de six : **trois des
+cinq projets retenus tombaient sur la même teinte**, et deux partageaient aussi
+le motif. Élargir la palette et ajouter des axes n'a pas suffi — une seconde
+collision est tombée du premier coup. Le hasard ne garantit rien : une palette
+catégorielle s'assigne **par index**, comme en visualisation de données.
+Séparément, le `viewBox` fixe était mal placé — un tiers de hauteur vide en
+haut, socle rogné en bas — et ne pouvait de toute façon pas convenir puisque le
+nombre d'éléments varie. Il est désormais **calculé** sur la boîte englobante
+des formes produites.
+
+Deux ajouts hors plan, tous deux des défauts constatés :
+
+- Le gel du joueur figeait la dernière frame écrite. Une pause déclenchée sur
+  une frame de clignotement d'i-frames laissait le héros **invisible** pendant
+  tout le dialogue, et `playerTransform.speed` gardait sa valeur, donc le
+  personnage **marchait sur place**. Corrigé dans la branche de pause.
+- `Pickups` et `Projectiles` intègrent leur mouvement hors de Rapier : le
+  `paused` du moteur physique ne les atteignait pas, et un projectile continuait
+  de traverser l'écran derrière le panneau. Ils ont désormais leur propre garde
+  de phase.
+
+Enfin, le typage croisé des dictionnaires s'est révélé **asymétrique** : une clé
+manquante dans `en.json` casse la compilation, une clé **en trop** y passait
+inaperçue (`en` est un binding importé, pas un littéral frais, donc pas de
+détection de propriétés excédentaires). Fermé par la constante
+`DICTIONARIES_MIRROR`, qui force la vérification dans les deux sens — et dont
+le mordant a été prouvé en ajoutant une clé orpheline.
+
+---
+
 ## Contraintes globales
 
 Elles s'appliquent à **toutes** les tâches, sans être répétées à chaque fois.

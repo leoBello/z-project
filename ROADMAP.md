@@ -4,7 +4,8 @@ Mini-jeu 3D navigateur inspiré de Zelda, pour portfolio front-end.
 Direction artistique : **diorama low-poly cozy** — cel-shading, FOV étroit,
 tilt-shift. La recette caméra + post-traitement du HD-2D, appliquée à de la 3D.
 
-Dernière mise à jour : 26 août 2026 — points d'intérêt, Temple du Sommet.
+Dernière mise à jour : 26 août 2026 — panneau portfolio au temple, socle i18n,
+horloge de jeu unique.
 
 ---
 
@@ -54,6 +55,28 @@ Dernière mise à jour : 26 août 2026 — points d'intérêt, Temple du Sommet.
 - Terrasse **creusée dans le relief** et non posée dessus : le mesh, le
   collider, le semis et la minimap voient tous la même plate-forme
 - Bandeau « Lieu découvert » quand le joueur entre dans le rayon du monument
+- **Interaction** : à l'autel, `F` ouvre un panneau qui présente les projets —
+  illustration générée, titre, description, tags, navigation aux flèches et
+  stepper. L'ouverture met la partie en pause
+- **Illustrations générées** : emblèmes isométriques en SVG, un solide = trois
+  aplats francs, transposition en 2D du `toonGradient` du rendu 3D. Motif déduit
+  des tags du projet, palette prélevée sur le jeu, cadrage calculé. Zéro asset
+
+### Internationalisation
+- Dictionnaires typés `src/i18n/{fr,en}.json`, **sans dépendance**. Le français
+  définit la forme, l'anglais doit s'y conformer — dans les deux sens, clé
+  manquante *et* clé en trop, vérifié à la compilation
+- Tout le texte visible passe par le dictionnaire : HUD, Game Over, rappels de
+  touches, noms de biomes, noms de lieux, panneau portfolio
+- Sélecteur FR/EN, préférence persistée, `<html lang>` posé dès le premier rendu
+
+### Temps de jeu
+- **Horloge de jeu unique** (`src/state/gameClock.ts`) : tous les délais de
+  gameplay s'y rapportent, plus aucun appel à `performance.now()` dans le code
+  exécutable. Elle cumule les mêmes deltas clampés que le déplacement, et
+  n'avance pas hors de la phase `playing`
+- Phase `paused` : physique Rapier gelée, joueur, ennemis, projectiles et cœurs
+  figés, horloge arrêtée
 
 ### Rendu
 - **Ciel étoilé procédural** : dégradé bleu à quatre paliers, halo
@@ -283,6 +306,7 @@ Reste ouvert sur ce chantier, à trancher en jouant :
       L'infrastructure est posée : ajouter une entrée dans `config/landmarks.ts`
       et un composant de géométrie suffit, terrasse, exclusion de végétation,
       repère de minimap et bandeau de découverte suivent tout seuls
+- [x] Donner une **raison de monter** au temple — fait : il présente les projets
 - [ ] Donner une **récompense** au temple. Il est aujourd'hui purement
       contemplatif : on y monte, le bandeau s'affiche, et il ne se passe rien.
       Un cœur maximal supplémentaire posé sur l'autel serait le geste le plus
@@ -298,7 +322,14 @@ Reste ouvert sur ce chantier, à trancher en jouant :
 - [ ] Son : ambiance, pas, épée
 
 ### Priorité 3 — performance et livraison
-- [ ] **Double horloge.** Le déplacement avance en temps *simulé* (`delta`
+- [x] **Double horloge — réglée.** Une horloge de jeu unique
+      (`src/state/gameClock.ts`) cumule les deltas clampés et s'arrête hors de
+      `playing`. La mise en pause du panneau portfolio l'a rendue inévitable :
+      sans elle, un dialogue ouvert trente secondes faisait expirer tous les
+      cœurs au sol et déclenchait toutes les attaques à la fermeture. Détail du
+      problème d'origine, conservé pour mémoire :
+
+- [x] ~~**Double horloge.**~~ Le déplacement avance en temps *simulé* (`delta`
       clampé à 0,05 s pour éviter la téléportation après un changement
       d'onglet), tandis que cooldowns, temps de préparation, i-frames et durées
       de vie sont lus sur `performance.now()`, donc en temps *réel*. Sous
@@ -356,6 +387,12 @@ animations.
 | Géométrie, cotes et colliders du temple | `src/components/environment/Temple.tsx` |
 | Ajouter un monument | `src/config/landmarks.ts` + un composant, monté dans `src/components/environment/Landmarks.tsx` |
 | Bandeau « Lieu découvert » | `src/components/HUD.tsx` + `.discovery` dans `src/index.css` |
+| Textes affichés, dans les deux langues | `src/i18n/fr.json` et `src/i18n/en.json` |
+| Projets montrés par le temple | `featured` dans `src/i18n/*.json` |
+| Apparence des illustrations de projet | `src/components/portfolio/illustration/` |
+| Panneau portfolio (mise en page, navigation) | `src/components/portfolio/PortfolioDialog.tsx` + `.portfolio*` dans `src/index.css` |
+| Touche d'interaction, rayon d'ouverture | `src/config/controls.ts`, `interactRadius` dans `src/config/landmarks.ts` |
+| Délais de gameplay, pause | `src/state/gameClock.ts` |
 | Densité et nature de la végétation | `src/components/environment/Vegetation.tsx` |
 | Bloom, tilt-shift, vignette | `src/components/PostFX.tsx` |
 | Ciel, Voie lactée, étoiles | `src/components/environment/StarrySky.tsx` |

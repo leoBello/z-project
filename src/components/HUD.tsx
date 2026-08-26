@@ -1,5 +1,6 @@
-import { controlHints } from '../config/controls'
-import { landmarkById } from '../config/landmarks'
+import { getControlHints } from '../config/controls'
+import { format } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
 import { clearPickups } from '../state/pickups'
 import { clearProjectiles } from '../state/projectiles'
 import { useGameStore } from '../store/useGameStore'
@@ -30,7 +31,9 @@ export function HUD() {
   const kills = useGameStore((state) => state.kills)
   const phase = useGameStore((state) => state.phase)
   const discovered = useGameStore((state) => state.discovered)
+  const nearbyLandmark = useGameStore((state) => state.nearbyLandmark)
   const reset = useGameStore((state) => state.reset)
+  const { dict } = useI18n()
 
   // Seul le dernier lieu trouvé s'affiche : le bandeau annonce une découverte,
   // il ne tient pas un journal.
@@ -66,13 +69,24 @@ export function HUD() {
           deuxième lieu découvert resterait figé sur sa dernière image. */}
       {lastDiscovery && (
         <div key={lastDiscovery} className="discovery">
-          <span className="discovery__kicker">Lieu découvert</span>
-          <strong className="discovery__name">{landmarkById(lastDiscovery)?.label}</strong>
+          <span className="discovery__kicker">{dict.ui.discovery.kicker}</span>
+          <strong className="discovery__name">
+            {dict.ui.landmarks[lastDiscovery].name}
+          </strong>
+        </div>
+      )}
+
+      {/* L'invite ne s'affiche qu'en jeu : à portée du temple au moment d'un
+          Game Over, elle resterait sinon posée sur l'écran de fin. */}
+      {phase === 'playing' && nearbyLandmark && (
+        <div className="hud__prompt">
+          <kbd>F</kbd>
+          {dict.ui.landmarks[nearbyLandmark].action}
         </div>
       )}
 
       <div className="hud__controls">
-        {controlHints.map((hint) => (
+        {getControlHints(dict).map((hint) => (
           <span key={hint.keys} className="hud__hint">
             <kbd>{hint.keys}</kbd>
             {hint.label}
@@ -83,14 +97,19 @@ export function HUD() {
       {phase === 'gameover' && (
         <div className="gameover">
           <div className="gameover__panel">
-            <h1>Game Over</h1>
+            <h1>{dict.ui.gameover.title}</h1>
+            {/* Le pluriel a sa propre clé plutôt qu'une règle : « 1 ennemi
+                vaincu » et « 2 ennemis vaincus » n'accordent pas seulement le
+                nom, et toutes les langues ne coupent pas au même endroit. */}
             <p>
               {kills === 0
-                ? 'Aucun ennemi vaincu.'
-                : `${kills} ennemi${kills > 1 ? 's' : ''} vaincu${kills > 1 ? 's' : ''}.`}
+                ? dict.ui.gameover.noKills
+                : format(kills === 1 ? dict.ui.gameover.killsOne : dict.ui.gameover.killsMany, {
+                    count: kills,
+                  })}
             </p>
             <button type="button" onClick={restart}>
-              Rejouer
+              {dict.ui.gameover.restart}
             </button>
           </div>
         </div>

@@ -10,6 +10,7 @@ import {
   Vector3,
 } from 'three'
 import { sampleHeight } from '../config/world'
+import { now as gameNow } from '../state/gameClock'
 import { playerTransform } from '../state/playerTransform'
 import {
   PICKUP_GRAVITY,
@@ -85,8 +86,16 @@ export function Pickups() {
     if (!instanced) return
 
     const delta = Math.min(rawDelta, 0.05)
-    const now = performance.now()
+    const now = gameNow()
     const store = useGameStore.getState()
+
+    // Ces deux pools intègrent leur mouvement à la main, hors de Rapier : le
+    // `paused` du moteur physique ne les atteint pas. Sans ce garde, un
+    // projectile continue de traverser l'écran derrière le panneau et un cœur
+    // continue de tomber, alors que tout le reste du monde est figé. Aucune
+    // conséquence de jeu — `damagePlayer` et `healPlayer` refusent déjà hors de
+    // `playing` — mais l'image, elle, trahissait la pause.
+    if (store.phase !== 'playing') return
 
     for (let i = 0; i < pickups.length; i++) {
       const pickup = pickups[i]
