@@ -1,3 +1,4 @@
+import { LANDMARKS } from './landmarks'
 import type { BiomeId } from '../types/game'
 
 /**
@@ -156,6 +157,31 @@ export function sampleHeight(x: number, z: number) {
   if (causewayDistance < CAUSEWAY.halfWidth) {
     const shelf = lerp(-0.3, -1.2, smoothstep(2, CAUSEWAY.halfWidth, causewayDistance))
     height = Math.max(height, shelf)
+  }
+
+  // Terrasses des points d'intérêt, appliquées en dernier : un monument doit
+  // effacer le relief qu'il occupe, pas s'y ajouter. Le fondu par smoothstep
+  // raccorde la plate-forme à la pente naturelle sans marche visible.
+  for (const landmark of LANDMARKS) {
+    // Un rayon nul veut dire « ce lieu n'a pas besoin d'être aplani ».
+    //
+    // Ce n'est pas un cas dégénéré mais une mesure : le sommet de l'île est
+    // déjà parfaitement plat, à 6,100 exactement sur 5,2 unités de rayon, parce
+    // que le masque d'île y sature. Y poser une terrasse aurait *raidi* le
+    // flanc au lieu de le corriger — le fondu maintient la hauteur au-dessus de
+    // la pente naturelle, qui doit ensuite rattraper son retard plus bas. Mesuré
+    // sur ce cas précis : de 1,00 à 1,50 de pente maximale, pour un nivellement
+    // qui n'apportait rien.
+    if (landmark.radius <= 0) continue
+
+    const weight =
+      1 -
+      smoothstep(
+        landmark.radius,
+        landmark.radius + landmark.blend,
+        Math.hypot(x - landmark.x, z - landmark.z),
+      )
+    if (weight > 0) height = lerp(height, landmark.altitude, weight)
   }
 
   // Plancher : l'océan reste guéable, le joueur n'est jamais submergé.

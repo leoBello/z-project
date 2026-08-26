@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { ENEMIES } from '../config/enemies'
 import { cameraView, makeScreenPoint, projectToScreen } from '../state/cameraView'
 import { enemyRegistry } from '../state/enemyRegistry'
+import { now as gameNow } from '../state/gameClock'
 import { playerTransform } from '../state/playerTransform'
 import { projectiles } from '../state/projectiles'
 import { useGameStore } from '../store/useGameStore'
@@ -69,7 +70,7 @@ export function CombatOverlay() {
       if (!cameraView.ready) return
       if (useGameStore.getState().phase !== 'playing') return
 
-      const now = performance.now()
+      const now = gameNow()
       // e[5] = 1 / tan(fov/2) : converti en pixels, c'est le facteur d'échelle
       // perspective. On dimensionne la barre en unités monde plutôt qu'en
       // pixels fixes, sinon un ennemi lointain porte la même barre qu'un ennemi
@@ -148,7 +149,7 @@ function drawThreatArrows(
   height: number,
   focal: number,
 ) {
-  const now = performance.now()
+  const now = gameNow()
   const playerX = playerTransform.position.x
   const playerY = playerTransform.position.y - PLAYER_FEET_DROP
   const playerZ = playerTransform.position.z

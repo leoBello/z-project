@@ -1,4 +1,5 @@
 import { Vector3 } from 'three'
+import { now as gameNow } from './gameClock'
 
 /**
  * Projectiles des Octoroks, gérés en **pool de taille fixe**.
@@ -81,7 +82,7 @@ export function fireProjectile(from: Vector3, target: Vector3, spread = 0) {
   slot.velocity.copy(direction).multiplyScalar(PROJECTILE_SPEED)
   // Compensation balistique approchée : la moitié de la chute sur le trajet.
   slot.velocity.y += (-PROJECTILE_GRAVITY * distance) / (2 * PROJECTILE_SPEED)
-  slot.bornAt = performance.now()
+  slot.bornAt = gameNow()
 }
 
 /** Désactive tous les projectiles en vol. Appelé au redémarrage d'une partie. */

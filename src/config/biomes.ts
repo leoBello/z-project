@@ -4,14 +4,14 @@ import type { BiomeId } from '../types/game'
  * Palettes des biomes.
  *
  * La géographie (où se trouve quel biome) vit dans `world.ts` ; ce fichier ne
- * décrit que l'apparence. Ajouter un biome = une entrée ici + une branche dans
+ * décrit que l'apparence. Le **nom affiché** n'y est plus : il en existe une
+ * version par langue, et sa place est donc dans `src/i18n/*.json`, sous
+ * `ui.biomes`. Ajouter un biome = une entrée ici + une branche dans
  * `classifyBiome`, rien d'autre à toucher.
  */
 
 export interface BiomeStyle {
   id: BiomeId
-  /** Nom affiché, notamment dans la minimap. */
-  label: string
   /** Couleur du sol. */
   ground: string
   /** Couleur montrée sur la minimap (souvent plus saturée pour la lisibilité). */
@@ -26,7 +26,6 @@ export interface BiomeStyle {
 export const BIOMES: Record<BiomeId, BiomeStyle> = {
   shallows: {
     id: 'shallows',
-    label: 'Haut-fond',
     ground: '#c9b98c',
     minimap: '#4f9dc4',
     foliage: ['#5e8f7a'],
@@ -36,7 +35,6 @@ export const BIOMES: Record<BiomeId, BiomeStyle> = {
   },
   beach: {
     id: 'beach',
-    label: 'Plage',
     ground: '#e2d3a3',
     minimap: '#e8d9a8',
     foliage: ['#7fa86a', '#6f9a5c'],
@@ -46,7 +44,6 @@ export const BIOMES: Record<BiomeId, BiomeStyle> = {
   },
   meadow: {
     id: 'meadow',
-    label: 'Prairie',
     ground: '#7cb85f',
     minimap: '#79bd5c',
     foliage: ['#4e9c4a', '#3f8a41', '#67b055'],
@@ -56,7 +53,6 @@ export const BIOMES: Record<BiomeId, BiomeStyle> = {
   },
   jungle: {
     id: 'jungle',
-    label: 'Jungle',
     ground: '#4e7f42',
     minimap: '#2f6b39',
     foliage: ['#2f7038', '#276030', '#3d8442'],
@@ -66,7 +62,6 @@ export const BIOMES: Record<BiomeId, BiomeStyle> = {
   },
   badlands: {
     id: 'badlands',
-    label: 'Terres arides',
     ground: '#c2a06a',
     minimap: '#c9a468',
     foliage: ['#7d8a52', '#6d7a48'],
@@ -76,7 +71,6 @@ export const BIOMES: Record<BiomeId, BiomeStyle> = {
   },
   mountain: {
     id: 'mountain',
-    label: 'Montagne',
     ground: '#8b8b8f',
     minimap: '#9b9ba2',
     foliage: ['#4a6b52'],
@@ -86,7 +80,6 @@ export const BIOMES: Record<BiomeId, BiomeStyle> = {
   },
   island: {
     id: 'island',
-    label: 'Île',
     ground: '#d8c890',
     minimap: '#d9c98e',
     foliage: ['#3f9464', '#348556'],

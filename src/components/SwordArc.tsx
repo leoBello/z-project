@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Color, DoubleSide, Group, Mesh, RingGeometry, ShaderMaterial } from 'three'
 import { ATTACK } from '../config/gameplay'
+import { now as gameNow } from '../state/gameClock'
 import { playerTransform } from '../state/playerTransform'
 
 /** Début et fin de l'arc, en fraction de la durée d'attaque. */
@@ -142,7 +143,7 @@ export function SwordArc() {
     const node = group.current
     if (!node) return
 
-    const now = performance.now()
+    const now = gameNow()
     const swing = playerTransform.attackStartedAt
     const progress = (now - swing) / ATTACK.durationMs
 

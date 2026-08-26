@@ -13,6 +13,7 @@ import type { Control } from '../config/controls'
 import { ATTACK, PLAYER } from '../config/gameplay'
 import { WORLD } from '../config/world'
 import { enemyRegistry } from '../state/enemyRegistry'
+import { now as gameNow } from '../state/gameClock'
 import { playerTransform } from '../state/playerTransform'
 import { useGameStore } from '../store/useGameStore'
 import { LinkModel } from './models/LinkModel'
@@ -113,6 +114,23 @@ export function Player() {
     const rb = body.current
     if (!rb) return
 
+    if (useGameStore.getState().phase !== 'playing') {
+      // Les demandes en attente sont consommées, pas conservées : sinon la
+      // touche qui ferme le dialogue déclencherait le saut mis en file juste
+      // avant la pause, et le personnage bondirait à la réouverture du jeu.
+      jumpRequested.current = false
+      attackRequested.current = false
+      // Le clignotement d'i-frames laisse le modèle une frame sur deux à
+      // `visible = false` : figer la boucle sur l'une de ces frames laisserait
+      // le personnage invisible pendant toute la pause.
+      if (visual.current) visual.current.visible = true
+      // La vitesse publiée est ce qui pilote le cycle de marche. Sortir sans la
+      // remettre à zéro laisserait le personnage marcher sur place pendant tout
+      // le temps de la pause, avec la dernière vitesse connue.
+      playerTransform.speed = 0
+      return
+    }
+
     // Clamp du delta : après un changement d'onglet, un delta énorme
     // téléporterait le joueur à travers les collisions.
     const delta = Math.min(rawDelta, 0.05)
@@ -186,10 +204,10 @@ export function Player() {
     // dégâts viendra se brancher sur cette même fenêtre temporelle.
     if (attackRequested.current) {
       attackRequested.current = false
-      const attackElapsed = performance.now() - playerTransform.attackStartedAt
+      const attackElapsed = gameNow() - playerTransform.attackStartedAt
       // Pas d'enchaînement tant que le coup précédent n'est pas terminé.
       if (attackElapsed >= ATTACK.durationMs) {
-        playerTransform.attackStartedAt = performance.now()
+        playerTransform.attackStartedAt = gameNow()
         aimAtNearestEnemy(position.x, position.z)
       }
     }
@@ -212,7 +230,7 @@ export function Player() {
       // non via le hook : un abonnement re-rendrait le composant à chaque coup
       // reçu, alors qu'on ne veut que basculer une visibilité par frame.
       const invulnerable = useGameStore.getState().isInvulnerable()
-      visual.current.visible = !invulnerable || Math.floor(performance.now() / 90) % 2 === 0
+      visual.current.visible = !invulnerable || Math.floor(gameNow() / 90) % 2 === 0
     }
 
     // --- 6. Publication de l'état pour les autres systèmes ------------------

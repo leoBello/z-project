@@ -1,4 +1,5 @@
 import { Vector3 } from 'three'
+import { now as gameNow } from './gameClock'
 
 /**
  * Cœurs lâchés par les ennemis, gérés en **pool de taille fixe**.
@@ -61,7 +62,7 @@ export function dropPickup(x: number, y: number, z: number) {
   slot.landed = false
   slot.position.set(x, y, z)
   slot.velocityY = PICKUP_POP_SPEED
-  slot.bornAt = performance.now()
+  slot.bornAt = gameNow()
   slot.phase = Math.random() * Math.PI * 2
 }
 

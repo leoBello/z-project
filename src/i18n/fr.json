@@ -1,0 +1,222 @@
+{
+  "ui": {
+    "hud": {
+      "move": "se déplacer",
+      "jump": "sauter",
+      "attack": "attaquer",
+      "interact": "interagir"
+    },
+    "gameover": {
+      "title": "Game Over",
+      "noKills": "Aucun ennemi vaincu.",
+      "killsOne": "{count} ennemi vaincu.",
+      "killsMany": "{count} ennemis vaincus.",
+      "restart": "Rejouer"
+    },
+    "discovery": {
+      "kicker": "Lieu découvert"
+    },
+    "minimap": {
+      "north": "N"
+    },
+    "biomes": {
+      "shallows": "Haut-fond",
+      "beach": "Plage",
+      "meadow": "Prairie",
+      "jungle": "Jungle",
+      "badlands": "Terres arides",
+      "mountain": "Montagne",
+      "island": "Île"
+    },
+    "landmarks": {
+      "temple": {
+        "name": "Temple du Sommet",
+        "action": "Voir les projets"
+      },
+      "pyramid": {
+        "name": "Pyramide de la Jungle",
+        "action": "Lire la présentation"
+      },
+      "stele": {
+        "name": "Grande Stèle",
+        "action": "Voir les compétences"
+      },
+      "statue": {
+        "name": "Idole des Terres Arides",
+        "action": "Voir le parcours"
+      },
+      "ruins": {
+        "name": "Ruines de l'Île",
+        "action": "Prendre contact"
+      }
+    },
+    "sections": {
+      "projects": "Projets",
+      "bio": "À propos",
+      "skills": "Compétences",
+      "background": "Parcours",
+      "contact": "Contact"
+    },
+    "skillGroups": {
+      "frontend": "Front-end",
+      "backend": "Back-end",
+      "cloud_devops": "Cloud et DevOps",
+      "data_ml": "Données et IA",
+      "tools_methods": "Outils et méthodes",
+      "soft_skills": "Savoir-être"
+    },
+    "background": {
+      "certifications": "Certifications",
+      "issuedBy": "Délivrée par {issuer}"
+    },
+    "contactLabels": {
+      "email": "E-mail",
+      "linkedin": "LinkedIn",
+      "github": "GitHub",
+      "website": "Site web",
+      "intro": "Basé à {location}. Ouvert aux missions front-end et full-stack."
+    },
+    "portfolio": {
+      "previous": "Précédent",
+      "next": "Suivant",
+      "close": "Fermer",
+      "position": "{current} sur {total}"
+    },
+    "language": {
+      "label": "Langue",
+      "fr": "Français",
+      "en": "English"
+    }
+  },
+  "about": {
+    "name": "Léo Bello",
+    "title": "Développeur Full-Stack — React, Next.js, TypeScript, PostgreSQL",
+    "location": "Marseille, Provence-Alpes-Côte d'Azur, France",
+    "bio": "Développeur front-end spécialisé en React et TypeScript, j'interviens sur des applications web ambitieuses où la lisibilité du code, la robustesse de l'interface et la qualité d'exécution sont essentielles. Je travaille sur des sujets de conception front-end, d'intégration d'API, de performance, de testing et de maintenabilité, avec une approche orientée produit et long terme.\n\nJe suis à l'aise dans des environnements où le front-end doit rester fiable à mesure que le produit se complexifie : architecture de composants, gestion d'état, formulaires avancés, intégration PostgreSQL/Supabase, revues de code, amélioration continue et collaboration étroite avec le backend, le design et le produit. Mon objectif est de construire des interfaces claires, stables et durables, sans complexité inutile.",
+    "website": "leobello.dev"
+  },
+  "experience": [
+    {
+      "id": "saisoneo",
+      "featured": true,
+      "company": "Saisoneo",
+      "role": "Développeur Full-Stack React / Next.js / TypeScript — Freelance",
+      "period": "Février 2026 — Aujourd'hui",
+      "location": "Marseille · à distance",
+      "description": "Conception et développement from scratch d'une application de gestion locative saisonnière : recueil des besoins, définition de l'architecture technique et du modèle de données. Développement complet en TDD : front-end React/TypeScript, back-end Next.js avec Supabase et PostgreSQL. Mise en place d'une architecture microservices et event-driven, orientée performance et scalabilité. Intégration d'API tierces (SharePoint, Yousign) et implémentation de l'authentification OAuth 2.0/SSO avec gestion des tokens. Maquettage des interfaces UX/UI, rédaction des tests unitaires et de la documentation technique, déploiement via pipelines CI/CD.",
+      "tags": ["React", "Next.js", "TypeScript", "Supabase", "PostgreSQL", "TDD", "Microservices", "Event-Driven", "OAuth 2.0", "SSO", "CI/CD"]
+    },
+    {
+      "id": "bleu-tomate",
+      "featured": true,
+      "company": "Bleu Tomate",
+      "role": "Développeur Frontend React/TypeScript — Freelance",
+      "period": "Mai 2025 — Présent",
+      "location": "Marseille, Provence-Alpes-Côte d'Azur, France",
+      "description": "Intégré à une équipe Agile, développement et maintenance d'une application métier à grande échelle pour un grand compte. Contribution sur des fonctionnalités complexes avec React et TypeScript dans un contexte de forte exigence sur la qualité, la stabilité et la robustesse du code. Rédaction et maintenance de tests unitaires avec Jest et React Testing Library. Participation aux revues de code, aux tests croisés entre développeurs, au chiffrage des demandes fonctionnelles et aux cérémonies Agile.",
+      "tags": ["React", "TypeScript", "Jest", "React Testing Library", "Agile"]
+    },
+    {
+      "id": "sopra-steria",
+      "featured": true,
+      "company": "Française des Jeux / Sopra Steria",
+      "role": "Développeur Front-end React/TypeScript — CDI",
+      "period": "Novembre 2023 — Avril 2025",
+      "location": "Aix-en-Provence, Provence-Alpes-Côte d'Azur, France",
+      "description": "Intégré à une équipe Agile, développement et maintenance d'une application métier à grande échelle pour un grand compte. Contribution sur des fonctionnalités complexes avec React et TypeScript dans un contexte de forte exigence sur la qualité, la stabilité et la robustesse du code. Rédaction et maintenance de tests unitaires, participation aux revues de code et aux cérémonies Agile.",
+      "tags": ["React", "TypeScript", "Jest", "Agile", "Grand compte"]
+    },
+    {
+      "id": "freelance-2023",
+      "featured": false,
+      "company": "Freelance",
+      "role": "Développeur web — Freelance",
+      "period": "Mai 2023 — Octobre 2023",
+      "location": "Remote",
+      "description": "Développement front-end sur des besoins variés en React et TypeScript. Contrôle de données de formulaires, mise en place de modules WordPress et réalisation de scripts Google Sheets pour automatiser certaines tâches métier. Travail en autonomie avec une forte capacité d'adaptation, d'autoformation et de livraison rapide.",
+      "tags": ["React", "TypeScript", "WordPress", "Google Sheets", "Automatisation"]
+    },
+    {
+      "id": "yooz",
+      "featured": true,
+      "company": "Yooz",
+      "role": "Développeur web — Freelance",
+      "period": "Mai 2022 — Mai 2023",
+      "location": "Aimargues, Occitanie, France",
+      "description": "Participation à la maintenance et aux évolutions d'une application web. Développement de nouvelles fonctionnalités en React et Node.js, correction de bugs, et amélioration progressive de l'existant en production. Rédaction de documentation, chiffrage des demandes, mise en place d'API REST et rédaction de tests unitaires.",
+      "tags": ["React", "Node.js", "REST API", "Tests unitaires"]
+    },
+    {
+      "id": "freelance-2021",
+      "featured": false,
+      "company": "Freelance",
+      "role": "Développeur full-stack React/Node.js — Freelance",
+      "period": "Octobre 2021 — Mai 2022",
+      "location": "Remote",
+      "description": "Réalisation de missions client en React et Node.js. Participation à la conception et à la livraison d'un POC, intégration de maquettes et développement de sites web dans une logique de production rapide et propre.",
+      "tags": ["React", "Node.js", "POC", "Intégration"]
+    },
+    {
+      "id": "amiltone",
+      "featured": false,
+      "company": "Amiltone",
+      "role": "Développeur web full-stack — Alternance",
+      "period": "Septembre 2020 — Septembre 2021",
+      "location": "Villeurbanne, Auvergne-Rhône-Alpes, France",
+      "description": "Participation à la maintenance applicative et aux demandes d'évolution sur une application existante. Correction de bugs, relecture de code, rédaction de documentation et contribution aux évolutions fonctionnelles. Développement sur un environnement mêlant React et Java EE.",
+      "tags": ["React", "Java EE", "Maintenance", "Documentation"]
+    },
+    {
+      "id": "sully-group-dev",
+      "featured": false,
+      "company": "Sully Group",
+      "role": "Développeur fullstack Java EE | Angular",
+      "period": "Septembre 2019 — Juillet 2020",
+      "location": "Grenoble, Auvergne-Rhône-Alpes, France",
+      "description": "Estimation et chiffrage des demandes, puis réalisation des développements front-end et back-end. Contribution à des évolutions fonctionnelles dans un cadre structuré, avec rédaction de documents utilisateurs et techniques.",
+      "tags": ["Java EE", "Angular", "Chiffrage"]
+    },
+    {
+      "id": "sully-group-stage",
+      "featured": false,
+      "company": "Sully Group",
+      "role": "Stagiaire en développement Web",
+      "period": "Juin 2019 — Septembre 2019",
+      "location": "Grenoble, Auvergne-Rhône-Alpes, France",
+      "description": "Réalisation de demandes de développement et participation aux revues de code. Veille technologique, montée en compétence sur les outils de travail et autoformation sur les sujets nécessaires au projet.",
+      "tags": ["Développement web", "Veille technologique"]
+    },
+    {
+      "id": "lig",
+      "featured": true,
+      "company": "Laboratoire Informatique de Grenoble (LIG)",
+      "role": "Stagiaire en recherche informatique",
+      "period": "Mai 2018 — Août 2018",
+      "location": "Grenoble, Auvergne-Rhône-Alpes, France",
+      "description": "Travail sur un sujet de machine learning, deep learning et robotique. Mise en place et entraînement d'un réseau de neurones convolutif avec PyTorch, puis intégration dans un robot Pepper. Rédaction d'un wiki à destination des chercheurs.",
+      "tags": ["Machine Learning", "Deep Learning", "PyTorch", "Robotique"]
+    }
+  ],
+  "education": [
+    { "school": "Université Grenoble Alpes", "degree": "Master, Informatique (MIAGE)", "period": "2020 — 2021" },
+    { "school": "Université Grenoble Alpes", "degree": "Licence, Informatique — option MIAGE", "period": "2015 — 2018" },
+    { "school": "Lycée Berthollet", "degree": "Baccalauréat Scientifique, spécialité Mathématiques (candidat libre)", "period": "" }
+  ],
+  "certifications": [{ "name": "ReactJS Quiz Medium", "issuer": "ReactJS" }],
+  "skills": {
+    "frontend": ["React", "TypeScript", "JavaScript", "Angular", "Tests unitaires", "React Testing Library", "Jest", "Architecture de composants"],
+    "backend": ["Node.js", "Java EE", "REST API", "Firebase Firestore", "PostgreSQL"],
+    "cloud_devops": ["Firebase", "Google Cloud", "Cloud Computing", "CI/CD"],
+    "data_ml": ["Machine Learning", "Deep Learning", "PyTorch", "Réseaux de neurones", "Robotique"],
+    "tools_methods": ["Git", "Code Review", "Agile", "WordPress", "Google Sheets", "Google Analytics", "Documentation technique"],
+    "soft_skills": ["Autonomie", "Rigueur", "Auto-formation", "Veille technologique", "Entrepreneuriat", "Collaboration transverse"]
+  },
+  "contact": {
+    "email": "leobello.wd@gmail.com",
+    "linkedin": "https://www.linkedin.com/in/leobellolinkedurl",
+    "github": "https://github.com/leoBello/",
+    "website": "leobello.dev",
+    "location": "Marseille, France"
+  },
+  "cv": { "label": "Télécharger le CV", "file": "/cv/leo-bello-cv-fr.pdf" }
+}

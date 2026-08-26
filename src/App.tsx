@@ -6,12 +6,15 @@ import { CameraRig } from './components/CameraRig'
 import { CombatOverlay } from './components/CombatOverlay'
 import { Enemies } from './components/Enemies'
 import { Environment } from './components/Environment'
+import { GameClock } from './components/GameClock'
 import { HUD } from './components/HUD'
+import { LanguageToggle } from './components/LanguageToggle'
 import { Minimap } from './components/Minimap'
 import { Pickups } from './components/Pickups'
 import { Player } from './components/Player'
 import { Projectiles } from './components/Projectiles'
 import { PostFX } from './components/PostFX'
+import { PortfolioDialog } from './components/portfolio/PortfolioDialog'
 import { SwordArc } from './components/SwordArc'
 import { controlMap } from './config/controls'
 import { CAMERA, PLAYER } from './config/gameplay'
@@ -28,6 +31,12 @@ export default function App() {
    * machines à états à zéro sans logique de réinitialisation à écrire.
    */
   const runId = useGameStore((state) => state.runId)
+  /**
+   * Lu par abonnement, et c'est sans danger : la phase ne change qu'à une
+   * transition (pause, Game Over), jamais par frame. Le composant ne se
+   * re-rend donc que dans ces rares moments.
+   */
+  const phase = useGameStore((state) => state.phase)
 
   return (
     <KeyboardControls map={controlMap}>
@@ -49,8 +58,16 @@ export default function App() {
         */}
         <fog attach="fog" args={['#6b7cba', 60, 200]} />
 
+        {/* Avant <Physics> et avec une priorité de useFrame négative : tout ce
+            qui lit un délai de gameplay doit trouver l'horloge déjà avancée. */}
+        <GameClock />
+
         <Suspense fallback={null}>
-          <Physics gravity={[0, PLAYER.gravity, 0]} debug={DEBUG_PHYSICS}>
+          <Physics
+            gravity={[0, PLAYER.gravity, 0]}
+            paused={phase !== 'playing'}
+            debug={DEBUG_PHYSICS}
+          >
             <Environment />
             <Player key={`player-${runId}`} />
             <Enemies key={`enemies-${runId}`} />
@@ -73,6 +90,9 @@ export default function App() {
       <CombatOverlay />
       <Minimap />
       <HUD />
+      <LanguageToggle />
+      {/* Le panneau passe devant tout le HUD, invite d'interaction comprise. */}
+      <PortfolioDialog />
       <Loader />
     </KeyboardControls>
   )

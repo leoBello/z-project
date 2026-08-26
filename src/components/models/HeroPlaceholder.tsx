@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { Outlines } from '@react-three/drei'
 import { Group, MathUtils } from 'three'
 import { ATTACK, PLAYER } from '../../config/gameplay'
+import { now as gameNow } from '../../state/gameClock'
 import { playerTransform } from '../../state/playerTransform'
 import { toonGradient } from './toonGradient'
 
@@ -123,7 +124,7 @@ export function HeroPlaceholder() {
     const ground = 1 - air
 
     // --- Attaque ------------------------------------------------------------
-    const elapsed = performance.now() - playerTransform.attackStartedAt
+    const elapsed = gameNow() - playerTransform.attackStartedAt
     const attackProgress = elapsed / ATTACK.durationMs
     const attacking = attackProgress >= 0 && attackProgress <= 1
 
