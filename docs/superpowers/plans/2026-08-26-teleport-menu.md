@@ -67,7 +67,7 @@ src/index.css                MODIFIÉ : .teleport-menu*, .teleport-overlay*
 
 ---
 
-## Tâche 1 — État du store et pont vers le corps physique
+## Task 1 — État du store et pont vers le corps physique
 
 **Fichiers**
 - Créer : `src/state/playerBody.ts`
@@ -241,7 +241,7 @@ git commit -m "feat: état de téléportation et pont vers le RigidBody du joueu
 
 ---
 
-## Tâche 2 — Séquence de téléportation (`TeleportOverlay`)
+## Task 2 — Séquence de téléportation (`TeleportOverlay`)
 
 **Fichiers**
 - Créer : `src/components/TeleportOverlay.tsx`
@@ -480,7 +480,7 @@ git commit -m "feat: animation de téléportation, déclenchable par le store"
 
 ---
 
-## Tâche 3 — Le menu (`TeleportMenu`)
+## Task 3 — Le menu (`TeleportMenu`)
 
 **Fichiers**
 - Créer : `src/components/TeleportMenu.tsx`
