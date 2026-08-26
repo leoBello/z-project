@@ -10,12 +10,14 @@ import { Color, Group, MathUtils, Vector3 } from 'three'
 import {
   DEATH_FADE_MS,
   ENEMIES,
+  HEART_DROP_CHANCE,
   HIT_FLASH_MS,
   HIT_KNOCKBACK,
 } from '../config/enemies'
 import { ATTACK } from '../config/gameplay'
 import { playerTransform } from '../state/playerTransform'
-import { enemyRegistry } from '../state/enemyRegistry'
+import { enemyRegistry, updateEnemyMarker } from '../state/enemyRegistry'
+import { dropPickup } from '../state/pickups'
 import { fireProjectile } from '../state/projectiles'
 import { useGameStore } from '../store/useGameStore'
 import type { EnemySpawn, EnemyState } from '../types/game'
@@ -38,6 +40,9 @@ interface EnemyRuntime {
   /** Horodatage d'entrée dans l'état courant. */
   stateSince: number
   lastAttackAt: number
+  /** Vrai entre le début d'une préparation d'attaque et sa résolution. */
+  windupPending: boolean
+  windupStartedAt: number
   /** Identifiant du coup d'épée déjà encaissé : un swing ne blesse qu'une fois. */
   lastHitSwing: number
   hitFlashUntil: number
@@ -74,6 +79,8 @@ export function Enemy({ spawn }: EnemyProps) {
     state: 'idle',
     stateSince: 0,
     lastAttackAt: -Infinity,
+    windupPending: false,
+    windupStartedAt: 0,
     lastHitSwing: -Infinity,
     hitFlashUntil: -Infinity,
     deathAt: -Infinity,
@@ -88,9 +95,12 @@ export function Enemy({ spawn }: EnemyProps) {
     enemyRegistry.set(spawn.id, {
       kind: spawn.kind,
       x: spawn.position[0],
+      y: spawn.position[1],
       z: spawn.position[2],
       state: 'idle',
       hp: stats.hp,
+      maxHp: stats.hp,
+      lastHitAt: -Infinity,
     })
     return () => {
       enemyRegistry.delete(spawn.id)
@@ -123,13 +133,7 @@ export function Enemy({ spawn }: EnemyProps) {
       return
     }
 
-    enemyRegistry.set(spawn.id, {
-      kind: spawn.kind,
-      x: position.x,
-      z: position.z,
-      state: state.state,
-      hp: state.hp,
-    })
+    updateEnemyMarker(spawn.id, position.x, position.y, position.z, state.state, state.hp)
 
     // --- Mort ---------------------------------------------------------------
     if (state.state === 'dead') {
@@ -168,6 +172,12 @@ export function Enemy({ spawn }: EnemyProps) {
       if (Math.hypot(position.x - hitX, position.z - hitZ) < reach) {
         state.hp -= 1
         state.hitFlashUntil = now + HIT_FLASH_MS
+        // Signale au reste du jeu que ce swing a porté : le retour visuel du
+        // coup dans le vide s'en sert, et la barre de vie reste affichée un
+        // moment après le dernier coup encaissé.
+        playerTransform.lastLandedSwing = swing
+        const marker = enemyRegistry.get(spawn.id)
+        if (marker) marker.lastHitAt = now
 
         // Recul : l'ennemi est projeté à l'opposé du joueur, avec un petit saut.
         knockback.copy(toPlayer).normalize().multiplyScalar(-HIT_KNOCKBACK)
@@ -177,6 +187,11 @@ export function Enemy({ spawn }: EnemyProps) {
           state.state = 'dead'
           state.deathAt = now
           useGameStore.getState().registerKill()
+          // Le cœur part de la poitrine, pas des pieds : le petit saut le rend
+          // visible par-dessus les herbes hautes avant qu'il ne retombe.
+          if (Math.random() < HEART_DROP_CHANCE) {
+            dropPickup(position.x, position.y + 0.3, position.z)
+          }
           return
         }
       }
@@ -242,16 +257,33 @@ export function Enemy({ spawn }: EnemyProps) {
     state.yaw = dampAngle(state.yaw, targetYaw, 9, delta)
     group.rotation.y = state.yaw
 
-    // --- Attaque ------------------------------------------------------------
-    const canAttack =
+    // --- Attaque : préparation, puis résolution ------------------------------
+    // La préparation est un **drapeau consommé**, pas un intervalle testé à
+    // chaque frame. Écrire « sommes-nous dans la fenêtre de préparation ? »
+    // reviendrait à échantillonner quelques centaines de millisecondes dans une
+    // boucle à cadence variable — le piège déjà payé trois fois sur ce projet.
+    const ready =
       state.state === 'attack' && !frozen && now - state.lastAttackAt > stats.attackCooldownMs
 
-    if (canAttack) {
+    if (ready && !state.windupPending) {
+      state.windupPending = true
+      state.windupStartedAt = now
+    }
+
+    // Sortir de portée annule le coup en préparation. C'est tout l'intérêt du
+    // temps de préparation : sans annulation, il ne ferait que retarder un coup
+    // de toute façon inévitable.
+    if (state.windupPending && (frozen || state.state !== 'attack')) {
+      state.windupPending = false
+    }
+
+    if (state.windupPending && now - state.windupStartedAt >= stats.telegraphMs) {
+      state.windupPending = false
       state.lastAttackAt = now
       if (stats.ranged) {
         muzzle.set(position.x, position.y + 0.45, position.z)
         playerChest.copy(playerTransform.position)
-        fireProjectile(muzzle, playerChest)
+        fireProjectile(muzzle, playerChest, stats.spread)
       } else {
         useGameStore.getState().damagePlayer(stats.damage)
       }
@@ -260,10 +292,16 @@ export function Enemy({ spawn }: EnemyProps) {
     // Anticipation puis détente sur l'attaque : suffit à lire le coup.
     const sinceAttack = now - state.lastAttackAt
     const lunge = sinceAttack < 260 ? Math.sin((sinceAttack / 260) * Math.PI) : 0
-    group.position.z = lunge * 0.28
+    // Le corps se ramasse pendant la préparation et se détend au moment du
+    // coup : c'est ce mouvement, plus que la couleur, qui rend l'attaque
+    // lisible à la périphérie du regard.
+    const windup = state.windupPending
+      ? Math.min(1, (now - state.windupStartedAt) / stats.telegraphMs)
+      : 0
+    group.position.z = lunge * 0.28 - windup * 0.2
     const bob = state.state === 'chase' ? Math.abs(Math.sin(now * 0.012)) * 0.08 : 0
-    group.position.y = bob
-    const puff = flashing ? 1.18 : 1
+    group.position.y = bob - windup * 0.1
+    const puff = flashing ? 1.18 : 1 + windup * 0.22
     group.scale.setScalar(MathUtils.damp(group.scale.x, puff, 18, delta))
   })
 

@@ -3,13 +3,16 @@ import { Canvas } from '@react-three/fiber'
 import { KeyboardControls, Loader } from '@react-three/drei'
 import { Physics } from '@react-three/rapier'
 import { CameraRig } from './components/CameraRig'
+import { CombatOverlay } from './components/CombatOverlay'
 import { Enemies } from './components/Enemies'
 import { Environment } from './components/Environment'
 import { HUD } from './components/HUD'
 import { Minimap } from './components/Minimap'
+import { Pickups } from './components/Pickups'
 import { Player } from './components/Player'
 import { Projectiles } from './components/Projectiles'
 import { PostFX } from './components/PostFX'
+import { SwordArc } from './components/SwordArc'
 import { controlMap } from './config/controls'
 import { CAMERA, PLAYER } from './config/gameplay'
 import { useGameStore } from './store/useGameStore'
@@ -52,13 +55,22 @@ export default function App() {
             <Player key={`player-${runId}`} />
             <Enemies key={`enemies-${runId}`} />
             <Projectiles />
+            <Pickups />
           </Physics>
+
+          {/* Hors de <Physics> : la traînée de lame n'est qu'un effet visuel,
+              elle n'a ni collider ni corps à simuler. */}
+          <SwordArc />
         </Suspense>
 
         <CameraRig />
         <PostFX />
       </Canvas>
 
+      {/* Le calque de combat est posé avant le HUD : les barres de vie et les
+          indicateurs de menace appartiennent à la scène, les cœurs et le menu
+          de Game Over passent devant. */}
+      <CombatOverlay />
       <Minimap />
       <HUD />
       <Loader />

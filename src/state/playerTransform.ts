@@ -19,6 +19,14 @@ export const playerTransform = {
   speed: 0,
   /** Timestamp du dernier coup lancé ; -Infinity = aucune attaque en cours. */
   attackStartedAt: -Infinity,
+  /**
+   * Identifiant (= `attackStartedAt`) du dernier coup qui a touché quelque chose.
+   *
+   * Chaque ennemi blessé y inscrit le swing en cours. Le retour visuel compare
+   * ensuite cette valeur au swing courant pour savoir si le coup a porté — sans
+   * avoir à refaire le test de hitbox, qui doit rester dans `Enemy.tsx`.
+   */
+  lastLandedSwing: -Infinity,
 }
 
 // Exposé en développement pour inspecter l'état du joueur depuis la console

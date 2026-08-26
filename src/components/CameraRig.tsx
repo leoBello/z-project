@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Vector3 } from 'three'
 import { CAMERA } from '../config/gameplay'
+import { cameraView } from '../state/cameraView'
 import { playerTransform } from '../state/playerTransform'
 
 /** Position de la caméra relative au joueur, en coordonnées monde. */
@@ -33,6 +34,19 @@ export function CameraRig() {
     desiredTarget.y += CAMERA.lookAtHeight
     lookAt.current.lerp(desiredTarget, t)
     camera.lookAt(lookAt.current)
+
+    // Publication de la caméra pour le calque de combat 2D.
+    //
+    // `lookAt` ne met à jour que le quaternion : sans `updateMatrixWorld`, la
+    // matrice monde reste celle de la frame précédente et les barres de vie
+    // traînent visiblement derrière les ennemis pendant les déplacements.
+    camera.updateMatrixWorld()
+    cameraView.viewProjection.multiplyMatrices(
+      camera.projectionMatrix,
+      camera.matrixWorldInverse,
+    )
+    cameraView.position.copy(camera.position)
+    cameraView.ready = true
   })
 
   return null

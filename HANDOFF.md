@@ -30,9 +30,11 @@ Vite 8 + React 19 + TypeScript 6, three 0.185, @react-three/fiber 9, drei 10,
 
 Ce qui tourne : monde procédural de 200×200 avec relief, sept biomes, mer
 guéable et île atteignable à pied ; personnage articulé animé à la main ;
-combat complet (deux espèces d'ennemis, IA à états, épée, projectiles, cœurs,
-Game Over, relance) ; minimap ; ciel étoilé procédural ; rendu diorama
-cel-shadé avec bloom, tilt-shift et vignette.
+combat complet et lisible (deux espèces d'ennemis, IA à états avec temps de
+préparation avant chaque attaque, épée avec traînée qui dit si le coup a porté,
+projectiles dispersés, barres de vie, chevrons d'alerte pour les tirs hors
+cadre, cœurs lâchés, cinq cœurs, Game Over, relance) ; minimap ; ciel étoilé
+procédural ; rendu diorama cel-shadé avec bloom, tilt-shift et vignette.
 
 Direction artistique : **diorama low-poly cozy** — la recette caméra et
 post-traitement du HD-2D appliquée à de la vraie 3D. Ne la change pas sans que
@@ -98,6 +100,11 @@ crochets de diagnostic exposés en développement :
 - `window.gameWorld` — `sampleHeight`, `sampleSlope`, `classifyBiome`, `WORLD`
 - `window.__store` — le store zustand complet (vie, phase, kills)
 - `window.__enemies()` — liste des ennemis vivants avec état d'IA et PV
+- `window.__enemyRegistry` — le registre lui-même, pour injecter un ennemi
+  factice et vérifier le calque de combat sans avoir à jouer
+- `window.__lastSwing` — verdict du dernier coup d'épée (jugé, touché, opacité
+  atteinte). Existe parce que la traînée ne dure que 230 ms : trop court pour
+  une capture d'écran, il faut la mesurer
 - `window.vegetationCounts` — nombre d'instances par famille de props
 - `?debug` dans l'URL affiche les colliders Rapier
 
@@ -105,8 +112,16 @@ Méthode qui a fonctionné : piloter le jeu avec Playwright en headless
 (`--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader`), puis
 **mesurer depuis la page** plutôt que juger à l'œil. Deux avertissements :
 
-- le rendu logiciel headless tourne à ~10 fps et **chaque capture d'écran coûte
-  2 à 3 secondes** — n'en déduis jamais un timing sans horodater dans la page ;
+- le rendu logiciel headless tourne à **~1 fps** (mesuré : 0,8 fps en 1280×720,
+  3 fps en 420×260) et une capture d'écran peut demander une minute. Deux
+  conséquences : n'en déduis jamais un timing sans horodater dans la page, et
+  **renonce à capturer un effet transitoire** — un état qui dure moins d'une
+  seconde ne tombera pas sur une frame. Mesure-le depuis la page, ou fige-le
+  temporairement dans le code le temps d'une capture, puis annule ;
+- le clamp de `delta` à 0,05 s fait tourner le déplacement vingt fois moins vite
+  que le temps réel à 1 fps, alors que cooldowns et durées de vie restent en
+  temps réel. Un test de combat headless mesure donc une difficulté qui n'est
+  pas celle du jeu ;
 - **Vite sert parfois une version périmée d'un module après édition.** Cela m'a
   coûté plusieurs cycles de diagnostic sur de faux bugs. Avant de conclure qu'un
   correctif ne marche pas : `pkill -f vite`, `rm -rf node_modules/.vite`,
@@ -117,17 +132,18 @@ doivent passer, et tu dois avoir vu ou mesuré le résultat.
 
 ### Ce qu'il faut faire maintenant
 
-Priorité 1 de la roadmap : **équilibrage et lisibilité du combat**. 26 ennemis
-pour 3 cœurs, la partie est trop courte — dans les tests, le joueur mourait en
-restant immobile. Sont prévus : barres de vie au-dessus des ennemis engagés
-(les PV sont déjà dans le registre), indicateur de direction pour les tirs
-venus de hors écran, retour visuel quand un coup part dans le vide, et cœurs
-lâchés par les ennemis vaincus.
+La priorité 1 (équilibrage et lisibilité du combat) est faite. Le point le plus
+gênant visuellement est maintenant en tête : **en jungle, une canopée passe
+régulièrement entre la caméra et le joueur**. La solution retenue est un fondu
+par tramage dans le fragment shader des canopées, en passant la position du
+joueur en uniform — pas de tri de transparence à gérer.
 
-Le point le plus gênant visuellement est en priorité 2 : **en jungle, une
-canopée passe régulièrement entre la caméra et le joueur**. La solution retenue
-est un fondu par tramage dans le fragment shader des canopées, en passant la
-position du joueur en uniform — pas de tri de transparence à gérer.
+Deux choses à reprendre au passage, décrites dans la roadmap :
+
+- l'équilibrage n'a jamais été **joué**, seulement mesuré ; les leviers sont
+  `MAX_HEARTS`, `HEART_DROP_CHANCE`, `telegraphMs` et `spread` ;
+- la **double horloge** (déplacement en temps simulé, délais en temps réel)
+  fausse le jeu en dessous de 20 fps — priorité 3 de la roadmap.
 
 Ne pars pas sur autre chose sans le demander.
 

@@ -1,4 +1,5 @@
 import { controlHints } from '../config/controls'
+import { clearPickups } from '../state/pickups'
 import { clearProjectiles } from '../state/projectiles'
 import { useGameStore } from '../store/useGameStore'
 
@@ -30,9 +31,10 @@ export function HUD() {
   const reset = useGameStore((state) => state.reset)
 
   const restart = () => {
-    // Les projectiles en vol survivraient au redémarrage : ils vivent dans un
-    // pool hors React, que remonter les composants ne vide pas.
+    // Projectiles en vol et cœurs au sol survivraient au redémarrage : ils
+    // vivent dans des pools hors React, que remonter les composants ne vide pas.
     clearProjectiles()
+    clearPickups()
     reset()
   }
 

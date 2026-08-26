@@ -1,8 +1,16 @@
 import { create } from 'zustand'
 import type { GamePhase } from '../types/game'
 
-/** Nombre de cœurs de départ (façon Zelda : 3 cœurs). */
-export const MAX_HEARTS = 3
+/**
+ * Nombre de cœurs de départ.
+ *
+ * Zelda commence à trois cœurs, mais son héros dispose d'un bouclier, d'une
+ * roulade et d'une caméra libre pour voir venir les coups. Ici on n'a que le
+ * déplacement : à trois cœurs, la carte n'était pas traversable, et une partie
+ * pouvait se terminer sans que le joueur ait bougé. Cinq cœurs laissent le
+ * temps d'apprendre les deux espèces d'ennemis.
+ */
+export const MAX_HEARTS = 5
 /** Durée d'invincibilité après un coup reçu, en millisecondes. */
 export const INVULNERABILITY_MS = 1100
 
@@ -26,6 +34,8 @@ export interface GameState {
   damagePlayer: (amount?: number) => void
   /** Vrai tant que le joueur est en i-frames (clignotement + immunité). */
   isInvulnerable: () => boolean
+  /** Rend des cœurs au joueur. Ignoré si la barre est déjà pleine. */
+  healPlayer: (amount?: number) => boolean
   registerKill: () => void
   /** Relance une partie depuis zéro. */
   reset: () => void
@@ -56,6 +66,15 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   isInvulnerable: () => performance.now() - get().lastHitAt < INVULNERABILITY_MS,
+
+  healPlayer: (amount = 1) => {
+    const { phase, hearts, maxHearts } = get()
+    // Le booléen de retour évite au ramassage de refaire le test de son côté :
+    // c'est le store qui sait si le soin a servi, donc si le cœur est consommé.
+    if (phase !== 'playing' || hearts >= maxHearts) return false
+    set({ hearts: Math.min(maxHearts, hearts + amount) })
+    return true
+  },
 
   registerKill: () => set((state) => ({ kills: state.kills + 1 })),
 

@@ -24,6 +24,15 @@ export interface EnemyStats {
   attackRange: number
   /** Délai entre deux attaques, en millisecondes. */
   attackCooldownMs: number
+  /**
+   * Temps de préparation visible avant que l'attaque parte, en millisecondes.
+   *
+   * C'est le réglage qui décide si un coup se subit ou s'esquive. Sans lui,
+   * l'attaque partait à la frame même où l'ennemi entrait en portée : le joueur
+   * n'avait aucun signal à lire, seulement un cœur en moins. Sortir de portée
+   * pendant la préparation l'annule.
+   */
+  telegraphMs: number
   /** Cœurs retirés au joueur. */
   damage: number
   /** Rayon du collider et demi-hauteur de la capsule. */
@@ -33,6 +42,8 @@ export interface EnemyStats {
   minimapColor: string
   /** Vrai si l'ennemi attaque à distance (projectile) plutôt qu'au contact. */
   ranged: boolean
+  /** Dispersion du tir, en radians. Ignorée pour un ennemi de corps-à-corps. */
+  spread?: number
 }
 
 export const ENEMIES: Record<EnemyKind, EnemyStats> = {
@@ -42,14 +53,23 @@ export const ENEMIES: Record<EnemyKind, EnemyStats> = {
     hp: 2,
     speed: 1.6,
     patrolSpeed: 1.2,
-    detectRadius: 24,
-    attackRange: 22,
-    attackCooldownMs: 2000,
+    // Détection et portée de tir étaient à 24 et 22 : l'Octorok tirait à la
+    // frame où il repérait le joueur, depuis une distance où il n'était
+    // lui-même qu'un point à l'écran. L'écart entre les deux valeurs donne
+    // maintenant neuf unités pendant lesquelles on le voit sans être visé.
+    detectRadius: 21,
+    attackRange: 15,
+    attackCooldownMs: 2400,
+    telegraphMs: 560,
     damage: 1,
     radius: 0.45,
     halfHeight: 0.3,
     minimapColor: '#e0574f',
     ranged: true,
+    // ±5° : à quinze unités, l'écart latéral atteint 1,3 unité pour un rayon
+    // de collision de 0,62 — le tir devient évitable au loin sans cesser de
+    // faire mouche à bout portant.
+    spread: 0.088,
   },
   moblin: {
     kind: 'moblin',
@@ -59,7 +79,11 @@ export const ENEMIES: Record<EnemyKind, EnemyStats> = {
     patrolSpeed: 1.6,
     detectRadius: 17,
     attackRange: 2,
-    attackCooldownMs: 1200,
+    // Le cooldown dépasse volontairement les i-frames du joueur (1 100 ms) :
+    // en dessous, un Moblin collé au joueur touchait à chaque fin
+    // d'invulnérabilité et le combat se réduisait à une course de dégâts.
+    attackCooldownMs: 1500,
+    telegraphMs: 420,
     damage: 1,
     radius: 0.45,
     halfHeight: 0.55,
@@ -78,6 +102,17 @@ export const DEATH_FADE_MS = 500
 export const HIT_KNOCKBACK = 4
 /** Durée du flash blanc quand un ennemi encaisse un coup. */
 export const HIT_FLASH_MS = 160
+
+/**
+ * Probabilité qu'un ennemi vaincu laisse un cœur.
+ *
+ * Levier d'équilibrage principal : c'est lui qui décide si la carte se
+ * traverse d'une traite ou si chaque combat coûte durablement. Le tirage est
+ * fait au moment de la mort, avec `Math.random` et non la graine du monde —
+ * une graine fixe rendrait les lâchers identiques à chaque partie, et le joueur
+ * apprendrait quels ennemis « donnent » un cœur.
+ */
+export const HEART_DROP_CHANCE = 0.4
 
 /** Nombre d'ennemis posés sur la carte. */
 const ENEMY_COUNT = 26

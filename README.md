@@ -27,6 +27,10 @@ src/
   types/game.ts               types métier (phase, ennemis, biomes)
   store/useGameStore.ts       état de partie zustand (vie, phase, kills)
   state/playerTransform.ts    transform du joueur partagé hors React (60 fps)
+  state/cameraView.ts         matrice view-projection publiée hors React + projection écran
+  state/enemyRegistry.ts      position, état d'IA et PV des ennemis vivants
+  state/projectiles.ts        pool de tirs
+  state/pickups.ts            pool de cœurs lâchés
   components/
     Player.tsx                contrôleur physique du personnage
     CameraRig.tsx             caméra 3e personne lissée
@@ -34,6 +38,9 @@ src/
     PostFX.tsx                bloom + tilt-shift + vignette (rendu "diorama")
     HUD.tsx                   overlay 2D
     Minimap.tsx               carte 2D, position du joueur, ennemis
+    CombatOverlay.tsx         barres de vie et chevrons d'alerte, en canvas 2D
+    SwordArc.tsx              traînée de lame, verdict touché / dans le vide
+    Pickups.tsx               cœurs lâchés : chute, flottement, ramassage
     Enemy.tsx                 physique et machine à états d'un ennemi
     Enemies.tsx               peuplement de la carte
     Projectiles.tsx           pool de projectiles, un seul draw call
