@@ -1,0 +1,5 @@
+# https://leobello.dev — portfolio de Léo Bello
+User-agent: *
+Allow: /
+
+Sitemap: https://leobello.dev/sitemap.xml

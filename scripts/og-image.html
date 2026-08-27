@@ -1,0 +1,88 @@
+<!doctype html>
+<!--
+  Source de l'image de partage `public/og-image.png` (1200 × 630).
+  Régénérer après modification :
+
+    msedge --headless=new --window-size=1200,630 \
+      --screenshot=public/og-image.png scripts/og-image.html
+
+  (ou Chrome / `npx playwright screenshot`). Garder le fichier à 1200 × 630.
+-->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  .card {
+    width: 1200px; height: 630px; position: relative;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background: linear-gradient(180deg, #232a52 0%, #3c4780 45%, #6b7cba 100%);
+    color: #f6f2e4;
+  }
+  .stars { position: absolute; inset: 0; }
+  .stars i {
+    position: absolute; background: #fff; border-radius: 50%;
+    width: 2px; height: 2px; opacity: .8;
+  }
+  .content {
+    position: absolute; left: 80px; top: 0; height: 100%;
+    display: flex; flex-direction: column; justify-content: center;
+    z-index: 2; max-width: 760px;
+  }
+  .kicker {
+    font-size: 20px; letter-spacing: .32em; text-transform: uppercase;
+    color: #f5dc95; opacity: .9; margin-bottom: 20px;
+  }
+  .name {
+    font-size: 104px; font-weight: 800; line-height: 1; letter-spacing: -.01em;
+    text-shadow: 0 6px 30px rgba(0,0,0,.35);
+  }
+  .role {
+    margin-top: 26px; font-size: 33px; font-weight: 500; line-height: 1.35;
+    color: #e7e2d0;
+  }
+  .role b { color: #f5dc95; font-weight: 700; }
+  .site {
+    position: absolute; left: 80px; bottom: 54px; z-index: 2;
+    font-size: 24px; letter-spacing: .06em; color: #cdd6f4;
+  }
+  .site::before {
+    content: ""; display: inline-block; width: 12px; height: 12px;
+    margin-right: 12px; border-radius: 3px; background: #f5dc95;
+    transform: rotate(45deg); vertical-align: middle;
+  }
+  svg.mountains { position: absolute; left: 0; bottom: 0; width: 1200px; height: 340px; z-index: 1; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="stars" id="stars"></div>
+
+  <svg class="mountains" viewBox="0 0 1200 340" preserveAspectRatio="none">
+    <path d="M0 340 L0 200 L180 90 L360 210 L470 150 L640 300 L760 210 L900 120 L1050 250 L1200 170 L1200 340 Z" fill="#2b3360" opacity="0.55"/>
+    <path d="M0 340 L0 270 L150 180 L330 300 L520 210 L700 320 L860 240 L1020 320 L1200 250 L1200 340 Z" fill="#1e2547"/>
+    <path d="M150 180 L210 218 L120 232 Z" fill="#f5dc95" opacity="0.9"/>
+    <path d="M520 210 L575 244 L470 258 Z" fill="#f5dc95" opacity="0.8"/>
+  </svg>
+
+  <div class="content">
+    <div class="kicker">Portfolio</div>
+    <div class="name">Léo Bello</div>
+    <div class="role">Développeur <b>Full-Stack</b><br>React &nbsp;·&nbsp; Next.js &nbsp;·&nbsp; TypeScript &nbsp;·&nbsp; PostgreSQL</div>
+  </div>
+  <div class="site">leobello.dev</div>
+</div>
+<script>
+  const s = document.getElementById('stars');
+  let h = '';
+  for (let i = 0; i < 90; i++) {
+    const x = Math.random() * 1200, y = Math.random() * 380;
+    const sz = Math.random() < 0.15 ? 3 : Math.random() < 0.5 ? 2 : 1;
+    const op = (0.35 + Math.random() * 0.5).toFixed(2);
+    h += `<i style="left:${x.toFixed(0)}px;top:${y.toFixed(0)}px;width:${sz}px;height:${sz}px;opacity:${op}"></i>`;
+  }
+  s.innerHTML = h;
+</script>
+</body>
+</html>
