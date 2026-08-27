@@ -16,6 +16,7 @@ import { Projectiles } from './components/Projectiles'
 import { PostFX } from './components/PostFX'
 import { PortfolioDialog } from './components/portfolio/PortfolioDialog'
 import { SwordArc } from './components/SwordArc'
+import { TeleportOverlay } from './components/TeleportOverlay'
 import { controlMap } from './config/controls'
 import { CAMERA, PLAYER } from './config/gameplay'
 import { useGameStore } from './store/useGameStore'
@@ -93,6 +94,7 @@ export default function App() {
       <LanguageToggle />
       {/* Le panneau passe devant tout le HUD, invite d'interaction comprise. */}
       <PortfolioDialog />
+      <TeleportOverlay />
       <Loader />
     </KeyboardControls>
   )

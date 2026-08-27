@@ -633,3 +633,62 @@ canvas {
   outline: 2px solid #f6f2e4;
   outline-offset: 2px;
 }
+
+/* --- Overlay de téléportation ----------------------------------------------- */
+
+/*
+  Braises dorées qui convergent puis se dispersent, sur un fond qui couvre
+  entièrement l'écran au pic — c'est ce fond, et non les braises, qui garantit
+  qu'aucun "pop" de position n'est visible pendant le warp.
+*/
+.teleport-overlay {
+  position: fixed;
+  inset: 0;
+  /* Bloque les clics pendant le trajet — redondant avec le garde du store,
+     mais évite aussi de cliquer un lien ou un bouton caché dessous. */
+  pointer-events: auto;
+}
+
+.teleport-overlay__veil {
+  position: absolute;
+  inset: 0;
+  /* Même teinte que le fond de `.gameover` / `.portfolio`, mais opaque au
+     pic : c'est un écran de chargement, pas un calque translucide. */
+  background: #0a100c;
+  opacity: 0;
+  animation: teleport-veil 760ms ease-in-out forwards;
+}
+
+@keyframes teleport-veil {
+  0%, 100% { opacity: 0; }
+  50%, 55% { opacity: 1; }
+}
+
+.teleport-overlay__ember {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #f5dc95;
+  box-shadow: 0 0 8px 2px rgba(245, 220, 149, 0.75);
+  opacity: 0;
+  animation: teleport-ember 760ms ease-in-out forwards;
+}
+
+/* Convergent vers le centre (0 → 38%), restent groupées et lumineuses
+   pendant le warp (38 → 55%), puis repartent se disperser en s'effaçant. */
+@keyframes teleport-ember {
+  0% { opacity: 0; transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(0.4); }
+  38% { opacity: 1; transform: translate(-50%, -50%) translate(0, 0) scale(1); }
+  50%, 55% { opacity: 1; transform: translate(-50%, -50%) translate(0, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(0.3); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Le voile reste tel quel : un simple fondu d'opacité, pas un mouvement.
+     Le raccourcir désynchroniserait sa disparition du "warp" programmé à
+     380 ms dans TeleportOverlay, et le pop redeviendrait visible. */
+  .teleport-overlay__ember { display: none; }
+}
