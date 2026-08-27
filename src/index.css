@@ -1,6 +1,13 @@
 :root {
   --hud-fg: #f6f2e4;
   --hud-bg: rgba(18, 26, 20, 0.55);
+  /*
+    Côté du fond de carte de la minimap, et seule mesure à changer pour la
+    redimensionner : le cadre s'y accorde. Il ajoute 16px de padding horizontal
+    et 35px de chrome vertical (paddings + la ligne du nom de biome), donc
+    176×195 autour d'un fond de 160.
+  */
+  --minimap-map: 160px;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
@@ -97,7 +104,7 @@ canvas {
   position: fixed;
   top: 16px;
   left: 16px;
-  width: 176px;
+  width: calc(var(--minimap-map) + 16px);
   padding: 8px 8px 6px;
   border-radius: 14px;
   background: rgba(18, 26, 20, 0.55);
@@ -110,8 +117,8 @@ canvas {
 
 .minimap__canvas {
   display: block;
-  width: 160px;
-  height: 160px;
+  width: var(--minimap-map);
+  height: var(--minimap-map);
   border-radius: 9px;
   /* Sans ça le fond de carte est interpolé et la côte devient floue. */
   image-rendering: pixelated;
@@ -1154,11 +1161,51 @@ canvas {
   .touch-hint__icon { animation: none; }
 }
 
-/* Sur mobile, les rappels de touches et l'invite <F> n'ont pas de sens :
-   l'interaction passe par le bouton tactile contextuel. */
+/* --- Ajustements mobiles -------------------------------------------------- */
+
 @media (pointer: coarse) and (hover: none) {
+  /* Les rappels de touches et l'invite <F> n'ont pas de sens ici :
+     l'interaction passe par le bouton tactile contextuel. */
   .hud__controls,
   .hud__prompt {
     display: none;
+  }
+
+  /*
+    Carte resserrée : à 176px de large, elle occupait près de la moitié d'un
+    écran de 390px et passait sous les cœurs centrés. Le cadre suit tout seul.
+
+    Une valeur fixe, et non un pourcentage de la fenêtre : `Minimap` mesure la
+    largeur du canvas **une seule fois**, au montage, pour dimensionner son
+    tampon de rendu. Un côté en `vw` deviendrait faux à la première rotation
+    d'écran et la carte s'afficherait floue. La query, elle, porte sur le type
+    de pointeur : elle ne bascule jamais en cours de visite.
+  */
+  :root { --minimap-map: 120px; }
+
+  /*
+    Cœurs poussés en haut à droite, sous le sélecteur de langue : centrés, ils
+    se retrouvaient à cheval sur la carte, et la place manque pour tenir entre
+    les deux. Le décalage vaut 16 (marge du sélecteur) + 29 (sa hauteur) + 8 de
+    respiration, moins les 16 que le padding du HUD applique déjà.
+  */
+  .hud__top {
+    justify-content: flex-end;
+    padding-top: 37px;
+  }
+
+  /*
+    Et un cran plus petits, à l'échelle de la carte réduite. C'est aussi ce qui
+    garantit la séparation sur les téléphones les plus étroits : à 320px de
+    large, la pastille commence 6px après le bord droit de la carte.
+  */
+  .hud__hearts {
+    gap: 4px;
+    padding: 6px 10px;
+  }
+
+  .heart {
+    width: 22px;
+    height: 22px;
   }
 }
