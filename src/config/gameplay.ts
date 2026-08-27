@@ -91,6 +91,16 @@ export const CAMERA = {
    * aux trois quarts de la hauteur, sans jamais toucher le bord bas.
    */
   lookAtHeight: 4.5,
+  /**
+   * Hauteur visée sur mobile.
+   *
+   * Plus basse que `lookAtHeight` : l'axe de visée se relève, le joueur remonte
+   * vers le centre du cadre — au-dessus de la bande de contrôles tactiles qui
+   * occupe le bas de l'écran. Contrepartie assumée : un peu moins de ciel
+   * visible en haut de l'image sur mobile. La position de la caméra, elle, ne
+   * bouge pas.
+   */
+  lookAtHeightMobile: 2,
   /** Réactivité du suivi ; plus haut = plus collé au joueur. */
   damping: 5,
 } as const

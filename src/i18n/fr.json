@@ -6,6 +6,12 @@
       "attack": "attaquer",
       "interact": "interagir"
     },
+    "touch": {
+      "move": "se déplacer",
+      "attack": "attaquer",
+      "jump": "sauter",
+      "interact": "interagir"
+    },
     "gameover": {
       "title": "Game Over",
       "noKills": "Aucun ennemi vaincu.",

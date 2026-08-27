@@ -29,6 +29,26 @@ export const playerTransform = {
   lastLandedSwing: -Infinity,
 }
 
+/**
+ * Remet à zéro les compteurs de combat au redémarrage d'une partie.
+ *
+ * `attackStartedAt` et `lastLandedSwing` sont des timestamps de l'horloge de
+ * jeu. Celle-ci repart de 0 à chaque `reset()` (voir `resetClock`), mais ces
+ * deux champs, eux, vivent dans ce singleton et survivent au remontage du
+ * joueur. Sans cette remise à zéro, une partie où l'on a déjà frappé laisse
+ * `attackStartedAt` à plusieurs secondes dans le « futur » de la nouvelle
+ * horloge : `gameNow() - attackStartedAt` devient négatif et la garde
+ * anti-enchaînement de l'attaque ne repasse jamais — plus moyen d'attaquer
+ * jusqu'à ce que l'horloge ait rattrapé l'ancienne valeur.
+ *
+ * `position`, `yaw`, `speed` et `grounded` n'ont pas besoin d'être touchés :
+ * `Player` les réécrit dès sa première frame.
+ */
+export function resetCombat() {
+  playerTransform.attackStartedAt = -Infinity
+  playerTransform.lastLandedSwing = -Infinity
+}
+
 // Exposé en développement pour inspecter l'état du joueur depuis la console
 // (ou depuis un test navigateur) sans avoir à instrumenter les composants.
 if (import.meta.env.DEV) {

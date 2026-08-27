@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
+import { isTouchDevice } from '../config/device'
 import { LANDMARKS } from '../config/landmarks'
 import { useI18n } from '../i18n/useI18n'
 import { useGameStore } from '../store/useGameStore'
@@ -37,7 +38,11 @@ export function TeleportMenu() {
   const phase = useGameStore((state) => state.phase)
   const activeLandmark = useGameStore((state) => state.activeLandmark)
   const teleportTo = useGameStore((state) => state.teleportTo)
-  const [open, setOpen] = useState(true)
+  // Ouvert par défaut sur desktop. Sur mobile il démarre replié : le panneau
+  // déployé recouvrirait le coin haut-gauche de la zone du joystick, et un pouce
+  // posé là déclencherait une téléportation au lieu d'un déplacement. L'onglet
+  // vertical reste visible et le menu s'ouvre au toucher.
+  const [open, setOpen] = useState(() => !isTouchDevice())
 
   // À l'écran de fin, un menu de voyage rapide n'a plus de sens.
   if (phase === 'gameover') return null

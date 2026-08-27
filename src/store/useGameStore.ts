@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { now as gameNow, resetClock } from '../state/gameClock'
+import { resetCombat } from '../state/playerTransform'
 import type { GamePhase, LandmarkId } from '../types/game'
 
 /**
@@ -205,6 +206,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     // à plusieurs minutes : les sentinelles `-Infinity` encaissent, mais un cœur
     // lâché juste avant le Game Over expirerait instantanément.
     resetClock()
+    // Les compteurs de combat vivent dans `playerTransform` (hors React) et
+    // survivent au remontage du joueur : sans ça, `attackStartedAt` reste dans
+    // le futur de l'horloge fraîchement remise à zéro et l'attaque se bloque.
+    resetCombat()
     set((state) => ({ ...initialState, discovered: [], runId: state.runId + 1 }))
   },
 }))

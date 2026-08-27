@@ -10,12 +10,14 @@ import {
 } from '@react-three/rapier'
 import { Group, Vector3 } from 'three'
 import type { Control } from '../config/controls'
+import { isTouchDevice } from '../config/device'
 import { ATTACK, PLAYER } from '../config/gameplay'
 import { WORLD } from '../config/world'
 import { enemyRegistry } from '../state/enemyRegistry'
 import { now as gameNow } from '../state/gameClock'
-import { playerTransform } from '../state/playerTransform'
 import { playerBody } from '../state/playerBody'
+import { playerTransform } from '../state/playerTransform'
+import { touchInput, resetTouchMove } from '../state/touchInput'
 import { useGameStore } from '../store/useGameStore'
 import { LinkModel } from './models/LinkModel'
 
@@ -152,6 +154,13 @@ export function Player() {
       // avant la pause, et le personnage bondirait à la réouverture du jeu.
       jumpRequested.current = false
       attackRequested.current = false
+      // Mêmes raisons que pour les refs clavier ci-dessus : une demande tactile
+      // faite juste avant la pause ne doit pas se déclencher à la reprise. Le
+      // joystick est remis au neutre pour ne pas « marcher sur place » si
+      // l'overlay a disparu avant le pointerup.
+      touchInput.jumpRequested = false
+      touchInput.attackRequested = false
+      resetTouchMove()
       // Le clignotement d'i-frames laisse le modèle une frame sur deux à
       // `visible = false` : figer la boucle sur l'une de ces frames laisserait
       // le personnage invisible pendant toute la pause.
@@ -193,20 +202,40 @@ export function Player() {
     camRight.crossVectors(camForward, WORLD_UP).normalize()
 
     moveDir.set(0, 0, 0)
-    if (keys.forward) moveDir.add(camForward)
-    if (keys.backward) moveDir.sub(camForward)
-    if (keys.right) moveDir.add(camRight)
-    if (keys.left) moveDir.sub(camRight)
+    // `speedScale` reste à 1 pour le clavier (plein régime) ; le joystick le
+    // ramène entre 0 et 1 selon l'amplitude du stick.
+    let speedScale = 1
+
+    // Test tactile en second : sur desktop `moveX/moveY` valent toujours 0, donc
+    // on court-circuite avant même de consulter la media query — le chemin
+    // clavier ne paie rien.
+    if ((touchInput.moveX !== 0 || touchInput.moveY !== 0) && isTouchDevice()) {
+      // Joystick : l'axe écran est projeté sur les axes caméra (droite / avant).
+      // `moveY` positif pointe vers le bas de l'écran, donc vers l'arrière.
+      moveDir
+        .addScaledVector(camRight, touchInput.moveX)
+        .addScaledVector(camForward, -touchInput.moveY)
+      // camRight et camForward sont unitaires et perpendiculaires : la longueur
+      // de moveDir vaut donc hypot(moveX, moveY) — l'amplitude du stick.
+      speedScale = Math.min(moveDir.length(), 1)
+    } else {
+      if (keys.forward) moveDir.add(camForward)
+      if (keys.backward) moveDir.sub(camForward)
+      if (keys.right) moveDir.add(camRight)
+      if (keys.left) moveDir.sub(camRight)
+    }
 
     const isMoving = moveDir.lengthSq() > 0
-    // Normaliser évite le classique "diagonale plus rapide".
+    // Normaliser évite le classique "diagonale plus rapide" ; la vitesse est
+    // dosée séparément par `speedScale`.
     if (isMoving) moveDir.normalize()
 
     // Patauger ralentit. On teste la hauteur des pieds, pas celle du centre de
     // la capsule : c'est le contact avec l'eau qui compte, pas la silhouette.
     const feetHeight = position.y + FEET_OFFSET
     const wading = feetHeight < WORLD.waterLevel
-    const speed = wading ? PLAYER.speed * PLAYER.waterSpeedFactor : PLAYER.speed
+    const speed =
+      (wading ? PLAYER.speed * PLAYER.waterSpeedFactor : PLAYER.speed) * speedScale
 
     // --- 3. Application de la vélocité --------------------------------------
     // On pilote directement la vélocité linéaire plutôt que d'appliquer des
@@ -215,10 +244,12 @@ export function Player() {
     const linvel = rb.linvel()
     let velocityY = linvel.y
 
-    if (jumpRequested.current) {
+    if (jumpRequested.current || touchInput.jumpRequested) {
       // La demande est consommée même si le saut est refusé : sans ça, un appui
-      // en l'air se déclencherait à l'atterrissage.
+      // en l'air se déclencherait à l'atterrissage. Les deux sources (clavier et
+      // bouton tactile) sont vidées ensemble.
       jumpRequested.current = false
+      touchInput.jumpRequested = false
       if (grounded) velocityY = PLAYER.jumpSpeed
     }
 
@@ -234,8 +265,9 @@ export function Player() {
     // --- 4. Attaque ----------------------------------------------------------
     // Ici on ne fait que déclencher l'animation ; la hitbox qui inflige les
     // dégâts viendra se brancher sur cette même fenêtre temporelle.
-    if (attackRequested.current) {
+    if (attackRequested.current || touchInput.attackRequested) {
       attackRequested.current = false
+      touchInput.attackRequested = false
       const attackElapsed = gameNow() - playerTransform.attackStartedAt
       // Pas d'enchaînement tant que le coup précédent n'est pas terminé.
       if (attackElapsed >= ATTACK.durationMs) {

@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Vector3 } from 'three'
 import { CAMERA } from '../config/gameplay'
+import { useIsTouchDevice } from '../config/device'
 import { cameraView } from '../state/cameraView'
 import { playerTransform } from '../state/playerTransform'
 
@@ -20,6 +21,7 @@ const desiredTarget = new Vector3()
  */
 export function CameraRig() {
   const camera = useThree((state) => state.camera)
+  const isTouch = useIsTouchDevice()
   /** Point visé, lissé lui aussi pour éviter les à-coups de rotation. */
   const lookAt = useRef(new Vector3())
 
@@ -31,7 +33,10 @@ export function CameraRig() {
     camera.position.lerp(desiredPosition, t)
 
     desiredTarget.copy(playerTransform.position)
-    desiredTarget.y += CAMERA.lookAtHeight
+    // Sur mobile, on vise plus bas : le joueur remonte au centre, au-dessus des
+    // contrôles tactiles. Le rig lerpe déjà `desiredTarget` chaque frame, donc
+    // le changement de valeur s'applique en douceur, sans transition à coder.
+    desiredTarget.y += isTouch ? CAMERA.lookAtHeightMobile : CAMERA.lookAtHeight
     lookAt.current.lerp(desiredTarget, t)
     camera.lookAt(lookAt.current)
 

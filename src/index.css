@@ -781,3 +781,126 @@ canvas {
 @media (prefers-reduced-motion: reduce) {
   .teleport-menu__item { transition: none; }
 }
+
+/* --- Contrôles tactiles (mobile uniquement) ------------------------------- */
+
+/*
+  Le conteneur n'existe dans le DOM que lorsque `useIsTouchDevice()` est vrai
+  (cf. TouchControls.tsx). Comme `.hud`, il ne capte pas les pointeurs — chaque
+  contrôle réactive `pointer-events` localement.
+*/
+.touch-controls {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+/* Zone de saisie du joystick : moitié gauche, bas de l'écran. Le stick naît
+   sous le pouce, n'importe où dans cette zone. */
+.touch-joystick__zone {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 50%;
+  height: 42%;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+/* Base + tête : purement visuels, positionnés en coordonnées écran (le parent
+   `.touch-controls` est `inset: 0`, donc `left`/`top` = viewport). */
+.touch-joystick__base {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  margin: -60px 0 0 -60px;
+  border-radius: 999px;
+  /* Fond un peu plus opaque plutôt qu'un `backdrop-filter: blur()` : sur un
+     élément qui bouge à chaque frame au-dessus du canvas WebGL, le flou de
+     fond force une relecture du buffer par image — coûteux sur les téléphones
+     d'entrée de gamme, justement la cible de cette fonctionnalité. */
+  background: rgba(18, 26, 20, 0.4);
+  border: 1px solid rgba(246, 242, 228, 0.28);
+  pointer-events: none;
+}
+
+.touch-joystick__thumb {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
+  border-radius: 999px;
+  background: rgba(246, 242, 228, 0.38);
+  border: 1px solid rgba(246, 242, 228, 0.5);
+}
+
+/* Boutons d'action : bas-droite, en triangle façon manette. */
+.touch-buttons {
+  position: absolute;
+  right: 22px;
+  bottom: 26px;
+  display: grid;
+  grid-template-columns: repeat(2, 64px);
+  grid-template-rows: repeat(2, 64px);
+  gap: 12px;
+  pointer-events: none;
+}
+
+.touch-button {
+  grid-column: 1;
+  grid-row: 1;
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  border: 1px solid rgba(246, 242, 228, 0.4);
+  background: rgba(18, 26, 20, 0.32);
+  color: var(--hud-fg);
+  font: inherit;
+  font-weight: 700;
+  font-size: 18px;
+  opacity: 0.35;
+  pointer-events: auto;
+  touch-action: none;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.touch-button:active {
+  opacity: 0.7;
+  transform: scale(0.94);
+}
+
+/* A en bas-droite, B en haut-gauche : diagonale. Interagir occupe le
+   bas-gauche quand il apparaît. */
+.touch-button--attack { grid-column: 2; grid-row: 2; }
+.touch-button--jump { grid-column: 1; grid-row: 1; }
+.touch-button--interact {
+  grid-column: 1;
+  grid-row: 2;
+  border-color: rgba(245, 220, 149, 0.5);
+  color: #f5dc95;
+  opacity: 0.5;
+}
+
+.touch-button--interact svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .touch-button { transition: none; }
+}
+
+/* Sur mobile, les rappels de touches et l'invite <F> n'ont pas de sens :
+   l'interaction passe par le bouton tactile contextuel. */
+@media (pointer: coarse) and (hover: none) {
+  .hud__controls,
+  .hud__prompt {
+    display: none;
+  }
+}
