@@ -27,6 +27,28 @@ const camForward = new Vector3()
 const camRight = new Vector3()
 const moveDir = new Vector3()
 
+/**
+ * Référence stable pour `userData` du `RigidBody` ci-dessous.
+ *
+ * Doit être définie une seule fois hors du composant : `@react-three/rapier`
+ * inclut `userData` dans les dépendances de l'effet qui synchronise ses
+ * options mutables (`useUpdateRigidBodyOptions`), et cet effet **réapplique
+ * aussi la translation** du corps physique à chaque déclenchement (depuis la
+ * position, possiblement obsolète, de l'`object3D` React-Three-Fiber — voir
+ * `setRigidBodyOptions` dans la lib, appelé avec `updateTranslations: true`
+ * par défaut). Un objet littéral `{ type: 'player' }` recréé à chaque rendu de
+ * `Player` change de référence sans changer de contenu, mais React compare par
+ * référence : chaque rendu déclenchait donc ce réagencement complet. Résultat
+ * mesuré : après une téléportation (qui gèle la physique via `paused` sur
+ * `<Physics>`, donc sans synchronisation de l'`object3D` pendant tout l'arrêt),
+ * fermer la modale fait re-rendre `Player` (la phase change), ce qui réactive
+ * cet effet et réécrase la translation fraîchement posée par
+ * `TeleportOverlay` avec l'ancienne position du joueur d'avant le voyage.
+ * Une référence stable élimine le déclenchement — plus aucune trace de
+ * `userData` ne change entre deux rendus.
+ */
+const PLAYER_USER_DATA = { type: 'player' }
+
 /** Décalage entre le centre de la capsule et les pieds du modèle. */
 const FEET_OFFSET = -(PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius)
 /** Longueur du rayon "suis-je au sol ?" : pieds + une petite marge. */
@@ -264,7 +286,7 @@ export function Player() {
     <RigidBody
       ref={body}
       name="player"
-      userData={{ type: 'player' }}
+      userData={PLAYER_USER_DATA}
       position={PLAYER.spawn}
       colliders={false}
       // Le personnage ne doit jamais basculer : on bloque toutes les rotations
