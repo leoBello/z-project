@@ -75,6 +75,14 @@
       "tools_methods": "Outils et méthodes",
       "soft_skills": "Savoir-être"
     },
+    "skillSummaries": {
+      "frontend": "Je construis des interfaces React et TypeScript pensées pour durer : découpage en composants réutilisables, état maîtrisé, formulaires complexes et rendu maîtrisé côté performance. Je couvre le tout de tests unitaires avec Jest et React Testing Library, en testant le comportement plutôt que l'implémentation, et j'ai également mené des applications Angular en production.",
+      "backend": "Je conçois et j'expose des API REST avec Node.js et Next.js, sur un modèle de données PostgreSQL réfléchi en amont plutôt que subi. Je sais reprendre un back-end existant, y compris en Java EE, et brancher des services tiers — Supabase, Firestore, authentification OAuth 2.0 — sans fragiliser ce qui tourne déjà.",
+      "cloud_devops": "Je déploie et j'exploite mes applications sur Firebase et Google Cloud, avec des pipelines CI/CD qui exécutent les tests avant chaque mise en production. Je privilégie les livraisons petites et fréquentes, faciles à vérifier et à annuler, plutôt que les grandes mises en production événementielles.",
+      "data_ml": "Passé par la recherche au Laboratoire d'Informatique de Grenoble, j'ai entraîné des réseaux de neurones convolutifs avec PyTorch et intégré le modèle obtenu dans un robot Pepper. J'en garde la capacité à lire un article, comprendre un modèle et évaluer honnêtement ce qu'une brique d'IA apporte — ou non — à un produit.",
+      "tools_methods": "Git au quotidien, revues de code exigeantes et argumentées, documentation écrite pour la personne qui reprendra le projet après moi. En équipe Agile, je chiffre, je découpe les sujets en incréments livrables et je signale tôt ce qui coince, pas le jour de la démo.",
+      "soft_skills": "Autonome sur un sujet neuf : je cadre le besoin, je pose les questions aux bonnes personnes et j'avance sans qu'on ait à me relancer. Curieux et rigoureux, je fais de la veille, je transmets volontiers ce que j'apprends et je travaille naturellement avec le produit, le design et le back-end."
+    },
     "background": {
       "certifications": "Certifications",
       "issuedBy": "Délivrée par {issuer}"
