@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { useIsTouchDevice } from '../config/device'
 import { touchInput, resetTouchMove } from '../state/touchInput'
 import { useGameStore } from '../store/useGameStore'
+import { useI18n } from '../i18n/useI18n'
 
 /** Rayon (px) au-delà duquel l'amplitude du stick est bornée à 1. */
 const JOY_RADIUS = 60
@@ -25,6 +26,8 @@ const JOY_HIDDEN: JoyVisual = { active: false, x: 0, y: 0, dx: 0, dy: 0 }
 export function TouchControls() {
   const isTouch = useIsTouchDevice()
   const phase = useGameStore((state) => state.phase)
+  const nearbyLandmark = useGameStore((state) => state.nearbyLandmark)
+  const { dict } = useI18n()
 
   const joyPointer = useRef<number | null>(null)
   const joyOrigin = useRef({ x: 0, y: 0 })
@@ -89,6 +92,50 @@ export function TouchControls() {
           />
         </div>
       )}
+
+      <div className="touch-buttons">
+        {nearbyLandmark && (
+          <button
+            type="button"
+            className="touch-button touch-button--interact"
+            aria-label={dict.ui.touch.interact}
+            onPointerDown={() => {
+              // Appel direct du store : c'est un vrai événement pointeur, pas un
+              // sondage par frame — aucun risque de le perdre, donc pas besoin
+              // de passer par un drapeau dans `touchInput`. Même garde que
+              // `LandmarkInteraction` côté clavier.
+              const store = useGameStore.getState()
+              if (store.phase === 'playing' && store.nearbyLandmark) {
+                store.openLandmark(store.nearbyLandmark)
+              }
+            }}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
+            </svg>
+          </button>
+        )}
+        <button
+          type="button"
+          className="touch-button touch-button--jump"
+          aria-label={dict.ui.touch.jump}
+          onPointerDown={() => {
+            touchInput.jumpRequested = true
+          }}
+        >
+          B
+        </button>
+        <button
+          type="button"
+          className="touch-button touch-button--attack"
+          aria-label={dict.ui.touch.attack}
+          onPointerDown={() => {
+            touchInput.attackRequested = true
+          }}
+        >
+          A
+        </button>
+      </div>
     </div>
   )
 }
