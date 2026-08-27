@@ -1043,8 +1043,115 @@ canvas {
   fill: currentColor;
 }
 
+/* --- Bulles d'aide tactiles ---------------------------------------------- */
+
+/*
+  Deux repères de premier contact : « le menu des lieux se déplie » et « le
+  joystick naît sous le pouce ». Aucun des deux ne se devine sur un écran
+  tactile — pas de touche à lire, pas de survol pour révéler l'affordance. Les
+  deux bulles disparaissent ensemble au premier toucher (cf.
+  `state/touchHints.ts`).
+*/
+.touch-hint {
+  --touch-hint-bg: #16211a;
+  --touch-hint-line: rgba(245, 220, 149, 0.32);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 11px;
+  border-radius: 12px;
+  border: 1px solid var(--touch-hint-line);
+  /* Fond franchement opaque, pour deux raisons. D'abord le coût : un
+     `backdrop-filter: blur()` serait recalculé à chaque frame au-dessus d'un
+     canvas WebGL qui se redessine, sur les téléphones modestes que vise
+     justement le mode tactile. Ensuite la pointe : deux fonds translucides qui
+     se recouvrent composent leurs alphas, et le losange se détachait en tache
+     sombre sur la bulle au lieu de la prolonger. */
+  background: var(--touch-hint-bg);
+  color: var(--hud-fg);
+  font-size: 12px;
+  line-height: 1.35;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+  /* Une bulle qui réclame un toucher ne doit surtout pas l'intercepter : celle
+     du joystick se pose en plein milieu de la zone de saisie. */
+  pointer-events: none;
+  animation: touch-hint-in 360ms ease-out both;
+}
+
+.touch-hint__icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: #f5dc95;
+}
+
+/* Bulle du joystick : dans la zone de saisie elle-même (moitié gauche, bas de
+   l'écran), à hauteur de là où le pouce doit se poser. */
+.touch-hint--joystick {
+  position: absolute;
+  left: 16px;
+  bottom: 21%;
+  max-width: min(230px, 62vw);
+}
+
+.touch-hint--joystick .touch-hint__icon {
+  animation: touch-hint-tap 2.4s ease-in-out infinite;
+}
+
+/* Bulle des lieux : enfant flex de `.teleport-menu`, donc posée à droite de
+   l'onglet sans coordonnées à tenir à jour si l'onglet change de taille. */
+.touch-hint--teleport {
+  align-self: center;
+  margin-left: 8px;
+  max-width: min(215px, 56vw);
+}
+
+/* Pointe vers l'onglet : un carré tourné de 45°, deux bords colorés comme
+   ceux de la bulle pour prolonger la bordure. */
+.touch-hint--teleport::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin-top: -5px;
+  transform: rotate(45deg);
+  background: var(--touch-hint-bg);
+  border-left: 1px solid var(--touch-hint-line);
+  border-bottom: 1px solid var(--touch-hint-line);
+}
+
+.touch-hint--teleport .touch-hint__icon {
+  animation: touch-hint-slide 2.4s ease-in-out infinite;
+}
+
+@keyframes touch-hint-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Battement du doigt qui tapote, et chevrons qui poussent vers la droite : la
+   bulle dit le geste, l'icône le montre. */
+@keyframes touch-hint-tap {
+  0%, 100% { opacity: 0.5; transform: scale(0.88); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+
+@keyframes touch-hint-slide {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(3px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .touch-button { transition: none; }
+  /* Les bulles restent — c'est leur texte qui informe, pas leur mouvement.
+     Seules l'apparition et la respiration de l'icône s'arrêtent. */
+  .touch-hint,
+  .touch-hint__icon { animation: none; }
 }
 
 /* Sur mobile, les rappels de touches et l'invite <F> n'ont pas de sens :

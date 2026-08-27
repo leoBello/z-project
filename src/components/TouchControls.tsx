@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { useIsTouchDevice } from '../config/device'
+import { useTouchHintsVisible } from '../state/touchHints'
 import { touchInput, resetTouchMove } from '../state/touchInput'
 import { useGameStore } from '../store/useGameStore'
 import { useI18n } from '../i18n/useI18n'
@@ -51,6 +52,10 @@ function TouchControlsOverlay() {
   const joyPointer = useRef<number | null>(null)
   const joyOrigin = useRef({ x: 0, y: 0 })
   const [joy, setJoy] = useState<JoyVisual>(JOY_HIDDEN)
+  // Le joystick est invisible tant qu'aucun pouce ne s'est posé : sans un mot,
+  // la moitié basse gauche ressemble à du décor. La bulle s'efface au premier
+  // contact avec l'écran, géré par le hook lui-même.
+  const showHint = useTouchHintsVisible()
 
   // Filet : au démontage (changement de phase pendant qu'un pouce est posé), le
   // `pointerup` n'arrivera jamais — on relâche le joystick à la main.
@@ -110,6 +115,24 @@ function TouchControlsOverlay() {
         onPointerUp={onUp}
         onPointerCancel={onUp}
       />
+      {showHint && (
+        <p className="touch-hint touch-hint--joystick">
+          <svg
+            className="touch-hint__icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.6}
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />
+            <path d="M6.7 17.3a7.5 7.5 0 010-10.6M17.3 6.7a7.5 7.5 0 010 10.6" />
+          </svg>
+          {dict.ui.touch.hint}
+        </p>
+      )}
+
       {joy.active && (
         <div className="touch-joystick__base" style={{ left: joy.x, top: joy.y }}>
           <div

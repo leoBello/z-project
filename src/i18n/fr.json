@@ -10,7 +10,8 @@
       "move": "se déplacer",
       "attack": "attaquer",
       "jump": "sauter",
-      "interact": "interagir"
+      "interact": "interagir",
+      "hint": "Touchez l'écran pour faire apparaître le joystick"
     },
     "gameover": {
       "title": "Game Over",
@@ -58,7 +59,8 @@
     },
     "teleport": {
       "tab": "Lieux",
-      "group": "Téléportation rapide"
+      "group": "Téléportation rapide",
+      "hint": "Touchez pour déplier le menu des lieux"
     },
     "sections": {
       "projects": "Projets",
