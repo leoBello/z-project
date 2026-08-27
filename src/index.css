@@ -656,7 +656,11 @@ canvas {
      pic : c'est un écran de chargement, pas un calque translucide. */
   background: #0a100c;
   opacity: 0;
-  animation: teleport-veil 760ms ease-in-out forwards;
+  /* Durée pilotée depuis `TOTAL_MS` dans TeleportOverlay.tsx via la variable
+     `--teleport-total`, posée sur `.teleport-overlay` et héritée ici : plus de
+     durée littérale à garder synchronisée à la main. Seuls les paliers en
+     pourcentage des `@keyframes` ci-dessous restent une ratio à maintenir. */
+  animation: teleport-veil var(--teleport-total) ease-in-out forwards;
 }
 
 @keyframes teleport-veil {
@@ -674,7 +678,9 @@ canvas {
   background: #f5dc95;
   box-shadow: 0 0 8px 2px rgba(245, 220, 149, 0.75);
   opacity: 0;
-  animation: teleport-ember 760ms ease-in-out forwards;
+  /* Durée pilotée depuis `TOTAL_MS` via `--teleport-total` — voir le
+     commentaire sur `.teleport-overlay__veil` ci-dessus. */
+  animation: teleport-ember var(--teleport-total) ease-in-out forwards;
 }
 
 /* Convergent vers le centre (0 → 38%), restent groupées et lumineuses

@@ -20,7 +20,15 @@ const EMBER_OFFSETS: ReadonlyArray<[number, number]> = [
 
 /** Durée entre le déclenchement et le "warp", en millisecondes — écran couvert. */
 const WARP_AT_MS = 380
-/** Durée totale de la séquence — doit correspondre à `teleport-veil` / `teleport-ember` dans index.css. */
+/**
+ * Durée totale de la séquence, source unique de vérité : injectée dans le CSS
+ * via la variable `--teleport-total` (voir le rendu plus bas), qui pilote la
+ * durée des animations `teleport-veil` / `teleport-ember` dans index.css. Seuls
+ * les paliers en pourcentage à l'intérieur de ces `@keyframes` restent à
+ * maintenir à la main : le rapport `WARP_AT_MS / TOTAL_MS` doit toujours
+ * correspondre au palier de couverture totale du voile (50 %–55 %) si l'une
+ * des deux constantes change.
+ */
 const TOTAL_MS = 760
 
 /**
@@ -79,7 +87,11 @@ export function TeleportOverlay() {
   if (!teleporting) return null
 
   return (
-    <div className="teleport-overlay" aria-hidden="true">
+    <div
+      className="teleport-overlay"
+      aria-hidden="true"
+      style={{ '--teleport-total': `${TOTAL_MS}ms` } as CSSProperties}
+    >
       <div className="teleport-overlay__veil" />
       {EMBER_OFFSETS.map(([dx, dy]) => (
         <span

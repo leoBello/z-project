@@ -172,7 +172,21 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ phase: 'paused', activeLandmark: null, teleporting: id })
   },
 
-  resolveTeleport: () => set((state) => ({ activeLandmark: state.teleporting })),
+  /**
+   * Réaffirme `phase: 'paused'` en même temps que `activeLandmark`, sans
+   * condition. Pendant le vol (voir `teleportTo`), la phase peut avoir été
+   * remise à `playing` par un appui sur F traité comme une fermeture de
+   * panneau (`closeLandmark`, voir le garde ajouté dans `Landmarks.tsx`) ;
+   * sans cette réaffirmation, `activeLandmark` se retrouverait non nul avec
+   * `phase === 'playing'`, brisant l'invariant documenté plus haut et ouvrant
+   * la modale sur une partie qui tourne toujours (physique et ennemis actifs).
+   */
+  resolveTeleport: () =>
+    set((state) =>
+      state.teleporting === null
+        ? state
+        : { activeLandmark: state.teleporting, phase: 'paused' },
+    ),
 
   finishTeleport: () => set({ teleporting: null }),
 
