@@ -98,7 +98,15 @@ export function TeleportMenu() {
                 className={`teleport-menu__item${isActive ? ' teleport-menu__item--active' : ''}`}
                 aria-current={isActive || undefined}
                 aria-label={`${dict.ui.landmarks[landmark.id].name} — ${dict.ui.landmarks[landmark.id].action}`}
-                onClick={() => teleportTo(landmark.id)}
+                onClick={() => {
+                  teleportTo(landmark.id)
+                  // Sur mobile, le panneau déployé recouvre la modale qui vient
+                  // de s'ouvrir : sur un écran étroit, il n'y a pas la place
+                  // pour les deux. On le replie donc après la téléportation,
+                  // l'onglet restant là pour sauter à la section suivante. Sur
+                  // desktop il reste ouvert — la modale ne le touche pas.
+                  if (isTouch) setOpen(false)
+                }}
               >
                 <svg
                   className="teleport-menu__icon"
