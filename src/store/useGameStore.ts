@@ -49,7 +49,9 @@ export interface GameState {
    *
    * Distinct de `activeLandmark` : tant qu'il est non-nul, l'overlay de
    * braises est à l'écran et la modale n'a pas encore commencé son fondu
-   * d'ouverture — elle ne démarre qu'au "warp", via `resolveTeleport`.
+   * d'ouverture — elle ne démarre qu'en toute fin de séquence, une fois la
+   * dispersion inverse et la pause d'observation écoulées, via
+   * `resolveTeleport`.
    */
   teleporting: LandmarkId | null
   /**
@@ -81,7 +83,12 @@ export interface GameState {
    * partie est terminée, ou si `id` est déjà le lieu affiché.
    */
   teleportTo: (id: LandmarkId) => void
-  /** Ouvre la modale du lieu en cours de téléportation, à mi-animation. */
+  /**
+   * Ouvre la modale du lieu en cours de téléportation, en toute fin de
+   * séquence — pas au "warp" : le délai est volontaire, pour laisser le temps
+   * de voir la dispersion inverse des braises et la destination avant que la
+   * modale n'apparaisse (voir `TeleportOverlay`).
+   */
   resolveTeleport: () => void
   /** Efface l'état de téléportation, en fin d'animation. */
   finishTeleport: () => void
