@@ -15,6 +15,11 @@ interface ProjectStepperProps {
  * l'ordre est la seule information qu'elle porte. Chaque pastille reste un
  * bouton — pouvoir sauter directement au quatrième projet évite trois clics
  * sur la flèche, et c'est ce que tout le monde essaie de faire.
+ *
+ * La pastille visible est un `<span>` à l'intérieur du bouton, et non le bouton
+ * lui-même : la cible cliquable fait alors 24 px de haut pendant que le point
+ * n'en fait que 8. Un bouton de 8 px est en dessous de tout seuil de confort au
+ * doigt, et le jeu se joue aussi sur téléphone.
  */
 export function ProjectStepper({ total, current, onSelect }: ProjectStepperProps) {
   const { dict } = useI18n()
@@ -36,7 +41,9 @@ export function ProjectStepper({ total, current, onSelect }: ProjectStepperProps
                 total,
               })}
               onClick={() => onSelect(index)}
-            />
+            >
+              <span className="portfolio__dot-mark" aria-hidden="true" />
+            </button>
           </li>
         )
       })}

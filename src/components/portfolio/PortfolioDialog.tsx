@@ -10,6 +10,43 @@ import { buildSlides } from './sections'
 /** Sélecteur des éléments qui peuvent recevoir le focus dans le panneau. */
 const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
 
+/*
+  Glyphes tracés plutôt que typographiés.
+
+  Les caractères `×`, `←` et `→` n'occupent pas le centre de leur cadratin et
+  varient d'une police système à l'autre : dans un bouton rond, ils tombent
+  toujours un peu haut et un peu à gauche, et aucun réglage de `line-height` ne
+  rattrape ça de façon portable. Un tracé SVG, lui, est centré par construction.
+*/
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+function ChevronIcon({ direction }: { direction: 'left' | 'right' }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d={direction === 'left' ? 'M14.5 5.5 8 12l6.5 6.5' : 'M9.5 5.5 16 12l-6.5 6.5'}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 interface PortfolioPanelProps {
   section: PortfolioSection
   onClose: () => void
@@ -101,8 +138,7 @@ function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
           aria-label={dict.ui.portfolio.close}
           onClick={onClose}
         >
-          {/* Le glyphe est décoratif : c'est `aria-label` qui nomme le bouton. */}
-          <span aria-hidden="true">×</span>
+          <CloseIcon />
         </button>
 
         <ProjectIllustration
@@ -169,7 +205,7 @@ function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
               aria-label={dict.ui.portfolio.previous}
               onClick={() => go(-1)}
             >
-              <span aria-hidden="true">←</span>
+              <ChevronIcon direction="left" />
             </button>
 
             <ProjectStepper total={total} current={index} onSelect={setIndex} />
@@ -180,7 +216,7 @@ function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
               aria-label={dict.ui.portfolio.next}
               onClick={() => go(1)}
             >
-              <span aria-hidden="true">→</span>
+              <ChevronIcon direction="right" />
             </button>
           </nav>
         )}
