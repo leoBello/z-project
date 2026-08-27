@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { isTouchDevice } from '../config/device'
+import { isTouchDevice, useIsTouchDevice } from '../config/device'
 import { LANDMARKS } from '../config/landmarks'
 import { useI18n } from '../i18n/useI18n'
+import { useTouchHintsVisible } from '../state/touchHints'
 import { useGameStore } from '../store/useGameStore'
 import type { LandmarkId } from '../types/game'
 
@@ -43,6 +44,12 @@ export function TeleportMenu() {
   // posé là déclencherait une téléportation au lieu d'un déplacement. L'onglet
   // vertical reste visible et le menu s'ouvre au toucher.
   const [open, setOpen] = useState(() => !isTouchDevice())
+  // Replié, l'onglet vertical ne ressemble pas à un menu : rien n'indique qu'il
+  // s'ouvre, et sur mobile il n'y a ni survol ni curseur pour le suggérer. Une
+  // bulle le dit, puis s'efface au premier contact avec l'écran, où qu'il ait
+  // lieu — pas seulement sur l'onglet.
+  const isTouch = useIsTouchDevice()
+  const showHint = useTouchHintsVisible()
 
   // À l'écran de fin, un menu de voyage rapide n'a plus de sens.
   if (phase === 'gameover') return null
@@ -58,6 +65,27 @@ export function TeleportMenu() {
       >
         {dict.ui.teleport.tab}
       </button>
+
+      {/* Jamais par-dessus une modale ouverte : ce menu passe devant tout le
+          reste du DOM (voir l'en-tête du fichier), la bulle irait donc se poser
+          au milieu d'un panneau de portfolio. */}
+      {isTouch && showHint && !open && phase === 'playing' && (
+        <p className="touch-hint touch-hint--teleport">
+          <svg
+            className="touch-hint__icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M7 5l6 7-6 7M13 5l6 7-6 7" />
+          </svg>
+          {dict.ui.teleport.hint}
+        </p>
+      )}
 
       {open && (
         <nav className="teleport-menu__panel" aria-label={dict.ui.teleport.group}>
