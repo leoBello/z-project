@@ -97,6 +97,7 @@ export function buildSlides(section: PortfolioSection, dict: Dictionary): Portfo
         id: `skills-${group}`,
         accentIndex: index,
         title: dict.ui.skillGroups[group],
+        paragraphs: [dict.ui.skillSummaries[group]],
         tags: dict.skills[group],
       }))
 

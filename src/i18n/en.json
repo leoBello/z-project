@@ -75,6 +75,14 @@
       "tools_methods": "Tools and methods",
       "soft_skills": "Soft skills"
     },
+    "skillSummaries": {
+      "frontend": "I build React and TypeScript interfaces meant to last: reusable component boundaries, deliberate state management, complex forms, and rendering kept under control performance-wise. I cover it all with unit tests using Jest and React Testing Library, testing behaviour rather than implementation, and I have also shipped Angular applications to production.",
+      "backend": "I design and expose REST APIs with Node.js and Next.js, on a PostgreSQL data model thought through up front rather than inherited by accident. I can pick up an existing back-end, Java EE included, and wire in third-party services — Supabase, Firestore, OAuth 2.0 authentication — without destabilising what already runs.",
+      "cloud_devops": "I deploy and operate my applications on Firebase and Google Cloud, with CI/CD pipelines that run the test suite before every release. I favour small, frequent releases that are easy to verify and to roll back over large, ceremonial deployments.",
+      "data_ml": "Coming from research at the Grenoble Computer Science Laboratory, I trained convolutional neural networks with PyTorch and integrated the resulting model into a Pepper robot. I kept from it the ability to read a paper, understand a model, and honestly assess what an AI component does — or does not — bring to a product.",
+      "tools_methods": "Git every day, demanding and well-argued code reviews, documentation written for whoever picks the project up after me. On an Agile team I estimate, split work into shippable increments, and raise blockers early rather than on demo day.",
+      "soft_skills": "Autonomous on unfamiliar ground: I frame the need, ask the right people the right questions, and move forward without needing to be chased. Curious and rigorous, I keep up with the ecosystem, gladly pass on what I learn, and work naturally with product, design, and back-end teams."
+    },
     "background": {
       "certifications": "Certifications",
       "issuedBy": "Issued by {issuer}"
