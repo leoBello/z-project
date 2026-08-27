@@ -26,8 +26,10 @@ import {
   sampleSlope,
   seededRandom,
 } from '../../config/world'
+import { useQualityStore } from '../../store/useQualityStore'
 import { toonGradient } from '../models/toonGradient'
 import { faceted } from './faceted'
+import { tickOcclusionFade, withOcclusionFade } from './occlusionFade'
 import { createWindMaterial, tickWind } from './windMaterial'
 
 /** Une instance posée sur la carte. */
@@ -137,17 +139,26 @@ function staticMaterial() {
  * Les matériaux sont créés une fois pour toutes, hors du rendu React : ils
  * portent les uniforms du vent, et les recréer invaliderait le programme GPU.
  * La couleur vient de `instanceColor`, d'où le blanc en couleur de base.
+ *
+ * Seules les familles **hautes** reçoivent le fondu par tramage : la caméra
+ * plonge de 35°, une touffe d'herbe ou une fleur ne se glisse jamais entre elle
+ * et le joueur. Les en doter coûterait un test par pixel sur les deux familles
+ * les plus nombreuses de la carte, pour un cas qui n'arrive pas.
  */
 const materials: Record<PropKind, Material> = {
-  trunk: staticMaterial(),
-  canopy: createWindMaterial({ color: '#ffffff', strength: 0.14, height: 0.8 }),
-  palmTrunk: staticMaterial(),
-  palmCrown: createWindMaterial({ color: '#ffffff', strength: 0.2, height: 0.7 }),
+  trunk: withOcclusionFade(staticMaterial()),
+  canopy: withOcclusionFade(
+    createWindMaterial({ color: '#ffffff', strength: 0.14, height: 0.8 }),
+  ),
+  palmTrunk: withOcclusionFade(staticMaterial()),
+  palmCrown: withOcclusionFade(
+    createWindMaterial({ color: '#ffffff', strength: 0.2, height: 0.7 }),
+  ),
   bush: createWindMaterial({ color: '#ffffff', strength: 0.06, height: 0.6 }),
   rock: staticMaterial(),
   grass: createWindMaterial({ color: '#ffffff', strength: 0.12, height: 0.85 }),
   flower: createWindMaterial({ color: '#ffffff', strength: 0.09, height: 0.3 }),
-  deadTrunk: staticMaterial(),
+  deadTrunk: withOcclusionFade(staticMaterial()),
 }
 
 /** Teintes des fleurs de prairie. */
@@ -163,7 +174,7 @@ type Buckets = Record<PropKind, ScatterItem[]>
  * décide de ce qui pousse. Le générateur est initialisé par une graine fixe —
  * sans ça la carte se redessinerait à chaque rechargement.
  */
-function generateScatter(): Buckets {
+function generateScatter(density: number): Buckets {
   const buckets: Buckets = {
     trunk: [],
     canopy: [],
@@ -180,7 +191,12 @@ function generateScatter(): Buckets {
   const pick = (list: string[]) => list[Math.floor(random() * list.length)]
   const margin = WORLD.half - 3
 
-  for (let i = 0; i < SAMPLE_COUNT; i++) {
+  // La densité rogne le **nombre de tirages**, pas le résultat d'un tirage
+  // complet : la graine étant fixe, les points conservés en qualité réduite
+  // sont exactement les premiers de ceux de la qualité haute. Un massif ne se
+  // redessine donc pas ailleurs quand on change de réglage, il s'éclaircit.
+  const samples = Math.round(SAMPLE_COUNT * density)
+  for (let i = 0; i < samples; i++) {
     const x = (random() * 2 - 1) * margin
     const z = (random() * 2 - 1) * margin
     const roll = random()
@@ -391,9 +407,16 @@ function ScatterMesh({ kind, items, castShadow = false }: ScatterMeshProps) {
   )
 }
 
-/** Avance l'horloge du vent, partagée par tous les matériaux instanciés. */
+/**
+ * Avance les uniforms partagés par tous les matériaux instanciés : l'horloge du
+ * vent et le cône d'effacement œil / joueur. Un seul `useFrame` pour toute la
+ * végétation, quel que soit le nombre de familles rendues.
+ */
 function WindClock() {
-  useFrame((state) => tickWind(state.clock.elapsedTime))
+  useFrame((state) => {
+    tickWind(state.clock.elapsedTime)
+    tickOcclusionFade()
+  })
   return null
 }
 
@@ -443,7 +466,11 @@ function Obstacles({ buckets }: { buckets: Buckets }) {
 }
 
 export function Vegetation() {
-  const buckets = useMemo(generateScatter, [])
+  const density = useQualityStore((state) => state.settings.vegetationDensity)
+  // Le semis est refait quand la densité change — c'est le seul moment où il
+  // l'est. Un changement de réglage coûte donc une seconde de génération, ce
+  // qui est le prix normal d'un changement de qualité graphique.
+  const buckets = useMemo(() => generateScatter(density), [density])
 
   if (import.meta.env.DEV) {
     // Compteur d'instances : le poste de coût dominant du décor, et le premier

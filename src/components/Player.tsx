@@ -9,6 +9,7 @@ import {
   type RapierRigidBody,
 } from '@react-three/rapier'
 import { Group, Vector3 } from 'three'
+import { playFootstep, playJump, playSwing } from '../audio/sfx'
 import type { Control } from '../config/controls'
 import { isTouchDevice } from '../config/device'
 import { ATTACK, PLAYER } from '../config/gameplay'
@@ -55,6 +56,14 @@ const PLAYER_USER_DATA = { type: 'player' }
 const FEET_OFFSET = -(PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius)
 /** Longueur du rayon "suis-je au sol ?" : pieds + une petite marge. */
 const GROUND_RAY_LENGTH = PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius + 0.2
+/**
+ * Distance entre deux pas, en unités monde.
+ *
+ * Calée sur le cycle de marche du modèle : à la vitesse de course (7 u/s), 1,45
+ * donne un peu moins de cinq pas par seconde, soit la cadence de l'animation.
+ * Une valeur en secondes se décalerait dès que le joueur ralentit dans l'eau.
+ */
+const STRIDE_LENGTH = 1.45
 
 /**
  * Aligne le personnage sur l'ennemi le plus proche au moment de frapper.
@@ -109,6 +118,8 @@ export function Player() {
    * entre deux sondages et serait perdu. On s'abonne donc aux transitions de
    * touche, on lève un drapeau, et la frame suivante le consomme.
    */
+  /** Distance parcourue depuis le dernier pas entendu, en unités monde. */
+  const strideRef = useRef(0)
   const jumpRequested = useRef(false)
   const attackRequested = useRef(false)
 
@@ -250,7 +261,10 @@ export function Player() {
       // bouton tactile) sont vidées ensemble.
       jumpRequested.current = false
       touchInput.jumpRequested = false
-      if (grounded) velocityY = PLAYER.jumpSpeed
+      if (grounded) {
+        velocityY = PLAYER.jumpSpeed
+        playJump()
+      }
     }
 
     rb.setLinvel(
@@ -273,6 +287,7 @@ export function Player() {
       if (attackElapsed >= ATTACK.durationMs) {
         playerTransform.attackStartedAt = gameNow()
         aimAtNearestEnemy(position.x, position.z)
+        playSwing()
       }
     }
 
@@ -303,6 +318,23 @@ export function Player() {
     playerTransform.position.set(position.x, position.y, position.z)
     playerTransform.grounded = grounded
     playerTransform.speed = Math.hypot(linvel.x, linvel.z)
+
+    // --- 7. Pas ---------------------------------------------------------------
+    // Déclenchés à la **distance parcourue**, pas à intervalle de temps : c'est
+    // ce qui les garde synchronisés avec le cycle de marche, qui est lui aussi
+    // piloté par la vitesse réelle. Un pas toutes les N secondes se décalerait
+    // dès que le joueur ralentit dans l'eau ou monte une pente.
+    if (grounded && playerTransform.speed > 0.5) {
+      strideRef.current += playerTransform.speed * delta
+      if (strideRef.current >= STRIDE_LENGTH) {
+        strideRef.current = 0
+        playFootstep()
+      }
+    } else {
+      // Remise à zéro en l'air : à l'atterrissage, le premier pas doit tomber
+      // sur une foulée complète, pas sur le reliquat d'avant le saut.
+      strideRef.current = 0
+    }
 
     // Filet de sécurité si le joueur passe sous la map.
     if (position.y < WORLD.maxDepth - 20) {

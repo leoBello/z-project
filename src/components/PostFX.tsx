@@ -1,4 +1,5 @@
 import { Bloom, EffectComposer, TiltShift2, Vignette } from '@react-three/postprocessing'
+import { useQualityStore } from '../store/useQualityStore'
 
 /**
  * Chaîne de post-traitement.
@@ -14,6 +15,13 @@ import { Bloom, EffectComposer, TiltShift2, Vignette } from '@react-three/postpr
  * elles feraient s'effondrer le framerate pour un gain marginal à ce style.
  */
 export function PostFX() {
+  const enabled = useQualityStore((state) => state.settings.postProcessing)
+
+  // En qualité réduite, on ne rend pas un composer vide : on ne monte pas le
+  // composer du tout. Trois passes plein écran plus le multisampling, c'est le
+  // deuxième poste de coût après la végétation, et le plus simple à débrancher.
+  if (!enabled) return null
+
   return (
     <EffectComposer enableNormalPass={false} multisampling={4}>
       {/* Seuil haut : seuls le ciel et les surfaces éclairées "débordent",

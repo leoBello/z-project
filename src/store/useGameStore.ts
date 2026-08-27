@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { playDamage, playPickup, playReward } from '../audio/sfx'
 import { now as gameNow, resetClock } from '../state/gameClock'
 import { resetCombat } from '../state/playerTransform'
 import type { GamePhase, LandmarkId } from '../types/game'
@@ -37,6 +38,14 @@ export interface GameState {
    */
   discovered: LandmarkId[]
   /**
+   * Monuments dont le réceptacle de cœur a été pris.
+   *
+   * Stocké par identifiant de lieu, et pas en simple compteur : le réceptacle
+   * doit rester pris quand on revient sur place, et un compteur ne saurait pas
+   * *lequel* a déjà été ramassé.
+   */
+  heartContainers: LandmarkId[]
+  /**
    * Lieu dont le panneau est ouvert. Non nul implique `phase === 'paused'`.
    */
   activeLandmark: LandmarkId | null
@@ -70,6 +79,12 @@ export interface GameState {
   /** Rend des cœurs au joueur. Ignoré si la barre est déjà pleine. */
   healPlayer: (amount?: number) => boolean
   registerKill: () => void
+  /**
+   * Ramasse le réceptacle d'un monument : un cœur maximal de plus, et la vie
+   * refaite au passage. Retourne faux s'il était déjà pris, pour que
+   * l'appelant sache s'il doit faire disparaître l'objet.
+   */
+  claimHeartContainer: (id: LandmarkId) => boolean
   /** Marque un lieu comme trouvé. Sans effet s'il l'était déjà. */
   discoverLandmark: (id: LandmarkId) => void
   /** Ouvre le panneau d'un lieu et met la partie en pause. */
@@ -104,6 +119,7 @@ const initialState = {
   lastHitAt: -Infinity,
   kills: 0,
   discovered: [] as LandmarkId[],
+  heartContainers: [] as LandmarkId[],
   activeLandmark: null as LandmarkId | null,
   nearbyLandmark: null as LandmarkId | null,
   teleporting: null as LandmarkId | null,
@@ -118,6 +134,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (phase !== 'playing' || isInvulnerable()) return
 
     const next = Math.max(0, hearts - amount)
+    playDamage()
     set({
       hearts: next,
       lastHitAt: gameNow(),
@@ -132,11 +149,30 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Le booléen de retour évite au ramassage de refaire le test de son côté :
     // c'est le store qui sait si le soin a servi, donc si le cœur est consommé.
     if (phase !== 'playing' || hearts >= maxHearts) return false
+    playPickup()
     set({ hearts: Math.min(maxHearts, hearts + amount) })
     return true
   },
 
   registerKill: () => set((state) => ({ kills: state.kills + 1 })),
+
+  /**
+   * Le soin est total et non d'un cœur : le réceptacle est au sommet d'une
+   * montagne, on y arrive entamé, et rendre un seul cœur ferait de la
+   * récompense une punition déguisée pour qui y est monté en difficulté.
+   */
+  claimHeartContainer: (id) => {
+    const { phase, heartContainers, maxHearts } = get()
+    if (phase !== 'playing' || heartContainers.includes(id)) return false
+    const next = maxHearts + 1
+    playReward()
+    set({
+      heartContainers: [...heartContainers, id],
+      maxHearts: next,
+      hearts: next,
+    })
+    return true
+  },
 
   discoverLandmark: (id) =>
     set((state) =>
@@ -198,9 +234,10 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   finishTeleport: () => set({ teleporting: null }),
 
-  // `discovered` est réécrit explicitement : `initialState` est un objet unique
-  // partagé par toutes les parties, et en réutiliser le tableau ferait qu'une
-  // mutation en place fuiterait d'une partie à l'autre.
+  // `discovered` et `heartContainers` sont réécrits explicitement :
+  // `initialState` est un objet unique partagé par toutes les parties, et en
+  // réutiliser leurs tableaux ferait qu'une mutation en place fuiterait d'une
+  // partie à l'autre.
   reset: () => {
     // Sans cette remise à zéro, une seconde partie démarrerait avec une horloge
     // à plusieurs minutes : les sentinelles `-Infinity` encaissent, mais un cœur
@@ -210,7 +247,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     // survivent au remontage du joueur : sans ça, `attackStartedAt` reste dans
     // le futur de l'horloge fraîchement remise à zéro et l'attaque se bloque.
     resetCombat()
-    set((state) => ({ ...initialState, discovered: [], runId: state.runId + 1 }))
+    set((state) => ({
+      ...initialState,
+      discovered: [],
+      heartContainers: [],
+      runId: state.runId + 1,
+    }))
   },
 }))
 

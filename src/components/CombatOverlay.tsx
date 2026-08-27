@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { ENEMIES } from '../config/enemies'
+import { sampleHeight } from '../config/world'
 import { cameraView, makeScreenPoint, projectToScreen } from '../state/cameraView'
 import { enemyRegistry } from '../state/enemyRegistry'
 import { now as gameNow } from '../state/gameClock'
@@ -16,6 +17,16 @@ const HEALTH_BAR_FADE_MS = 450
 /** Air laissé entre le sommet du collider et la barre, en unités monde. */
 const HEALTH_BAR_CLEARANCE = 0.4
 
+/** Nombre de sondages de relief entre la caméra et un ennemi. */
+const OCCLUSION_STEPS = 12
+/**
+ * Marge sous laquelle un relief ne compte pas comme occultant.
+ *
+ * Le segment part du sommet de la tête de l'ennemi ; sans marge, la pente sur
+ * laquelle il se tient lui-même déclencherait le test dès le premier pas.
+ */
+const OCCLUSION_TOLERANCE = 0.35
+
 /** Distance à laquelle un tir hors cadre est signalé. Au-delà, il ne menace pas encore. */
 const THREAT_MAX_DISTANCE = 34
 /** Rayon, en unités monde, du cercle au sol où se pose le chevron d'alerte. */
@@ -25,6 +36,37 @@ const PLAYER_FEET_DROP = 0.8
 
 const point = makeScreenPoint()
 const anchor = makeScreenPoint()
+
+/**
+ * Le relief coupe-t-il la vue entre la caméra et ce point ?
+ *
+ * Une barre de vie dessinée en 2D par-dessus la scène ignore le tampon de
+ * profondeur : un ennemi derrière une colline affichait quand même sa vie, et
+ * l'information devenait un mensonge sur sa position. Le filtre « engagé ou
+ * blessé récemment, à moins de 45 unités » limitait les cas sans les supprimer.
+ *
+ * On sonde `sampleHeight` — **le même échantillonneur que le mesh, le collider
+ * et la minimap**, donc aucune seconde source de vérité — en une douzaine de
+ * points le long du segment. Un raycast Rapier serait plus complet (il verrait
+ * aussi les troncs) mais coûterait une requête physique par ennemi et par
+ * frame, et surtout : ce calque vit hors de R3F et n'a pas le monde physique
+ * sous la main. Le relief est de toute façon l'occultant qui gêne — un tronc
+ * est trop fin pour cacher une barre plus d'une fraction de seconde.
+ *
+ * Le coût est marginal : le test n'est atteint que par les ennemis qui ont déjà
+ * passé les filtres d'engagement et de distance, rarement plus de deux ou trois.
+ */
+function terrainHides(x: number, y: number, z: number) {
+  const eye = cameraView.position
+  for (let i = 1; i < OCCLUSION_STEPS; i++) {
+    const t = i / OCCLUSION_STEPS
+    const sx = eye.x + (x - eye.x) * t
+    const sy = eye.y + (y - eye.y) * t
+    const sz = eye.z + (z - eye.z) * t
+    if (sampleHeight(sx, sz) > sy + OCCLUSION_TOLERANCE) return true
+  }
+  return false
+}
 
 /**
  * Calque de combat, dessiné en canvas 2D **par-dessus** le Canvas 3D.
@@ -96,6 +138,7 @@ export function CombatOverlay() {
         const lift = stats.halfHeight + stats.radius + HEALTH_BAR_CLEARANCE
         projectToScreen(enemy.x, enemy.y + lift, enemy.z, width, height, point)
         if (!point.onScreen) continue
+        if (terrainHides(enemy.x, enemy.y + lift, enemy.z)) continue
 
         const distance = Math.hypot(
           enemy.x - cameraView.position.x,

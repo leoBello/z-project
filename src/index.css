@@ -191,6 +191,21 @@ canvas {
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
+/*
+  Variante récompense : rouge cœur au lieu de l'or des lieux, et descendue sous
+  le bandeau de découverte. Les deux se déclenchent à quelques secondes
+  d'intervalle au temple — superposés, ils seraient illisibles.
+*/
+.discovery--reward {
+  top: 32%;
+  border-top-color: rgba(232, 68, 60, 0.6);
+  border-bottom-color: rgba(232, 68, 60, 0.6);
+}
+
+.discovery--reward .discovery__name {
+  color: #ff8d84;
+}
+
 /* Apparition, palier de lecture, puis effacement — le tout en une passe pour
    n'avoir aucun état à piloter depuis React. */
 @keyframes discovery-card {
@@ -749,10 +764,22 @@ canvas {
 
 /* --- Sélecteur de langue -------------------------------------------------- */
 
-.language {
+/*
+  Rangée de réglages en haut à droite : langue et qualité graphique. Les deux
+  pastilles partagent le même conteneur pour qu'aucune n'ait à connaître la
+  largeur de l'autre — c'est le flex qui les range, pas des décalages en dur.
+*/
+.settings {
   position: fixed;
   top: 16px;
   right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.language {
   display: flex;
   gap: 2px;
   padding: 3px;
@@ -760,9 +787,37 @@ canvas {
   background: var(--hud-bg);
   backdrop-filter: blur(6px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
-  /* Seul élément cliquable du HUD hors Game Over : il réactive les clics que
-     `.hud` neutralise, sinon le Canvas les recevrait à sa place. */
+  /* Les pastilles de réglage réactivent les clics que `.hud` et `.settings`
+     neutralisent, sinon le Canvas les recevrait à leur place. */
   pointer-events: auto;
+}
+
+/* Même pastille que la langue, mais un seul bouton : la qualité est une
+   bascule à deux états, pas un choix parmi une liste. */
+.quality {
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 7px 12px;
+  border: none;
+  border-radius: 999px;
+  background: var(--hud-bg);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  color: var(--hud-fg);
+  opacity: 0.75;
+  transition: opacity 140ms ease;
+  pointer-events: auto;
+}
+
+.quality:hover {
+  opacity: 1;
+}
+
+.quality:focus-visible {
+  outline: 2px solid #f6f2e4;
+  outline-offset: 2px;
 }
 
 .language__button {

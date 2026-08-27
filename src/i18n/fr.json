@@ -23,6 +23,19 @@
     "discovery": {
       "kicker": "Lieu découvert"
     },
+    "heartContainer": {
+      "kicker": "Réceptacle de cœur",
+      "name": "Cœur maximal +1"
+    },
+    "quality": {
+      "label": "Qualité graphique",
+      "high": "Qualité élevée",
+      "low": "Qualité réduite"
+    },
+    "sound": {
+      "on": "Couper le son",
+      "off": "Activer le son"
+    },
     "minimap": {
       "north": "N"
     },
