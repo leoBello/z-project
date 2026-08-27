@@ -781,3 +781,57 @@ canvas {
 @media (prefers-reduced-motion: reduce) {
   .teleport-menu__item { transition: none; }
 }
+
+/* --- Contrôles tactiles (mobile uniquement) ------------------------------- */
+
+/*
+  Le conteneur n'existe dans le DOM que lorsque `useIsTouchDevice()` est vrai
+  (cf. TouchControls.tsx). Comme `.hud`, il ne capte pas les pointeurs — chaque
+  contrôle réactive `pointer-events` localement.
+*/
+.touch-controls {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+/* Zone de saisie du joystick : moitié gauche, bas de l'écran. Le stick naît
+   sous le pouce, n'importe où dans cette zone. */
+.touch-joystick__zone {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 50%;
+  height: 42%;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+/* Base + tête : purement visuels, positionnés en coordonnées écran (le parent
+   `.touch-controls` est `inset: 0`, donc `left`/`top` = viewport). */
+.touch-joystick__base {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  margin: -60px 0 0 -60px;
+  border-radius: 999px;
+  background: rgba(18, 26, 20, 0.28);
+  border: 1px solid rgba(246, 242, 228, 0.28);
+  backdrop-filter: blur(2px);
+  pointer-events: none;
+}
+
+.touch-joystick__thumb {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
+  border-radius: 999px;
+  background: rgba(246, 242, 228, 0.38);
+  border: 1px solid rgba(246, 242, 228, 0.5);
+}

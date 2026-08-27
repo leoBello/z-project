@@ -19,6 +19,7 @@ import { SwordArc } from './components/SwordArc'
 import { BootScreen } from './components/BootScreen'
 import { TeleportMenu } from './components/TeleportMenu'
 import { TeleportOverlay } from './components/TeleportOverlay'
+import { TouchControls } from './components/TouchControls'
 import { controlMap } from './config/controls'
 import { CAMERA, PLAYER } from './config/gameplay'
 import { useGameStore } from './store/useGameStore'
@@ -93,6 +94,9 @@ export default function App() {
       <CombatOverlay />
       <Minimap />
       <HUD />
+      {/* Avant <PortfolioDialog /> : le panneau plein écran doit recouvrir les
+          contrôles tactiles quand il s'ouvre. */}
+      <TouchControls />
       <LanguageToggle />
       {/* Le panneau passe devant tout le HUD, invite d'interaction comprise. */}
       <PortfolioDialog />
