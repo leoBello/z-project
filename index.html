@@ -1,7 +1,13 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" class="no-js">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Sans JavaScript, l'écran de chargement est masqué et le contenu de repli
+      // (lu par les robots) s'affiche directement. Ce basculement doit précéder
+      // tout rendu, d'où le script inline en tête de <head>.
+      document.documentElement.classList.replace('no-js', 'js')
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Léo Bello — Portfolio · Développeur Full-Stack React &amp; TypeScript</title>
@@ -52,12 +58,14 @@
     <meta name="twitter:image" content="https://leobello.dev/og-image.png" />
     <meta name="twitter:image:alt" content="Léo Bello — Développeur Full-Stack. Portfolio sous forme de mini-jeu 3D." />
 
-    <!--
-      Contenu de repli lu par les robots qui n'exécutent pas de JavaScript.
-      React 19 vide `#root` à son premier rendu : ce bloc disparaît dès que le
-      jeu démarre. Injecté au build par `plugins/seo.ts` depuis `src/i18n/fr.json`.
-    -->
     <style>
+      /*
+        Contenu de repli lu par les robots qui n'exécutent pas de JavaScript.
+        React 19 vide `#root` à son premier rendu : ce bloc disparaît dès que le
+        jeu démarre. Avec JS, l'écran de chargement `#boot` le recouvre jusque-là,
+        donc un humain ne le voit jamais. Injecté au build par `plugins/seo.ts`
+        depuis `src/i18n/fr.json`.
+      */
       #seo-fallback {
         position: fixed;
         inset: 0;
@@ -89,10 +97,175 @@
       #seo-fallback a {
         color: #7fb8e6;
       }
+
+      /* --- Écran de chargement (façon RPG) --------------------------------- */
+
+      /* Sans JS : pas d'écran de chargement, le contenu de repli suffit. */
+      .no-js #boot {
+        display: none;
+      }
+
+      #boot {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483647;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(125% 85% at 50% 16%, #3a4372 0%, #262d52 45%, #161a2e 100%);
+        color: #f5dc95;
+        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+        /*
+          Filet de sécurité : si le JS se charge mais échoue avant de retirer
+          `#boot`, l'écran s'efface seul au bout de 12 s et découvre le contenu
+          en dessous, plutôt que de piéger le visiteur devant un chargement figé.
+        */
+        animation: boot-failsafe 0s linear 12s forwards;
+      }
+
+      @keyframes boot-failsafe {
+        to {
+          opacity: 0;
+          visibility: hidden;
+          pointer-events: none;
+        }
+      }
+
+      /* Retiré par `BootScreen` une fois la scène prête. */
+      #boot.boot--done {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 480ms ease, visibility 0s linear 480ms;
+      }
+
+      .boot__inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 22px;
+        padding: 24px;
+        text-align: center;
+      }
+
+      .boot__triforce {
+        --edge: 26px;
+        position: relative;
+        width: calc(var(--edge) * 4);
+        height: calc(var(--edge) * 3.46);
+        filter: drop-shadow(0 0 12px rgba(245, 220, 149, 0.55));
+        animation: boot-float 2600ms ease-in-out infinite;
+      }
+      .boot__triforce span {
+        position: absolute;
+        width: calc(var(--edge) * 2);
+        height: calc(var(--edge) * 1.73);
+        background: linear-gradient(155deg, #ffe9a8, #e5bb5f);
+        clip-path: polygon(50% 0, 100% 100%, 0 100%);
+      }
+      .boot__triforce span:nth-child(1) {
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      .boot__triforce span:nth-child(2) {
+        bottom: 0;
+        left: 0;
+      }
+      .boot__triforce span:nth-child(3) {
+        bottom: 0;
+        right: 0;
+      }
+
+      @keyframes boot-float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-9px); }
+      }
+
+      .boot__title {
+        margin: 0;
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: clamp(20px, 5vw, 30px);
+        letter-spacing: 0.34em;
+        text-indent: 0.34em;
+        text-transform: uppercase;
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+      }
+
+      .boot__bar {
+        position: relative;
+        width: min(240px, 62vw);
+        height: 8px;
+        overflow: hidden;
+        background: rgba(12, 16, 30, 0.72);
+        border: 1px solid rgba(245, 220, 149, 0.32);
+      }
+      /* Petits angles dorés, façon boîte de dialogue 8-bit. */
+      .boot__bar::before,
+      .boot__bar::after {
+        content: '';
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: #f5dc95;
+      }
+      .boot__bar::before { top: -3px; left: -3px; }
+      .boot__bar::after { bottom: -3px; right: -3px; }
+      .boot__fill {
+        width: 42%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, #ffe9a8 45%, #ffe9a8 55%, transparent);
+        animation: boot-slide 1200ms ease-in-out infinite;
+      }
+
+      @keyframes boot-slide {
+        0% { transform: translateX(-120%); }
+        100% { transform: translateX(280%); }
+      }
+
+      .boot__hint {
+        margin: 0;
+        font-size: 12px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: #cdd6f4;
+        opacity: 0.82;
+      }
+      .boot__hint i {
+        font-style: normal;
+        animation: boot-blink 1400ms steps(1, end) infinite;
+      }
+      .boot__hint i:nth-of-type(2) { animation-delay: 200ms; }
+      .boot__hint i:nth-of-type(3) { animation-delay: 400ms; }
+
+      @keyframes boot-blink {
+        0%, 60% { opacity: 1; }
+        61%, 100% { opacity: 0.15; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .boot__triforce,
+        .boot__fill,
+        .boot__hint i {
+          animation: none;
+        }
+        .boot__fill {
+          width: 100%;
+          transform: none;
+          background: #ffe9a8;
+        }
+      }
     </style>
   </head>
   <body>
     <div id="root"></div>
+    <div id="boot" role="status" aria-live="polite" aria-label="Chargement du portfolio">
+      <div class="boot__inner">
+        <div class="boot__triforce" aria-hidden="true"><span></span><span></span><span></span></div>
+        <p class="boot__title">Léo Bello</p>
+        <div class="boot__bar" aria-hidden="true"><div class="boot__fill"></div></div>
+        <p class="boot__hint">Chargement du monde<i>.</i><i>.</i><i>.</i></p>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

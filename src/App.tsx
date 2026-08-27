@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { KeyboardControls, Loader } from '@react-three/drei'
+import { KeyboardControls } from '@react-three/drei'
 import { Physics } from '@react-three/rapier'
 import { CameraRig } from './components/CameraRig'
 import { CombatOverlay } from './components/CombatOverlay'
@@ -16,6 +16,7 @@ import { Projectiles } from './components/Projectiles'
 import { PostFX } from './components/PostFX'
 import { PortfolioDialog } from './components/portfolio/PortfolioDialog'
 import { SwordArc } from './components/SwordArc'
+import { BootScreen } from './components/BootScreen'
 import { TeleportMenu } from './components/TeleportMenu'
 import { TeleportOverlay } from './components/TeleportOverlay'
 import { controlMap } from './config/controls'
@@ -97,7 +98,7 @@ export default function App() {
       <PortfolioDialog />
       <TeleportMenu />
       <TeleportOverlay />
-      <Loader />
+      <BootScreen />
     </KeyboardControls>
   )
 }
