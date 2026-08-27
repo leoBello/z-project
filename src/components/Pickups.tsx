@@ -1,12 +1,10 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import {
-  ExtrudeGeometry,
   type InstancedMesh,
   Matrix4,
   MeshToonMaterial,
   Quaternion,
-  Shape,
   Vector3,
 } from 'three'
 import { sampleHeight } from '../config/world'
@@ -22,6 +20,7 @@ import {
   pickups,
 } from '../state/pickups'
 import { useGameStore } from '../store/useGameStore'
+import { heartGeometry } from './models/heartGeometry'
 import { toonGradient } from './models/toonGradient'
 
 const HIDDEN = new Matrix4().makeScale(0, 0, 0)
@@ -35,38 +34,6 @@ const UP = new Vector3(0, 1, 0)
 const HEART_SIZE = 0.26
 
 /**
- * Cœur en volume, tracé à la main puis extrudé.
- *
- * Pas de `.glb` : la silhouette d'un cœur tient en six courbes de Bézier, et le
- * générer ici garde la promesse du projet — aucun octet à télécharger, et la
- * couleur reste celle du HUD sans avoir à retoucher un fichier.
- */
-function heartGeometry() {
-  const shape = new Shape()
-  shape.moveTo(0, -1)
-  shape.bezierCurveTo(0.55, -0.45, 1.1, -0.05, 1.1, 0.4)
-  shape.bezierCurveTo(1.1, 0.85, 0.75, 1.05, 0.45, 1.05)
-  shape.bezierCurveTo(0.2, 1.05, 0.05, 0.9, 0, 0.72)
-  shape.bezierCurveTo(-0.05, 0.9, -0.2, 1.05, -0.45, 1.05)
-  shape.bezierCurveTo(-0.75, 1.05, -1.1, 0.85, -1.1, 0.4)
-  shape.bezierCurveTo(-1.1, -0.05, -0.55, -0.45, 0, -1)
-
-  const geometry = new ExtrudeGeometry(shape, {
-    depth: 0.55,
-    bevelEnabled: true,
-    bevelSize: 0.16,
-    bevelThickness: 0.12,
-    bevelSegments: 2,
-    curveSegments: 8,
-  })
-  // Centrée puis mise à l'échelle : la forme est dessinée dans un repère
-  // arbitraire, l'instance doit tourner autour de son propre centre.
-  geometry.center()
-  geometry.scale(HEART_SIZE, HEART_SIZE, HEART_SIZE)
-  return geometry
-}
-
-/**
  * Cœurs au sol.
  *
  * Un seul `InstancedMesh` pour tout le pool, comme les projectiles : le nombre
@@ -75,7 +42,7 @@ function heartGeometry() {
  */
 export function Pickups() {
   const mesh = useRef<InstancedMesh>(null)
-  const geometry = useMemo(heartGeometry, [])
+  const geometry = useMemo(() => heartGeometry(HEART_SIZE), [])
   const material = useMemo(
     () => new MeshToonMaterial({ color: '#e8443c', gradientMap: toonGradient }),
     [],

@@ -41,6 +41,33 @@ const SKY = {
  * choisi sur le ruban (produit scalaire nul avec l'axe) et à quelques degrés
  * au-dessus de l'horizon, donc dans le cadre.
  */
+/**
+ * Direction de la lune, et sa taille angulaire.
+ *
+ * Le placement n'est pas libre : la caméra plonge de 17° pour un demi-FOV
+ * vertical de 24°, donc **le ciel n'occupe que les 7 degrés au-dessus de
+ * l'horizon**. Une lune posée à 20° d'élévation, aussi belle soit-elle, ne
+ * serait jamais dans le cadre. Elle est donc à 4,5° — assez haut pour se
+ * détacher de la brume d'horizon, assez bas pour rester visible.
+ *
+ * En azimut, elle est décalée de 22° vers l'est pour ne pas se superposer au
+ * bulbe galactique (`CORE_DIRECTION`), qui est presque dans l'axe de visée.
+ * Les deux points lumineux du ciel doivent se partager le cadre, pas se
+ * recouvrir.
+ *
+ * C'est la deuxième tentative de corps céleste : la première, une planète
+ * annelée, a été retirée parce que l'anneau ne se raccordait pas au globe —
+ * seule sa moitié arrière était dessinée. Une lune n'a pas ce problème de
+ * profondeur à résoudre, et c'est précisément pourquoi elle a été choisie.
+ */
+const MOON_DIRECTION = new Vector3(
+  Math.sin(0.384) * Math.cos(0.0785),
+  Math.sin(0.0785),
+  -Math.cos(0.384) * Math.cos(0.0785),
+).normalize()
+/** Rayon angulaire, en radians : ~3,2° de diamètre apparent. */
+const MOON_RADIUS = 0.028
+
 const BAND_AXIS = new Vector3(0.84, -0.52, -0.15).normalize()
 const CORE_DIRECTION = new Vector3(-0.118, 0.094, -0.988).normalize()
 
@@ -72,6 +99,8 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uNebulaBlue;
   uniform vec3 uBandAxis;
   uniform vec3 uCoreDir;
+  uniform vec3 uMoonDir;
+  uniform float uMoonRadius;
 
   // --- Bruit -----------------------------------------------------------------
 
@@ -213,6 +242,41 @@ const fragmentShader = /* glsl */ `
     stars *= smoothstep(-0.05, 0.26, height);
     sky += stars;
 
+    // --- Lune ----------------------------------------------------------------
+    // Le disque est composé en mix et non en somme : une lune additive
+    // laisserait les étoiles transparaître au travers, ce qui la ferait lire
+    // comme un halo plutôt que comme un corps solide.
+    float moonAngle = acos(clamp(dot(dir, uMoonDir), -1.0, 1.0));
+
+    // Repère orthonormé porté par la lune : donne les coordonnées locales du
+    // fragment sur le disque, donc de quoi y dessiner un motif fixe. Sans lui,
+    // les mers dériveraient avec l'orientation du regard.
+    vec3 moonRight = normalize(cross(uMoonDir, vec3(0.0, 1.0, 0.0)));
+    vec3 moonUp = cross(moonRight, uMoonDir);
+    vec2 moonLocal = vec2(dot(dir, moonRight), dot(dir, moonUp)) / uMoonRadius;
+
+    // Mers : deux octaves suffisent, la lune fait trois degrés à l'écran et un
+    // détail plus fin y serait sous le pixel.
+    float maria = fbm3(vec3(moonLocal * 1.35, 4.7));
+    vec3 moonColor = mix(vec3(0.96, 0.95, 0.92), vec3(0.74, 0.75, 0.80),
+                         smoothstep(0.42, 0.72, maria));
+
+    // Assombrissement du limbe : un disque uniforme se lit comme un trou dans
+    // le ciel, cette courbure lui redonne du volume.
+    float limb = sqrt(max(0.0, 1.0 - dot(moonLocal, moonLocal)));
+    moonColor *= 0.72 + 0.28 * smoothstep(0.0, 0.7, limb);
+
+    float disc = 1.0 - smoothstep(uMoonRadius * 0.94, uMoonRadius, moonAngle);
+    // Halo : c'est lui qui accroche le bloom du post-traitement et donne à la
+    // lune sa place de source lumineuse dans l'image.
+    float halo = exp(-(moonAngle * moonAngle) / (2.0 * pow(uMoonRadius * 1.9, 2.0)));
+
+    // Même extinction que les étoiles : la lune ne doit pas rester nette dans
+    // la brume d'horizon quand tout le reste du ciel s'y estompe.
+    float moonFade = smoothstep(-0.02, 0.10, height);
+    sky += vec3(0.72, 0.78, 0.95) * halo * 0.30 * moonFade;
+    sky = mix(sky, moonColor, disc * moonFade);
+
     gl_FragColor = vec4(sky, 1.0);
     #include <colorspace_fragment>
   }
@@ -251,6 +315,8 @@ export function StarrySky() {
       // colorimétrique de three et n'accepte pas de composante négative.
       uBandAxis: { value: BAND_AXIS.clone() },
       uCoreDir: { value: CORE_DIRECTION.clone() },
+      uMoonDir: { value: MOON_DIRECTION.clone() },
+      uMoonRadius: { value: MOON_RADIUS },
     }
 
     return new ShaderMaterial({

@@ -14,9 +14,11 @@ import {
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { TEMPLE } from '../../config/landmarks'
 import { now as gameNow } from '../../state/gameClock'
+import { useQualityStore } from '../../store/useQualityStore'
 import { toonGradient } from '../models/toonGradient'
 import { faceted } from './faceted'
 import { box, cyl } from './solids'
+import { HeartContainer } from './HeartContainer'
 import { InteractionMarker } from './InteractionMarker'
 
 /**
@@ -245,6 +247,7 @@ const geometry = buildTemple()
 function Crystal({ y }: { y: number }) {
   const mesh = useRef<Mesh>(null)
   const glow = useRef<Group>(null)
+  const pointLights = useQualityStore((state) => state.settings.pointLights)
 
   useFrame(() => {
     // Horloge de jeu et non celle de r3f : cette dernière continue de courir
@@ -275,9 +278,11 @@ function Crystal({ y }: { y: number }) {
         candidat à sauter si le framerate décroche sur GPU intégré — la retirer
         ne change rien à la lisibilité du lieu.
       */}
-      <group ref={glow} position={[0, y, 0]}>
-        <pointLight color="#ffc46b" intensity={26} distance={17} decay={2} />
-      </group>
+      {pointLights && (
+        <group ref={glow} position={[0, y, 0]}>
+          <pointLight color="#ffc46b" intensity={26} distance={17} decay={2} />
+        </group>
+      )}
     </>
   )
 }
@@ -385,6 +390,15 @@ export function Temple() {
         />
       </mesh>
       <Crystal y={FLOOR_Y + 2.55} />
+
+      {/*
+        Réceptacle de cœur, posé sur l'assise de l'autel, sous le cristal.
+        C'est la récompense de la montée : jusqu'ici le sommet ne donnait qu'un
+        bandeau. Il est *sous* le cristal et non à sa place — le cristal est la
+        balise du lieu, visible depuis la plaine, le déplacer casserait la
+        silhouette du temple.
+      */}
+      <HeartContainer landmarkId={TEMPLE.id} position={[0, FLOOR_Y + 1.75, 0]} />
 
       {/*
         Le marqueur d'interaction, sur le parvis, dans l'axe de l'escalier. Sa

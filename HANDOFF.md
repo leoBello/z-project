@@ -33,8 +33,10 @@ guéable et île atteignable à pied ; personnage articulé animé à la main ;
 combat complet et lisible (deux espèces d'ennemis, IA à états avec temps de
 préparation avant chaque attaque, épée avec traînée qui dit si le coup a porté,
 projectiles dispersés, barres de vie, chevrons d'alerte pour les tirs hors
-cadre, cœurs lâchés, cinq cœurs, Game Over, relance) ; minimap ; ciel étoilé
-procédural ; rendu diorama cel-shadé avec bloom, tilt-shift et vignette.
+cadre, cœurs lâchés, cinq cœurs, Game Over, relance, renvoi des projectiles à
+l'épée) ; minimap ; ciel étoilé procédural avec lune ; mer à écume de rivage ;
+rendu diorama cel-shadé avec bloom, tilt-shift et vignette ; son entièrement
+synthétisé, coupé par défaut ; réglage de qualité à deux niveaux.
 
 Direction artistique : **diorama low-poly cozy** — la recette caméra et
 post-traitement du HD-2D appliquée à de la vraie 3D. Ne la change pas sans que
@@ -106,6 +108,14 @@ crochets de diagnostic exposés en développement :
   atteinte). Existe parce que la traînée ne dure que 230 ms : trop court pour
   une capture d'écran, il faut la mesurer
 - `window.vegetationCounts` — nombre d'instances par famille de props
+- `window.__playerBody` — le rigid body du joueur. **Le seul crochet qui
+  écrit** : il sert à poser le personnage à un endroit précis de la carte, parce
+  qu'à 1 fps une traversée à pied est hors de portée d'un test
+- `window.__projectiles` — le pool, pour poser une balle factice devant le
+  joueur et vérifier la parade sans avoir à cadrer un vrai tir d'Octorok
+- `window.__occlusionFade` — les uniforms du fondu de canopée. Forcer
+  `uOccMinAlpha` à 1 rend le même point de vue sans effacement : c'est ce qui
+  permet de comparer deux captures au lieu de juger à l'œil
 - `?debug` dans l'URL affiche les colliders Rapier
 
 Méthode qui a fonctionné : piloter le jeu avec Playwright en headless
@@ -132,18 +142,26 @@ doivent passer, et tu dois avoir vu ou mesuré le résultat.
 
 ### Ce qu'il faut faire maintenant
 
-La priorité 1 (équilibrage et lisibilité du combat) est faite. Le point le plus
-gênant visuellement est maintenant en tête : **en jungle, une canopée passe
-régulièrement entre la caméra et le joueur**. La solution retenue est un fondu
-par tramage dans le fragment shader des canopées, en passant la position du
-joueur en uniform — pas de tri de transparence à gérer.
+Les trois priorités de la roadmap sont vidées de tout ce qui pouvait être fait
+depuis un poste de développement. **Ce qui reste demande une manette et une
+machine, pas du code** :
 
-Deux choses à reprendre au passage, décrites dans la roadmap :
+- **jouer le combat.** L'équilibrage n'a jamais été joué, seulement mesuré, et
+  toutes les mesures viennent d'un rendu logiciel à ~1 fps où le déplacement
+  tourne vingt fois moins vite que les délais d'attaque. Les leviers sont
+  `MAX_HEARTS`, `HEART_DROP_CHANCE`, `telegraphMs` et `spread`. Le réceptacle de
+  cœur du temple ajoute un sixième cœur : c'est le premier chiffre à revoir ;
+- **jouer la montée au temple.** L'accès n'a été mesuré que par la pente, jamais
+  parcouru ;
+- **mesurer le framerate sur un GPU intégré.** Le réglage de qualité existe et
+  agit (densité de végétation, shadow map, post-traitement, lumière ponctuelle
+  du cristal), mais le seuil à partir duquel il devient nécessaire n'a pas été
+  relevé sur une vraie machine modeste. C'est ce chiffre, et lui seul, qui doit
+  décider de l'instanciation des ennemis (~150 draw calls) — une optimisation
+  qui complique le code des modèles et n'a pas à être faite à l'aveugle.
 
-- l'équilibrage n'a jamais été **joué**, seulement mesuré ; les leviers sont
-  `MAX_HEARTS`, `HEART_DROP_CHANCE`, `telegraphMs` et `spread` ;
-- la **double horloge** (déplacement en temps simulé, délais en temps réel)
-  fausse le jeu en dessous de 20 fps — priorité 3 de la roadmap.
+Tout le reste de la priorité 3 est fait : bundle découpé, écran de chargement,
+horloge unique.
 
 Ne pars pas sur autre chose sans le demander.
 

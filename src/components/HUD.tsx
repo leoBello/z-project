@@ -31,6 +31,7 @@ export function HUD() {
   const kills = useGameStore((state) => state.kills)
   const phase = useGameStore((state) => state.phase)
   const discovered = useGameStore((state) => state.discovered)
+  const heartContainers = useGameStore((state) => state.heartContainers)
   const nearbyLandmark = useGameStore((state) => state.nearbyLandmark)
   const reset = useGameStore((state) => state.reset)
   const { dict } = useI18n()
@@ -38,6 +39,9 @@ export function HUD() {
   // Seul le dernier lieu trouvé s'affiche : le bandeau annonce une découverte,
   // il ne tient pas un journal.
   const lastDiscovery = discovered[discovered.length - 1]
+  // Même raisonnement : le bandeau annonce le réceptacle qu'on vient de
+  // prendre, pas la liste de ceux qu'on possède.
+  const lastContainer = heartContainers[heartContainers.length - 1]
 
   const restart = () => {
     // Projectiles en vol et cœurs au sol survivraient au redémarrage : ils
@@ -73,6 +77,19 @@ export function HUD() {
           <strong className="discovery__name">
             {dict.ui.landmarks[lastDiscovery].name}
           </strong>
+        </div>
+      )}
+
+      {/*
+        Bandeau du réceptacle, sur le même mécanisme de `key` que la découverte.
+        Il est placé après elle dans le DOM parce que les deux se déclenchent à
+        quelques secondes d'intervalle au temple : celui du réceptacle, plus
+        récent, doit passer devant.
+      */}
+      {lastContainer && (
+        <div key={`container-${lastContainer}`} className="discovery discovery--reward">
+          <span className="discovery__kicker">{dict.ui.heartContainer.kicker}</span>
+          <strong className="discovery__name">{dict.ui.heartContainer.name}</strong>
         </div>
       )}
 

@@ -14,12 +14,17 @@ import {
   HIT_FLASH_MS,
   HIT_KNOCKBACK,
 } from '../config/enemies'
+import { playHit } from '../audio/sfx'
 import { ATTACK } from '../config/gameplay'
 import { playerTransform } from '../state/playerTransform'
 import { enemyRegistry, updateEnemyMarker } from '../state/enemyRegistry'
 import { now as gameNow } from '../state/gameClock'
 import { dropPickup } from '../state/pickups'
-import { fireProjectile } from '../state/projectiles'
+import {
+  fireProjectile,
+  PROJECTILE_HIT_RADIUS,
+  projectiles,
+} from '../state/projectiles'
 import { useGameStore } from '../store/useGameStore'
 import type { EnemySpawn, EnemyState } from '../types/game'
 import { MoblinModel, OctorokModel, useEnemyMaterials } from './enemies/models'
@@ -53,6 +58,53 @@ interface EnemyRuntime {
   /** Cible de patrouille, relative au point d'apparition. */
   patrolAngle: number
   patrolUntil: number
+}
+
+/**
+ * Applique un point de dégât et tout ce qui va avec : flash, recul, mort.
+ *
+ * Deux sources y mènent — le coup d'épée et le projectile renvoyé — et elles
+ * doivent produire *exactement* le même effet, cœur lâché compris. Le recul est
+ * calculé depuis la source du coup, pas depuis le joueur : une balle parée qui
+ * arrive de côté doit pousser de côté.
+ *
+ * Retourne vrai si l'ennemi vient de mourir, pour que l'appelant s'arrête là.
+ */
+function damageEnemy(
+  state: EnemyRuntime,
+  rb: RapierRigidBody,
+  x: number,
+  y: number,
+  z: number,
+  spawnId: string,
+  now: number,
+  fromX: number,
+  fromZ: number,
+) {
+  state.hp -= 1
+  state.hitFlashUntil = now + HIT_FLASH_MS
+  playHit()
+
+  const marker = enemyRegistry.get(spawnId)
+  if (marker) marker.lastHitAt = now
+
+  knockback.set(x - fromX, 0, z - fromZ)
+  // Source confondue avec l'ennemi (tir à bout portant) : pas de direction de
+  // recul exploitable, on ne pousse pas plutôt que de pousser n'importe où.
+  if (knockback.lengthSq() > 1e-6) {
+    knockback.normalize().multiplyScalar(HIT_KNOCKBACK)
+    rb.setLinvel({ x: knockback.x, y: 3, z: knockback.z }, true)
+  }
+
+  if (state.hp > 0) return false
+
+  state.state = 'dead'
+  state.deathAt = now
+  useGameStore.getState().registerKill()
+  // Le cœur part de la poitrine, pas des pieds : le petit saut le rend visible
+  // par-dessus les herbes hautes avant qu'il ne retombe.
+  if (Math.random() < HEART_DROP_CHANCE) dropPickup(x, y + 0.3, z)
+  return true
 }
 
 interface EnemyProps {
@@ -171,31 +223,57 @@ export function Enemy({ spawn }: EnemyProps) {
       const hitZ = playerTransform.position.z + Math.cos(playerTransform.yaw) * ATTACK.reach
       const reach = ATTACK.radius + stats.radius
       if (Math.hypot(position.x - hitX, position.z - hitZ) < reach) {
-        state.hp -= 1
-        state.hitFlashUntil = now + HIT_FLASH_MS
         // Signale au reste du jeu que ce swing a porté : le retour visuel du
         // coup dans le vide s'en sert, et la barre de vie reste affichée un
         // moment après le dernier coup encaissé.
         playerTransform.lastLandedSwing = swing
-        const marker = enemyRegistry.get(spawn.id)
-        if (marker) marker.lastHitAt = now
-
-        // Recul : l'ennemi est projeté à l'opposé du joueur, avec un petit saut.
-        knockback.copy(toPlayer).normalize().multiplyScalar(-HIT_KNOCKBACK)
-        rb.setLinvel({ x: knockback.x, y: 3, z: knockback.z }, true)
-
-        if (state.hp <= 0) {
-          state.state = 'dead'
-          state.deathAt = now
-          useGameStore.getState().registerKill()
-          // Le cœur part de la poitrine, pas des pieds : le petit saut le rend
-          // visible par-dessus les herbes hautes avant qu'il ne retombe.
-          if (Math.random() < HEART_DROP_CHANCE) {
-            dropPickup(position.x, position.y + 0.3, position.z)
-          }
-          return
-        }
+        const died = damageEnemy(
+          state,
+          rb,
+          position.x,
+          position.y,
+          position.z,
+          spawn.id,
+          now,
+          playerTransform.position.x,
+          playerTransform.position.z,
+        )
+        if (died) return
       }
+    }
+
+    // --- Projectile renvoyé -------------------------------------------------
+    // La collision est testée ici, et pas dans la boucle des projectiles, pour
+    // la même raison que la hitbox d'épée : les PV vivent dans ce composant, et
+    // les faire vivre ailleurs créerait une seconde source de vérité. Le
+    // projectile, lui, n'a qu'à être désactivé.
+    for (const projectile of projectiles) {
+      if (!projectile.active || !projectile.deflected) continue
+      const reach = stats.radius + PROJECTILE_HIT_RADIUS
+      if (
+        Math.hypot(
+          projectile.position.x - position.x,
+          projectile.position.y - position.y,
+          projectile.position.z - position.z,
+        ) > reach
+      ) {
+        continue
+      }
+
+      projectile.active = false
+      const died = damageEnemy(
+        state,
+        rb,
+        position.x,
+        position.y,
+        position.z,
+        spawn.id,
+        now,
+        projectile.position.x,
+        projectile.position.z,
+      )
+      if (died) return
+      break
     }
 
     // Flash blanc à l'impact : le retour visuel qui rend le combat lisible.

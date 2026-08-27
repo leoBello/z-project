@@ -14,6 +14,8 @@ import { Pickups } from './components/Pickups'
 import { Player } from './components/Player'
 import { Projectiles } from './components/Projectiles'
 import { PostFX } from './components/PostFX'
+import { QualityToggle } from './components/QualityToggle'
+import { SoundToggle } from './components/SoundToggle'
 import { PortfolioDialog } from './components/portfolio/PortfolioDialog'
 import { SwordArc } from './components/SwordArc'
 import { BootScreen } from './components/BootScreen'
@@ -97,7 +99,13 @@ export default function App() {
       {/* Avant <PortfolioDialog /> : le panneau plein écran doit recouvrir les
           contrôles tactiles quand il s'ouvre. */}
       <TouchControls />
-      <LanguageToggle />
+      {/* Réglages du visiteur : langue et qualité graphique, rangés ensemble
+          pour qu'aucun n'ait à connaître la largeur de l'autre. */}
+      <div className="settings">
+        <SoundToggle />
+        <QualityToggle />
+        <LanguageToggle />
+      </div>
       {/* Le panneau passe devant tout le HUD, invite d'interaction comprise. */}
       <PortfolioDialog />
       <TeleportMenu />

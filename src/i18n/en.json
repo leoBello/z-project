@@ -23,6 +23,19 @@
     "discovery": {
       "kicker": "Place discovered"
     },
+    "heartContainer": {
+      "kicker": "Heart container",
+      "name": "Max hearts +1"
+    },
+    "quality": {
+      "label": "Graphics quality",
+      "high": "High quality",
+      "low": "Reduced quality"
+    },
+    "sound": {
+      "on": "Mute sound",
+      "off": "Enable sound"
+    },
     "minimap": {
       "north": "N"
     },

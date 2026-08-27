@@ -4,8 +4,9 @@ Mini-jeu 3D navigateur inspiré de Zelda, pour portfolio front-end.
 Direction artistique : **diorama low-poly cozy** — cel-shading, FOV étroit,
 tilt-shift. La recette caméra + post-traitement du HD-2D, appliquée à de la 3D.
 
-Dernière mise à jour : 26 août 2026 — cinq points d'intérêt, une section de
-portfolio chacun.
+Dernière mise à jour : 27 août 2026 — occlusion de la canopée, renvoi des
+projectiles, réceptacle de cœur au temple, écume, lune, son, réglage de qualité
+et découpage du bundle.
 
 ---
 
@@ -22,6 +23,13 @@ portfolio chacun.
   ou depuis un test navigateur. `__lastSwing` existe parce que la traînée de
   lame ne dure que 230 ms : trop court pour être attrapé de façon fiable par une
   capture d'écran, il fallait pouvoir *mesurer* le verdict au lieu de le voir
+- Trois crochets ajoutés depuis, tous pour la même raison — un test navigateur
+  en rendu logiciel tourne à ~1 fps, il ne peut pas *provoquer* une situation,
+  il faut pouvoir la poser :
+  `window.__playerBody` (déplacer le joueur à un point précis de la carte),
+  `window.__projectiles` (poser une balle factice et vérifier la parade),
+  `window.__occlusionFade` (forcer l'opacité du fondu à 1 pour rendre deux fois
+  le même point de vue, avec et sans effacement, et comparer)
 
 ### Personnage
 - Contrôleur physique : capsule Rapier, rotations verrouillées, vélocité imposée
@@ -77,6 +85,26 @@ portfolio chacun.
   aplats francs, transposition en 2D du `toonGradient` du rendu 3D. Motif déduit
   des tags du projet, palette prélevée sur le jeu, cadrage calculé. Zéro asset
 
+### Son
+- **Entièrement synthétisé** en Web Audio, aucun fichier à télécharger : nappe
+  de vent (bruit filtré dont le volume respire), pas, coup d'épée dans l'air,
+  impact, saut, dégât, cœur ramassé, réceptacle
+- Les pas sont déclenchés à la **distance parcourue** et non à intervalle de
+  temps : c'est ce qui les garde synchronisés avec le cycle de marche, lui aussi
+  piloté par la vitesse réelle
+- **Coupé par défaut**, allumé d'un clic. Un portfolio qui se met à souffler du
+  vent sans prévenir est agaçant, et le geste qui allume le son est justement
+  celui qui autorise l'audio au regard de la politique d'autoplay du navigateur
+
+### Réglage de qualité
+- Deux niveaux, persistés, avec estimation de départ (appareil tactile ou peu de
+  cœurs → qualité réduite). Quatre leviers : densité de végétation (100 % / 55 %),
+  shadow map (2048² / 1024²), post-traitement, lumière ponctuelle du cristal
+- La densité rogne le **nombre de tirages** du semis, pas leur résultat : la
+  graine étant fixe, un massif ne se redessine pas ailleurs, il s'éclaircit
+- **Non mesuré sur GPU intégré** : le réglage agit, mais le seuil à partir
+  duquel il devient nécessaire n'a pas été relevé sur une vraie machine modeste
+
 ### Internationalisation
 - Dictionnaires typés `src/i18n/{fr,en}.json`, **sans dépendance**. Le français
   définit la forme, l'anglais doit s'y conformer — dans les deux sens, clé
@@ -109,6 +137,18 @@ portfolio chacun.
 - Trois sources de lumière (clé chaude, rebond froid, contre-jour)
 - Soleil et shadow camera qui suivent le joueur
 - Mer translucide avec houle et normales calculées dans le vertex shader
+- **Écume au rivage**, tirée d'une carte de profondeur cuite au démarrage depuis
+  `sampleHeight` : la frange suit exactement la ligne où le terrain croise le
+  niveau de la mer, sur le continent comme autour de l'île. Deux bandes — une
+  nappe large et un liseré vif — dont le bord ondule comme un ressac
+- **Lune procédurale** : disque à mers, assombrissement du limbe et halo qui
+  accroche le bloom. Placée à 4,5° d'élévation parce que le ciel n'occupe que
+  les sept degrés au-dessus de l'horizon, et décalée en azimut pour ne pas se
+  superposer au bulbe galactique
+- **Effacement de la végétation qui passe entre la caméra et le joueur** :
+  fondu par tramage (*screen-door*) dans le fragment shader, sur un test de cône
+  œil → joueur. Le matériau reste opaque, donc aucun tri de transparence à
+  gérer sur un `InstancedMesh`. Seules les familles hautes sont concernées
 
 ### Combat et ennemis
 - **Deux espèces** : Octorok (tourelle, tire des projectiles en cloche) et
@@ -133,6 +173,10 @@ portfolio chacun.
 - **Traînée de lame** à chaque coup : dorée quand le coup porte, bleu pâle et
   retombante quand il part dans le vide. Elle matérialise aussi la portée réelle
   de l'épée, que rien n'indiquait auparavant
+- **Renvoi des projectiles au coup d'épée.** Une balle parée change de camp :
+  elle vise l'ennemi vivant le plus proche, vire à l'or (le même que la traînée
+  d'un coup qui porte) et inflige un point de dégât. Évalué une fois par swing
+  et par projectile, jamais par test de fenêtre
 - **Cœurs lâchés** par 40 % des ennemis vaincus. Ils se posent sur le relief via
   le même échantillonneur que le terrain, flottent, palpitent en fin de vie, et
   ne sont consommés que si le joueur a quelque chose à soigner
@@ -152,6 +196,14 @@ portfolio chacun.
     d'où vient la menace et pointant vers le joueur
 - Cinq cœurs au lieu de trois
 - Bandeau de découverte d'un lieu, animé en CSS pur, sans état piloté depuis React
+- **Réceptacle de cœur** sur l'autel du temple : un cœur maximal de plus et la
+  vie refaite, ramassé en marchant jusqu'à l'autel. Bandeau dédié, rouge, décalé
+  sous celui de la découverte — les deux se déclenchent à quelques secondes
+  d'intervalle au temple
+- Les barres de vie sont **masquées par le relief** : le segment caméra → ennemi
+  est sondé sur `sampleHeight`, donc un ennemi derrière une colline n'affiche
+  plus sa vie par-dessus la pierre
+- Rangée de réglages en haut à droite : son, qualité graphique, langue
 
 ---
 
@@ -182,6 +234,15 @@ portfolio chacun.
 | Chevron d'alerte posé dans le monde, pas en 2D | Placé au sol sur un cercle autour du joueur puis projeté, il hérite de la perspective sans qu'on ait à calculer l'ellipse qu'un cercle devient à l'écran. |
 | Traînée de lame en `ShaderMaterial` | Le dégradé tête-queue et l'affinement des bords sont calculés par pixel : la traînée se réduit à 40 segments de géométrie, sans texture à charger, et reste nette à toute taille. |
 | Préparation d'attaque en **drapeau consommé** | Un `windupPending` booléen, jamais un test « sommes-nous dans la fenêtre de préparation ? ». Voir la famille de bugs ci-dessous. |
+| Effacement de la canopée par **tramage** et non par transparence | La végétation est instanciée : passer un `InstancedMesh` en `transparent` obligerait le renderer à trier des milliers d'instances entre elles, ce qu'il ne sait pas faire — la canopée se mettrait à clignoter selon l'ordre de rendu. En jetant un pixel sur N, le matériau reste opaque, continue d'écrire dans le tampon de profondeur et se trie normalement. |
+| L'arbre effacé **projette toujours son ombre** | La passe d'ombres utilise un matériau de profondeur distinct, qui ne reçoit pas le patch. Le corriger coûterait un second matériau ; et c'est l'ombre qui dit au joueur que l'arbre est encore là. |
+| Occultation des barres de vie par sondage de `sampleHeight`, pas par raycast Rapier | Le calque de combat vit hors de R3F et n'a pas le monde physique sous la main. Un raycast coûterait une requête physique par ennemi et par frame pour voir en plus les troncs — or un tronc est trop fin pour cacher une barre plus d'une fraction de seconde. Le relief est l'occultant qui gêne, et `sampleHeight` est déjà la source de vérité de tout le monde. |
+| Écume tirée d'une carte de profondeur **cuite au démarrage** | Le shader n'a pas accès au bruit du relief, qui est du JavaScript. Cuire `sampleHeight` une fois garantit que la ligne de rivage de l'écume est celle du mesh, du collider et de la minimap. L'alternative — lire le tampon de profondeur — coûte une passe de rendu de plus pour une frange de deux unités de large. |
+| Balle renvoyée portée par le **même pool**, avec un drapeau | Un second pool dupliquerait l'intégration du mouvement, la collision avec le relief et le rendu instancié, pour un objet qui ne diffère que par son camp. |
+| Collision de la balle renvoyée testée dans `Enemy.tsx`, pas dans la boucle des projectiles | Les PV vivent dans le composant de l'ennemi. Les tester ailleurs créerait une seconde source de vérité ; le projectile, lui, n'a qu'à être désactivé. |
+| Son **synthétisé**, jamais échantillonné | Même promesse que la végétation, le ciel et les illustrations : rien à télécharger. Un pas et un coup d'épée ne sont que du bruit filtré et une enveloppe. |
+| Son **coupé par défaut** | Un portfolio qui souffle du vent sans prévenir est agaçant — et le geste par lequel le visiteur allume le son est précisément celui qui autorise l'audio au regard de la politique d'autoplay. |
+| Découpage du bundle par **vitesse de changement**, pas par graphe de dépendances | Le total téléchargé ne bouge pas : une scène 3D a besoin de tout dès la première frame. Ce qu'on gagne est le cache du navigateur — le code du jeu change à chaque commit, `three` et Rapier une ou deux fois par an. |
 | Cœurs et projectiles en pools hors React et hors Rapier | Même raison : durée de vie courte, aucune allocation en cours de partie, et le redémarrage n'a qu'à vider les pools. |
 
 ---
@@ -289,6 +350,24 @@ aucun moyen de se retourner sur place : un ennemi passé derrière le joueur ne
 pouvait plus jamais être touché. Mesuré : dix coups d'affilée dans le vide.
 Corrigé par une visée assistée circulaire.
 
+**`manualChunks` n'est qu'une indication sous Rolldown.** Le découpage du bundle
+a d'abord semblé ne rien faire : la fonction était bien appelée, `three` y était
+bien assigné au groupe « three », et il se retrouvait quand même fondu dans le
+chunk de physique, qui pesait alors 3,1 Mo à lui seul — c'est-à-dire tout le
+bundle moins des miettes. Deux choses à retenir : utiliser `advancedChunks`, qui
+fait des groupes fermes, et se méfier de l'ordre des règles — un groupe
+`three` écrit `/(three|@react-three)/` et placé après `physics` renvoyait de
+nouveau tout le moteur du mauvais côté, parce que le chemin de
+`@react-three/rapier` contient lui aussi « three ». La règle qui marche cible
+`node_modules/three/` seul, et passe en premier.
+
+**Deux commentaires GLSL qui cassaient la compilation TypeScript.** Les shaders
+sont écrits dans des littéraux gabarits. Un commentaire de shader contenant un
+mot entre accents graves — l'idiome du reste du projet pour citer un
+identifiant — ferme le littéral au milieu du code. Le message d'erreur (`','
+expected`) ne pointe évidemment pas sur la cause. Dans un bloc `/* glsl */`, on
+cite sans accents graves.
+
 ---
 
 ### Taux de touche d'un tir d'Octorok, mesuré
@@ -328,44 +407,36 @@ signal pour l'appliquer.
       d'approche à découvert, dispersion du tir, rayon de collision des
       projectiles ramené de 0,85 à 0,62 (la capsule du joueur n'en fait que 0,35)
 
-Reste ouvert sur ce chantier, à trancher en jouant :
-- [ ] Vérifier la difficulté **manette en main** : toutes les mesures de timing
+Reste ouvert sur ce chantier, et il ne se referme qu'en jouant :
+- [ ] Vérifier la difficulté **manette en main**. Toutes les mesures de timing
       ont été faites en rendu logiciel headless à ~1 fps, où le déplacement
-      tourne vingt fois moins vite que les délais d'attaque (voir « double
-      horloge » en priorité 3). Les leviers sont `MAX_HEARTS`,
-      `HEART_DROP_CHANCE`, `telegraphMs` et `spread`
-- [ ] Barres de vie non occultées : un ennemi engagé derrière une colline ou un
-      tronc affiche quand même sa barre. Limité pour l'instant par le filtre
-      « engagé ou blessé récemment, et à moins de 45 unités ». Un rayon vers la
-      caméra le corrigerait, au prix d'une requête physique par ennemi et par
-      frame
-- [ ] Renvoyer les projectiles d'un coup d'épée, comme dans Zelda : le verdict
-      du coup et la boucle des projectiles sont déjà en place
+      tourne vingt fois moins vite que les délais d'attaque. Les leviers sont
+      `MAX_HEARTS`, `HEART_DROP_CHANCE`, `telegraphMs` et `spread`
+- [x] Barres de vie non occultées — fait : le segment caméra → ennemi est sondé
+      sur `sampleHeight`, une douzaine de points, et seulement pour les ennemis
+      qui ont déjà passé les filtres d'engagement et de distance. Limite connue :
+      un tronc ne masque pas la barre, seul le relief le fait
+- [x] Renvoyer les projectiles d'un coup d'épée — fait : la balle parée vise
+      l'ennemi vivant le plus proche, vire à l'or et inflige un point
 
 ### Priorité 2 — confort et finition
-- [ ] **Occlusion des arbres** : en jungle, une canopée passe régulièrement entre
-      la caméra et le joueur. Solution prévue : fondu par tramage
-      (*screen-door*) dans le fragment shader des canopées, en passant la
-      position du joueur en uniform. Pas de tri de transparence à gérer.
+- [x] **Occlusion des arbres** — fait : fondu par tramage dans le fragment
+      shader des familles hautes, sur un test de cône œil → joueur. Rien n'est
+      retiré de la carte, ni collider ni ombre — le prop redevient plein dès
+      qu'il sort de l'axe
 - [x] **Point d'intérêt au sommet de la montagne** — Temple du Sommet, fait
-- [ ] Points d'intérêt sur l'île, pour lui donner une raison d'exister.
-      L'infrastructure est posée : ajouter une entrée dans `config/landmarks.ts`
-      et un composant de géométrie suffit, terrasse, exclusion de végétation,
-      repère de minimap et bandeau de découverte suivent tout seuls
+- [x] Point d'intérêt sur l'île — fait : les Ruines de l'Île portent la section
+      contact
 - [x] Donner une **raison de monter** au temple — fait : il présente les projets
-- [ ] Donner une **récompense** au temple. Il est aujourd'hui purement
-      contemplatif : on y monte, le bandeau s'affiche, et il ne se passe rien.
-      Un cœur maximal supplémentaire posé sur l'autel serait le geste le plus
-      court, et `MAX_HEARTS` est déjà dans le store
+- [x] Donner une **récompense** au temple — fait : un réceptacle de cœur sur
+      l'autel, un cœur maximal de plus et la vie refaite
 - [ ] Vérifier **manette en main** que le sommet vaut le déplacement : l'accès
       n'a été mesuré que par la pente (0,24 à 0,36 sur la crête sud-ouest, contre
       1,25 sur les trois autres flancs), jamais joué
-- [ ] Écume au bord de l'eau
-- [ ] Corps céleste dans le ciel : la planète annelée a été retirée (anneau mal
-      raccordé au globe, seule la moitié arrière était dessinée). À reprendre
-      en dessinant l'anneau devant **et** derrière le globe, ou remplacer par
-      une lune simple
-- [ ] Son : ambiance, pas, épée
+- [x] Écume au bord de l'eau — fait
+- [x] Corps céleste dans le ciel — fait : une lune procédurale. La planète
+      annelée reste écartée, c'est son anneau qui posait problème
+- [x] Son : ambiance, pas, épée — fait, entièrement synthétisé
 
 ### Priorité 3 — performance et livraison
 - [x] **Double horloge — réglée.** Une horloge de jeu unique
@@ -385,25 +456,37 @@ Reste ouvert sur ce chantier, à trancher en jouant :
       logiciel à 1 fps, où le facteur atteint 20. Atteignable sur un GPU
       intégré. Correctif : tenir une horloge de jeu unique, cumulant les
       `delta` clampés, et y rapporter tous les délais de gameplay
-- [ ] Bundle à 3,5 Mo (1,2 Mo gzip) en un seul chunk — découper le code
-- [ ] Mesurer le framerate sur GPU intégré ; prévoir un réglage de qualité
-      (densité de végétation, résolution d'ombres, post-traitement)
+- [x] Bundle en un seul chunk — découpé. Le total est inchangé (3,6 Mo, 1,2 Mo
+      gzip : une scène 3D a besoin de tout dès la première frame), mais il est
+      réparti en `physics` 2,4 Mo, `three` 729 ko, `index` 200 ko, `react`
+      178 ko et `postfx` 87 ko. Ce qu'on gagne est le cache du navigateur entre
+      deux déploiements, pas des octets
+- [x] Prévoir un **réglage de qualité** — fait : deux niveaux, quatre leviers
+      (densité de végétation, shadow map, post-traitement, lumière ponctuelle),
+      persistés, avec estimation de départ
+- [ ] **Mesurer le framerate sur GPU intégré.** Le réglage existe mais le seuil
+      à partir duquel il devient nécessaire n'a jamais été relevé sur une vraie
+      machine modeste : le poste de développement ne rend qu'en logiciel, à
+      ~1 fps quel que soit le niveau, ce qui ne dit rien d'utile. À faire sur
+      une machine, pas depuis un test
 - [ ] Les ennemis coûtent ~150 draw calls à 26 unités : instancier les parties
-      communes si le framerate décroche
-- [ ] Le cristal du temple ajoute **la seule lumière ponctuelle de la scène**,
-      donc une passe d'éclairage supplémentaire dans *tous* les shaders,
-      végétation instanciée comprise. Gardée parce que c'est elle qui détache la
-      colonnade sur la neige, mais c'est le premier candidat à sauter sur GPU
-      intégré : la retirer ne change rien à la lisibilité du lieu
-      (`src/components/environment/Temple.tsx`, composant `Crystal`)
-- [ ] Écran de chargement : la génération du monde bloque ~1 s au démarrage
+      communes **si** le framerate décroche. Volontairement pas fait tant que le
+      point précédent n'a pas donné de chiffre — c'est une optimisation qui
+      complique le code des modèles, elle doit être justifiée par une mesure
+- [x] Le cristal du temple ajoute la seule lumière ponctuelle de la scène, donc
+      une passe d'éclairage supplémentaire dans *tous* les shaders — elle est
+      maintenant coupée par le réglage de qualité réduite
+- [x] Écran de chargement — fait (`BootScreen`, `#boot` dans `index.html`)
 
 ### Plus tard
 - [ ] Inventaire, quêtes, dialogues
 - [ ] Modèles `.glb` riggés + animations Mixamo pour le héros
 - [ ] Cycle jour/nuit
-
----
+- [ ] Réceptacles de cœur sur les autres monuments : l'infrastructure est
+      générique (`HeartContainer`, `heartContainers` dans le store), il ne
+      manque qu'un emplacement par monument. Volontairement laissé au temple
+      seul pour l'instant — cinq réceptacles feraient dix cœurs, et
+      l'équilibrage du combat n'a toujours pas été joué
 
 ## 5. Écarts assumés par rapport au brief initial
 
@@ -458,3 +541,12 @@ animations.
 | Barres de vie, chevrons d'alerte | `src/components/CombatOverlay.tsx` |
 | Traînée de lame (couleurs, ouverture, inclinaison) | `src/components/SwordArc.tsx` |
 | Apparence et durée de vie des cœurs au sol | `src/components/Pickups.tsx` + `src/state/pickups.ts` |
+| Rayon et opacité de l'effacement de la canopée | `RADIUS` et `MIN_ALPHA` dans `src/components/environment/occlusionFade.ts` |
+| Quelles familles de props s'effacent | `withOcclusionFade(...)` dans `materials`, `src/components/environment/Vegetation.tsx` |
+| Largeur et aspect de l'écume | `FOAM_DEPTH` dans `src/components/environment/shoreDepth.ts`, bandes dans `src/components/environment/Water.tsx` |
+| Position, taille et teinte de la lune | `MOON_DIRECTION`, `MOON_RADIUS` dans `src/components/environment/StarrySky.tsx` |
+| Renvoi des projectiles (rayon, vitesse, portée de visée) | `src/state/projectiles.ts` |
+| Réceptacle de cœur : emplacement, rayon | `<HeartContainer>` dans `src/components/environment/Temple.tsx` |
+| Ce que change chaque niveau de qualité | `QUALITY` dans `src/store/useQualityStore.ts` |
+| Sons : timbre, volume, cadence des pas | `src/audio/sfx.ts`, `STRIDE_LENGTH` dans `src/components/Player.tsx` |
+| Découpage du bundle | `advancedChunks` dans `vite.config.ts` |

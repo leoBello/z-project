@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Object3D, type DirectionalLight } from 'three'
 import { playerTransform } from '../state/playerTransform'
+import { useQualityStore } from '../store/useQualityStore'
 import { Landmarks } from './environment/Landmarks'
 import { Terrain } from './environment/Terrain'
 import { Vegetation } from './environment/Vegetation'
@@ -28,6 +29,10 @@ const SHADOW_EXTENT = 42
 function SunLight() {
   const light = useRef<DirectionalLight>(null)
   const target = useMemo(() => new Object3D(), [])
+  // Une shadow map de 2048² coûte une passe de rendu de la scène à cette
+  // résolution, à chaque frame. C'est le levier de qualité le plus direct
+  // après la densité de végétation.
+  const shadowMapSize = useQualityStore((state) => state.settings.shadowMapSize)
 
   useFrame(() => {
     const { position } = playerTransform
@@ -49,7 +54,7 @@ function SunLight() {
         castShadow
         intensity={2.1}
         color="#ffe3ad"
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[shadowMapSize, shadowMapSize]}
         shadow-bias={-0.0008}
         shadow-normalBias={0.02}
         shadow-camera-left={-SHADOW_EXTENT}
