@@ -11,12 +11,12 @@ import {
 import { Group, Vector3 } from 'three'
 import type { Control } from '../config/controls'
 import { isTouchDevice } from '../config/device'
-import { touchInput, resetTouchMove } from '../state/touchInput'
 import { ATTACK, PLAYER } from '../config/gameplay'
 import { WORLD } from '../config/world'
 import { enemyRegistry } from '../state/enemyRegistry'
 import { now as gameNow } from '../state/gameClock'
 import { playerTransform } from '../state/playerTransform'
+import { touchInput, resetTouchMove } from '../state/touchInput'
 import { playerBody } from '../state/playerBody'
 import { useGameStore } from '../store/useGameStore'
 import { LinkModel } from './models/LinkModel'
@@ -206,7 +206,10 @@ export function Player() {
     // ramène entre 0 et 1 selon l'amplitude du stick.
     let speedScale = 1
 
-    if (isTouchDevice() && (touchInput.moveX !== 0 || touchInput.moveY !== 0)) {
+    // Test tactile en second : sur desktop `moveX/moveY` valent toujours 0, donc
+    // on court-circuite avant même de consulter la media query — le chemin
+    // clavier ne paie rien.
+    if ((touchInput.moveX !== 0 || touchInput.moveY !== 0) && isTouchDevice()) {
       // Joystick : l'axe écran est projeté sur les axes caméra (droite / avant).
       // `moveY` positif pointe vers le bas de l'écran, donc vers l'arrière.
       moveDir

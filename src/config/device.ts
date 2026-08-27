@@ -12,10 +12,22 @@ import { useEffect, useState } from 'react'
  */
 const TOUCH_QUERY = '(pointer: coarse) and (hover: none)'
 
+/**
+ * `MediaQueryList` construit **une seule fois** au chargement du module.
+ *
+ * `isTouchDevice()` est appelé à chaque frame par `Player` : recréer un
+ * `MediaQueryList` à chaque appel ferait travailler le GC pour rien dans la
+ * boucle la plus chaude de l'app. `.matches` reste vivant (le navigateur le
+ * tient à jour), donc la réactivité n'est pas perdue.
+ */
+const touchQuery =
+  typeof window !== 'undefined' && window.matchMedia
+    ? window.matchMedia(TOUCH_QUERY)
+    : null
+
 /** Version pure, utilisable hors React (ex. dans une boucle `useFrame`). */
 export function isTouchDevice(): boolean {
-  if (typeof window === 'undefined' || !window.matchMedia) return false
-  return window.matchMedia(TOUCH_QUERY).matches
+  return touchQuery?.matches ?? false
 }
 
 /**
@@ -27,11 +39,10 @@ export function useIsTouchDevice(): boolean {
   const [touch, setTouch] = useState(isTouchDevice)
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return
-    const mql = window.matchMedia(TOUCH_QUERY)
-    const onChange = () => setTouch(mql.matches)
-    mql.addEventListener('change', onChange)
-    return () => mql.removeEventListener('change', onChange)
+    if (!touchQuery) return
+    const onChange = () => setTouch(touchQuery.matches)
+    touchQuery.addEventListener('change', onChange)
+    return () => touchQuery.removeEventListener('change', onChange)
   }, [])
 
   return touch

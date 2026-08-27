@@ -16,16 +16,35 @@ const JOY_HIDDEN: JoyVisual = { active: false, x: 0, y: 0, dx: 0, dy: 0 }
  * Contrôles tactiles, façon émulateur GBA — **mobile uniquement**.
  *
  * En HTML superposé au Canvas (comme `HUD`), pas via `<Html>` de drei : c'est
- * de l'interface ancrée à l'écran. Rendu seulement sur appareil tactile et
- * seulement en jeu ; sinon `null`, et rien n'écrit dans `touchInput`.
+ * de l'interface ancrée à l'écran.
+ *
+ * Ce composant n'est qu'une porte : il ne rend `<TouchControlsOverlay />` que
+ * sur appareil tactile **et** en jeu. Le corps (refs du joystick, state, gestes)
+ * vit dans l'overlay, donc un changement de phase le **démonte vraiment** — son
+ * `useEffect` de nettoyage remet alors le joystick au neutre et les refs de
+ * suivi de pointeur repartent de zéro au remontage. Sans cette séparation, un
+ * simple `return null` laisserait un `pointerId` capturé et périmé bloquer le
+ * joystick jusqu'au rechargement de la page.
  *
  * Monté avant `<PortfolioDialog />` dans `App.tsx` : quand un panneau s'ouvre,
- * la phase passe à `paused`, ce composant se démonte, et son `useEffect` de
- * nettoyage remet le joystick au neutre.
+ * la phase passe à `paused` et l'overlay disparaît proprement.
  */
 export function TouchControls() {
   const isTouch = useIsTouchDevice()
   const phase = useGameStore((state) => state.phase)
+
+  if (!isTouch || phase !== 'playing') return null
+
+  return <TouchControlsOverlay />
+}
+
+/**
+ * Corps des contrôles tactiles. Monté/démonté par `TouchControls` selon la
+ * phase — jamais rendu directement, jamais exporté (garde `only-export-components`
+ * satisfait). Sur desktop il n'est jamais instancié : `useGameStore` n'y est donc
+ * abonné à rien et `useI18n` non plus.
+ */
+function TouchControlsOverlay() {
   const nearbyLandmark = useGameStore((state) => state.nearbyLandmark)
   const { dict } = useI18n()
 
@@ -33,16 +52,21 @@ export function TouchControls() {
   const joyOrigin = useRef({ x: 0, y: 0 })
   const [joy, setJoy] = useState<JoyVisual>(JOY_HIDDEN)
 
-  // Filet : si le composant disparaît alors qu'un pouce est encore posé
-  // (changement de phase), le `pointerup` n'arrivera jamais.
+  // Filet : au démontage (changement de phase pendant qu'un pouce est posé), le
+  // `pointerup` n'arrivera jamais — on relâche le joystick à la main.
   useEffect(() => resetTouchMove, [])
-
-  if (!isTouch || phase !== 'playing') return null
 
   const onDown = (e: PointerEvent<HTMLDivElement>) => {
     if (joyPointer.current !== null) return
     joyPointer.current = e.pointerId
-    e.currentTarget.setPointerCapture(e.pointerId)
+    // `setPointerCapture` peut lever `InvalidPointerId` si le pointeur a déjà
+    // disparu (tap très bref + geste système) : la capture est un confort, la
+    // zone étant une grande région fixe, on continue sans elle si ça échoue.
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    } catch {
+      /* pointeur déjà parti — sans importance ici */
+    }
     joyOrigin.current = { x: e.clientX, y: e.clientY }
     setJoy({ active: true, x: e.clientX, y: e.clientY, dx: 0, dy: 0 })
   }
@@ -79,6 +103,8 @@ export function TouchControls() {
     <div className="touch-controls">
       <div
         className="touch-joystick__zone"
+        role="application"
+        aria-label={dict.ui.touch.move}
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
@@ -98,7 +124,9 @@ export function TouchControls() {
           <button
             type="button"
             className="touch-button touch-button--interact"
-            aria-label={dict.ui.touch.interact}
+            // Libellé = l'action précise du monument (« Voir les projets »…),
+            // le même texte que l'invite clavier `.hud__prompt` côté desktop.
+            aria-label={dict.ui.landmarks[nearbyLandmark].action}
             onPointerDown={() => {
               // Appel direct du store : c'est un vrai événement pointeur, pas un
               // sondage par frame — aucun risque de le perdre, donc pas besoin
