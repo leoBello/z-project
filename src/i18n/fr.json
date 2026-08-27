@@ -50,6 +50,10 @@
         "action": "Prendre contact"
       }
     },
+    "teleport": {
+      "tab": "Lieux",
+      "group": "Téléportation rapide"
+    },
     "sections": {
       "projects": "Projets",
       "bio": "À propos",

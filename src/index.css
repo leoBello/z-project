@@ -692,3 +692,82 @@ canvas {
      380 ms dans TeleportOverlay, et le pop redeviendrait visible. */
   .teleport-overlay__ember { display: none; }
 }
+
+/* --- Menu de téléportation --------------------------------------------------- */
+
+.teleport-menu {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: stretch;
+  pointer-events: auto;
+}
+
+.teleport-menu__tab {
+  writing-mode: vertical-rl;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 14px 5px;
+  border: none;
+  border-radius: 0 10px 10px 0;
+  background: var(--hud-bg);
+  backdrop-filter: blur(6px);
+  color: #f5dc95;
+  cursor: pointer;
+}
+
+.teleport-menu__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px;
+  border-radius: 0 14px 14px 0;
+  border-left: 2px solid rgba(245, 220, 149, 0.4);
+  background: rgba(18, 26, 20, 0.88);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.teleport-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 14px 7px 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--hud-fg);
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.teleport-menu__item:hover { background: rgba(255, 255, 255, 0.08); }
+
+.teleport-menu__item--active {
+  color: #f5dc95;
+  background: rgba(245, 220, 149, 0.14);
+}
+
+.teleport-menu__icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.teleport-menu__tab:focus-visible,
+.teleport-menu__item:focus-visible {
+  outline: 2px solid #f5dc95;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .teleport-menu__item { transition: none; }
+}
