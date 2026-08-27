@@ -19,17 +19,19 @@ const EMBER_OFFSETS: ReadonlyArray<[number, number]> = [
 ]
 
 /** Durée entre le déclenchement et le "warp", en millisecondes — écran couvert. */
-const WARP_AT_MS = 380
+const WARP_AT_MS = 700
 /**
  * Durée totale de la séquence, source unique de vérité : injectée dans le CSS
  * via la variable `--teleport-total` (voir le rendu plus bas), qui pilote la
  * durée des animations `teleport-veil` / `teleport-ember` dans index.css. Seuls
  * les paliers en pourcentage à l'intérieur de ces `@keyframes` restent à
- * maintenir à la main : le rapport `WARP_AT_MS / TOTAL_MS` doit toujours
- * correspondre au palier de couverture totale du voile (50 %–55 %) si l'une
- * des deux constantes change.
+ * maintenir à la main s'ils changent : couverture progressive jusqu'à 39 %,
+ * palier "écran couvert" (c'est là que le warp se déclenche) de 39 % à 44 %,
+ * puis dispersion inverse des braises avec fondu de 44 % à 78 %, et enfin un
+ * palier calme "écran dégagé" de 78 % à 100 % qui laisse le temps d'observer
+ * la destination avant l'ouverture de la modale.
  */
-const TOTAL_MS = 760
+const TOTAL_MS = 1800
 
 /**
  * Écran de transition affiché pendant une téléportation lancée depuis le menu.
@@ -46,9 +48,10 @@ export function TeleportOverlay() {
   useEffect(() => {
     if (!teleporting) return
 
-    // À mi-animation, écran couvert : on déplace le joueur et on ouvre la
-    // modale, qui commence son propre fondu d'apparition sous les braises
-    // encore pleines.
+    // Écran couvert (palier 39 %–44 %) : on déplace le joueur pendant qu'il
+    // est encore caché sous les braises. On ne fait QUE le déplacement
+    // physique ici — la modale ne s'ouvre volontairement pas à ce stade, pour
+    // laisser l'animation de dispersion se jouer sans être masquée par elle.
     const warpTimer = setTimeout(() => {
       const landmark = landmarkById(teleporting)
       if (!landmark) return
@@ -71,12 +74,16 @@ export function TeleportOverlay() {
       // la lecture de la modale.
       playerTransform.position.set(x, y, z)
       playerTransform.yaw = yaw
-
-      resolveTeleport()
     }, WARP_AT_MS)
 
-    // Fin de séquence : les braises ont fini de se disperser.
-    const endTimer = setTimeout(finishTeleport, TOTAL_MS)
+    // Fin de séquence : les braises ont fini de se disperser et le palier
+    // calme "écran dégagé" (78 %–100 %) s'est écoulé. Le délai est
+    // intentionnel : il laisse le joueur voir la dispersion inverse des
+    // braises puis ses nouvelles environs avant que la modale n'apparaisse.
+    const endTimer = setTimeout(() => {
+      resolveTeleport()
+      finishTeleport()
+    }, TOTAL_MS)
 
     return () => {
       clearTimeout(warpTimer)

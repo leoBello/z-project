@@ -664,8 +664,9 @@ canvas {
 }
 
 @keyframes teleport-veil {
-  0%, 100% { opacity: 0; }
-  50%, 55% { opacity: 1; }
+  0% { opacity: 0; }
+  39%, 44% { opacity: 1; }
+  78%, 100% { opacity: 0; }
 }
 
 .teleport-overlay__ember {
@@ -683,19 +684,22 @@ canvas {
   animation: teleport-ember var(--teleport-total) ease-in-out forwards;
 }
 
-/* Convergent vers le centre (0 → 38%), restent groupées et lumineuses
-   pendant le warp (38 → 55%), puis repartent se disperser en s'effaçant. */
+/* Se regroupent légèrement avant que le voile ait fini de couvrir l'écran
+   (36 % vs 39 %), restent groupées et lumineuses pendant le warp (39 → 44%),
+   puis repartent se disperser en s'effaçant (44 → 78%), et restent dispersées
+   pendant tout le palier calme d'observation (78 → 100%). */
 @keyframes teleport-ember {
   0% { opacity: 0; transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(0.4); }
-  38% { opacity: 1; transform: translate(-50%, -50%) translate(0, 0) scale(1); }
-  50%, 55% { opacity: 1; transform: translate(-50%, -50%) translate(0, 0) scale(1); }
+  36% { opacity: 1; transform: translate(-50%, -50%) translate(0, 0) scale(1); }
+  39%, 44% { opacity: 1; transform: translate(-50%, -50%) translate(0, 0) scale(1); }
+  78% { opacity: 0; transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(0.3); }
   100% { opacity: 0; transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(0.3); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   /* Le voile reste tel quel : un simple fondu d'opacité, pas un mouvement.
-     Le raccourcir désynchroniserait sa disparition du "warp" programmé à
-     380 ms dans TeleportOverlay, et le pop redeviendrait visible. */
+     Le raccourcir désynchroniserait sa disparition du warp programmé dans
+     `TeleportOverlay.tsx`, et le pop redeviendrait visible. */
   .teleport-overlay__ember { display: none; }
 }
 

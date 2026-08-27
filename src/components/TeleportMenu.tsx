@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { LANDMARKS } from '../config/landmarks'
 import { useI18n } from '../i18n/useI18n'
@@ -36,16 +36,8 @@ export function TeleportMenu() {
   const { dict } = useI18n()
   const phase = useGameStore((state) => state.phase)
   const activeLandmark = useGameStore((state) => state.activeLandmark)
-  const teleporting = useGameStore((state) => state.teleporting)
   const teleportTo = useGameStore((state) => state.teleportTo)
   const [open, setOpen] = useState(true)
-
-  // Se replie automatiquement dès qu'une modale s'ouvre ou qu'un trajet
-  // démarre — évite le chevauchement avec le panneau portfolio — puis se
-  // rouvre au prochain clic sur l'onglet.
-  useEffect(() => {
-    if (activeLandmark || teleporting) setOpen(false)
-  }, [activeLandmark, teleporting])
 
   // À l'écran de fin, un menu de voyage rapide n'a plus de sens.
   if (phase === 'gameover') return null
