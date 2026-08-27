@@ -71,7 +71,11 @@ function LandmarkInteraction() {
           const store = useGameStore.getState()
           if (store.phase === 'playing' && store.nearbyLandmark) {
             store.openLandmark(store.nearbyLandmark)
-          } else if (store.phase === 'paused') {
+          } else if (store.phase === 'paused' && store.teleporting === null) {
+            // Pendant une téléportation, `phase === 'paused'` ne signifie pas
+            // qu'un panneau est ouvert — aucun panneau ne l'est encore. Sans
+            // ce garde, F relancerait le jeu (physique, ennemis) derrière le
+            // voile encore opaque de l'overlay de braises.
             store.closeLandmark()
           }
         },

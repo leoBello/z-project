@@ -633,3 +633,151 @@ canvas {
   outline: 2px solid #f6f2e4;
   outline-offset: 2px;
 }
+
+/* --- Overlay de téléportation ----------------------------------------------- */
+
+/*
+  Braises dorées qui convergent puis se dispersent, sur un fond qui couvre
+  entièrement l'écran au pic — c'est ce fond, et non les braises, qui garantit
+  qu'aucun "pop" de position n'est visible pendant le warp.
+*/
+.teleport-overlay {
+  position: fixed;
+  inset: 0;
+  /* Bloque les clics pendant le trajet — redondant avec le garde du store,
+     mais évite aussi de cliquer un lien ou un bouton caché dessous. */
+  pointer-events: auto;
+}
+
+.teleport-overlay__veil {
+  position: absolute;
+  inset: 0;
+  /* Même teinte que le fond de `.gameover` / `.portfolio`, mais opaque au
+     pic : c'est un écran de chargement, pas un calque translucide. */
+  background: #0a100c;
+  opacity: 0;
+  /* Durée pilotée depuis `TOTAL_MS` dans TeleportOverlay.tsx via la variable
+     `--teleport-total`, posée sur `.teleport-overlay` et héritée ici : plus de
+     durée littérale à garder synchronisée à la main. Seuls les paliers en
+     pourcentage des `@keyframes` ci-dessous restent une ratio à maintenir. */
+  animation: teleport-veil var(--teleport-total) ease-in-out forwards;
+}
+
+@keyframes teleport-veil {
+  0% { opacity: 0; }
+  39%, 44% { opacity: 1; }
+  78%, 100% { opacity: 0; }
+}
+
+.teleport-overlay__ember {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #f5dc95;
+  box-shadow: 0 0 8px 2px rgba(245, 220, 149, 0.75);
+  opacity: 0;
+  /* Durée pilotée depuis `TOTAL_MS` via `--teleport-total` — voir le
+     commentaire sur `.teleport-overlay__veil` ci-dessus. */
+  animation: teleport-ember var(--teleport-total) ease-in-out forwards;
+}
+
+/* Se regroupent légèrement avant que le voile ait fini de couvrir l'écran
+   (36 % vs 39 %), restent groupées et lumineuses pendant le warp (39 → 44%),
+   puis repartent se disperser en s'effaçant (44 → 78%), et restent dispersées
+   pendant tout le palier calme d'observation (78 → 100%). */
+@keyframes teleport-ember {
+  0% { opacity: 0; transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(0.4); }
+  36% { opacity: 1; transform: translate(-50%, -50%) translate(0, 0) scale(1); }
+  39%, 44% { opacity: 1; transform: translate(-50%, -50%) translate(0, 0) scale(1); }
+  78% { opacity: 0; transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(0.3); }
+  100% { opacity: 0; transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(0.3); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Le voile reste tel quel : un simple fondu d'opacité, pas un mouvement.
+     Le raccourcir désynchroniserait sa disparition du warp programmé dans
+     `TeleportOverlay.tsx`, et le pop redeviendrait visible. */
+  .teleport-overlay__ember { display: none; }
+}
+
+/* --- Menu de téléportation --------------------------------------------------- */
+
+.teleport-menu {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: stretch;
+  pointer-events: auto;
+}
+
+.teleport-menu__tab {
+  writing-mode: vertical-rl;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 14px 5px;
+  border: none;
+  border-radius: 0 10px 10px 0;
+  background: var(--hud-bg);
+  backdrop-filter: blur(6px);
+  color: #f5dc95;
+  cursor: pointer;
+}
+
+.teleport-menu__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px;
+  border-radius: 0 14px 14px 0;
+  border-left: 2px solid rgba(245, 220, 149, 0.4);
+  background: rgba(18, 26, 20, 0.88);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.teleport-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 14px 7px 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--hud-fg);
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.teleport-menu__item:hover { background: rgba(255, 255, 255, 0.08); }
+
+.teleport-menu__item--active {
+  color: #f5dc95;
+  background: rgba(245, 220, 149, 0.14);
+}
+
+.teleport-menu__icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.teleport-menu__tab:focus-visible,
+.teleport-menu__item:focus-visible {
+  outline: 2px solid #f5dc95;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .teleport-menu__item { transition: none; }
+}
