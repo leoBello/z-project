@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber'
 import { KeyboardControls } from '@react-three/drei'
 import { CameraRig } from './components/CameraRig'
 import { CombatOverlay } from './components/CombatOverlay'
+import { DeathPuffs } from './components/DeathPuffs'
 import { Enemies } from './components/Enemies'
 import { Environment } from './components/Environment'
 import { GameClock } from './components/GameClock'
@@ -75,11 +76,12 @@ export default function App() {
             <Pickups />
           </PhysicsGate>
 
-          {/* Hors de <Physics> : la traînée de lame et la fumée de changement
-              de tenue ne sont que des effets visuels, elles n'ont ni collider
-              ni corps à simuler. */}
+          {/* Hors de <Physics> : la traînée de lame, la fumée de changement de
+              tenue et les fumées de mort ne sont que des effets visuels, elles
+              n'ont ni collider ni corps à simuler. */}
           <SwordArc />
           <OutfitSmoke />
+          <DeathPuffs />
         </Suspense>
 
         <CameraRig />
