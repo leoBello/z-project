@@ -1,7 +1,6 @@
 import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { KeyboardControls } from '@react-three/drei'
-import { Physics } from '@react-three/rapier'
 import { CameraRig } from './components/CameraRig'
 import { CombatOverlay } from './components/CombatOverlay'
 import { Enemies } from './components/Enemies'
@@ -10,6 +9,7 @@ import { GameClock } from './components/GameClock'
 import { HUD } from './components/HUD'
 import { LanguageToggle } from './components/LanguageToggle'
 import { Minimap } from './components/Minimap'
+import { PhysicsGate } from './components/PhysicsGate'
 import { Pickups } from './components/Pickups'
 import { Player } from './components/Player'
 import { Projectiles } from './components/Projectiles'
@@ -27,7 +27,7 @@ import { TeleportMenu } from './components/TeleportMenu'
 import { TeleportOverlay } from './components/TeleportOverlay'
 import { TouchControls } from './components/TouchControls'
 import { controlMap } from './config/controls'
-import { CAMERA, PLAYER } from './config/gameplay'
+import { CAMERA } from './config/gameplay'
 import { useGameStore } from './store/useGameStore'
 
 /** Ajouter `?debug` à l'URL pour visualiser les colliders Rapier. */
@@ -41,12 +41,6 @@ export default function App() {
    * machines à états à zéro sans logique de réinitialisation à écrire.
    */
   const runId = useGameStore((state) => state.runId)
-  /**
-   * Lu par abonnement, et c'est sans danger : la phase ne change qu'à une
-   * transition (pause, Game Over), jamais par frame. Le composant ne se
-   * re-rend donc que dans ces rares moments.
-   */
-  const phase = useGameStore((state) => state.phase)
 
   return (
     <KeyboardControls map={controlMap}>
@@ -73,17 +67,13 @@ export default function App() {
         <GameClock />
 
         <Suspense fallback={null}>
-          <Physics
-            gravity={[0, PLAYER.gravity, 0]}
-            paused={phase !== 'playing'}
-            debug={DEBUG_PHYSICS}
-          >
+          <PhysicsGate debug={DEBUG_PHYSICS}>
             <Environment />
             <Player key={`player-${runId}`} />
             <Enemies key={`enemies-${runId}`} />
             <Projectiles />
             <Pickups />
-          </Physics>
+          </PhysicsGate>
 
           {/* Hors de <Physics> : la traînée de lame et la fumée de changement
               de tenue ne sont que des effets visuels, elles n'ont ni collider
