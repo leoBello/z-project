@@ -311,3 +311,24 @@ export function playEquip() {
   noiseBurst('highpass', 1800, 400, 0.9, 0.13, 0.3)
   noiseBurst('bandpass', 600, 1600, 1.2, 0.07, 0.12)
 }
+
+/**
+ * Défaite d'un ennemi : le corps qui cède, puis le souffle du nuage.
+ *
+ * Plus long et plus grave que `playHit` (0,09 s), qui reste le son de l'impact
+ * — les deux jouent d'affilée sur un coup fatal, l'un étant ce que l'autre
+ * provoque.
+ *
+ * **Aucune note musicale**, et c'est le point : même raisonnement que
+ * `playEquip`. Une mort qui sonne comme une récompense entrerait en
+ * concurrence avec la fanfare du coffre, et c'est le coffre qui doit rester la
+ * trouvaille de la partie.
+ */
+export function playDefeat() {
+  // Le corps qui cède : passe-bas franchement descendant.
+  noiseBurst('lowpass', 3000, 260, 0.9, 0.22, 0.22)
+  // La chute, qui donne le poids. Sans elle l'effet n'est qu'un « pfff ».
+  tone('triangle', 300, 70, 0.18, 0.3)
+  // Le souffle du nuage : montant, léger, il prolonge sans alourdir.
+  noiseBurst('highpass', 900, 2600, 1.0, 0.06, 0.18)
+}
