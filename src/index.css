@@ -8,6 +8,20 @@
     176×195 autour d'un fond de 160.
   */
   --minimap-map: 160px;
+  /*
+    Cotes de la colonne de reglages en haut a droite, nommees parce que le HUD
+    s'en sert **ailleurs** : sur mobile, la barre de vie se range dessous et doit
+    connaitre la hauteur exacte de la pile. Elles etaient auparavant additionnees
+    a la main dans un unique `padding-top: 37px`, et ajouter la pastille
+    d'inventaire sous le selecteur de langue a rendu ce total faux sans que rien
+    ne le signale : les coeurs se sont retrouves exactement sous la pastille,
+    34px de recouvrement. Le calcul est desormais ecrit, pas recopie.
+  */
+  --settings-top: 16px;
+  /* Hauteur d'une pastille de reglage (son, qualite, langue), mesuree. */
+  --settings-pill: 29px;
+  --settings-gap: 8px;
+  --inventory-size: 44px;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
@@ -793,7 +807,7 @@ canvas {
 */
 .settings {
   position: fixed;
-  top: 16px;
+  top: var(--settings-top);
   right: 16px;
   /*
     Colonne, et non plus une simple rangée : la pastille d'inventaire se range
@@ -804,7 +818,7 @@ canvas {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
+  gap: var(--settings-gap);
   pointer-events: none;
 }
 
@@ -1274,29 +1288,53 @@ canvas {
   :root { --minimap-map: 120px; }
 
   /*
-    Cœurs poussés en haut à droite, sous le sélecteur de langue : centrés, ils
-    se retrouvaient à cheval sur la carte, et la place manque pour tenir entre
-    les deux. Le décalage vaut 16 (marge du sélecteur) + 29 (sa hauteur) + 8 de
-    respiration, moins les 16 que le padding du HUD applique déjà.
+    Cœurs poussés en haut à droite, **sous toute la colonne de réglages** :
+    centrés, ils se retrouvaient à cheval sur la carte, et la place manque pour
+    tenir entre les deux.
+
+    Le décalage est calculé et non recopié, et c'est le correctif : il valait
+    `37px` — la marge, la hauteur d'une pastille, une respiration, moins le
+    padding du HUD — à l'époque où la colonne ne contenait qu'une rangée. La
+    pastille d'inventaire ajoutée dessous a fait grandir la pile de 52px sans
+    que ce nombre bouge, et les cœurs se sont retrouvés exactement dessous :
+    34px de recouvrement, à toutes les largeurs. Écrit en `calc`, le décalage
+    suit désormais la colonne au lieu de la contredire.
   */
   .hud__top {
     justify-content: flex-end;
-    padding-top: 37px;
+    padding-top: calc(
+      var(--settings-top) + var(--settings-pill) + var(--settings-gap) +
+        var(--inventory-size) + 8px - 16px
+    );
   }
 
   /*
-    Et un cran plus petits, à l'échelle de la carte réduite. C'est aussi ce qui
-    garantit la séparation sur les téléphones les plus étroits : à 320px de
-    large, la pastille commence 6px après le bord droit de la carte.
+    Et un cran plus petits, à l'échelle de la carte réduite.
+
+    La barre **passe à la ligne** plutôt que de rétrécir indéfiniment. Le cas
+    limite n'est pas celui de la partie fraîche : avec le réceptacle du temple
+    et les deux cœurs de la tenue, elle compte huit cases, soit 208px — plus
+    que les 184 disponibles sur un écran de 360 une fois la carte déduite. Une
+    barre plus courte à tout prix aurait donné des cœurs de quinze pixels sur
+    les petits téléphones ; deux rangées se lisent mieux, et c'est de toute
+    façon ce que fait Zelda passé dix cœurs.
+
+    La largeur disponible se déduit de la carte au lieu d'être devinée : elle
+    occupe `--minimap-map` plus 16px de padding, posée à 16 du bord gauche, et
+    les cœurs s'arrêtent à 16 du bord droit — d'où les 56px fixes, plus 8 de
+    respiration entre les deux.
   */
   .hud__hearts {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: calc(100vw - 56px - var(--minimap-map));
     gap: 4px;
     padding: 6px 10px;
   }
 
   .heart {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
   }
 }
 
@@ -1316,9 +1354,10 @@ canvas {
   place-items: center;
   /* 44px : la cible tactile minimale recommandée. La pastille est en haut à
      droite, là où le pouce arrive de biais — la rogner aurait été le seul
-     endroit de l'écran où ça se paie vraiment. */
-  width: 44px;
-  height: 44px;
+     endroit de l'écran où ça se paie vraiment. Le jeton est lu aussi par le
+     décalage des cœurs sur mobile : c'est cette pastille qu'ils contournent. */
+  width: var(--inventory-size);
+  height: var(--inventory-size);
   padding: 0;
   border: none;
   border-radius: 999px;
