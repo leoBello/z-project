@@ -3,6 +3,7 @@ import { format } from '../i18n'
 import { useI18n } from '../i18n/useI18n'
 import { clearPickups } from '../state/pickups'
 import { clearProjectiles } from '../state/projectiles'
+import { clearDeathPuffs } from '../state/deathPuffs'
 import { interactionLabel, useInteraction } from '../store/interaction'
 import { useGameStore } from '../store/useGameStore'
 
@@ -62,10 +63,12 @@ export function HUD() {
   const lastContainer = heartContainers[heartContainers.length - 1]
 
   const restart = () => {
-    // Projectiles en vol et cœurs au sol survivraient au redémarrage : ils
-    // vivent dans des pools hors React, que remonter les composants ne vide pas.
+    // Projectiles en vol, cœurs au sol et fumées en cours survivraient au
+    // redémarrage : ils vivent dans des pools hors React, que remonter les
+    // composants ne vide pas.
     clearProjectiles()
     clearPickups()
+    clearDeathPuffs()
     reset()
   }
 
