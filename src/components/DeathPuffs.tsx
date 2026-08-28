@@ -1,12 +1,14 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import {
+  DoubleSide,
   Euler,
   IcosahedronGeometry,
   InstancedBufferAttribute,
   type InstancedMesh,
   Matrix4,
   Quaternion,
+  RingGeometry,
   ShaderMaterial,
   Vector3,
 } from 'three'
@@ -15,7 +17,12 @@ import {
   DEATH_PUFF_MS,
   DEATH_PUFF_POOL_SIZE,
   DEATH_PUFF_SIZE,
+  DEATH_RING_FROM,
+  DEATH_RING_MS,
+  DEATH_RING_POOL_SIZE,
+  DEATH_RING_TO,
   deathPuffs,
+  deathRings,
 } from '../state/deathPuffs'
 import { faceted } from './environment/faceted'
 
@@ -85,7 +92,7 @@ function makePuffMaterial() {
  * et gel compris. Aucune garde de phase n'est nécessaire ici, contrairement à
  * `Pickups` : l'horloge est déjà arrêtée, donc l'âge des nuages ne bouge pas.
  */
-export function DeathPuffs() {
+function SmokeClouds() {
   const mesh = useRef<InstancedMesh>(null)
 
   const geometry = useMemo(() => {
@@ -153,5 +160,114 @@ export function DeathPuffs() {
       // englobant commun à chaque frame coûterait plus cher que de les dessiner.
       frustumCulled={false}
     />
+  )
+}
+
+/** Couché à plat : la géométrie d'anneau naît dans le plan XY. */
+const FLAT = new Quaternion().setFromEuler(new Euler(-Math.PI / 2, 0, 0))
+
+/**
+ * Anneau de choc, posé au sol sous l'ennemi vaincu.
+ *
+ * Il partage le shader des fumées : même besoin d'opacité et de teinte par
+ * instance, aucune raison d'en écrire un second.
+ *
+ * L'anneau est **la première chose à couper** si l'effet ne se lit pas.
+ * `SwordArc` documente que la caméra, à 11 unités de haut pour 21 de recul, ne
+ * voit un objet couché que sous 28° : elle n'en présente qu'un peu plus du
+ * tiers de la surface. Le pari est qu'une forme concentrique en expansion
+ * survit à cet écrasement là où un ruban ne survivait pas — mais c'est un
+ * pari, pas une certitude.
+ */
+function DeathRings() {
+  const mesh = useRef<InstancedMesh>(null)
+
+  const geometry = useMemo(() => {
+    // Rayon unitaire : c'est l'échelle d'instance qui fait grandir l'anneau,
+    // pas une géométrie régénérée à chaque frame.
+    const base = new RingGeometry(0.86, 1, 36)
+    base.setAttribute(
+      'aAlpha',
+      new InstancedBufferAttribute(new Float32Array(DEATH_RING_POOL_SIZE), 1),
+    )
+    base.setAttribute(
+      'aColor',
+      new InstancedBufferAttribute(new Float32Array(DEATH_RING_POOL_SIZE * 3), 3),
+    )
+    return base
+  }, [])
+
+  const material = useMemo(() => {
+    const shared = makePuffMaterial()
+    // Visible des deux côtés : sur une pente, la caméra peut passer sous le
+    // plan de l'anneau, et un anneau qui disparaît selon l'inclinaison du
+    // terrain se lit comme un bug.
+    shared.side = DoubleSide
+    return shared
+  }, [])
+
+  useFrame(() => {
+    const instanced = mesh.current
+    if (!instanced) return
+
+    const now = gameNow()
+    const alpha = geometry.getAttribute('aAlpha') as InstancedBufferAttribute
+    const colors = geometry.getAttribute('aColor') as InstancedBufferAttribute
+
+    for (let i = 0; i < deathRings.length; i++) {
+      const ring = deathRings[i]
+      const k = ring.active ? (now - ring.bornAt) / DEATH_RING_MS : 1
+      if (ring.active && k >= 1) ring.active = false
+
+      if (!ring.active) {
+        instanced.setMatrixAt(i, HIDDEN)
+        alpha.setX(i, 0)
+        continue
+      }
+
+      // Expansion en sortie cubique : l'onde part vite et s'essouffle, ce qui
+      // est le mouvement d'un choc. Linéaire, elle se lit comme un halo qui
+      // grandit.
+      const ease = 1 - (1 - k) ** 3
+      const radius = DEATH_RING_FROM + (DEATH_RING_TO - DEATH_RING_FROM) * ease
+      position.copy(ring.position)
+      scale.set(radius, radius, radius)
+      matrix.compose(position, FLAT, scale)
+      instanced.setMatrixAt(i, matrix)
+
+      // Extinction plus rapide que l'expansion : l'anneau doit avoir disparu
+      // avant d'atteindre sa taille maximale, sinon il stationne.
+      alpha.setX(i, 0.7 * (1 - k) ** 2)
+      colors.setXYZ(i, ring.color.r, ring.color.g, ring.color.b)
+    }
+
+    instanced.instanceMatrix.needsUpdate = true
+    alpha.needsUpdate = true
+    colors.needsUpdate = true
+  })
+
+  return (
+    <instancedMesh
+      ref={mesh}
+      args={[geometry, material, DEATH_RING_POOL_SIZE]}
+      renderOrder={3}
+      frustumCulled={false}
+    />
+  )
+}
+
+/**
+ * Effets laissés par les ennemis vaincus : les fumées et l'anneau de choc.
+ *
+ * Deux `InstancedMesh` et non un seul : les géométries diffèrent, et une
+ * géométrie par instance n'existe pas. Deux draw calls pour toutes les morts
+ * de l'écran, quel qu'en soit le nombre.
+ */
+export function DeathPuffs() {
+  return (
+    <>
+      <SmokeClouds />
+      <DeathRings />
+    </>
   )
 }
