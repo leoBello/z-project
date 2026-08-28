@@ -8,7 +8,7 @@ import {
   playTreasure,
 } from '../audio/sfx'
 import { chestById } from '../config/chests'
-import { itemById } from '../config/items'
+import { itemById, type Equipment, type ItemSlot } from '../config/items'
 import { now as gameNow, resetClock } from '../state/gameClock'
 import { resetCombat } from '../state/playerTransform'
 import type { ChestId, GamePhase, ItemId, LandmarkId } from '../types/game'
@@ -25,6 +25,16 @@ import type { ChestId, GamePhase, ItemId, LandmarkId } from '../types/game'
 export const MAX_HEARTS = 5
 /** Durée d'invincibilité après un coup reçu, en millisecondes. */
 export const INVULNERABILITY_MS = 1100
+
+/**
+ * Dégâts d'un coup d'épée, arme nue.
+ *
+ * Les armes de l'inventaire *multiplient* cette valeur plutôt que d'en déclarer
+ * une nouvelle : les points de vie des ennemis sont des entiers de deux et trois
+ * (voir `config/enemies.ts`), et un multiplicateur se lit directement en nombre
+ * de coups économisés — ce qu'une valeur absolue oblige à calculer de tête.
+ */
+export const SWORD_DAMAGE = 1
 
 export interface GameState {
   phase: GamePhase
@@ -100,8 +110,17 @@ export interface GameState {
    * donne au sac une histoire plutôt qu'un tri arbitraire.
    */
   items: ItemId[]
-  /** Objet porté, ou `null`. Un seul emplacement d'équipement. */
-  equipped: ItemId | null
+  /**
+   * Objets portés, **un par famille** : une tenue, une arme, une babiole.
+   *
+   * Un emplacement unique aurait été plus simple à écrire et faux à jouer : le
+   * katana et la tenue du clan n'occupent pas la même place sur un personnage,
+   * et les faire se chasser l'un l'autre aurait fait d'une deuxième trouvaille
+   * un renoncement à la première. La famille de l'objet *est* son emplacement
+   * (voir `ItemSlot`), il n'y a donc rien à déclarer en plus dans la table des
+   * objets.
+   */
+  equipped: Equipment
   /**
    * Coffres déjà ouverts.
    *
@@ -138,12 +157,13 @@ export interface GameState {
    */
   nearbyChest: ChestId | null
   /**
-   * Horodatage du dernier changement de tenue, sur l'horloge de jeu.
+   * Horodatage du dernier changement d'équipement, sur l'horloge de jeu.
    *
    * Sert de `key` et de départ d'animation à la bouffée de fumée qui masque le
-   * changement de silhouette. `-Infinity` tant qu'aucune tenue n'a été portée.
+   * changement de silhouette — celui de la tenue comme celui de la lame, qui
+   * s'allonge d'un coup. `-Infinity` tant que rien n'a été équipé.
    */
-  outfitChangedAt: number
+  equipChangedAt: number
   /**
    * Lieu vers lequel une téléportation est en cours, ou `null`.
    *
@@ -188,6 +208,14 @@ export interface GameState {
 
   /** Capacité totale de la barre de vie : cœurs rouges plus cœurs jaunes. */
   heartCapacity: () => number
+  /**
+   * Dégâts d'un coup d'épée, arme portée comprise.
+   *
+   * Une fonction et non un champ : elle est appelée une fois par coup porté,
+   * depuis `Enemy.tsx`, et un champ tenu à jour à chaque équipement aurait été
+   * une seconde source de vérité à côté de la table des objets.
+   */
+  swordDamage: () => number
   /** Ouvre l'inventaire et met la partie en pause. */
   openInventory: () => void
   /** Referme l'inventaire, et la carte d'objet avec lui. */
@@ -197,12 +225,17 @@ export interface GameState {
   /** Referme la carte d'objet, sans quitter l'inventaire. */
   hideItem: () => void
   /**
-   * Porte un objet. Retire d'abord celui qui l'était, en mettant ses cœurs
-   * jaunes de côté. Sans effet si l'objet n'est pas possédé.
+   * Porte un objet. Retire d'abord celui qui occupait **son emplacement**, en
+   * mettant ses cœurs jaunes de côté. Sans effet si l'objet n'est pas possédé.
    */
   equipItem: (id: ItemId) => void
-  /** Retire la tenue portée et met ses cœurs jaunes restants de côté. */
-  unequipItem: () => void
+  /**
+   * Retire l'objet porté, s'il l'est, et met ses cœurs jaunes restants de côté.
+   *
+   * Prend l'objet et non l'emplacement : l'appelant est une carte d'objet, qui
+   * sait ce qu'elle affiche et n'a pas à connaître la table des emplacements.
+   */
+  unequipItem: (id: ItemId) => void
   /**
    * Déclenche l'ouverture d'un coffre : gèle la partie et lance sa séquence.
    * Retourne faux s'il était déjà ouvert ou si la partie n'est pas en cours.
@@ -249,28 +282,42 @@ const initialState = {
   discovered: [] as LandmarkId[],
   heartContainers: [] as LandmarkId[],
   items: [] as ItemId[],
-  equipped: null as ItemId | null,
+  equipped: {} as Equipment,
   openedChests: [] as ChestId[],
   inventoryOpen: false,
   activeItem: null as ItemId | null,
   chestReveal: null as ChestId | null,
   nearbyChest: null as ChestId | null,
-  outfitChangedAt: -Infinity,
+  equipChangedAt: -Infinity,
   activeLandmark: null as LandmarkId | null,
   nearbyLandmark: null as LandmarkId | null,
   teleporting: null as LandmarkId | null,
 }
 
 /**
- * Retire la tenue portée, en mettant de côté les cœurs jaunes qui restaient.
+ * Vide un emplacement d'équipement, en mettant de côté les cœurs jaunes qui
+ * restaient à l'objet qui l'occupait.
  *
  * Fonction pure et non action du store : elle est appelée par `equipItem`
- * *avant* de poser la nouvelle tenue, et deux `set` successifs auraient fait
+ * *avant* de poser le nouvel objet, et deux `set` successifs auraient fait
  * clignoter la barre de vie à la valeur intermédiaire.
  */
-function stripOutfit(state: GameState) {
-  if (state.equipped === null || state.bonusHearts === 0) {
-    return { hearts: state.hearts, bonusHearts: 0, bonusCarry: state.bonusCarry }
+function stripSlot(state: GameState, slot: ItemSlot) {
+  const equipped = { ...state.equipped }
+  delete equipped[slot]
+
+  const current = state.equipped[slot]
+  const item = current ? itemById(current) : undefined
+  // Une arme n'a pas de cœurs jaunes à rendre : on ne touche alors ni à la barre
+  // de vie ni à la réserve. Le test porte sur l'objet et non sur l'emplacement —
+  // c'est la table des objets qui sait ce qu'un objet prête.
+  if (!current || !item || item.bonusHearts === 0) {
+    return {
+      hearts: state.hearts,
+      bonusHearts: state.bonusHearts,
+      bonusCarry: state.bonusCarry,
+      equipped,
+    }
   }
   // Ce qui dépasse des cœurs rouges *est* le jaune restant : la barre est un
   // pool unique dont les jaunes occupent la fin.
@@ -278,7 +325,8 @@ function stripOutfit(state: GameState) {
   return {
     hearts: Math.min(state.hearts, state.maxHearts),
     bonusHearts: 0,
-    bonusCarry: { ...state.bonusCarry, [state.equipped]: left },
+    bonusCarry: { ...state.bonusCarry, [current]: left },
+    equipped,
   }
 }
 
@@ -304,6 +352,14 @@ export const useGameStore = create<GameState>((set, get) => ({
   heartCapacity: () => {
     const { maxHearts, bonusHearts } = get()
     return maxHearts + bonusHearts
+  },
+
+  swordDamage: () => {
+    const held = get().equipped.weapon
+    const weapon = held ? itemById(held) : undefined
+    // Arrondi parce que rien n'interdira un multiplicateur fractionnaire un
+    // jour, et que les points de vie des ennemis, eux, sont des entiers.
+    return Math.round(SWORD_DAMAGE * (weapon?.attackMultiplier ?? 1))
   },
 
   healPlayer: (amount = 1) => {
@@ -409,32 +465,35 @@ export const useGameStore = create<GameState>((set, get) => ({
   equipItem: (id) => {
     const state = get()
     const item = itemById(id)
-    if (!item || !state.items.includes(id) || state.equipped === id) return
+    if (!item || !state.items.includes(id) || state.equipped[item.kind] === id) return
 
-    // La tenue précédente part d'abord, dans le même `set` : deux écritures
-    // successives feraient passer la barre de vie par une valeur intermédiaire,
-    // visible le temps d'une frame.
-    const stripped = stripOutfit(state)
+    // L'objet qui occupait l'emplacement part d'abord, dans le même `set` : deux
+    // écritures successives feraient passer la barre de vie par une valeur
+    // intermédiaire, visible le temps d'une frame.
+    const stripped = stripSlot(state, item.kind)
     const carried = stripped.bonusCarry[id] ?? item.bonusHearts
 
     playEquip()
     set({
-      equipped: id,
-      bonusHearts: item.bonusHearts,
-      // On ne rend que ce qui restait — plafonné par la capacité jaune de la
-      // *nouvelle* tenue, qui peut être plus petite que celle d'où vient le
-      // report.
+      equipped: { ...stripped.equipped, [item.kind]: id },
+      // Somme et non affectation : `stripSlot` n'a remis les jaunes à zéro que
+      // s'il vidait l'emplacement qui les portait. Équiper une arme ne doit pas
+      // faire disparaître les cœurs de la tenue.
+      bonusHearts: stripped.bonusHearts + item.bonusHearts,
+      // On ne rend que ce qui restait — plafonné par la capacité jaune du
+      // *nouvel* objet, qui peut être plus petite que celle d'où vient le report.
       hearts: stripped.hearts + Math.min(carried, item.bonusHearts),
       bonusCarry: { ...stripped.bonusCarry, [id]: 0 },
-      outfitChangedAt: gameNow(),
+      equipChangedAt: gameNow(),
     })
   },
 
-  unequipItem: () => {
+  unequipItem: (id) => {
     const state = get()
-    if (state.equipped === null) return
+    const item = itemById(id)
+    if (!item || state.equipped[item.kind] !== id) return
     playEquip()
-    set({ ...stripOutfit(state), equipped: null, outfitChangedAt: gameNow() })
+    set({ ...stripSlot(state, item.kind), equipChangedAt: gameNow() })
   },
 
   // --- Coffres --------------------------------------------------------------
@@ -518,8 +577,8 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   // Les collections sont réécrites explicitement : `initialState` est un objet
   // unique partagé par toutes les parties, et en réutiliser les tableaux (ou
-  // l'objet `bonusCarry`) ferait qu'une mutation en place fuiterait d'une
-  // partie à l'autre.
+  // les objets `equipped` et `bonusCarry`) ferait qu'une mutation en place
+  // fuiterait d'une partie à l'autre.
   reset: () => {
     // Sans cette remise à zéro, une seconde partie démarrerait avec une horloge
     // à plusieurs minutes : les sentinelles `-Infinity` encaissent, mais un cœur
@@ -534,6 +593,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       discovered: [],
       heartContainers: [],
       items: [],
+      equipped: {},
       openedChests: [],
       bonusCarry: {},
       runId: state.runId + 1,

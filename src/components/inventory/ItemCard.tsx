@@ -20,6 +20,15 @@ function CloseIcon() {
   )
 }
 
+/** Petite lame, pour les armes. Même rôle que le cœur : montrer l'effet. */
+function AttackBlade() {
+  return (
+    <svg className="item-card__effect-heart" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M19 3l-9.5 9.5-2 4.5 4.5-2L21.5 5.5 19 3zM7.5 15.5L4 19l1 1 3.5-3.5-1-1z" />
+    </svg>
+  )
+}
+
 /** Petit cœur doré, repris du tracé du HUD : l'effet se montre, il ne se décrit pas. */
 function BonusHeart() {
   return (
@@ -54,12 +63,18 @@ interface ItemCardProps {
  * le même objet qu'on regarde.
  */
 export function ItemCard({ id, context, onClose }: ItemCardProps) {
+  // Résolu avant les hooks parce que le sélecteur d'équipement en a besoin, et
+  // qu'un hook ne peut pas vivre après le `return null` qui suit.
+  const item = itemById(id)
   const { dict } = useI18n()
   const panel = useRef<HTMLDivElement>(null)
   const closeButton = useRef<HTMLButtonElement>(null)
-  const equipped = useGameStore((state) => state.equipped)
   const equipItem = useGameStore((state) => state.equipItem)
   const unequipItem = useGameStore((state) => state.unequipItem)
+  // Le booléen est calculé dans le sélecteur et non à côté : s'abonner à
+  // `equipped` ferait re-rendre la carte à chaque changement d'emplacement, y
+  // compris ceux qui ne la concernent pas.
+  const isWorn = useGameStore((state) => (item ? state.equipped[item.kind] === id : false))
 
   // Mémoïsé : `useDialogFocus` le garde en dépendance de son écouteur clavier,
   // et une fonction recréée à chaque rendu le réabonnerait sans arrêt.
@@ -70,11 +85,9 @@ export function ItemCard({ id, context, onClose }: ItemCardProps) {
     closeButton.current?.focus()
   }, [])
 
-  const item = itemById(id)
   if (!item) return null
 
   const text = dict.ui.items[id]
-  const isWorn = equipped === id
 
   return (
     <div className={`item-card${context === 'reveal' ? ' item-card--reveal' : ''}`}>
@@ -108,16 +121,19 @@ export function ItemCard({ id, context, onClose }: ItemCardProps) {
           <p className="item-card__meta">{text.meta}</p>
           <p className="item-card__description">{text.description}</p>
 
-          {item.bonusHearts > 0 && (
+          {/* Un objet sans effet n'affiche pas de ligne d'effet vide : le test
+              porte sur les deux effets connus, et non sur la seule armure. */}
+          {(item.bonusHearts > 0 || item.attackMultiplier > 1) && (
             <p className="item-card__effect">
               <span className="item-card__effect-label">{dict.ui.inventory.effect}</span>
-              {/* Les cœurs sont dessinés en plus du texte, pas à sa place : le
+              {/* Le pictogramme est dessiné en plus du texte, pas à sa place : le
                   nombre doit rester lisible aux lecteurs d'écran, et le dessin
-                  fait le lien avec la barre de vie en haut de l'écran. */}
+                  fait le lien avec la barre de vie ou avec la lame. */}
               <span className="item-card__effect-value">
                 {Array.from({ length: item.bonusHearts }, (_, index) => (
                   <BonusHeart key={index} />
                 ))}
+                {item.attackMultiplier > 1 && <AttackBlade />}
                 {text.effect}
               </span>
             </p>
@@ -127,7 +143,7 @@ export function ItemCard({ id, context, onClose }: ItemCardProps) {
             <button
               type="button"
               className={`item-card__action${isWorn ? ' item-card__action--worn' : ''}`}
-              onClick={() => (isWorn ? unequipItem() : equipItem(id))}
+              onClick={() => (isWorn ? unequipItem(id) : equipItem(id))}
             >
               {isWorn ? dict.ui.inventory.unequip : dict.ui.inventory.equip}
             </button>

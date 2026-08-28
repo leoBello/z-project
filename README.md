@@ -28,6 +28,9 @@ src/
   config/biomes.ts            palettes des sept biomes
   config/enemies.ts           statistiques par espèce, placement
   config/landmarks.ts         points d'intérêt : position, terrasse, découverte
+  config/bridge.ts            tracé du pont de Nakano, ancrages lus dans le relief
+  config/items.ts             objets : effets, emplacements, silhouettes, lames
+  config/chests.ts            coffres : monument porteur, position locale, contenu
   i18n/fr.json, en.json       dictionnaires (interface + contenu du portfolio)
   i18n/index.ts               types, dictionnaires, format()
   i18n/useI18n.ts             accès au dictionnaire courant
@@ -64,6 +67,9 @@ src/
     environment/Stele.tsx     Grande Stèle — les compétences
     environment/Statue.tsx    Idole des Terres Arides — le parcours
     environment/Ruins.tsx     Ruines de l'Île — le contact
+    environment/Pagoda.tsx    Temple de Nakano — la pagode de l'îlot du nord-est
+    environment/Bridge.tsx    pont et torii vers l'îlot : tablier, piles, colliders
+    environment/TreasureChest.tsx  coffre au trésor et séquence d'ouverture
     environment/solids.ts     primitives partagées des monuments
     environment/faceted.ts    normales par face, partagé par le décor
     environment/windMaterial.ts  matériau toon + vent en vertex shader

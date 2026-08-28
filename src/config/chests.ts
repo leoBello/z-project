@@ -1,5 +1,5 @@
 import type { ChestId, ItemId } from '../types/game'
-import { PYRAMID, type Landmark } from './landmarks'
+import { NAKANO, PYRAMID, type Landmark } from './landmarks'
 
 /**
  * Coffres au trésor de la carte.
@@ -117,7 +117,40 @@ export const CHEST_SEQUENCE = {
   cardAt: 1500,
 } as const
 
-export const CHESTS: readonly Chest[] = [PYRAMID_CHEST]
+/**
+ * Coffre de Nakano — le katana de Kusanagi.
+ *
+ * Posé en `[3.75, 1.2]` dans le repère de la pagode, et les deux nombres sont
+ * contraints, pas choisis :
+ *
+ *  - **3,75 en X** parce que le socle du temple fait 2,95 de demi-côté et le
+ *    coffre 0,675 de demi-largeur : à 3,7 leurs emprises se touchaient encore.
+ *    Le coffre est donc juste en dehors du socle, sur le dallage ;
+ *  - **3,94 du centre au total**, angles du coffre à 4,4 : le plateau de l'îlot
+ *    est plat à la valeur près jusqu'à 4,7 (terrasse de `NAKANO`), le coffre ne
+ *    peut donc ni flotter ni s'enfoncer d'un côté.
+ *
+ * Aucune règle de priorité à arbitrer ici, contrairement au coffre de la
+ * pyramide : le temple de Nakano ne présente aucune section de portfolio, il n'a
+ * donc pas de zone d'interaction qui pourrait se recouvrir avec celle du coffre.
+ *
+ * Le joueur débarque du pont en `[0, 5.7]` local, c'est-à-dire pile dans l'axe
+ * de la façade : le coffre est alors sur sa droite, et au **sud** du monument —
+ * le seul côté que la caméra, fixe et tournée vers le nord, montre d'un
+ * bâtiment de dix unités de haut.
+ */
+export const NAKANO_CHEST = define({
+  id: 'nakano-chest',
+  landmark: NAKANO,
+  local: [3.75, 1.2],
+  // De biais vers l'arrivée : d'équerre avec la pagode, le coffre se serait lu
+  // comme une pièce du bâtiment. Même raison que pour celui de la pyramide.
+  yaw: -0.55,
+  item: 'kusanagi',
+  interactRadius: 2.6,
+})
+
+export const CHESTS: readonly Chest[] = [PYRAMID_CHEST, NAKANO_CHEST]
 
 /** Retrouve un coffre par son identifiant. */
 export function chestById(id: ChestId): Chest | undefined {

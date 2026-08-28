@@ -6,10 +6,11 @@ import { useGameStore } from '../store/useGameStore'
 import { faceted } from './environment/faceted'
 
 /**
- * Bouffée de fumée au changement de tenue.
+ * Bouffée de fumée au changement d'équipement.
  *
  * Un changement d'équipement fait sauter la silhouette du joueur d'une image à
- * l'autre : le manteau, la crinière et les épaulières apparaissent d'un coup.
+ * l'autre : le manteau et les épaulières apparaissent d'un coup, la lame double
+ * de longueur.
  * Sans rien pour le couvrir, ça se lit comme un bug d'affichage. Une demi-
  * seconde de fumée suffit à en faire un événement — et c'est de surcroît la
  * convention du genre, ce qui rend l'effet lisible sans explication.
@@ -52,11 +53,11 @@ export function OutfitSmoke() {
   // Horodatage du store plutôt qu'un compteur : il change à chaque équipement
   // *et* à chaque retrait, donc l'effet joue dans les deux sens sans qu'on ait
   // à distinguer les cas.
-  const changedAt = useGameStore((state) => state.outfitChangedAt)
+  const changedAt = useGameStore((state) => state.equipChangedAt)
 
   useEffect(() => {
-    // `-Infinity` est la valeur de départ : aucune tenue n'a encore été
-    // touchée, il n'y a rien à jouer.
+    // `-Infinity` est la valeur de départ : rien n'a encore été équipé, il n'y
+    // a donc rien à jouer.
     startedAt.current = Number.isFinite(changedAt) ? performance.now() : null
   }, [changedAt])
 

@@ -100,14 +100,59 @@ function distanceToSegment(
 
 /** Crête montagneuse, au nord-ouest du continent. */
 const RIDGE = { ax: -52, az: -28, bx: -14, bz: -58, sigma: 20, height: 16 } as const
-/** Île mystérieuse, au large du sud-est. */
-const ISLAND = { x: 74, z: 74, radius: 15, height: 6.5 } as const
-/** Haut-fond guéable reliant la plage du continent à l'île. */
+interface Island {
+  x: number
+  z: number
+  /** Rayon du fondu ; le plateau sommital occupe les 35 % centraux. */
+  radius: number
+  /** Altitude du plateau, avant le retrait de 40 cm appliqué par `sampleHeight`. */
+  height: number
+}
+
+/**
+ * Îles du large.
+ *
+ * Une table plutôt que deux constantes : le masque, le relief, la teinte de
+ * sable et la classification en biome interrogent tous « suis-je sur une
+ * île ? », et une seconde constante nommée à part aurait obligé chacun de ces
+ * quatre appelants à connaître l'existence de la deuxième île. Ajouter une
+ * troisième île ne demande donc qu'une ligne ici.
+ */
+const ISLANDS: readonly Island[] = [
+  /** Île mystérieuse, au large du sud-est. On l'atteint à gué. */
+  { x: 74, z: 74, radius: 15, height: 6.5 },
+  /**
+   * Îlot de Nakano, au large du nord-est.
+   *
+   * Plus petit et plus bas que son aînée — c'est un îlot, il porte un seul
+   * bâtiment. Sa position est mesurée et non choisie à l'œil : sur la diagonale
+   * nord-est, le continent passe sous la mer à r = 82 et la bande de plage qui
+   * le précède est adossée aux terres arides (valeur de région 0,8, bien
+   * au-dessus du seuil de 0,66). Le centre à r = 99 laisse donc un bras de mer
+   * d'une dizaine d'unités entre les deux rivages : assez pour qu'on lise deux
+   * terres séparées, assez peu pour qu'un pont les relie.
+   */
+  { x: 70, z: -70, radius: 12, height: 5.6 },
+]
+
+/** Haut-fond guéable reliant la plage du continent à l'île du sud-est. */
 const CAUSEWAY = { ax: 53, az: 53, bx: 66, bz: 66, halfWidth: 9 } as const
 
-/** Vaut 1 au cœur de l'île, 0 au large. Sert aussi à choisir ses props. */
+/** Masque d'une île prise isolément : 1 sur son plateau, 0 au large. */
+function maskOf(island: Island, x: number, z: number) {
+  return 1 - smoothstep(island.radius * 0.35, island.radius, Math.hypot(x - island.x, z - island.z))
+}
+
+/**
+ * Vaut 1 au cœur d'une île, 0 au large. Sert aussi à choisir ses props.
+ *
+ * Le maximum et non la somme : deux îles qui se recouvriraient donneraient un
+ * masque supérieur à 1, donc une plage qui déborde au large.
+ */
 export function islandMask(x: number, z: number) {
-  return 1 - smoothstep(ISLAND.radius * 0.35, ISLAND.radius, Math.hypot(x - ISLAND.x, z - ISLAND.z))
+  let mask = 0
+  for (const island of ISLANDS) mask = Math.max(mask, maskOf(island, x, z))
+  return mask
 }
 
 /**
@@ -115,7 +160,7 @@ export function islandMask(x: number, z: number) {
  *
  * Composition : un dôme continental qui plonge sous la mer avant les bords de
  * carte (l'océan sert de limite naturelle, bien plus élégante qu'un mur), une
- * crête montagneuse, une île, un haut-fond, et du bruit pour casser les
+ * crête montagneuse, deux îles, un haut-fond, et du bruit pour casser les
  * courbes trop propres.
  */
 export function sampleHeight(x: number, z: number) {
@@ -141,9 +186,13 @@ export function sampleHeight(x: number, z: number) {
   height += (fbm(x * 0.021, z * 0.021) - 0.5) * 3.4 * (0.25 + landMask * 0.75)
   height += (fbm(x * 0.075 + 11, z * 0.075 - 5) - 0.5) * 0.9
 
-  // Île : posée par-dessus le fond marin, pas ajoutée (sinon elle s'enfonce).
-  const island = ISLAND.height * islandMask(x, z)
-  if (island > 0) height = Math.max(height, island - 0.4)
+  // Îles : posées par-dessus le fond marin, pas ajoutées (sinon elles
+  // s'enfoncent). Chacune est relevée avec *sa* hauteur — passer par le masque
+  // combiné donnerait à la petite île la silhouette de la grande.
+  for (const island of ISLANDS) {
+    const relief = island.height * maskOf(island, x, z)
+    if (relief > 0) height = Math.max(height, relief - 0.4)
+  }
 
   // Haut-fond : remonte le fond juste sous la surface, en gué.
   const causewayDistance = distanceToSegment(

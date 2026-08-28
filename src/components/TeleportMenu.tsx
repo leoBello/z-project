@@ -1,32 +1,38 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { isTouchDevice, useIsTouchDevice } from '../config/device'
-import { LANDMARKS } from '../config/landmarks'
+import { PORTFOLIO_LANDMARKS, type PortfolioSection } from '../config/landmarks'
 import { useI18n } from '../i18n/useI18n'
 import { useTouchHintsVisible } from '../state/touchHints'
 import { useGameStore } from '../store/useGameStore'
-import type { LandmarkId } from '../types/game'
 
 /**
- * Tracés des cinq icônes, un par monument — style "traits dorés" validé en
- * maquette. `currentColor` sur le `<svg>` parent suit la couleur du texte du
- * bouton : la ligne active se recolore par CSS seul, sans prop de couleur.
+ * Tracés des cinq icônes — style "traits dorés" validé en maquette.
+ * `currentColor` sur le `<svg>` parent suit la couleur du texte du bouton : la
+ * ligne active se recolore par CSS seul, sans prop de couleur.
+ *
+ * La table est **indexée par section et non par monument**, et c'est ce qui la
+ * rend exhaustive : ce menu est la table des matières du portfolio, chaque
+ * section y est présentée par exactement un lieu, et un monument du paysage — la
+ * pagode de Nakano — n'y figure pas. Indexée par identifiant de lieu, elle aurait
+ * exigé une icône pour un bouton qui n'existe pas. Le dessin, lui, reste celui
+ * du monument : c'est ce que le joueur reconnaît.
  */
-const LANDMARK_ICONS: Record<LandmarkId, ReactNode> = {
-  temple: <path d="M4 20h16M6 20V9l6-5 6 5v11M9 20v-6h6v6" />,
-  pyramid: <path d="M12 4l9 16H3z" />,
-  stele: <path d="M8 3h8l2 6-6 12L6 9z" />,
-  statue: (
+const SECTION_ICONS: Record<PortfolioSection, ReactNode> = {
+  projects: <path d="M4 20h16M6 20V9l6-5 6 5v11M9 20v-6h6v6" />,
+  bio: <path d="M12 4l9 16H3z" />,
+  skills: <path d="M8 3h8l2 6-6 12L6 9z" />,
+  background: (
     <>
       <circle cx="12" cy="7" r="3" />
       <path d="M7 21c0-4 2-7 5-7s5 3 5 7" />
     </>
   ),
-  ruins: <path d="M4 21V11l4-6h8l4 6v10M8 21v-6h8v6" />,
+  contact: <path d="M4 21V11l4-6h8l4 6v10M8 21v-6h8v6" />,
 }
 
 /**
- * Menu de téléportation rapide vers les cinq points d'intérêt.
+ * Menu de téléportation rapide vers les cinq lieux du portfolio.
  *
  * Tablette rétractable sur le bord gauche, ouverte par défaut. Doit être
  * montée après `<PortfolioDialog />` dans `App.tsx` : le projet n'utilise
@@ -89,7 +95,7 @@ export function TeleportMenu() {
 
       {open && (
         <nav className="teleport-menu__panel" aria-label={dict.ui.teleport.group}>
-          {LANDMARKS.map((landmark) => {
+          {PORTFOLIO_LANDMARKS.map((landmark) => {
             const isActive = activeLandmark === landmark.id
             return (
               <button
@@ -97,7 +103,7 @@ export function TeleportMenu() {
                 type="button"
                 className={`teleport-menu__item${isActive ? ' teleport-menu__item--active' : ''}`}
                 aria-current={isActive || undefined}
-                aria-label={`${dict.ui.landmarks[landmark.id].name} — ${dict.ui.landmarks[landmark.id].action}`}
+                aria-label={`${dict.ui.landmarks[landmark.id].name} — ${dict.ui.sectionActions[landmark.section]}`}
                 onClick={() => {
                   teleportTo(landmark.id)
                   // Sur mobile, le panneau déployé recouvre la modale qui vient
@@ -116,7 +122,7 @@ export function TeleportMenu() {
                   strokeWidth={1.6}
                   aria-hidden="true"
                 >
-                  {LANDMARK_ICONS[landmark.id]}
+                  {SECTION_ICONS[landmark.section]}
                 </svg>
                 {dict.ui.sections[landmark.section]}
               </button>

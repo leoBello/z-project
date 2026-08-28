@@ -8,10 +8,10 @@ import type { ItemId } from '../../types/game'
  * contrôle. Un PNG de tenue aurait aussi imposé une seconde direction
  * artistique — un rendu peint à côté d'un monde en cel-shading facetté.
  *
- * Le tracé décrit la tenue **telle qu'elle est portée dans le jeu** : mêmes
- * teintes que la palette `ninja` de `HeroPlaceholder`, mêmes lamelles, même
- * crinière. La carte doit montrer ce qu'on va voir courir dans l'herbe, pas
- * une variante d'illustrateur.
+ * Le tracé décrit l'objet **tel qu'il est porté dans le jeu** : mêmes teintes
+ * que la palette de `HeroPlaceholder`, mêmes lamelles, même ligature. La carte
+ * doit montrer ce qu'on va voir courir dans l'herbe, pas une variante
+ * d'illustrateur.
  */
 
 /** Teintes partagées avec la silhouette 3D. Voir `OUTFITS.ninja`. */
@@ -143,8 +143,102 @@ function NinjaGarb() {
   )
 }
 
+/** Teintes partagées avec la lame 3D. Voir `Katana` dans `HeroPlaceholder`. */
+const KATANA = {
+  blade: '#dde6ef',
+  bladeShade: '#a9b8c9',
+  edge: '#f6fbff',
+  guard: '#d0a53c',
+  grip: '#3a2a1e',
+  cord: '#2f4f66',
+  jade: '#4fc9a3',
+} as const
+
+/**
+ * Katana de Kusanagi.
+ *
+ * Même format portrait que la tenue, et la lame le remplit **en diagonale** :
+ * posée à la verticale, elle ne fait qu'un trait au milieu d'un cadre vide ; à
+ * plat, elle perd toute la hauteur de la case. La diagonale est le seul cadrage
+ * qui donne à une arme longue sa longueur dans un rectangle debout.
+ *
+ * Le halo est de jade et non d'or, pour la même raison que l'accent de l'objet :
+ * l'or est déjà la couleur du trésor dans tout le jeu, et une lame légendaire
+ * dorée se serait lue comme un butin de plus.
+ */
+function KusanagiKatana() {
+  return (
+    <svg viewBox="0 0 320 300" role="img" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="katana-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#16232c" />
+          <stop offset="100%" stopColor="#3c5462" />
+        </linearGradient>
+        <radialGradient id="katana-halo" cx="0.5" cy="0.5" r="0.6">
+          <stop offset="0%" stopColor={KATANA.jade} stopOpacity="0.42" />
+          <stop offset="100%" stopColor={KATANA.jade} stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <rect width="320" height="300" fill="url(#katana-sky)" />
+      <circle cx="160" cy="150" r="150" fill="url(#katana-halo)" />
+
+      {/* Trois traits d'ombre derrière la lame : ils donnent le mouvement du
+          coup, et empêchent la diagonale de se lire comme un décor rayé. */}
+      {[0, 1, 2].map((i) => (
+        <path
+          key={i}
+          d={`M${44 + i * 14} ${252 - i * 8} L${236 + i * 14} ${52 - i * 8}`}
+          stroke={KATANA.jade}
+          strokeWidth="2"
+          strokeLinecap="round"
+          opacity={0.14 - i * 0.035}
+        />
+      ))}
+
+      {/* Poignée, du coin bas-gauche jusqu'à la garde. */}
+      <path d="M46 262 L82 226 L94 238 L58 274 Z" fill={KATANA.grip} />
+      {/* Ligature : sept losanges alternés, la signature d'un tsuka-ito. */}
+      {[0, 1, 2, 3, 4].map((i) => (
+        <path
+          key={`wrap-${i}`}
+          d={`M${52 + i * 8} ${268 - i * 8} l10 -10 l6 6 l-10 10 z`}
+          fill={KATANA.cord}
+        />
+      ))}
+      {/* Pommeau. */}
+      <path d="M40 268 h14 v10 h-14 z" fill={KATANA.cord} transform="rotate(-45 47 273)" />
+
+      {/* Tsuba : le disque de garde, vu de trois quarts, donc une ellipse. */}
+      <ellipse cx="99" cy="209" rx="9" ry="21" fill={KATANA.guard} transform="rotate(-45 99 209)" />
+
+      {/* Lame : un long quadrilatère à peine courbe. Le dos est plus sombre, le
+          tranchant presque blanc — c'est ce contraste, et non un contour, qui
+          fait qu'on voit de quel côté ça coupe. */}
+      <path d="M104 204 L246 56 L258 62 L116 216 Z" fill={KATANA.bladeShade} />
+      <path d="M110 210 L252 60 L258 62 L116 216 Z" fill={KATANA.blade} />
+      <path d="M113 213 L255 61 L258 62 L116 216 Z" fill={KATANA.edge} />
+
+      {/* Kissaki : la pointe, coupée en biais. */}
+      <path d="M246 56 L272 40 L262 68 L258 62 Z" fill={KATANA.blade} />
+      <path d="M258 62 L272 40 L266 60 Z" fill={KATANA.edge} />
+
+      {/* Éclat de jade au ras du tranchant : la seule chose qui dise que la lame
+          n'est pas une lame ordinaire. */}
+      <path
+        d="M118 214 L258 64"
+        stroke={KATANA.jade}
+        strokeWidth="3"
+        strokeLinecap="round"
+        opacity="0.55"
+      />
+    </svg>
+  )
+}
+
 const ILLUSTRATIONS: Record<ItemId, () => React.JSX.Element> = {
   'ninja-garb': NinjaGarb,
+  kusanagi: KusanagiKatana,
 }
 
 export function ItemIllustration({ id }: { id: ItemId }) {

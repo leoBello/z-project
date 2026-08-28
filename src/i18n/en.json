@@ -50,26 +50,12 @@
       "island": "Island"
     },
     "landmarks": {
-      "temple": {
-        "name": "Summit Temple",
-        "action": "View the projects"
-      },
-      "pyramid": {
-        "name": "Jungle Pyramid",
-        "action": "Read the bio"
-      },
-      "stele": {
-        "name": "Great Stele",
-        "action": "View the skills"
-      },
-      "statue": {
-        "name": "Badlands Idol",
-        "action": "View the background"
-      },
-      "ruins": {
-        "name": "Island Ruins",
-        "action": "Get in touch"
-      }
+      "temple": { "name": "Summit Temple" },
+      "pyramid": { "name": "Jungle Pyramid" },
+      "stele": { "name": "Great Stele" },
+      "statue": { "name": "Badlands Idol" },
+      "ruins": { "name": "Island Ruins" },
+      "nakano": { "name": "Nakano Temple" }
     },
     "teleport": {
       "tab": "Places",
@@ -82,6 +68,13 @@
       "skills": "Skills",
       "background": "Background",
       "contact": "Contact"
+    },
+    "sectionActions": {
+      "projects": "View the projects",
+      "bio": "Read the bio",
+      "skills": "View the skills",
+      "background": "View the background",
+      "contact": "Get in touch"
     },
     "skillGroups": {
       "frontend": "Front-end",
@@ -125,11 +118,11 @@
       "title": "Inventory",
       "close": "Close the inventory",
       "empty": "Your bag is empty. The world's treasures are still out there.",
-      "equipped": "Worn",
-      "equip": "Wear",
-      "unequip": "Take off",
+      "equipped": "Equipped",
+      "equip": "Equip",
+      "unequip": "Unequip",
       "effect": "Effect",
-      "kinds": { "outfit": "Outfit", "trinket": "Trinket" }
+      "kinds": { "outfit": "Outfit", "trinket": "Trinket", "weapon": "Weapon" }
     },
     "items": {
       "ninja-garb": {
@@ -137,6 +130,12 @@
         "meta": "Found in the chest at the Jungle Pyramid",
         "description": "A long-tailed plum coat strapped with lacquered crimson lamellae bound in gold. The collar rises to the nape; forearms and calves are wrapped in white linen. War dress of a clan whose name no one remembers.",
         "effect": "+2 golden hearts while worn"
+      },
+      "kusanagi": {
+        "name": "Kusanagi Katana",
+        "meta": "Found in the chest at Nakano Temple",
+        "description": "A long, barely curved blade on a two-handed grip bound in midnight blue, its only guard a disc of bronze. They say it was drawn from the islet itself, and no one explains why the temple that kept it never had a priest.",
+        "effect": "sword damage doubled"
       }
     },
     "language": {

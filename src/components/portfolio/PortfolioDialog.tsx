@@ -250,7 +250,11 @@ export function PortfolioDialog() {
   if (!activeLandmark) return null
 
   const landmark = landmarkById(activeLandmark)
-  if (!landmark) return null
+  // Un lieu sans section ne devrait jamais arriver ici — il n'a ni braise ni
+  // zone d'interaction, et ne figure pas au menu de téléportation. Le garde est
+  // là pour que ça reste vrai : le jour où un tel lieu deviendrait ouvrable, on
+  // n'ouvrirait pas un panneau vide, on ne l'ouvrirait pas du tout.
+  if (!landmark || landmark.section === null) return null
 
   return (
     <PortfolioPanel key={activeLandmark} section={landmark.section} onClose={closeLandmark} />

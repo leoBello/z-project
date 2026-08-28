@@ -16,6 +16,7 @@ import {
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { CHEST_SEQUENCE, type Chest } from '../../config/chests'
 import { itemById } from '../../config/items'
+import type { ItemId } from '../../types/game'
 import { seededRandom } from '../../config/world'
 import { now as gameNow } from '../../state/gameClock'
 import { useGameStore } from '../../store/useGameStore'
@@ -183,6 +184,88 @@ const HIDDEN = new Matrix4().makeScale(0, 0, 0)
 
 type ToonMesh = Mesh<BufferGeometry, MeshToonMaterial>
 type BasicMesh = Mesh<BufferGeometry, MeshBasicMaterial>
+
+/**
+ * L'objet trouvé, en réduction, flottant au-dessus du coffre ouvert.
+ *
+ * Volontairement **pas** une reproduction fidèle : à cette taille, en rotation,
+ * et une seconde à l'écran, ce sont deux ou trois teintes et une silhouette qui
+ * portent la lecture. Le détail, c'est la carte qui suit qui le montre.
+ *
+ * Un composant par objet plutôt qu'un modèle générique tourné en fonction du
+ * type : une tenue se lit couchée et une lame debout, et rien de commun ne
+ * ressort de ces deux poses qu'un paramètre aurait pu capturer.
+ */
+function LootShape({ id, accent }: { id: ItemId; accent: string }) {
+  if (id === 'kusanagi') {
+    return (
+      <>
+        {/* Lame dressée, pointe en haut : la seule pose où une arme longue se
+            lit dans le faisceau du coffre. */}
+        <mesh castShadow position={[0, 0.18, 0]}>
+          <boxGeometry args={[0.05, 0.72, 0.025]} />
+          <meshToonMaterial
+            gradientMap={toonGradient}
+            color="#dde6ef"
+            emissive={accent}
+            emissiveIntensity={0.55}
+          />
+        </mesh>
+        <mesh castShadow position={[0, 0.6, 0]} rotation={[0, 0, Math.PI]}>
+          <coneGeometry args={[0.035, 0.12, 4]} />
+          <meshToonMaterial gradientMap={toonGradient} color="#dde6ef" />
+        </mesh>
+        <mesh position={[0, -0.19, 0]}>
+          <cylinderGeometry args={[0.11, 0.11, 0.03, 12]} />
+          <meshToonMaterial
+            gradientMap={toonGradient}
+            color={GOLD}
+            emissive={GOLD}
+            emissiveIntensity={0.9}
+          />
+        </mesh>
+        <mesh castShadow position={[0, -0.32, 0]}>
+          <boxGeometry args={[0.05, 0.24, 0.05]} />
+          <meshToonMaterial gradientMap={toonGradient} color="#2f4f66" />
+        </mesh>
+      </>
+    )
+  }
+
+  return (
+    <>
+      <mesh castShadow>
+        <boxGeometry args={[0.34, 0.4, 0.14]} />
+        <meshToonMaterial
+          gradientMap={toonGradient}
+          color="#4b4062"
+          emissive="#4b4062"
+          emissiveIntensity={0.45}
+        />
+      </mesh>
+      {[0.09, -0.05].map((y) => (
+        <mesh key={y} position={[0, y, 0.075]}>
+          <boxGeometry args={[0.3, 0.09, 0.03]} />
+          <meshToonMaterial
+            gradientMap={toonGradient}
+            color={accent}
+            emissive={accent}
+            emissiveIntensity={0.7}
+          />
+        </mesh>
+      ))}
+      <mesh position={[0, 0.02, 0.095]}>
+        <boxGeometry args={[0.04, 0.26, 0.02]} />
+        <meshToonMaterial
+          gradientMap={toonGradient}
+          color={GOLD}
+          emissive={GOLD}
+          emissiveIntensity={1.1}
+        />
+      </mesh>
+    </>
+  )
+}
 
 export function TreasureChest({ chest }: { chest: Chest }) {
   const lid = useRef<Group>(null)
@@ -384,40 +467,8 @@ export function TreasureChest({ chest }: { chest: Chest }) {
         <meshBasicMaterial color={GLOW} transparent opacity={1} depthWrite={false} />
       </instancedMesh>
 
-      {/* L'objet trouvé, en réduction : le manteau, deux lamelles et la
-          ligature d'or. Pas une reproduction fidèle — à cette taille et en
-          mouvement, ce sont les trois teintes qui portent la lecture, et la
-          carte qui suit montre le détail. */}
       <group ref={loot} visible={false}>
-        <mesh castShadow>
-          <boxGeometry args={[0.34, 0.4, 0.14]} />
-          <meshToonMaterial
-            gradientMap={toonGradient}
-            color="#4b4062"
-            emissive="#4b4062"
-            emissiveIntensity={0.45}
-          />
-        </mesh>
-        {[0.09, -0.05].map((y) => (
-          <mesh key={y} position={[0, y, 0.075]}>
-            <boxGeometry args={[0.3, 0.09, 0.03]} />
-            <meshToonMaterial
-              gradientMap={toonGradient}
-              color={accent}
-              emissive={accent}
-              emissiveIntensity={0.7}
-            />
-          </mesh>
-        ))}
-        <mesh position={[0, 0.02, 0.095]}>
-          <boxGeometry args={[0.04, 0.26, 0.02]} />
-          <meshToonMaterial
-            gradientMap={toonGradient}
-            color={GOLD}
-            emissive={GOLD}
-            emissiveIntensity={1.1}
-          />
-        </mesh>
+        <LootShape id={chest.item} accent={accent} />
       </group>
 
       {/*

@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { Object3D, type DirectionalLight } from 'three'
 import { playerTransform } from '../state/playerTransform'
 import { useQualityStore } from '../store/useQualityStore'
+import { Bridge } from './environment/Bridge'
 import { Landmarks } from './environment/Landmarks'
 import { Terrain } from './environment/Terrain'
 import { Vegetation } from './environment/Vegetation'
@@ -102,6 +103,9 @@ export function Environment() {
       <Terrain />
       <Water />
       <Vegetation />
+      {/* Monté hors de `Landmarks` : le pont n'est le parvis d'aucun monument,
+          c'est une pièce du relief au même titre que la mer. */}
+      <Bridge />
       <Landmarks />
     </>
   )
