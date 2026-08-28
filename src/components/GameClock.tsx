@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber'
-import { advance } from '../state/gameClock'
+import { advance, pollHitStop } from '../state/gameClock'
 import { useGameStore } from '../store/useGameStore'
 
 /**
@@ -23,6 +23,10 @@ import { useGameStore } from '../store/useGameStore'
  */
 export function GameClock() {
   useFrame((_, rawDelta) => {
+    // Sondé **avant** la garde de phase et sans condition : le gel se mesure en
+    // temps réel, il doit pouvoir expirer même quand l'horloge de jeu, elle,
+    // n'avance déjà plus.
+    if (pollHitStop()) return
     if (useGameStore.getState().phase !== 'playing') return
     advance(Math.min(rawDelta, 0.05))
   }, -100)
