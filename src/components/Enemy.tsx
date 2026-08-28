@@ -61,12 +61,17 @@ interface EnemyRuntime {
 }
 
 /**
- * Applique un point de dégât et tout ce qui va avec : flash, recul, mort.
+ * Applique des dégâts et tout ce qui va avec : flash, recul, mort.
  *
  * Deux sources y mènent — le coup d'épée et le projectile renvoyé — et elles
  * doivent produire *exactement* le même effet, cœur lâché compris. Le recul est
  * calculé depuis la source du coup, pas depuis le joueur : une balle parée qui
  * arrive de côté doit pousser de côté.
+ *
+ * Le montant, lui, dépend de l'appelant : l'arme portée multiplie le coup
+ * d'épée, jamais le renvoi de projectile — celui-ci est une parade, pas une
+ * frappe, et il n'y a aucune raison qu'une lame plus tranchante fasse un
+ * projectile plus meurtrier.
  *
  * Retourne vrai si l'ennemi vient de mourir, pour que l'appelant s'arrête là.
  */
@@ -80,8 +85,9 @@ function damageEnemy(
   now: number,
   fromX: number,
   fromZ: number,
+  amount: number,
 ) {
-  state.hp -= 1
+  state.hp -= amount
   state.hitFlashUntil = now + HIT_FLASH_MS
   playHit()
 
@@ -237,6 +243,10 @@ export function Enemy({ spawn }: EnemyProps) {
           now,
           playerTransform.position.x,
           playerTransform.position.z,
+          // Lu au moment du coup et non mémorisé : l'inventaire met la partie en
+          // pause, donc l'arme peut changer entre deux frappes sans que ce
+          // composant en soit averti.
+          store.swordDamage(),
         )
         if (died) return
       }
@@ -271,6 +281,7 @@ export function Enemy({ spawn }: EnemyProps) {
         now,
         projectile.position.x,
         projectile.position.z,
+        1,
       )
       if (died) return
       break

@@ -107,7 +107,7 @@ export function InventoryPanel() {
               )
             }
 
-            const isWorn = equipped === id
+            const isWorn = equipped[item.kind] === id
             const wornSuffix = isWorn ? ' — ' + dict.ui.inventory.equipped : ''
 
             return (

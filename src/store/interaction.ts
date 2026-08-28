@@ -1,3 +1,4 @@
+import { landmarkById } from '../config/landmarks'
 import type { Dictionary } from '../i18n'
 import type { ChestId, GamePhase, LandmarkId } from '../types/game'
 import { useGameStore } from './useGameStore'
@@ -63,12 +64,20 @@ export function useInteraction(): Interaction {
   return pick(phase, nearbyChest, nearbyLandmark)
 }
 
-/** Libellé de l'action proposée : « Ouvrir le coffre », « Lire la présentation »… */
+/**
+ * Libellé de l'action proposée : « Ouvrir le coffre », « Lire la présentation »…
+ *
+ * Le libellé d'un monument est celui de **sa section**, pas du monument : les
+ * cinq lieux qui en ont une proposent chacun d'ouvrir une page différente, et
+ * ranger la phrase à côté du nom du lieu revenait à écrire deux fois la même
+ * table. La chaîne vide couvre le cas d'un lieu sans section — il n'a alors ni
+ * braise ni zone d'interaction, et ne peut donc pas être la cible ici.
+ */
 export function interactionLabel(target: Interaction, dict: Dictionary): string {
   if (!target) return ''
-  return target.kind === 'chest'
-    ? dict.ui.chest.action
-    : dict.ui.landmarks[target.id].action
+  if (target.kind === 'chest') return dict.ui.chest.action
+  const section = landmarkById(target.id)?.section
+  return section ? dict.ui.sectionActions[section] : ''
 }
 
 /**

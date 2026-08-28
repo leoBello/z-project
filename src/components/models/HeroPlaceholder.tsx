@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Outlines } from '@react-three/drei'
 import { DoubleSide, Group, MathUtils } from 'three'
-import type { OutfitId } from '../../config/items'
+import type { OutfitId, WeaponId } from '../../config/items'
 import { ATTACK, PLAYER } from '../../config/gameplay'
 import { now as gameNow } from '../../state/gameClock'
 import { playerTransform } from '../../state/playerTransform'
@@ -19,13 +19,14 @@ import { toonGradient } from './toonGradient'
  * Convention : l'avant du modèle est +Z, la main droite du personnage est
  * donc du côté -X (right = forward × up en repère main droite).
  *
- * **Les tenues sont des habillages d'un rig unique.** Quand la tenue du clan
- * est arrivée, la tentation était d'écrire un second personnage à côté ; ça
- * aurait fait deux cycles de marche à régler, deux animations d'attaque à
- * garder synchrones, et la garantie qu'elles divergent au premier ajustement.
- * Ce qui change d'une tenue à l'autre est donc strictement : la palette, la
- * pièce de tête, l'équipement de buste, et l'habillage des membres. Le
- * squelette et toutes les animations sont partagés.
+ * **Les tenues et les armes sont des habillages d'un rig unique.** Quand la
+ * tenue du clan est arrivée, la tentation était d'écrire un second personnage à
+ * côté ; ça aurait fait deux cycles de marche à régler, deux animations
+ * d'attaque à garder synchrones, et la garantie qu'elles divergent au premier
+ * ajustement. Ce qui change d'une tenue à l'autre est donc strictement : la
+ * palette, la pièce de tête, l'équipement de buste, et l'habillage des membres ;
+ * d'une arme à l'autre, seule la géométrie tenue en main droite. Le squelette et
+ * toutes les animations sont partagés.
  */
 
 /** Palette d'une tenue. Toutes les tenues déclarent exactement ces teintes. */
@@ -41,6 +42,8 @@ interface Palette {
   blade: string
   guard: string
   grip: string
+  /** Ligature du katana : la seule teinte que l'épée de base n'utilise pas. */
+  cord: string
   eye: string
   outline: string
   /** Teinte d'appoint : bouclier ou lamelles d'armure, selon la tenue. */
@@ -69,6 +72,7 @@ const OUTFITS: Record<OutfitId, Palette> = {
     blade: '#dde6ef',
     guard: '#d0a53c',
     grip: '#5b3a1e',
+    cord: '#2f4f66',
     eye: '#26241f',
     outline: '#1c2b1e',
     gear: '#b4763a',
@@ -87,6 +91,7 @@ const OUTFITS: Record<OutfitId, Palette> = {
     blade: '#dde6ef',
     guard: '#d8a93f',
     grip: '#3a2a1e',
+    cord: '#2f4f66',
     eye: '#1b1626',
     // Contour plus froid que celui de la tenue verte : un cerne brun sur du
     // prune vire au marron sale.
@@ -146,7 +151,12 @@ const SWING_TORSO = [
   [1, 0],
 ] as const
 
-export function HeroPlaceholder({ outfit = 'default' }: { outfit?: OutfitId }) {
+interface HeroProps {
+  outfit?: OutfitId
+  weapon?: WeaponId
+}
+
+export function HeroPlaceholder({ outfit = 'default', weapon = 'sword' }: HeroProps) {
   const torso = useRef<Group>(null)
   const head = useRef<Group>(null)
   const headwear = useRef<Group>(null)
@@ -271,7 +281,7 @@ export function HeroPlaceholder({ outfit = 'default' }: { outfit?: OutfitId }) {
         </group>
         <group ref={armR} position={[-0.24, SHOULDER_Y - HIP_Y, 0]}>
           <Arm palette={palette} ninja={isNinja} side={-1} />
-          <Sword palette={palette} />
+          {weapon === 'katana' ? <Katana palette={palette} /> : <Sword palette={palette} />}
         </group>
 
         {/* --- Tête --- */}
@@ -600,6 +610,71 @@ function Sword({ palette }: { palette: Palette }) {
       </mesh>
       <mesh castShadow position={[0, 0.81, 0]} rotation={[0, 0, Math.PI]}>
         <coneGeometry args={[0.053, 0.1, 4]} />
+        <meshToonMaterial color={palette.blade} gradientMap={toonGradient} />
+      </mesh>
+    </group>
+  )
+}
+
+/**
+ * Katana de Kusanagi.
+ *
+ * Même point d'attache et même repère que l'épée de base : il vit dans celui du
+ * bras et suit donc l'animation d'attaque sans un calcul de plus. Trois choses
+ * seulement le distinguent, et chacune sert la lecture à distance :
+ *
+ *  - **la lame fait 1,08 contre 0,68**, soit une demi-tête du personnage de plus
+ *    au-dessus de l'épaule. C'est le minimum pour que la différence se voie en
+ *    plongée de 17° — un allongement de vingt centimètres se lisait comme une
+ *    erreur de proportion, pas comme une autre arme ;
+ *  - **la garde est un disque et non une croix.** C'est elle qui dit « katana »
+ *    d'un seul coup d'œil, avant même la longueur ;
+ *  - **la lame est légèrement inclinée en arrière du manche.** Une courbure
+ *    véritable demanderait une géométrie dédiée pour un gain nul à cette taille ;
+ *    deux segments à peine désaxés suffisent à casser l'axe droit de l'épée.
+ *
+ * Attention à la portée : ce katana est plus long **à l'écran** seulement. La
+ * hitbox reste celle d'`ATTACK` — la traînée de `SwordArc` est une géométrie
+ * construite une fois pour toutes à partir de `ATTACK.reach`, et la faire varier
+ * avec l'arme demanderait de la reconstruire à chaque équipement. Ce que l'objet
+ * change, ce sont les dégâts.
+ */
+function Katana({ palette }: { palette: Palette }) {
+  return (
+    <group position={[-0.02, -0.3, 0.02]} rotation={[0.24, 0, -0.1]}>
+      {/* Poignée longue, prise à deux mains, et sa ligature. */}
+      <mesh castShadow position={[0, 0.11, 0]}>
+        <boxGeometry args={[0.05, 0.26, 0.05]} />
+        <meshToonMaterial color={palette.grip} gradientMap={toonGradient} />
+      </mesh>
+      {[0.04, 0.11, 0.18].map((y) => (
+        <mesh key={y} castShadow position={[0, y, 0]}>
+          <boxGeometry args={[0.062, 0.03, 0.062]} />
+          <meshToonMaterial color={palette.cord} gradientMap={toonGradient} />
+        </mesh>
+      ))}
+
+      {/* Tsuba : le disque de garde, à plat. */}
+      <mesh castShadow position={[0, 0.26, 0]}>
+        <cylinderGeometry args={[0.115, 0.115, 0.035, 12]} />
+        <meshToonMaterial color={palette.guard} gradientMap={toonGradient} />
+      </mesh>
+
+      {/* Lame, en deux tronçons à peine désaxés. Le contour n'est posé que sur
+          le premier : deux contours qui se croisent au raccord font une arête
+          noire en travers de la lame. */}
+      <mesh castShadow position={[0, 0.63, -0.015]} rotation={[0.045, 0, 0]}>
+        <boxGeometry args={[0.055, 0.72, 0.028]} />
+        <meshToonMaterial color={palette.blade} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+      <mesh castShadow position={[0, 1.15, -0.05]} rotation={[0.11, 0, 0]}>
+        <boxGeometry args={[0.052, 0.34, 0.026]} />
+        <meshToonMaterial color={palette.blade} gradientMap={toonGradient} />
+      </mesh>
+      {/* Kissaki : la pointe, coupée en biais comme celle d'un vrai katana. */}
+      <mesh castShadow position={[0, 1.36, -0.073]} rotation={[0.11, 0, Math.PI]}>
+        <coneGeometry args={[0.037, 0.13, 4]} />
         <meshToonMaterial color={palette.blade} gradientMap={toonGradient} />
       </mesh>
     </group>

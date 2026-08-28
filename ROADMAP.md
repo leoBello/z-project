@@ -45,8 +45,19 @@ et découpage du bundle.
 - Carte 200 × 200, relief généré par bruit déterministe
 - **Sept biomes** : haut-fond, plage, prairie, jungle, terres arides, montagne, île
 - Continent occupant l'essentiel de la carte, ceinturé par l'océan
-- Montagne enneigée au nord-ouest, île au large du sud-est
-- **Île atteignable à pied** par un haut-fond guéable — pas de système de nage
+- Montagne enneigée au nord-ouest, **deux îles** au large : celle du sud-est et
+  l'îlot de Nakano, au nord-est
+- **Île du sud-est atteignable à pied** par un haut-fond guéable — pas de
+  système de nage
+- **Îlot de Nakano atteignable par un pont**, depuis la plage des terres arides.
+  Une rampe droite de 17 unités à 16,7°, sur piles, précédée d'un torii
+  vermillon. Les deux ancrages sont **lus dans le relief** au chargement
+  (`config/bridge.ts`) : le tablier affleure le sol à ses deux bouts, donc on
+  entre et on sort du pont sans marche — un personnage sans autostep ne franchit
+  aucune marche, c'est le piège déjà payé sur l'escalier du temple.
+  L'ancrage côté îlot est le **point de tangence** de la droite la plus raide
+  qu'on puisse tirer depuis le pied : viser le bord du plateau enfonçait le
+  tablier de 22 cm dans un flanc qui monte à 1,36 de pente
 - Collider `Heightfield` Rapier construit à partir de la même grille que le
   mesh visuel : alignement vérifié à 0,00 unité près
 - Végétation instanciée : ~7 600 props en 9 draw calls, vent en vertex shader
@@ -56,11 +67,17 @@ et découpage du bundle.
 - Table déclarative dans `src/config/landmarks.ts`. Trois systèmes la lisent
   sans se connaître : `sampleHeight` y creuse la terrasse du monument, le semis
   de végétation s'y interdit de pousser, la minimap y pose un repère
-- **Cinq monuments**, un par section du portfolio, chacun dans un biome
+- **Cinq monuments de portfolio**, un par section, chacun dans un biome
   différent et chacun avec sa braise d'interaction :
   Temple du Sommet (montagne) → projets ; Pyramide de la Jungle → présentation ;
   Grande Stèle (jungle) → compétences ; Idole des Terres Arides → parcours ;
   Ruines de l'Île → contact
+- **Un sixième lieu sans section** : le Temple de Nakano, une pagode à quatre
+  toits sur l'îlot du nord-est. `section: null` veut dire « paysage, pas page » :
+  il se découvre, il paraît sur la minimap et il creuse sa terrasse comme les
+  autres, mais il n'a ni braise ni entrée au menu de téléportation — ce menu est
+  la table des matières du portfolio, pas un index des monuments. Ce qu'on vient
+  y chercher est dans le coffre posé à côté
 - Sites choisis **par balayage de `sampleHeight`**, pas à vue : dénivelé naturel
   et pureté de biome mesurés sur tout le rayon avant de poser quoi que ce soit
 - Le contenu de chaque section se ramène à une **forme unique** de diapositive
@@ -84,6 +101,31 @@ et découpage du bundle.
 - **Illustrations générées** : emblèmes isométriques en SVG, un solide = trois
   aplats francs, transposition en 2D du `toonGradient` du rendu 3D. Motif déduit
   des tags du projet, palette prélevée sur le jeu, cadrage calculé. Zéro asset
+
+### Objets et inventaire
+- Table déclarative dans `src/config/items.ts` : un objet y déclare ce qu'il
+  **fait** (cœurs bonus, multiplicateur d'attaque, silhouette, lame) ; ses
+  libellés vivent dans `src/i18n/*.json`, le jeu étant bilingue
+- **Un emplacement d'équipement par famille d'objet** (`ItemKind` sert de clé
+  d'emplacement) : on porte la tenue *et* l'arme. Un emplacement unique aurait
+  été plus court à écrire et faux à jouer — la deuxième trouvaille serait
+  devenue un renoncement à la première
+- **Tenue du Clan** (coffre de la pyramide) : +2 cœurs jaunes, silhouette ninja
+- **Katana de Kusanagi** (coffre du temple de Nakano) : dégâts d'épée ×2, lame
+  longue en main droite. L'effet est volontairement brutal — les PV des ennemis
+  sont des entiers de 2 et 3, donc l'octorok tombe en un coup au lieu de deux et
+  le moblin en deux au lieu de trois. Un bonus plus fin n'aurait rien changé
+- Les dégâts sont lus **au moment du coup** (`swordDamage()` dans le store) et
+  non mémorisés : l'inventaire met la partie en pause, l'arme peut donc changer
+  entre deux frappes sans que l'ennemi en soit averti
+- Le renvoi de projectile reste à 1 dégât : c'est une parade, pas une frappe
+- Réserve de cœurs jaunes mémorisée par objet (`bonusCarry`) : retirer puis
+  remettre une tenue ne soigne pas gratuitement
+- Coffres décrits **dans le repère de leur monument** (`src/config/chests.ts`),
+  jamais en coordonnées monde : un coffre posé en absolu se retrouve dans le
+  vide au premier réglage du monument
+- Séquence d'ouverture chronométrée en **temps réel** et non sur l'horloge de
+  jeu, qui est gelée dès l'appui — même contrainte que l'overlay de téléportation
 
 ### Son
 - **Entièrement synthétisé** en Web Audio, aucun fichier à télécharger : nappe
@@ -479,7 +521,19 @@ Reste ouvert sur ce chantier, et il ne se referme qu'en jouant :
 - [x] Écran de chargement — fait (`BootScreen`, `#boot` dans `index.html`)
 
 ### Plus tard
-- [ ] Inventaire, quêtes, dialogues
+- [ ] Quêtes, dialogues
+- [ ] **Portée de l'arme.** Le katana est plus long à l'écran seulement : la
+      hitbox et la traînée dérivent de `ATTACK.reach`, et `SwordArc` construit
+      sa géométrie **une fois pour toutes** au chargement. Faire varier la
+      portée avec l'arme demande de reconstruire cet anneau à chaque équipement,
+      donc de sortir `ATTACK.reach` de la constante — à faire le jour où une
+      deuxième arme le justifie, pas pour une seule
+- [ ] **Autel plutôt que coffre pour les armes.** Le katana sort d'un coffre de
+      bois comme la tenue du clan, parce que toute la séquence de révélation
+      (couvercle, colonne de lumière, éclats, objet qui s'élève, carte) vit dans
+      `TreasureChest.tsx` et qu'elle est réglée. Une lame plantée dans une
+      pierre se lirait mieux ; ça demande de séparer la machine à états du
+      trésor de la géométrie du coffre
 - [ ] Modèles `.glb` riggés + animations Mixamo pour le héros
 - [ ] Cycle jour/nuit
 - [ ] Réceptacles de cœur sur les autres monuments : l'infrastructure est
@@ -510,7 +564,10 @@ animations.
 | --- | --- |
 | Vitesse, saut, gravité, caméra, durée d'attaque | `src/config/gameplay.ts` |
 | Touches | `src/config/controls.ts` |
-| Relief, position de la montagne, de l'île, du gué | `src/config/world.ts` |
+| Relief, position de la montagne, des îles, du gué | `src/config/world.ts` |
+| Tracé, largeur et ancrages du pont de Nakano | `src/config/bridge.ts` |
+| Charpente du pont, torii, piles, garde-corps | `src/components/environment/Bridge.tsx` |
+| Cotes, étages et toitures de la pagode | `src/components/environment/Pagoda.tsx` |
 | Couleurs d'un biome | `src/config/biomes.ts` |
 | Position, cap, terrasse et rayon de découverte d'un monument | `src/config/landmarks.ts` |
 | Géométrie, cotes et colliders du temple | `src/components/environment/Temple.tsx` |
@@ -531,6 +588,11 @@ animations.
 | Animation du personnage | `src/components/models/HeroPlaceholder.tsx` |
 | Minimap | `src/components/Minimap.tsx` |
 | Vie, phase de partie, score | `src/store/useGameStore.ts` |
+| Effets d'un objet : cœurs bonus, multiplicateur d'attaque, silhouette, lame | `src/config/items.ts` |
+| Dégâts d'un coup d'épée arme nue | `SWORD_DAMAGE` dans `src/store/useGameStore.ts` |
+| Emplacements d'équipement (un par famille d'objet) | `ItemKind` dans `src/config/items.ts` |
+| Contenu et position d'un coffre | `src/config/chests.ts` |
+| Géométrie des armes tenues en main | `Sword` et `Katana` dans `src/components/models/HeroPlaceholder.tsx` |
 | Statistiques et placement des ennemis | `src/config/enemies.ts` |
 | IA, dégâts, recul, mort | `src/components/Enemy.tsx` |
 | Apparence des ennemis | `src/components/enemies/models.tsx` |

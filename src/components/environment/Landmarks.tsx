@@ -8,6 +8,7 @@ import { playerTransform } from '../../state/playerTransform'
 import { triggerInteraction } from '../../store/interaction'
 import { useGameStore } from '../../store/useGameStore'
 import type { ChestId, LandmarkId } from '../../types/game'
+import { Pagoda } from './Pagoda'
 import { Pyramid } from './Pyramid'
 import { Ruins } from './Ruins'
 import { Statue } from './Statue'
@@ -39,6 +40,11 @@ function LandmarkProximity() {
       if (distance < landmark.discoverRadius && !store.discovered.includes(landmark.id)) {
         store.discoverLandmark(landmark.id)
       }
+      // Un lieu sans section n'ouvre rien : il se découvre et paraît sur la
+      // minimap, mais il n'a ni braise ni promesse à tenir. On saute donc son
+      // test de proximité plutôt que de lui inventer une ancre.
+      if (landmark.section === null) continue
+
       // L'interaction se mesure sur son **ancre** et non sur le centre du
       // monument : c'est le marqueur lumineux qui promet quelque chose au
       // joueur, donc c'est autour de lui que la promesse doit être tenue.
@@ -120,6 +126,7 @@ export function Landmarks() {
       <Stele />
       <Statue />
       <Ruins />
+      <Pagoda />
       {/* Les coffres sont posés en coordonnées monde, dérivées du repère de
           leur monument (voir `config/chests.ts`) : ils sont donc montés ici, à
           plat, et non à l'intérieur du composant du monument qui les porte. */}

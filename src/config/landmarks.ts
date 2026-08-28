@@ -70,8 +70,15 @@ export interface Landmark {
    * ne l'ouvre qu'en étant devant.
    */
   interactRadius: number
-  /** Section du portfolio présentée par ce lieu. */
-  section: PortfolioSection
+  /**
+   * Section du portfolio présentée par ce lieu, ou `null`.
+   *
+   * `null` veut dire « ce lieu est du paysage, pas une page » : il se découvre,
+   * il paraît sur la minimap et il creuse sa terrasse comme les autres, mais il
+   * n'a ni braise d'interaction ni entrée dans le menu de téléportation, qui
+   * est une table des matières du portfolio et non un index des monuments.
+   */
+  section: PortfolioSection | null
   /** Couleur du repère sur la minimap. */
   minimapColor: string
 }
@@ -247,7 +254,60 @@ export const RUINS = define({
   minimapColor: '#8fd8ff',
 })
 
-export const LANDMARKS: readonly Landmark[] = [TEMPLE, PYRAMID, STELE, STATUE, RUINS]
+/**
+ * Temple de Nakano — l'îlot du nord-est.
+ *
+ * Seul lieu de la carte qui ne présente aucune section : c'est une destination,
+ * pas une page. Ce qu'on vient y chercher est posé à côté du bâtiment, dans un
+ * coffre (voir `config/chests.ts`).
+ *
+ * **Terrasse plutôt que socle**, et c'est la règle du projet appliquée à la
+ * lettre : le plateau naturel de l'îlot est parfaitement plat — 5,200 à la
+ * valeur près — mais seulement jusqu'à 4,2 unités de rayon, ce qui laissait
+ * l'emprise du bâtiment sans marge et le coffre à cheval sur la pente. Poser un
+ * socle de pierre sous la pagode aurait créé une marche : le personnage n'a pas
+ * d'autostep, et une marche est un mur (voir l'escalier du Temple du Sommet).
+ * On élargit donc le plateau dans `sampleHeight`, où le mesh, le collider, le
+ * semis et la minimap le voient tous.
+ *
+ * Le cap regarde le sud-ouest, c'est-à-dire le pont : c'est de là qu'on arrive,
+ * et c'est aussi la moitié sud du monument, la seule que la caméra — fixe et
+ * tournée vers le nord — montre d'un bâtiment de dix unités de haut.
+ */
+export const NAKANO = define({
+  id: 'nakano',
+  x: 70,
+  z: -70,
+  yaw: -Math.PI / 4,
+  radius: 4.2,
+  blend: 5,
+  altitude: 5.2,
+  clearRadius: 6,
+  discoverRadius: 15,
+  // Aucune braise : `markerZ` ne sert donc qu'à renseigner `interact`, que rien
+  // ne lit pour un lieu sans section. Zéro plutôt qu'une valeur inventée.
+  markerZ: 0,
+  interactRadius: 0,
+  section: null,
+  minimapColor: '#e07a6a',
+})
+
+export const LANDMARKS: readonly Landmark[] = [TEMPLE, PYRAMID, STELE, STATUE, RUINS, NAKANO]
+
+/** Un lieu qui présente bien une section du portfolio. */
+export type PortfolioLandmark = Landmark & { section: PortfolioSection }
+
+/**
+ * Les lieux qui ouvrent une page, dans l'ordre de la table.
+ *
+ * Dérivé et non écrit à la main : le menu de téléportation, qui est la table
+ * des matières du portfolio, se met à jour tout seul quand un lieu gagne ou
+ * perd sa section. Le prédicat de type évite au passage d'avoir à vérifier la
+ * nullité de `section` à l'affichage.
+ */
+export const PORTFOLIO_LANDMARKS: readonly PortfolioLandmark[] = LANDMARKS.filter(
+  (landmark): landmark is PortfolioLandmark => landmark.section !== null,
+)
 
 /** Retrouve un lieu par son identifiant. */
 export function landmarkById(id: LandmarkId): Landmark | undefined {

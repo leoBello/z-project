@@ -17,6 +17,7 @@ import {
 } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { BIOMES } from '../../config/biomes'
+import { underBridge } from '../../config/bridge'
 import { LANDMARKS } from '../../config/landmarks'
 import { PLAYER } from '../../config/gameplay'
 import {
@@ -216,6 +217,9 @@ function generateScatter(density: number): Buckets {
       )
     )
       continue
+    // Le pont touche le sable à ses deux extrémités : un palmier planté là
+    // aurait poussé au travers du tablier.
+    if (underBridge(x, z)) continue
 
     const biome = classifyBiome(x, z, height)
     const style = BIOMES[biome]

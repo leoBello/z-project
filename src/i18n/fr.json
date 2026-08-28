@@ -50,26 +50,12 @@
       "island": "Île"
     },
     "landmarks": {
-      "temple": {
-        "name": "Temple du Sommet",
-        "action": "Voir les projets"
-      },
-      "pyramid": {
-        "name": "Pyramide de la Jungle",
-        "action": "Lire la présentation"
-      },
-      "stele": {
-        "name": "Grande Stèle",
-        "action": "Voir les compétences"
-      },
-      "statue": {
-        "name": "Idole des Terres Arides",
-        "action": "Voir le parcours"
-      },
-      "ruins": {
-        "name": "Ruines de l'Île",
-        "action": "Prendre contact"
-      }
+      "temple": { "name": "Temple du Sommet" },
+      "pyramid": { "name": "Pyramide de la Jungle" },
+      "stele": { "name": "Grande Stèle" },
+      "statue": { "name": "Idole des Terres Arides" },
+      "ruins": { "name": "Ruines de l'Île" },
+      "nakano": { "name": "Temple de Nakano" }
     },
     "teleport": {
       "tab": "Lieux",
@@ -82,6 +68,13 @@
       "skills": "Compétences",
       "background": "Parcours",
       "contact": "Contact"
+    },
+    "sectionActions": {
+      "projects": "Voir les projets",
+      "bio": "Lire la présentation",
+      "skills": "Voir les compétences",
+      "background": "Voir le parcours",
+      "contact": "Prendre contact"
     },
     "skillGroups": {
       "frontend": "Front-end",
@@ -125,11 +118,11 @@
       "title": "Inventaire",
       "close": "Fermer l'inventaire",
       "empty": "Ton sac est vide. Les trésors du monde n'attendent que d'être trouvés.",
-      "equipped": "Portée",
-      "equip": "Porter",
+      "equipped": "Équipé",
+      "equip": "Équiper",
       "unequip": "Retirer",
       "effect": "Effet",
-      "kinds": { "outfit": "Tenue", "trinket": "Babiole" }
+      "kinds": { "outfit": "Tenue", "trinket": "Babiole", "weapon": "Arme" }
     },
     "items": {
       "ninja-garb": {
@@ -137,6 +130,12 @@
         "meta": "Trouvée dans le coffre de la Pyramide de la Jungle",
         "description": "Un manteau prune aux longs pans, sanglé de lamelles cramoisies laquées et liées d'or. Le col monte jusqu'à la nuque, les avant-bras et les mollets sont pris dans des bandes de lin blanc. Une tenue de guerre d'un clan dont plus personne ne se souvient du nom.",
         "effect": "+2 cœurs jaunes tant qu'elle est portée"
+      },
+      "kusanagi": {
+        "name": "Katana de Kusanagi",
+        "meta": "Trouvé dans le coffre du Temple de Nakano",
+        "description": "Une lame longue et à peine courbe, montée sur une poignée de deux mains ligaturée de bleu nuit, avec pour seule garde un disque de bronze. On la dit tirée de l'îlot lui-même, et personne n'explique pourquoi le temple qui la gardait n'a jamais eu de prêtre.",
+        "effect": "dégâts d'épée multipliés par deux"
       }
     },
     "language": {
