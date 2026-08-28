@@ -1,16 +1,19 @@
 import { useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useKeyboardControls } from '@react-three/drei'
+import { CHESTS } from '../../config/chests'
 import type { Control } from '../../config/controls'
 import { LANDMARKS } from '../../config/landmarks'
 import { playerTransform } from '../../state/playerTransform'
+import { triggerInteraction } from '../../store/interaction'
 import { useGameStore } from '../../store/useGameStore'
-import type { LandmarkId } from '../../types/game'
+import type { ChestId, LandmarkId } from '../../types/game'
 import { Pyramid } from './Pyramid'
 import { Ruins } from './Ruins'
 import { Statue } from './Statue'
 import { Stele } from './Stele'
 import { Temple } from './Temple'
+import { TreasureChest } from './TreasureChest'
 
 /**
  * Découverte et mise à portée des points d'intérêt.
@@ -50,6 +53,26 @@ function LandmarkProximity() {
     }
 
     if (nearest !== store.nearbyLandmark) store.setNearbyLandmark(nearest)
+
+    // Coffres : même discipline, dans la même boucle. Un second `useFrame` les
+    // aurait fait balayer dans un ordre non garanti par rapport à celui-ci, et
+    // la règle de priorité de `currentInteraction` aurait pu lire un état
+    // vieux d'une frame.
+    let chest: ChestId | null = null
+    for (const candidate of CHESTS) {
+      // Un coffre ouvert ne propose plus rien : on saute le test, l'invite
+      // disparaît d'elle-même.
+      if (store.openedChests.includes(candidate.id)) continue
+      const distance = Math.hypot(
+        position.x - candidate.world.x,
+        position.z - candidate.world.z,
+      )
+      if (distance < candidate.interactRadius) {
+        chest = candidate.id
+        break
+      }
+    }
+    if (chest !== store.nearbyChest) store.setNearbyChest(chest)
   })
 
   return null
@@ -69,8 +92,10 @@ function LandmarkInteraction() {
           // qu'une frame serait perdu. C'est le piège déjà payé sur le saut et
           // sur l'attaque, et il ne coûte rien de ne pas le repayer.
           const store = useGameStore.getState()
-          if (store.phase === 'playing' && store.nearbyLandmark) {
-            store.openLandmark(store.nearbyLandmark)
+          if (store.phase === 'playing') {
+            // Une seule source de vérité pour « que fait la touche ici ? »,
+            // partagée avec le bouton tactile et l'invite du HUD.
+            triggerInteraction()
           } else if (store.phase === 'paused' && store.teleporting === null) {
             // Pendant une téléportation, `phase === 'paused'` ne signifie pas
             // qu'un panneau est ouvert — aucun panneau ne l'est encore. Sans
@@ -86,7 +111,7 @@ function LandmarkInteraction() {
   return null
 }
 
-/** Tous les monuments de la carte, plus leur logique de proximité. */
+/** Tous les monuments de la carte, leurs coffres, et la logique de proximité. */
 export function Landmarks() {
   return (
     <>
@@ -95,6 +120,12 @@ export function Landmarks() {
       <Stele />
       <Statue />
       <Ruins />
+      {/* Les coffres sont posés en coordonnées monde, dérivées du repère de
+          leur monument (voir `config/chests.ts`) : ils sont donc montés ici, à
+          plat, et non à l'intérieur du composant du monument qui les porte. */}
+      {CHESTS.map((chest) => (
+        <TreasureChest key={chest.id} chest={chest} />
+      ))}
       <LandmarkProximity />
       <LandmarkInteraction />
     </>

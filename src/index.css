@@ -665,6 +665,28 @@ canvas {
   transform: scale(0.86);
 }
 
+/*
+  Cœurs jaunes de la tenue, en fin de barre.
+
+  Même tracé que les cœurs rouges, et c'est délibéré : ce sont des cœurs, pas
+  une seconde jauge. Une autre forme les aurait fait lire comme une armure
+  posée à côté de la vie, alors que le modèle est justement qu'ils la
+  prolongent — les dégâts les entament en premier parce qu'ils sont au bout.
+
+  Le halo doré remplace l'ombre portée des rouges. C'est lui qui les fait
+  passer devant : sans halo, un cœur or sur fond sombre a moins de présence
+  qu'un cœur rouge, alors qu'il représente la vie la plus fraîche.
+*/
+.heart--bonus {
+  fill: #f2c14a;
+  filter: drop-shadow(0 0 5px rgba(242, 193, 74, 0.55));
+}
+
+.heart--bonus.heart--empty {
+  fill: rgba(242, 193, 74, 0.16);
+  filter: none;
+}
+
 /* Flash rouge sur les bords à chaque coup encaissé. */
 .hud__damage {
   position: absolute;
@@ -773,10 +795,23 @@ canvas {
   position: fixed;
   top: 16px;
   right: 16px;
+  /*
+    Colonne, et non plus une simple rangée : la pastille d'inventaire se range
+    sous les trois réglages. `align-items: flex-end` cale tout sur le bord droit
+    de l'écran, donc la pastille reste alignée sur la fin de la rangée quelle
+    que soit la largeur du sélecteur de langue — qui change avec la traduction.
+  */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.settings__row {
   display: flex;
   align-items: center;
   gap: 6px;
-  pointer-events: none;
 }
 
 .language {
@@ -1262,5 +1297,589 @@ canvas {
   .heart {
     width: 22px;
     height: 22px;
+  }
+}
+
+/* --- Inventaire ------------------------------------------------------------ */
+
+/*
+  Pastille d'accès, sous la rangée des réglages.
+
+  Ronde là où ses voisines sont des gélules : les trois du dessus règlent la
+  *page* (son, qualité, langue), celle-ci ouvre une partie du **jeu**. Une forme
+  différente évite qu'on la lise comme un quatrième réglage et qu'on ne la
+  clique jamais.
+*/
+.inventory-button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  /* 44px : la cible tactile minimale recommandée. La pastille est en haut à
+     droite, là où le pouce arrive de biais — la rogner aurait été le seul
+     endroit de l'écran où ça se paie vraiment. */
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--hud-bg);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  color: var(--hud-fg);
+  opacity: 0.78;
+  transition: opacity 140ms ease, transform 140ms ease;
+  pointer-events: auto;
+}
+
+.inventory-button svg {
+  width: 22px;
+  height: 22px;
+}
+
+.inventory-button:hover:not(:disabled) {
+  opacity: 1;
+  transform: scale(1.06);
+}
+
+.inventory-button:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.inventory-button:disabled {
+  opacity: 0.3;
+}
+
+.inventory-button:focus-visible {
+  outline: 2px solid #f6f2e4;
+  outline-offset: 2px;
+}
+
+/*
+  Pastille « quelque chose de neuf est dedans ».
+
+  Elle bat lentement plutôt que de rester fixe : posée immobile au coin d'une
+  icône déjà petite, elle passait pour un défaut de rendu. La pulsation la
+  désigne comme une information.
+*/
+.inventory-button__dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #f2c14a;
+  box-shadow: 0 0 8px rgba(242, 193, 74, 0.9);
+  animation: inventory-dot 1.8s ease-in-out infinite;
+}
+
+@keyframes inventory-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.7; }
+}
+
+/* Voile et cadre repris du portfolio : les écrans modaux du jeu se
+   reconnaissent à leur cadre avant même d'être lus. */
+.inventory {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: radial-gradient(
+    120% 90% at 50% 45%,
+    rgba(10, 16, 12, 0.5) 0%,
+    rgba(5, 9, 7, 0.82) 100%
+  );
+  backdrop-filter: blur(5px);
+  pointer-events: auto;
+  animation: portfolio-in 180ms ease-out;
+}
+
+.inventory__panel {
+  position: relative;
+  width: min(520px, 100%);
+  max-height: 100%;
+  padding: 28px;
+  border: 1px solid rgba(245, 220, 149, 0.16);
+  border-radius: 20px;
+  background: linear-gradient(158deg, rgba(34, 46, 38, 0.95) 0%, rgba(16, 23, 18, 0.96) 55%);
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  color: var(--hud-fg);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(245, 220, 149, 0.3) transparent;
+  animation: portfolio-panel-in 220ms cubic-bezier(0.22, 0.8, 0.28, 1);
+}
+
+.inventory__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid rgba(245, 220, 149, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--hud-fg);
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.inventory__close svg {
+  width: 18px;
+  height: 18px;
+}
+
+.inventory__close:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.inventory__close:active {
+  transform: scale(0.94);
+}
+
+.inventory__title {
+  margin: 0 46px 20px 0;
+  font-size: 22px;
+  letter-spacing: 0.01em;
+}
+
+/*
+  Grille fixe à quatre colonnes.
+
+  `auto-fill` aurait été plus souple, mais il fait passer la grille de quatre à
+  trois colonnes à une largeur intermédiaire, et le sac change alors de forme
+  sous les yeux du joueur pendant un redimensionnement. Quatre colonnes qui
+  rétrécissent se lisent mieux qu'un nombre de colonnes qui saute.
+*/
+.inventory__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.inventory__slot {
+  aspect-ratio: 1;
+}
+
+/*
+  Les cases vides ne sont pas du remplissage : un sac qui n'affiche que ce
+  qu'il contient se lit comme une liste et ne promet rien, alors qu'une grille
+  à trous dit qu'il reste des choses à trouver. C'est la seule indication du
+  jeu qu'un coffre existe quelque part.
+*/
+.inventory__slot-empty {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 1px dashed rgba(245, 220, 149, 0.14);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.inventory__item {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 1px solid rgba(245, 220, 149, 0.22);
+  border-radius: 12px;
+  /* La teinte de l'objet transparaît dans le fond de sa case : c'est ce qui
+     rend un emplacement identifiable avant même qu'on ait lu son icône. */
+  background:
+    radial-gradient(
+      120% 120% at 50% 15%,
+      color-mix(in srgb, var(--item-accent) 26%, transparent) 0%,
+      transparent 70%
+    ),
+    rgba(255, 255, 255, 0.05);
+  color: var(--hud-fg);
+  transition: transform 140ms ease, border-color 140ms ease;
+}
+
+.inventory__item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(245, 220, 149, 0.5);
+}
+
+.inventory__item:active {
+  transform: none;
+}
+
+/* L'objet porté garde un liseré doré permanent : dans une grille, une case
+   « active » doit se distinguer sans survol, sinon l'information n'existe
+   qu'à la souris — donc pas du tout sur mobile. */
+.inventory__item--worn {
+  border-color: rgba(242, 193, 74, 0.75);
+  box-shadow:
+    0 0 0 1px rgba(242, 193, 74, 0.35),
+    0 0 18px rgba(242, 193, 74, 0.22);
+}
+
+.item-icon {
+  width: 60%;
+  height: 60%;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.inventory__worn {
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(242, 193, 74, 0.92);
+  color: #201804;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.inventory__empty {
+  margin: 18px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  opacity: 0.62;
+  text-align: center;
+}
+
+.inventory__close:focus-visible,
+.inventory__item:focus-visible {
+  outline: 2px solid #f5dc95;
+  outline-offset: 2px;
+}
+
+/* --- Carte d'objet --------------------------------------------------------- */
+
+/*
+  Montée par-dessus la grille, jamais à sa place : refermer la carte doit
+  ramener au sac, pas au jeu. Elle a donc son propre voile, plus léger — deux
+  voiles opaques empilés auraient noirci l'écran.
+*/
+.item-card {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(4, 7, 6, 0.55);
+  backdrop-filter: blur(3px);
+  pointer-events: auto;
+  animation: portfolio-in 180ms ease-out;
+}
+
+/* Sortie de coffre : aucune grille dessous, donc le voile porte seul, et le
+   panneau arrive de plus bas et de plus petit — c'est la trouvaille de la
+   partie, elle mérite une entrée. */
+.item-card--reveal {
+  background: rgba(4, 7, 6, 0.34);
+}
+
+.item-card--reveal .item-card__panel {
+  animation: item-card-reveal 420ms cubic-bezier(0.2, 0.9, 0.24, 1);
+}
+
+.item-card__panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) 1fr;
+  gap: 0 26px;
+  width: min(760px, 100%);
+  max-height: 100%;
+  padding: 26px;
+  border: 1px solid color-mix(in srgb, var(--item-accent) 34%, rgba(245, 220, 149, 0.16));
+  border-radius: 20px;
+  background: linear-gradient(158deg, rgba(34, 46, 38, 0.96) 0%, rgba(16, 23, 18, 0.97) 55%);
+  /* Le halo prend la teinte de l'objet : une tenue de guerre et une babiole ne
+     donneront pas la même carte, sans changer une ligne de mise en page. */
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.55),
+    0 0 60px -20px var(--item-accent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  color: var(--hud-fg);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(245, 220, 149, 0.3) transparent;
+  animation: portfolio-panel-in 220ms cubic-bezier(0.22, 0.8, 0.28, 1);
+}
+
+@keyframes item-card-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(34px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.item-card__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid rgba(245, 220, 149, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--hud-fg);
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.item-card__close svg {
+  width: 18px;
+  height: 18px;
+}
+
+.item-card__close:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.item-card__close:active {
+  transform: scale(0.94);
+}
+
+/*
+  `align-self: start` : la colonne d'illustration prendrait sinon la hauteur du
+  texte à côté d'elle, et le fond de la case dépasserait sous le dessin d'autant
+  que la description est longue — donc d'une valeur qui change avec la langue.
+  Elle épouse maintenant son SVG, quoi qu'il arrive à droite.
+*/
+.item-card__illustration {
+  align-self: start;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #2a2440;
+}
+
+.item-card__illustration svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.item-card__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.item-card__kicker,
+.item-card__title {
+  padding-right: 46px;
+}
+
+.item-card__kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--item-accent);
+}
+
+.item-card__title {
+  margin: 6px 0 0;
+  font-size: 26px;
+  line-height: 1.15;
+}
+
+.item-card__meta {
+  margin: 6px 0 0;
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.item-card__description {
+  margin: 14px 0 0;
+  font-size: 14px;
+  line-height: 1.65;
+  opacity: 0.86;
+}
+
+/*
+  Ligne d'effet : encadrée, dorée, détachée de la description.
+
+  C'est la seule information de la carte qui change quelque chose au jeu ; noyée
+  dans le paragraphe de description, elle se lisait comme du décor littéraire.
+*/
+.item-card__effect {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(242, 193, 74, 0.32);
+  border-radius: 12px;
+  background: rgba(242, 193, 74, 0.09);
+  font-size: 13px;
+}
+
+.item-card__effect-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.item-card__effect-value {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #f2c14a;
+  font-weight: 600;
+}
+
+.item-card__effect-heart {
+  width: 15px;
+  height: 15px;
+  fill: #f2c14a;
+  filter: drop-shadow(0 0 4px rgba(242, 193, 74, 0.6));
+}
+
+.item-card__action {
+  margin-top: 20px;
+  padding: 11px 26px;
+  border: none;
+  border-radius: 999px;
+  background: var(--item-accent);
+  color: #fdf6ea;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  transition: filter 140ms ease, transform 140ms ease;
+}
+
+.item-card__action:hover {
+  filter: brightness(1.15);
+}
+
+.item-card__action:active {
+  transform: scale(0.97);
+}
+
+/* Retirer n'est pas l'action qu'on met en avant : le bouton passe en contour
+   dès que la tenue est portée, pour que « porter » reste le geste plein. */
+.item-card__action--worn {
+  background: transparent;
+  border: 1px solid rgba(245, 220, 149, 0.4);
+  color: var(--hud-fg);
+}
+
+.item-card__close:focus-visible,
+.item-card__action:focus-visible {
+  outline: 2px solid #f5dc95;
+  outline-offset: 2px;
+}
+
+/* --- Coffre au trésor ------------------------------------------------------- */
+
+/*
+  Voile de la séquence d'ouverture.
+
+  Il assombrit toute la page, HUD compris : c'est le seul moment du jeu où
+  l'écran a une seule chose à dire. Le fondu est lent — 900 ms — parce qu'il
+  accompagne l'ouverture du couvercle plutôt que de la précéder ; un voile
+  instantané aurait annoncé la surprise avant qu'elle n'arrive.
+*/
+.chest-reveal {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    100% 80% at 50% 60%,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(4, 6, 10, 0.62) 100%
+  );
+  animation: chest-veil 900ms ease-out both;
+}
+
+@keyframes chest-veil {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Le bouton tactile d'interaction vire à l'or devant un coffre : il change
+   d'action, il doit changer de couleur. */
+.touch-button--treasure {
+  border-color: rgba(242, 193, 74, 0.6);
+  background: rgba(242, 193, 74, 0.22);
+}
+
+/* --- Adaptations de l'inventaire -------------------------------------------- */
+
+@media (max-width: 720px) {
+  /* La carte passe en colonne : à 380 px de large, l'illustration et le texte
+     côte à côte laissaient six mots par ligne. */
+  .item-card__panel {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 20px;
+  }
+
+  .item-card__illustration {
+    max-height: 34vh;
+  }
+
+  .item-card__illustration svg {
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .item-card__title {
+    font-size: 21px;
+  }
+
+  .inventory__panel {
+    padding: 20px;
+  }
+
+  .inventory__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .inventory__title {
+    font-size: 19px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inventory,
+  .inventory__panel,
+  .item-card,
+  .item-card__panel,
+  .item-card--reveal .item-card__panel,
+  .chest-reveal {
+    animation-duration: 1ms;
+  }
+
+  /* La pastille cesse de battre, mais reste visible : c'est une information,
+     pas une décoration — la supprimer priverait le joueur du seul indice qui
+     dit qu'il faut rouvrir le sac. */
+  .inventory-button__dot {
+    animation: none;
   }
 }

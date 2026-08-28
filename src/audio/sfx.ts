@@ -265,3 +265,49 @@ export function playReward() {
     tone('triangle', frequency, frequency, 0.14, 0.5, index * 0.11)
   })
 }
+
+/**
+ * Grincement d'un couvercle de coffre.
+ *
+ * Un passe-bande **montant** et non descendant : une charnière qui cède monte
+ * en fréquence à mesure que le couvercle se lève, c'est ce sens qui la fait
+ * entendre comme une ouverture plutôt que comme un objet qui tombe. Le Q élevé
+ * est ce qui donne le côté « bois qui frotte » plutôt que « souffle ».
+ */
+export function playChestCreak() {
+  noiseBurst('bandpass', 320, 1250, 6, 0.1, 0.45)
+  // Le coup sourd du couvercle qui bute en fin de course, calé sur la fin de
+  // la bascule côté visuel (450 ms).
+  tone('triangle', 120, 60, 0.14, 0.2, 0.42)
+}
+
+/**
+ * Fanfare du trésor.
+ *
+ * Plus ample que `playReward` : six notes au lieu de quatre, et une tierce
+ * tenue par-dessous à partir de la troisième. Le réceptacle de cœur est une
+ * récompense de parcours, le coffre est la trouvaille de la partie — les deux
+ * ne peuvent pas sonner pareil, sinon la seconde n'apporte rien.
+ */
+export function playTreasure() {
+  const melody = [523.25, 659.25, 783.99, 1046.5, 1318.51, 1567.98]
+  melody.forEach((frequency, index) => {
+    tone('triangle', frequency, frequency, 0.13, 0.55, index * 0.1)
+  })
+  // Tierce tenue en dessous : c'est elle qui donne l'assise, sans quoi la
+  // montée s'entend comme un arpège d'ascenseur.
+  tone('sine', 392, 392, 0.09, 0.9, 0.2)
+  tone('sine', 523.25, 523.25, 0.08, 0.8, 0.4)
+}
+
+/**
+ * Changement de tenue : la bouffée de fumée, et l'étoffe qui claque.
+ *
+ * Le souffle est filtré vers le haut puis retombe — un nuage qui se détend.
+ * Aucune note : un changement d'équipement ne doit pas sonner comme une
+ * récompense, sinon il entre en concurrence avec la fanfare du coffre.
+ */
+export function playEquip() {
+  noiseBurst('highpass', 1800, 400, 0.9, 0.13, 0.3)
+  noiseBurst('bandpass', 600, 1600, 1.2, 0.07, 0.12)
+}

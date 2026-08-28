@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { Mesh, type Group } from 'three'
+import { outfitOf } from '../../config/items'
+import { useGameStore } from '../../store/useGameStore'
 import { HeroPlaceholder } from './HeroPlaceholder'
 import { SafeModel } from './SafeModel'
 
@@ -30,7 +32,10 @@ function LinkGltf() {
  * Modèle du joueur.
  *
  * Tant que `/models/link.glb` est absent, on affiche le personnage procédural
- * de HeroPlaceholder — animé, cel-shadé, et donc parfaitement présentable.
+ * de HeroPlaceholder — animé, cel-shadé, et donc parfaitement présentable. Il
+ * est le seul des deux à savoir porter les tenues de l'inventaire : un `.glb`
+ * déposé ici ignorera l'objet équipé, faute d'une convention de nommage de
+ * matériaux à laquelle se raccrocher.
  *
  * Convention du projet : **l'avant du modèle est +Z**. C'est ce qu'attend le
  * calcul de rotation de Player.tsx (`atan2(dir.x, dir.z)`). Si le .glb que tu
@@ -38,8 +43,15 @@ function LinkGltf() {
  * `<primitive>` ci-dessus plutôt que de toucher à Player.tsx.
  */
 export function LinkModel() {
+  // Abonnement au store, et c'est sans danger : l'objet équipé ne change qu'à
+  // un clic dans l'inventaire, jamais par frame. Le composant ne se re-rend
+  // donc qu'à ces rares moments, et le rig d'animation, qui vit dans
+  // `HeroPlaceholder`, n'est pas remonté pour autant — seules ses props
+  // changent.
+  const outfit = useGameStore((state) => outfitOf(state.equipped))
+
   return (
-    <SafeModel fallback={<HeroPlaceholder />}>
+    <SafeModel fallback={<HeroPlaceholder outfit={outfit} />}>
       <LinkGltf />
     </SafeModel>
   )

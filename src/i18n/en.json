@@ -4,7 +4,8 @@
       "move": "move",
       "jump": "jump",
       "attack": "attack",
-      "interact": "interact"
+      "interact": "interact",
+      "heartsLabel": "{current} of {total} hearts"
     },
     "touch": {
       "move": "move",
@@ -114,6 +115,29 @@
       "next": "Next",
       "close": "Close",
       "position": "{current} of {total}"
+    },
+    "chest": {
+      "action": "Open the chest",
+      "kicker": "Treasure"
+    },
+    "inventory": {
+      "open": "Open the inventory",
+      "title": "Inventory",
+      "close": "Close the inventory",
+      "empty": "Your bag is empty. The world's treasures are still out there.",
+      "equipped": "Worn",
+      "equip": "Wear",
+      "unequip": "Take off",
+      "effect": "Effect",
+      "kinds": { "outfit": "Outfit", "trinket": "Trinket" }
+    },
+    "items": {
+      "ninja-garb": {
+        "name": "Clan Garb",
+        "meta": "Found in the chest at the Jungle Pyramid",
+        "description": "A long-tailed plum coat strapped with lacquered crimson lamellae bound in gold. The collar rises to the nape; forearms and calves are wrapped in white linen. War dress of a clan whose name no one remembers.",
+        "effect": "+2 golden hearts while worn"
+      }
     },
     "language": {
       "label": "Language",

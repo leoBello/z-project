@@ -4,7 +4,8 @@
       "move": "se déplacer",
       "jump": "sauter",
       "attack": "attaquer",
-      "interact": "interagir"
+      "interact": "interagir",
+      "heartsLabel": "{current} cœurs sur {total}"
     },
     "touch": {
       "move": "se déplacer",
@@ -114,6 +115,29 @@
       "next": "Suivant",
       "close": "Fermer",
       "position": "{current} sur {total}"
+    },
+    "chest": {
+      "action": "Ouvrir le coffre",
+      "kicker": "Trésor"
+    },
+    "inventory": {
+      "open": "Ouvrir l'inventaire",
+      "title": "Inventaire",
+      "close": "Fermer l'inventaire",
+      "empty": "Ton sac est vide. Les trésors du monde n'attendent que d'être trouvés.",
+      "equipped": "Portée",
+      "equip": "Porter",
+      "unequip": "Retirer",
+      "effect": "Effet",
+      "kinds": { "outfit": "Tenue", "trinket": "Babiole" }
+    },
+    "items": {
+      "ninja-garb": {
+        "name": "Tenue du Clan",
+        "meta": "Trouvée dans le coffre de la Pyramide de la Jungle",
+        "description": "Un manteau prune aux longs pans, sanglé de lamelles cramoisies laquées et liées d'or. Le col monte jusqu'à la nuque, les avant-bras et les mollets sont pris dans des bandes de lin blanc. Une tenue de guerre d'un clan dont plus personne ne se souvient du nom.",
+        "effect": "+2 cœurs jaunes tant qu'elle est portée"
+      }
     },
     "language": {
       "label": "Langue",
