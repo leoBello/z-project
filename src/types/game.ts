@@ -27,6 +27,15 @@ export interface EnemySpawn {
 /** Identifiant de point d'intérêt. La table vit dans `config/landmarks.ts`. */
 export type LandmarkId = 'temple' | 'pyramid' | 'stele' | 'statue' | 'ruins'
 
+/**
+ * Identifiant d'objet ramassable. La table vit dans `config/items.ts`, et les
+ * libellés dans `src/i18n/*.json` sous `ui.items`.
+ */
+export type ItemId = 'ninja-garb'
+
+/** Identifiant de coffre au trésor. La table vit dans `config/chests.ts`. */
+export type ChestId = 'pyramid-chest'
+
 /** Identifiant de biome. Pilote le sol, la végétation et la minimap. */
 export type BiomeId =
   | 'shallows'

@@ -13,9 +13,13 @@ import { Minimap } from './components/Minimap'
 import { Pickups } from './components/Pickups'
 import { Player } from './components/Player'
 import { Projectiles } from './components/Projectiles'
+import { OutfitSmoke } from './components/OutfitSmoke'
 import { PostFX } from './components/PostFX'
 import { QualityToggle } from './components/QualityToggle'
 import { SoundToggle } from './components/SoundToggle'
+import { ChestReveal } from './components/inventory/ChestReveal'
+import { InventoryButton } from './components/inventory/InventoryButton'
+import { InventoryPanel } from './components/inventory/InventoryPanel'
 import { PortfolioDialog } from './components/portfolio/PortfolioDialog'
 import { SwordArc } from './components/SwordArc'
 import { BootScreen } from './components/BootScreen'
@@ -81,9 +85,11 @@ export default function App() {
             <Pickups />
           </Physics>
 
-          {/* Hors de <Physics> : la traînée de lame n'est qu'un effet visuel,
-              elle n'a ni collider ni corps à simuler. */}
+          {/* Hors de <Physics> : la traînée de lame et la fumée de changement
+              de tenue ne sont que des effets visuels, elles n'ont ni collider
+              ni corps à simuler. */}
           <SwordArc />
+          <OutfitSmoke />
         </Suspense>
 
         <CameraRig />
@@ -100,14 +106,30 @@ export default function App() {
           contrôles tactiles quand il s'ouvre. */}
       <TouchControls />
       {/* Réglages du visiteur : langue et qualité graphique, rangés ensemble
-          pour qu'aucun n'ait à connaître la largeur de l'autre. */}
+          pour qu'aucun n'ait à connaître la largeur de l'autre. La pastille
+          d'inventaire vient **sous** la rangée : ce n'est pas un réglage de la
+          page mais une partie du jeu, et la mettre à côté des trois autres
+          l'aurait fait lire comme un quatrième bouton d'options. */}
       <div className="settings">
-        <SoundToggle />
-        <QualityToggle />
-        <LanguageToggle />
+        <div className="settings__row">
+          <SoundToggle />
+          <QualityToggle />
+          <LanguageToggle />
+        </div>
+        {/* `key={runId}` : le point « nouvel objet » s'appuie sur un compteur
+            local au composant, qui doit repartir de zéro à chaque partie comme
+            l'inventaire lui-même. Voir l'en-tête d'`InventoryButton`. */}
+        <InventoryButton key={`inventory-${runId}`} />
       </div>
       {/* Le panneau passe devant tout le HUD, invite d'interaction comprise. */}
       <PortfolioDialog />
+      {/* Après le portfolio et avant le menu de téléportation : l'inventaire
+          doit recouvrir un panneau de lieu resté ouvert, mais pas l'onglet de
+          voyage rapide, qui reste accessible en toutes circonstances. */}
+      <InventoryPanel />
+      {/* La révélation d'un coffre passe devant tout le reste : c'est le seul
+          moment du jeu où l'écran a une seule chose à dire. */}
+      <ChestReveal />
       <TeleportMenu />
       <TeleportOverlay />
       <BootScreen />

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { useIsTouchDevice } from '../config/device'
 import { useTouchHintsVisible } from '../state/touchHints'
 import { touchInput, resetTouchMove } from '../state/touchInput'
+import { interactionLabel, triggerInteraction, useInteraction } from '../store/interaction'
 import { useGameStore } from '../store/useGameStore'
 import { useI18n } from '../i18n/useI18n'
 
@@ -46,7 +47,9 @@ export function TouchControls() {
  * abonné à rien et `useI18n` non plus.
  */
 function TouchControlsOverlay() {
-  const nearbyLandmark = useGameStore((state) => state.nearbyLandmark)
+  // Même source que l'invite clavier du HUD : le bouton tactile ne peut pas
+  // proposer autre chose que ce que la touche `F` déclencherait au même endroit.
+  const interaction = useInteraction()
   const { dict } = useI18n()
 
   const joyPointer = useRef<number | null>(null)
@@ -143,26 +146,33 @@ function TouchControlsOverlay() {
       )}
 
       <div className="touch-buttons">
-        {nearbyLandmark && (
+        {interaction && (
           <button
             type="button"
-            className="touch-button touch-button--interact"
-            // Libellé = l'action précise du monument (« Voir les projets »…),
-            // le même texte que l'invite clavier `.hud__prompt` côté desktop.
-            aria-label={dict.ui.landmarks[nearbyLandmark].action}
+            className={`touch-button touch-button--interact${
+              interaction.kind === 'chest' ? ' touch-button--treasure' : ''
+            }`}
+            // Libellé = l'action précise proposée (« Voir les projets »,
+            // « Ouvrir le coffre »…), le même texte que l'invite clavier
+            // `.hud__prompt` côté desktop.
+            aria-label={interactionLabel(interaction, dict)}
             onPointerDown={() => {
-              // Appel direct du store : c'est un vrai événement pointeur, pas un
-              // sondage par frame — aucun risque de le perdre, donc pas besoin
-              // de passer par un drapeau dans `touchInput`. Même garde que
-              // `LandmarkInteraction` côté clavier.
-              const store = useGameStore.getState()
-              if (store.phase === 'playing' && store.nearbyLandmark) {
-                store.openLandmark(store.nearbyLandmark)
-              }
+              // Appel direct : c'est un vrai événement pointeur, pas un sondage
+              // par frame — aucun risque de le perdre, donc pas besoin de
+              // passer par un drapeau dans `touchInput`. Les gardes de phase
+              // sont dans `triggerInteraction`, partagées avec le clavier.
+              triggerInteraction()
             }}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
+              {interaction.kind === 'chest' ? (
+                /* Coffre plutôt qu'étoile : le bouton change d'action, il doit
+                   changer de dessin — sinon rien à l'écran ne distingue un
+                   trésor d'un panneau de présentation. */
+                <path d="M3 10h18v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1zM3 10l2-5h14l2 5M11 10h2v4h-2z" />
+              ) : (
+                <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
+              )}
             </svg>
           </button>
         )}
