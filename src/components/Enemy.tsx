@@ -26,7 +26,7 @@ import { playerTransform } from '../state/playerTransform'
 import { shake } from '../state/cameraShake'
 import { spawnDeathPuff, spawnDeathRing } from '../state/deathPuffs'
 import { enemyRegistry, updateEnemyMarker } from '../state/enemyRegistry'
-import { hitStop, now as gameNow } from '../state/gameClock'
+import { hitStop, isHitStopped, now as gameNow } from '../state/gameClock'
 import { dropPickup } from '../state/pickups'
 import {
   fireProjectile,
@@ -295,6 +295,24 @@ export function Enemy({ spawn }: EnemyProps) {
       if (age >= DEATH_REMOVE_MS) setRemoved(true)
       return
     }
+
+    // --- Gel du coup fatal --------------------------------------------------
+    // Rien de ce qui suit n'a de raison de tourner pendant les 80 ms de gel, et
+    // deux lignes ont une raison de ne pas tourner : le lissage du cap et celui
+    // de l'échelle intègrent sur le `delta` de `useFrame`, pas sur l'horloge de
+    // jeu. Sur la durée du gel ils avaleraient la moitié de l'angle restant et
+    // les trois quarts de l'écart d'échelle — un ennemi qui pivote vers le
+    // joueur, ou qui redescend de son flash, bougerait pendant la frame censée
+    // être figée. Le reste est déjà inerte de lui-même : la fenêtre de dégâts se
+    // compare à `gameNow()`, arrêtée, donc aucun coup ne s'ouvre ni ne se ferme
+    // pendant le gel, et les `setLinvel` s'adressent à un moteur en pause.
+    //
+    // La garde est placée **après** la branche de mort, et pas en tête comme
+    // pour les pools : à la frame du coup fatal, `damageEnemy` sort avant que le
+    // corps n'ait pris sa pose écrasée, qui n'est posée qu'à la frame suivante —
+    // c'est-à-dire pendant le gel. La hisser plus haut figerait l'ennemi debout,
+    // soit exactement la pose que ce gel existe pour ne pas montrer.
+    if (isHitStopped()) return
 
     toPlayer.set(
       playerTransform.position.x - position.x,

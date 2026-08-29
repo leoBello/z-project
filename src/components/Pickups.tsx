@@ -8,7 +8,7 @@ import {
   Vector3,
 } from 'three'
 import { sampleHeight } from '../config/world'
-import { now as gameNow } from '../state/gameClock'
+import { isHitStopped, now as gameNow } from '../state/gameClock'
 import { playerTransform } from '../state/playerTransform'
 import {
   PICKUP_GRAVITY,
@@ -59,10 +59,13 @@ export function Pickups() {
     // Ces deux pools intègrent leur mouvement à la main, hors de Rapier : le
     // `paused` du moteur physique ne les atteint pas. Sans ce garde, un
     // projectile continue de traverser l'écran derrière le panneau et un cœur
-    // continue de tomber, alors que tout le reste du monde est figé. Aucune
-    // conséquence de jeu — `damagePlayer` et `healPlayer` refusent déjà hors de
-    // `playing` — mais l'image, elle, trahissait la pause.
-    if (store.phase !== 'playing') return
+    // continue de tomber, alors que tout le reste du monde est figé. Deux gels
+    // le demandent, et non un seul. Le panneau ouvert d'abord, où seule l'image
+    // trahissait la pause — `damagePlayer` et `healPlayer` refusent déjà hors de
+    // `playing`. Le hit-stop du coup fatal ensuite, pendant lequel la phase vaut
+    // toujours `playing` : un cœur qui tombe encore alors que le monde entier
+    // tient sa pose devient le seul mouvement de l'écran, donc le seul qu'on voit.
+    if (store.phase !== 'playing' || isHitStopped()) return
 
     for (let i = 0; i < pickups.length; i++) {
       const pickup = pickups[i]
