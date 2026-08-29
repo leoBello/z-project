@@ -51,7 +51,7 @@ const OFFSETS = [
 ] as const
 
 export const PUFFS_PER_DEATH = OFFSETS.length
-/** Six morts simultanées avant que le pool ne recycle. */
+/** Huit morts simultanées avant que le pool ne recycle. */
 export const DEATH_PUFF_POOL_SIZE = PUFFS_PER_DEATH * 8
 export const DEATH_RING_POOL_SIZE = 8
 /** Durée de vie d'un nuage, en millisecondes de temps de jeu. */

@@ -198,12 +198,15 @@ function DeathRings() {
   }, [])
 
   const material = useMemo(() => {
-    const shared = makePuffMaterial()
+    // Instance neuve, pas partagée avec les fumées : seule la *fabrique*
+    // `makePuffMaterial` l'est. C'est ce qui permet de muter `side` ici sans
+    // affecter le matériau de `SmokeClouds`.
+    const material = makePuffMaterial()
     // Visible des deux côtés : sur une pente, la caméra peut passer sous le
     // plan de l'anneau, et un anneau qui disparaît selon l'inclinaison du
     // terrain se lit comme un bug.
-    shared.side = DoubleSide
-    return shared
+    material.side = DoubleSide
+    return material
   }, [])
 
   useFrame(() => {

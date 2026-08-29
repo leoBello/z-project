@@ -39,7 +39,11 @@ export function shake(nextAmplitude: number, nextDurationMs: number) {
 export function sampleShake(out: Vector3) {
   const elapsed = (performance.now() - startedAt) / 1000
   const k = elapsed / (durationMs / 1000)
-  // Le `>= 0` attrape aussi le NaN de l'état initial (`-Infinity`, durée nulle).
+  // À l'état initial (`startedAt = -Infinity`, durée nulle), `elapsed` vaut
+  // `Infinity` et `k` vaut `Infinity / 0 = Infinity` : c'est le `k >= 1`
+  // qui l'attrape, pas le `!(k >= 0)`. Ce dernier ne sert que pour le vrai
+  // `NaN`, qui ne peut survenir que si `sampleShake` est appelée dans le même
+  // tick qu'un `shake(x, 0)` (soit `0 / 0`).
   if (!(k >= 0) || k >= 1) return out.set(0, 0, 0)
 
   // Enveloppe linéaire décroissante : une décroissance exponentielle laisse une
