@@ -222,7 +222,7 @@ export interface DeathPuff {
 }
 
 export const PUFFS_PER_DEATH = 6
-export const DEATH_PUFF_POOL_SIZE = 48   // six morts simultanées
+export const DEATH_PUFF_POOL_SIZE = 48   // huit morts simultanées
 export const DEATH_PUFF_MS = 600
 ```
 
@@ -255,7 +255,7 @@ un volume englobant commun chaque frame coûterait plus cher que de les dessiner
 ### Anneau au sol
 
 Second `InstancedMesh`, `RingGeometry` couchée à plat aux pieds de l'ennemi, même
-shader et même pool (`DEATH_RING_POOL_SIZE = 6`, un par mort). Rayon de 0,2 à
+shader et même pool (`DEATH_RING_POOL_SIZE = 8`, un par mort). Rayon de 0,2 à
 1,4 unité en 350 ms, alpha en décroissance rapide.
 
 **C'est la première chose à couper si le test montre qu'il se lit mal.**
@@ -392,7 +392,7 @@ reste figé en `dead` pour toujours : sa branche de mort n'est jamais atteinte, 
 ne se démonte jamais, et son entrée de registre reste en mémoire.
 
 La branche de mort passe **devant** le test de culling. Elle est bornée
-(190 ms) et ne coûte rien.
+(80 ms de temps réel puis 150 ms de temps de jeu, soit 230 ms) et ne coûte rien.
 
 ## Constantes
 
@@ -423,7 +423,8 @@ Le projet n'a pas de suite de tests ; la vérification est manuelle et
 instrumentée, comme le documente `HANDOFF.md`.
 
 **Sondes de développement** — sur le modèle du `__lastSwing` de `SwordArc`, une
-mort dure 190 ms et ne se capture pas de façon fiable à l'écran. En `DEV`, exposer
+mort dure 230 ms — 80 ms de gel en temps réel puis 150 ms de temps de jeu, le pic
+tombant à 210 — et ne se capture pas de façon fiable à l'écran. En `DEV`, exposer
 `window.__lastDeath = { at, popped, puffsActive, heartDropped }` et
 `window.__gameClock.isHitStopped`.
 
