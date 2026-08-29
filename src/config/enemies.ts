@@ -92,8 +92,30 @@ export const ENEMIES: Record<EnemyKind, EnemyStats> = {
   },
 }
 
-/** Durée de l'effondrement à la mort, avant disparition. */
-export const DEATH_FADE_MS = 500
+/**
+ * Gel du monde sur le coup fatal, en millisecondes de temps **réel**.
+ *
+ * En dessous de ~60 ms le gel ne se lit pas ; au-delà de ~110 ms il ne se lit
+ * plus comme un effet mais comme un à-coup de framerate.
+ */
+export const HIT_STOP_MS = 80
+/**
+ * Fin de la pose d'anticipation, en temps de **jeu**.
+ *
+ * Volontairement court, et ce n'est pas un oubli : le gel tient déjà cette pose
+ * 80 ms de temps réel, pendant lesquelles l'horloge de jeu ne bouge pas. Les
+ * deux durées s'additionnent à l'écran. Réglée « proprement » à 90 ms, la pose
+ * en paraîtrait 170 et la mort deviendrait molle.
+ */
+export const DEATH_SQUASH_MS = 40
+/** Pic de la détente : le corps disparaît, la fumée naît. */
+export const DEATH_POP_MS = 130
+/** Démontage du composant, quelques frames après le pic. */
+export const DEATH_REMOVE_MS = 150
+/** Amplitude de la secousse caméra, en unités monde. */
+export const DEATH_SHAKE_AMPLITUDE = 0.08
+/** Durée de la secousse, en millisecondes de temps réel. */
+export const DEATH_SHAKE_MS = 120
 /**
  * Recul imprimé à un ennemi touché.
  * Volontairement modéré : mesuré à 5,5, l'ennemi sortait de portée d'épée et
