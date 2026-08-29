@@ -11,7 +11,7 @@ import {
 import { ATTACK } from '../config/gameplay'
 import { sampleHeight } from '../config/world'
 import { enemyRegistry } from '../state/enemyRegistry'
-import { now as gameNow } from '../state/gameClock'
+import { isHitStopped, now as gameNow } from '../state/gameClock'
 import { playerTransform } from '../state/playerTransform'
 import {
   deflectProjectile,
@@ -132,10 +132,15 @@ export function Projectiles() {
     // Ces deux pools intègrent leur mouvement à la main, hors de Rapier : le
     // `paused` du moteur physique ne les atteint pas. Sans ce garde, un
     // projectile continue de traverser l'écran derrière le panneau et un cœur
-    // continue de tomber, alors que tout le reste du monde est figé. Aucune
-    // conséquence de jeu — `damagePlayer` et `healPlayer` refusent déjà hors de
-    // `playing` — mais l'image, elle, trahissait la pause.
-    if (store.phase !== 'playing') return
+    // continue de tomber, alors que tout le reste du monde est figé. Deux gels
+    // le demandent, et non un seul. Le panneau ouvert d'abord, où seule l'image
+    // trahissait la pause — `damagePlayer` et `healPlayer` refusent déjà hors de
+    // `playing`. Le hit-stop du coup fatal ensuite, pendant lequel la phase vaut
+    // toujours `playing` : là, l'enjeu n'est plus décoratif, une balle déjà
+    // proche toucherait le joueur pendant la frame gelée, alors qu'il est
+    // immobilisé, ne peut plus parer, et que ses i-frames — chronométrées sur
+    // l'horloge de jeu, arrêtée — ne s'écoulent pas non plus.
+    if (store.phase !== 'playing' || isHitStopped()) return
 
     for (let i = 0; i < projectiles.length; i++) {
       const projectile = projectiles[i]

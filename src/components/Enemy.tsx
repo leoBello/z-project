@@ -8,17 +8,25 @@ import {
 } from '@react-three/rapier'
 import { Color, Group, MathUtils, Vector3 } from 'three'
 import {
-  DEATH_FADE_MS,
+  DEATH_POP_MS,
+  DEATH_REMOVE_MS,
+  DEATH_SHAKE_AMPLITUDE,
+  DEATH_SHAKE_MS,
+  DEATH_SQUASH_MS,
   ENEMIES,
   HEART_DROP_CHANCE,
   HIT_FLASH_MS,
   HIT_KNOCKBACK,
+  HIT_STOP_MS,
 } from '../config/enemies'
-import { playHit } from '../audio/sfx'
+import { playDefeat, playHit } from '../audio/sfx'
 import { ATTACK } from '../config/gameplay'
+import { sampleHeight } from '../config/world'
 import { playerTransform } from '../state/playerTransform'
+import { shake } from '../state/cameraShake'
+import { spawnDeathPuff, spawnDeathRing } from '../state/deathPuffs'
 import { enemyRegistry, updateEnemyMarker } from '../state/enemyRegistry'
-import { now as gameNow } from '../state/gameClock'
+import { hitStop, isHitStopped, now as gameNow } from '../state/gameClock'
 import { dropPickup } from '../state/pickups'
 import {
   fireProjectile,
@@ -40,6 +48,23 @@ const muzzle = new Vector3()
 const playerChest = new Vector3()
 const WHITE = new Color(1, 1, 1)
 
+/**
+ * Dernière mort en date, pour vérification depuis la page.
+ *
+ * Même raison que `__lastSwing` : la séquence dure 210 ms, aucune capture ne
+ * l'attrapera et le rendu headless tourne à 1 fps. Ce qui se mesure, ce sont
+ * les horodatages et les drapeaux.
+ */
+const lastDeath = {
+  spawnId: '',
+  deathAt: -Infinity,
+  poppedAt: -Infinity,
+  dropsHeart: false,
+}
+if (import.meta.env.DEV) {
+  ;(window as unknown as Record<string, unknown>).__lastDeath = lastDeath
+}
+
 interface EnemyRuntime {
   hp: number
   state: EnemyState
@@ -53,6 +78,15 @@ interface EnemyRuntime {
   lastHitSwing: number
   hitFlashUntil: number
   deathAt: number
+  /**
+   * Tiré à la mort, consommé au pic.
+   *
+   * Le tirage reste à l'instant de la mort — seul le lâcher est différé, pour
+   * que le cœur se lise comme jaillissant de la fumée plutôt que du corps.
+   */
+  dropsHeart: boolean
+  /** Vrai une fois la fumée émise : elle ne doit l'être qu'une fois. */
+  popped: boolean
   /** Cap visuel, lissé. */
   yaw: number
   /** Cible de patrouille, relative au point d'apparition. */
@@ -79,7 +113,6 @@ function damageEnemy(
   state: EnemyRuntime,
   rb: RapierRigidBody,
   x: number,
-  y: number,
   z: number,
   spawnId: string,
   now: number,
@@ -106,10 +139,38 @@ function damageEnemy(
 
   state.state = 'dead'
   state.deathAt = now
+  state.popped = false
+  // Le tirage se fait ici, à l'instant de la mort, et avec `Math.random` et non
+  // la graine du monde — une graine fixe rendrait les lâchers identiques à
+  // chaque partie, et le joueur apprendrait quels ennemis « donnent » un cœur.
+  // Seul le lâcher est différé, jusqu'au pic de la détente.
+  state.dropsHeart = Math.random() < HEART_DROP_CHANCE
   useGameStore.getState().registerKill()
-  // Le cœur part de la poitrine, pas des pieds : le petit saut le rend visible
-  // par-dessus les herbes hautes avant qu'il ne retombe.
-  if (Math.random() < HEART_DROP_CHANCE) dropPickup(x, y + 0.3, z)
+
+  // Les trois retours qui font la différence entre « l'ennemi a disparu » et
+  // « je l'ai eu ». Tous trois chronométrés en temps réel : ils doivent jouer
+  // pendant le gel, qui est le moment où ils portent.
+  playDefeat()
+  hitStop(HIT_STOP_MS)
+  shake(DEATH_SHAKE_AMPLITUDE, DEATH_SHAKE_MS)
+
+  // Le registre doit dire « mort » dès l'instant du coup fatal, et pas seulement
+  // à la frame suivante comme avant : la branche de mort passe désormais avant
+  // `updateEnemyMarker`, qu'elle n'atteint donc jamais. Sans ça, le calque de
+  // combat continue de dessiner la barre de vie sur un corps qui s'étire et
+  // explose, et le renvoi de projectile peut se verrouiller sur un cadavre.
+  if (marker) {
+    marker.state = 'dead'
+    marker.hp = 0
+  }
+
+  if (import.meta.env.DEV) {
+    lastDeath.spawnId = spawnId
+    lastDeath.deathAt = now
+    lastDeath.poppedAt = -Infinity
+    lastDeath.dropsHeart = state.dropsHeart
+  }
+
   return true
 }
 
@@ -143,6 +204,8 @@ export function Enemy({ spawn }: EnemyProps) {
     lastHitSwing: -Infinity,
     hitFlashUntil: -Infinity,
     deathAt: -Infinity,
+    dropsHeart: false,
+    popped: false,
     yaw: 0,
     patrolAngle: Math.random() * Math.PI * 2,
     patrolUntil: 0,
@@ -177,6 +240,80 @@ export function Enemy({ spawn }: EnemyProps) {
     const store = useGameStore.getState()
     const position = rb.translation()
 
+    // --- Mort ---------------------------------------------------------------
+    // Placée **avant** le test de culling, et c'est une correction : un ennemi
+    // tué puis quitté au-delà d'ACTIVE_RADIUS n'atteignait jamais cette
+    // branche. Il restait figé en `dead` pour le reste de la partie, ne se
+    // démontait jamais, et son entrée de registre restait en mémoire.
+    if (state.state === 'dead') {
+      const age = now - state.deathAt
+
+      // Le corps reste blanc jusqu'au bout. L'affectation du flash est plus
+      // bas, après ce `return` : sans ces deux lignes, un cadavre reprendrait
+      // sa couleur d'origine au milieu de sa propre mort.
+      materials.body.color.copy(WHITE)
+      materials.dark.color.copy(WHITE)
+
+      if (age < DEATH_SQUASH_MS) {
+        // Anticipation : le corps se ramasse. C'est la pose que le gel tient,
+        // donc la frame que le joueur regarde vraiment.
+        group.scale.set(1.35, 0.6, 1.35)
+        group.position.y = 0
+        group.position.z = 0
+      } else if (age < DEATH_POP_MS) {
+        // Détente, en sortie cubique : une rampe linéaire donne un étirement
+        // mou, qui se lit comme un objet qu'on tire et non comme un ressort
+        // qu'on lâche.
+        const t = (age - DEATH_SQUASH_MS) / (DEATH_POP_MS - DEATH_SQUASH_MS)
+        const ease = 1 - (1 - t) ** 3
+        group.scale.set(1.35 - 0.75 * ease, 0.6 + 0.9 * ease, 1.35 - 0.75 * ease)
+        group.position.y = ease * 0.2
+        group.position.z = 0
+      } else if (!state.popped) {
+        state.popped = true
+        group.visible = false
+        spawnDeathPuff(position.x, position.y, position.z, materials.base.body)
+        // L'anneau se pose sur la surface **visible** du terrain, pas sous le
+        // centre de la capsule : même échantillonneur que le mesh, le collider
+        // et les cœurs, donc aucune seconde source de vérité.
+        spawnDeathRing(
+          position.x,
+          sampleHeight(position.x, position.z),
+          position.z,
+          materials.base.body,
+        )
+        // Le cœur part de la poitrine, pas des pieds : le petit saut le rend
+        // visible par-dessus les herbes hautes avant qu'il ne retombe.
+        if (state.dropsHeart) dropPickup(position.x, position.y + 0.3, position.z)
+        // Le point quitte la minimap au pic et non au démontage : la carte et
+        // l'écran doivent dire la même chose au même moment.
+        enemyRegistry.delete(spawn.id)
+        if (import.meta.env.DEV) lastDeath.poppedAt = now
+      }
+
+      rb.setLinvel({ x: 0, y: rb.linvel().y, z: 0 }, false)
+      if (age >= DEATH_REMOVE_MS) setRemoved(true)
+      return
+    }
+
+    // --- Gel du coup fatal --------------------------------------------------
+    // Rien de ce qui suit n'a de raison de tourner pendant les 80 ms de gel, et
+    // deux lignes ont une raison de ne pas tourner : le lissage du cap et celui
+    // de l'échelle intègrent sur le `delta` de `useFrame`, pas sur l'horloge de
+    // jeu. Sur la durée du gel ils avaleraient la moitié de l'angle restant et
+    // les trois quarts de l'écart d'échelle — un ennemi qui pivote vers le
+    // joueur, ou qui redescend de son flash, bougerait pendant la frame censée
+    // être figée. Le reste est déjà inerte de lui-même : la fenêtre de dégâts se
+    // compare à `gameNow()`, arrêtée, donc aucun coup ne s'ouvre ni ne se ferme
+    // pendant le gel, et les `setLinvel` s'adressent à un moteur en pause.
+    //
+    // La garde est placée **après** la branche de mort, et pas en tête comme
+    // pour les pools : à la frame du coup fatal, `damageEnemy` sort avant que le
+    // corps n'ait pris sa pose écrasée, qui n'est posée qu'à la frame suivante —
+    // c'est-à-dire pendant le gel. La hisser plus haut figerait l'ennemi debout,
+    // soit exactement la pose que ce gel existe pour ne pas montrer.
+    if (isHitStopped()) return
+
     toPlayer.set(
       playerTransform.position.x - position.x,
       0,
@@ -193,20 +330,6 @@ export function Enemy({ spawn }: EnemyProps) {
     }
 
     updateEnemyMarker(spawn.id, position.x, position.y, position.z, state.state, state.hp)
-
-    // --- Mort ---------------------------------------------------------------
-    if (state.state === 'dead') {
-      const progress = (now - state.deathAt) / DEATH_FADE_MS
-      // Effondrement : l'ennemi s'aplatit et rétrécit avant de disparaître.
-      const scale = Math.max(0, 1 - progress)
-      group.scale.set(scale, scale * Math.max(0, 1 - progress * 1.6), scale)
-      rb.setLinvel({ x: 0, y: rb.linvel().y, z: 0 }, false)
-      if (progress >= 1) {
-        enemyRegistry.delete(spawn.id)
-        setRemoved(true)
-      }
-      return
-    }
 
     // --- Coup d'épée du joueur ---------------------------------------------
     // La hitbox est une simple sphère posée devant le joueur : pas de requête
@@ -237,7 +360,6 @@ export function Enemy({ spawn }: EnemyProps) {
           state,
           rb,
           position.x,
-          position.y,
           position.z,
           spawn.id,
           now,
@@ -275,7 +397,6 @@ export function Enemy({ spawn }: EnemyProps) {
         state,
         rb,
         position.x,
-        position.y,
         position.z,
         spawn.id,
         now,

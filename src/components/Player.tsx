@@ -15,7 +15,7 @@ import { isTouchDevice } from '../config/device'
 import { ATTACK, PLAYER } from '../config/gameplay'
 import { WORLD } from '../config/world'
 import { enemyRegistry } from '../state/enemyRegistry'
-import { now as gameNow } from '../state/gameClock'
+import { isHitStopped, now as gameNow } from '../state/gameClock'
 import { playerBody } from '../state/playerBody'
 import { playerTransform } from '../state/playerTransform'
 import { touchInput, resetTouchMove } from '../state/touchInput'
@@ -158,6 +158,17 @@ export function Player() {
   useFrame((_, rawDelta) => {
     const rb = body.current
     if (!rb) return
+
+    // Pendant le gel du coup fatal, le monde entier tient sa pose : Rapier est
+    // en pause et les ennemis n'avancent plus d'un pixel. Le héros que la
+    // caméra garde au centre de l'écran ne peut pas être le seul repère à
+    // continuer de pivoter et de marcher pendant ces 80 ms. Contrairement à
+    // `Enemy.tsx`, aucune branche ci-dessous n'a d'effet à jouer *pendant* le
+    // gel : la garde peut donc se poser en tête, avant même de lire l'état de
+    // pause. Les demandes de saut et d'attaque (clavier et tactile) ne sont
+    // pas consommées ici — elles restent levées et se consommeront à la
+    // reprise, elles ne sont pas perdues dans le gel.
+    if (isHitStopped()) return
 
     if (useGameStore.getState().phase !== 'playing') {
       // Les demandes en attente sont consommées, pas conservées : sinon la

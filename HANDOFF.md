@@ -116,6 +116,21 @@ crochets de diagnostic exposés en développement :
 - `window.__occlusionFade` — les uniforms du fondu de canopée. Forcer
   `uOccMinAlpha` à 1 rend le même point de vue sans effacement : c'est ce qui
   permet de comparer deux captures au lieu de juger à l'œil
+- `window.__gameClock` — `now`, `resetClock`, et depuis l'animation de défaite
+  `hitStop` et `isHitStopped`. Exposée pour vérifier depuis la page qu'elle se
+  fige bien en pause, chose qu'on ne peut pas juger à l'œil ; le gel s'y ajoute
+  pour la même raison — il dure 80 ms, aucune capture ne l'attrapera
+- `window.__cameraShake` — `shake(amplitude, durationMs)` pour déclencher une
+  secousse à la demande, `sampleShake` pour lire l'offset courant. Elle dure
+  120 ms : impossible à juger sur une capture
+- `window.__deathPuffs` — les pools de fumée et d'anneaux, plus
+  `spawnDeathPuff`, `spawnDeathRing` et `clearDeathPuffs`. C'est le seul moyen
+  de vérifier l'effet de mort sans tuer un ennemi au bon moment : une mort
+  dure 210 ms
+- `window.__lastDeath` — horodatages de la dernière mort (identifiant de
+  l'ennemi, instant du coup fatal, instant du pic) et cœur lâché ou non. Même
+  raison que `__lastSwing` : la séquence dure 210 ms, aucune capture ne
+  l'attrapera
 - `?debug` dans l'URL affiche les colliders Rapier
 
 Méthode qui a fonctionné : piloter le jeu avec Playwright en headless
