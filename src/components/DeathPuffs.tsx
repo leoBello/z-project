@@ -24,7 +24,6 @@ import {
   deathPuffs,
   deathRings,
 } from '../state/deathPuffs'
-import { faceted } from './environment/faceted'
 
 const HIDDEN = new Matrix4().makeScale(0, 0, 0)
 const matrix = new Matrix4()
@@ -96,8 +95,12 @@ function SmokeClouds() {
   const mesh = useRef<InstancedMesh>(null)
 
   const geometry = useMemo(() => {
-    // Facettée, comme tout le décor et comme la fumée de tenue.
-    const base = faceted(new IcosahedronGeometry(DEATH_PUFF_SIZE, 0))
+    // Pas de `faceted()` ici, contrairement au décor : `IcosahedronGeometry` est
+    // déjà non indexée, l'appel se réduirait donc à un `computeVertexNormals()`
+    // dont personne ne lirait le résultat. La fumée est rendue en aplat par le
+    // shader ci-dessus — aucune lumière, aucune normale — exactement comme les
+    // nuages d'`OutfitSmoke`.
+    const base = new IcosahedronGeometry(DEATH_PUFF_SIZE, 0)
     base.setAttribute(
       'aAlpha',
       new InstancedBufferAttribute(new Float32Array(DEATH_PUFF_POOL_SIZE), 1),
@@ -115,10 +118,31 @@ function SmokeClouds() {
     const instanced = mesh.current
     if (!instanced) return
 
+    // Le pool est vide l'immense majorité du temps : entre deux morts, les
+    // quarante-huit itérations, les `setMatrixAt` et les trois `needsUpdate`
+    // ne font que réécrire des instances déjà à l'échelle zéro. Et le CPU n'est
+    // pas le vrai sujet — `frustumCulled={false}` interdit au rendu d'écarter le
+    // mesh, qui coûte donc un draw call par frame pour ne rien montrer, sur des
+    // GPU intégrés que le projet vise explicitement.
+    //
+    // Le test se fait sur `visible` **et** sur le pool : tant que le mesh est
+    // encore visible, il faut laisser passer la frame qui masquera le dernier
+    // nuage éteint. Sortir avant elle laisserait cette instance inscrite dans la
+    // matrice, prête à réapparaître au prochain retour de `visible`.
+    let pending = false
+    for (let i = 0; i < deathPuffs.length; i++) {
+      if (deathPuffs[i].active) {
+        pending = true
+        break
+      }
+    }
+    if (!pending && !instanced.visible) return
+
     const now = gameNow()
     const alpha = geometry.getAttribute('aAlpha') as InstancedBufferAttribute
     const colors = geometry.getAttribute('aColor') as InstancedBufferAttribute
 
+    let anyActive = false
     for (let i = 0; i < deathPuffs.length; i++) {
       const puff = deathPuffs[i]
       const k = puff.active ? (now - puff.bornAt) / DEATH_PUFF_MS : 1
@@ -129,6 +153,7 @@ function SmokeClouds() {
         alpha.setX(i, 0)
         continue
       }
+      anyActive = true
 
       // Gonflement rapide puis dissipation lente. L'inverse se lirait comme une
       // bulle qui éclate, pas comme un nuage qui se disperse.
@@ -147,6 +172,9 @@ function SmokeClouds() {
     instanced.instanceMatrix.needsUpdate = true
     alpha.needsUpdate = true
     colors.needsUpdate = true
+    // Après la passe de masquage, jamais avant : la frame qui éteint le dernier
+    // nuage est aussi celle qui le retire de la matrice.
+    instanced.visible = anyActive
   })
 
   return (
@@ -213,10 +241,22 @@ function DeathRings() {
     const instanced = mesh.current
     if (!instanced) return
 
+    // Même sortie anticipée que les fumées, et pour le même draw call inutile :
+    // un anneau ne vit que 350 ms, ce pool passe donc encore plus de temps vide.
+    let pending = false
+    for (let i = 0; i < deathRings.length; i++) {
+      if (deathRings[i].active) {
+        pending = true
+        break
+      }
+    }
+    if (!pending && !instanced.visible) return
+
     const now = gameNow()
     const alpha = geometry.getAttribute('aAlpha') as InstancedBufferAttribute
     const colors = geometry.getAttribute('aColor') as InstancedBufferAttribute
 
+    let anyActive = false
     for (let i = 0; i < deathRings.length; i++) {
       const ring = deathRings[i]
       const k = ring.active ? (now - ring.bornAt) / DEATH_RING_MS : 1
@@ -227,6 +267,7 @@ function DeathRings() {
         alpha.setX(i, 0)
         continue
       }
+      anyActive = true
 
       // Expansion en sortie cubique : l'onde part vite et s'essouffle, ce qui
       // est le mouvement d'un choc. Linéaire, elle se lit comme un halo qui
@@ -247,6 +288,7 @@ function DeathRings() {
     instanced.instanceMatrix.needsUpdate = true
     alpha.needsUpdate = true
     colors.needsUpdate = true
+    instanced.visible = anyActive
   })
 
   return (
