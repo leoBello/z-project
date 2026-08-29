@@ -154,6 +154,16 @@ function damageEnemy(
   hitStop(HIT_STOP_MS)
   shake(DEATH_SHAKE_AMPLITUDE, DEATH_SHAKE_MS)
 
+  // Le registre doit dire « mort » dès l'instant du coup fatal, et pas seulement
+  // à la frame suivante comme avant : la branche de mort passe désormais avant
+  // `updateEnemyMarker`, qu'elle n'atteint donc jamais. Sans ça, le calque de
+  // combat continue de dessiner la barre de vie sur un corps qui s'étire et
+  // explose, et le renvoi de projectile peut se verrouiller sur un cadavre.
+  if (marker) {
+    marker.state = 'dead'
+    marker.hp = 0
+  }
+
   if (import.meta.env.DEV) {
     lastDeath.spawnId = spawnId
     lastDeath.deathAt = now
