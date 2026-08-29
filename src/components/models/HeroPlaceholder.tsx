@@ -4,7 +4,7 @@ import { Outlines } from '@react-three/drei'
 import { DoubleSide, Group, MathUtils } from 'three'
 import type { OutfitId, WeaponId } from '../../config/items'
 import { ATTACK, PLAYER } from '../../config/gameplay'
-import { now as gameNow } from '../../state/gameClock'
+import { isHitStopped, now as gameNow } from '../../state/gameClock'
 import { playerTransform } from '../../state/playerTransform'
 import { toonGradient } from './toonGradient'
 
@@ -176,6 +176,15 @@ export function HeroPlaceholder({ outfit = 'default', weapon = 'sword' }: HeroPr
   useFrame((state, rawDelta) => {
     if (!torso.current || !legL.current || !legR.current) return
     if (!armL.current || !armR.current || !head.current || !headwear.current) return
+
+    // Même gel que dans `Player.tsx` : pendant les 80 ms du coup fatal, le
+    // reste du monde tient sa pose, et le cycle de marche ne doit pas
+    // continuer sur une vitesse Rapier qui reste figée à sa dernière valeur
+    // non nulle. Ce composant ne fait que *lire* `playerTransform` et lisser
+    // des refs locales — aucun drapeau ponctuel à consommer, aucun singleton à
+    // publier — la garde peut donc se poser juste après les gardes de refs
+    // habituelles, sans rien à préserver de plus.
+    if (isHitStopped()) return
 
     const delta = Math.min(rawDelta, 0.05)
     const time = state.clock.elapsedTime
