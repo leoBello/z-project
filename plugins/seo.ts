@@ -5,9 +5,13 @@ import type { Plugin } from 'vite'
 import {
   buildFallback,
   buildJsonLd,
+  buildLlmsTxt,
   buildProfilePage,
-  PROFILE_PATH,
+  LOCALES,
+  profilePath,
   type Dict,
+  type Dicts,
+  type Locale,
 } from './seo-content.ts'
 
 /**
@@ -16,17 +20,19 @@ import {
  * Le portfolio est une scène WebGL : sans JavaScript, un robot d'indexation ne
  * voit qu'un `<div id="root">` vide — et *avec* JavaScript, il voit un
  * `<canvas>`, ce qui n'est pas mieux. Ce plugin comble les deux trous au build
- * (et en dev) à partir d'une seule source de vérité — `src/i18n/fr.json`, le
- * même fichier que le jeu affiche :
+ * (et en dev) à partir d'une seule source de vérité — `src/i18n/*.json`, les
+ * mêmes fichiers que le jeu affiche :
  *
  *   1. il écrit une version HTML sémantique du portfolio **à l'intérieur de
  *      `#root`**. React 19 vide le conteneur à son premier rendu : ce contenu
  *      ne subsiste que pour les visiteurs sans JS ;
- *   2. il génère **`/profil/`**, une vraie page texte statique et indexable.
- *      C'est elle qui porte le référencement : elle survit au rendu, se charge
- *      en quelques kilo-octets, et un lien réel de l'accueil y mène ;
- *   3. il injecte le JSON-LD adapté à chaque page (`WebPage` + `Person` +
- *      `Service` sur l'accueil, `ProfilePage` + `FAQPage` sur `/profil/`).
+ *   2. il génère **`/profil/` et `/en/profile/`**, deux vraies pages texte
+ *      statiques et indexables, appariées par `hreflang`. Ce sont elles qui
+ *      portent le référencement : elles survivent au rendu, se chargent en
+ *      quelques kilo-octets, et un lien réel de l'accueil y mène ;
+ *   3. il publie **`/llms.txt`**, résumé Markdown pour les moteurs génératifs ;
+ *   4. il injecte le JSON-LD adapté à chaque page (`WebPage` sur l'accueil,
+ *      `ProfilePage` + `FAQPage` sur les pages texte).
  *
  * Tout ce qui est statique (title, meta, Open Graph…) reste écrit à la main dans
  * `index.html` : seul le contenu dérivé des données passe par ici, pour ne
@@ -36,11 +42,20 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url))
 
-const DEFAULT_LOCALE = 'fr'
+/** La langue de l'accueil, donc celle du repli injecté dans `#root`. */
+const DEFAULT_LOCALE: Locale = 'fr'
 
-function readDict(): Dict {
-  const path = resolve(here, '../src/i18n', `${DEFAULT_LOCALE}.json`)
+function readDict(locale: Locale): Dict {
+  const path = resolve(here, '../src/i18n', `${locale}.json`)
   return JSON.parse(readFileSync(path, 'utf8')) as Dict
+}
+
+/**
+ * Les dictionnaires sont relus à chaque appel, jamais mis en cache : en dev,
+ * corriger une phrase dans `fr.json` doit se voir au rechargement suivant.
+ */
+function readDicts(): Dicts {
+  return { fr: readDict('fr'), en: readDict('en') }
 }
 
 /**
@@ -52,9 +67,14 @@ function inlineJson(json: string): string {
   return json.replace(/</g, '\\u003c')
 }
 
-function profileHtml(): string {
-  const dict = readDict()
-  return buildProfilePage(dict, inlineJson(buildJsonLd(dict, 'profile')))
+function profileHtml(locale: Locale): string {
+  const dict = readDict(locale)
+  return buildProfilePage(dict, locale, inlineJson(buildJsonLd(dict, locale)))
+}
+
+/** Chemins servis en dev, avec ou sans barre finale. */
+function matches(path: string, target: string): boolean {
+  return path === `/${target}` || path === `/${target.replace(/\/$/, '')}`
 }
 
 export function seo(): Plugin {
@@ -64,7 +84,7 @@ export function seo(): Plugin {
     transformIndexHtml: {
       order: 'pre',
       handler(html) {
-        const dict = readDict()
+        const dict = readDict(DEFAULT_LOCALE)
         const jsonLd = inlineJson(buildJsonLd(dict, 'home'))
 
         return html
@@ -77,26 +97,43 @@ export function seo(): Plugin {
     },
 
     /**
-     * En dev, `/profil/` n'existe sur aucun disque : on la sert à la volée pour
-     * pouvoir la relire et la valider sans lancer un build complet.
+     * En dev, ces fichiers n'existent sur aucun disque : on les sert à la volée
+     * pour pouvoir les relire et les valider sans lancer un build complet.
      */
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const path = (req.url ?? '').split('?')[0]
-        if (path !== `/${PROFILE_PATH}` && path !== `/${PROFILE_PATH.replace(/\/$/, '')}`) {
+
+        if (path === '/llms.txt') {
+          res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+          res.end(buildLlmsTxt(readDicts()))
+          return
+        }
+
+        const locale = LOCALES.find((candidate) => matches(path, profilePath(candidate)))
+        if (!locale) {
           next()
           return
         }
+
         res.setHeader('Content-Type', 'text/html; charset=utf-8')
-        res.end(profileHtml())
+        res.end(profileHtml(locale))
       })
     },
 
     generateBundle() {
+      for (const locale of LOCALES) {
+        this.emitFile({
+          type: 'asset',
+          fileName: `${profilePath(locale)}index.html`,
+          source: profileHtml(locale),
+        })
+      }
+
       this.emitFile({
         type: 'asset',
-        fileName: `${PROFILE_PATH}index.html`,
-        source: profileHtml(),
+        fileName: 'llms.txt',
+        source: buildLlmsTxt(readDicts()),
       })
     },
   }
