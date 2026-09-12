@@ -2,8 +2,19 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://leobello.dev/</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <!--
+    Version texte du portfolio : la seule page que les robots peuvent lire en
+    entier, le reste du site étant une scène WebGL. Priorité volontairement
+    élevée — c'est elle qui doit remonter sur les requêtes métier.
+  -->
+  <url>
+    <loc>https://leobello.dev/profil/</loc>
+    <lastmod>2026-09-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
   </url>
 </urlset>

@@ -242,7 +242,29 @@
         61%, 100% { opacity: 0.15; }
       }
 
+      /* --- Lien vers la version texte --------------------------------------- */
+
+      .text-version {
+        position: fixed;
+        top: -80px;
+        left: 8px;
+        z-index: 2147483647;
+        padding: 10px 16px;
+        background: #161d24;
+        border: 1px solid rgba(245, 220, 149, 0.45);
+        color: #f5dc95;
+        font: 14px/1 system-ui, -apple-system, 'Segoe UI', sans-serif;
+        text-decoration: none;
+        transition: top 180ms ease;
+      }
+      .text-version:focus {
+        top: 8px;
+      }
+
       @media (prefers-reduced-motion: reduce) {
+        .text-version {
+          transition: none;
+        }
         .boot__triforce,
         .boot__fill,
         .boot__hint i {
@@ -266,6 +288,14 @@
         <p class="boot__hint">Chargement du monde<i>.</i><i>.</i><i>.</i></p>
       </div>
     </div>
+    <!--
+      Lien réel vers la version texte du portfolio. Il vit hors de `#root`,
+      donc il survit au rendu de React : c'est par lui qu'un robot qui exécute
+      le JavaScript découvre `/profil/`, la seule page du site qu'il puisse
+      lire en entier. Hors de l'écran jusqu'à ce qu'on l'atteigne au clavier —
+      c'est aussi un raccourci d'accessibilité vers une alternative non 3D.
+    -->
+    <a class="text-version" href="/profil/">Version texte du portfolio</a>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

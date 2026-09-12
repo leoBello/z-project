@@ -143,7 +143,7 @@ export function buildSlides(section: PortfolioSection, dict: Dictionary): Portfo
             { label: dict.ui.contactLabels.email, href: `mailto:${dict.contact.email}` },
             { label: dict.ui.contactLabels.linkedin, href: dict.contact.linkedin },
             { label: dict.ui.contactLabels.github, href: dict.contact.github },
-            { label: dict.ui.contactLabels.website, href: `https://${dict.contact.website}` },
+            { label: dict.ui.contactLabels.malt, href: dict.contact.malt },
           ],
         },
       ]

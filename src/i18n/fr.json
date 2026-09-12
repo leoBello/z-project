@@ -100,7 +100,7 @@
       "email": "E-mail",
       "linkedin": "LinkedIn",
       "github": "GitHub",
-      "website": "Site web",
+      "malt": "Profil Malt",
       "intro": "Basé à {location}. Ouvert aux missions front-end et full-stack."
     },
     "portfolio": {
@@ -260,7 +260,7 @@
   ],
   "certifications": [{ "name": "ReactJS Quiz Medium", "issuer": "ReactJS" }],
   "skills": {
-    "frontend": ["React", "TypeScript", "JavaScript", "Angular", "Tests unitaires", "React Testing Library", "Jest", "Architecture de composants"],
+    "frontend": ["React", "Next.js", "TypeScript", "JavaScript", "Angular", "Tests unitaires", "React Testing Library", "Jest", "Architecture de composants"],
     "backend": ["Node.js", "Java EE", "REST API", "Firebase Firestore", "PostgreSQL"],
     "cloud_devops": ["Firebase", "Google Cloud", "Cloud Computing", "CI/CD"],
     "data_ml": ["Machine Learning", "Deep Learning", "PyTorch", "Réseaux de neurones", "Robotique"],
@@ -271,6 +271,7 @@
     "email": "leobello.wd@gmail.com",
     "linkedin": "https://www.linkedin.com/in/leobellolinkedurl",
     "github": "https://github.com/leoBello/",
+    "malt": "https://www.malt.fr/profile/leobwebdev",
     "website": "leobello.dev",
     "location": "Marseille, France"
   },
