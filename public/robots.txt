@@ -1,5 +1,43 @@
 # https://leobello.dev — portfolio de Léo Bello
+
 User-agent: *
 Allow: /
+
+# Robots des moteurs génératifs, autorisés explicitement.
+#
+# `User-agent: *` les couvre déjà : un robot n'applique que le groupe le plus
+# spécifique qui le nomme, donc ces lignes ne changent rien techniquement tant
+# qu'elles disent « Allow: / ». Elles sont là pour dire l'intention — ce site
+# veut être lu, cité et résumé par ces moteurs — et pour que la décision reste
+# visible le jour où l'un d'eux doit être retiré.
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+# Résumé Markdown du site, écrit pour être lu par un modèle de langage.
+# https://leobello.dev/llms.txt
 
 Sitemap: https://leobello.dev/sitemap.xml

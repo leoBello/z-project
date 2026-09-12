@@ -10,14 +10,14 @@
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Léo Bello — Portfolio · Développeur Full-Stack React &amp; TypeScript</title>
+    <title>Léo Bello — Développeur web freelance React &amp; Next.js à Marseille</title>
     <meta
       name="description"
-      content="Portfolio de Léo Bello, développeur full-stack React, Next.js et TypeScript basé à Marseille. Applications web robustes : architecture front-end, intégration d'API, tests et performance."
+      content="Portfolio de Léo Bello, développeur web full-stack freelance à Marseille : React, Next.js, TypeScript, Node.js, PostgreSQL, intégration d'API et d'IA. Disponible pour des missions front-end et full-stack, sur place et à distance."
     />
     <meta
       name="keywords"
-      content="Léo Bello, développeur full-stack, développeur React, développeur front-end, Next.js, TypeScript, PostgreSQL, Supabase, Marseille, freelance, portfolio"
+      content="Léo Bello, développeur web freelance, développeur React freelance, développeur Next.js, développeur front-end Marseille, TypeScript, Node.js, PostgreSQL, Supabase, intégration IA, portfolio"
     />
     <meta name="author" content="Léo Bello" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
@@ -35,7 +35,7 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Léo Bello — Portfolio" />
-    <meta property="og:title" content="Léo Bello — Développeur Full-Stack React &amp; TypeScript" />
+    <meta property="og:title" content="Léo Bello — Développeur web freelance React &amp; Next.js à Marseille" />
     <meta
       property="og:description"
       content="Portfolio interactif : un mini-monde 3D à explorer, cinq monuments pour cinq sections — projets, parcours, compétences, présentation, contact."
@@ -50,7 +50,7 @@
 
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Léo Bello — Développeur Full-Stack React &amp; TypeScript" />
+    <meta name="twitter:title" content="Léo Bello — Développeur web freelance React &amp; Next.js à Marseille" />
     <meta
       name="twitter:description"
       content="Portfolio interactif : un mini-monde 3D à explorer, cinq monuments pour cinq sections."
@@ -242,7 +242,32 @@
         61%, 100% { opacity: 0.15; }
       }
 
+      /* --- Lien vers la version texte --------------------------------------- */
+
+      .text-version {
+        position: fixed;
+        top: -80px;
+        left: 8px;
+        z-index: 2147483647;
+        padding: 10px 16px;
+        background: #161d24;
+        border: 1px solid rgba(245, 220, 149, 0.45);
+        color: #f5dc95;
+        font: 14px/1 system-ui, -apple-system, 'Segoe UI', sans-serif;
+        text-decoration: none;
+        transition: top 180ms ease;
+      }
+      .text-version:focus {
+        top: 8px;
+      }
+      .text-version--en:focus {
+        top: 52px;
+      }
+
       @media (prefers-reduced-motion: reduce) {
+        .text-version {
+          transition: none;
+        }
         .boot__triforce,
         .boot__fill,
         .boot__hint i {
@@ -266,6 +291,15 @@
         <p class="boot__hint">Chargement du monde<i>.</i><i>.</i><i>.</i></p>
       </div>
     </div>
+    <!--
+      Lien réel vers la version texte du portfolio. Il vit hors de `#root`,
+      donc il survit au rendu de React : c'est par lui qu'un robot qui exécute
+      le JavaScript découvre `/profil/`, la seule page du site qu'il puisse
+      lire en entier. Hors de l'écran jusqu'à ce qu'on l'atteigne au clavier —
+      c'est aussi un raccourci d'accessibilité vers une alternative non 3D.
+    -->
+    <a class="text-version" href="/profil/">Version texte du portfolio</a>
+    <a class="text-version text-version--en" href="/en/profile/" hreflang="en">Text version (English)</a>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

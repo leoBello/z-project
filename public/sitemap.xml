@@ -1,9 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml"
+>
   <url>
     <loc>https://leobello.dev/</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <!--
+    Versions texte du portfolio : les seules pages que les robots peuvent lire
+    en entier, le reste du site étant une scène WebGL. Priorité volontairement
+    élevée — ce sont elles qui doivent remonter sur les requêtes métier.
+
+    Les `xhtml:link` déclarent l'appariement des deux langues. Ils doivent
+    figurer sur *chacune* des deux URL et se citer l'une l'autre, sans quoi
+    Google ignore la paire.
+  -->
+  <url>
+    <loc>https://leobello.dev/profil/</loc>
+    <lastmod>2026-09-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://leobello.dev/profil/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://leobello.dev/en/profile/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://leobello.dev/profil/" />
+  </url>
+  <url>
+    <loc>https://leobello.dev/en/profile/</loc>
+    <lastmod>2026-09-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://leobello.dev/profil/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://leobello.dev/en/profile/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://leobello.dev/profil/" />
   </url>
 </urlset>
