@@ -60,20 +60,39 @@ const SKILL_GROUPS = [
 
 export function buildSlides(section: PortfolioSection, dict: Dictionary): PortfolioSlide[] {
   switch (section) {
-    case 'projects':
+    case 'projects': {
+      // Les produits personnels ouvrent la section, devant les missions
+      // client. Ce sont les seuls dont le périmètre est tenu de bout en bout —
+      // décision produit, architecture, mise en ligne — donc ceux qui montrent
+      // le plus de ce que sait faire l'auteur, et pas seulement ce qu'on lui a
+      // confié.
+      const products = dict.projects.map((project, index) => ({
+        id: project.id,
+        accentIndex: index,
+        title: project.name,
+        meta: `${dict.ui.portfolio.personalProject} · ${project.tagline} · ${project.period}`,
+        paragraphs: [project.summary, project.approach, project.outcome],
+        tags: project.tags,
+      }))
+
       // L'index conservé est celui du tableau **complet** : masquer un projet
-      // ne doit pas reteindre tous les suivants.
-      return dict.experience
+      // ne doit pas reteindre tous les suivants. Il est décalé du nombre de
+      // produits personnels, sans quoi la première mission reprendrait la
+      // teinte de la première diapositive.
+      const missions = dict.experience
         .map((entry, position) => ({ entry, position }))
         .filter(({ entry }) => entry.featured)
         .map(({ entry, position }) => ({
           id: entry.id,
-          accentIndex: position,
+          accentIndex: products.length + position,
           title: entry.company,
           meta: `${entry.role} · ${entry.period}`,
           paragraphs: [entry.description],
           tags: entry.tags,
         }))
+
+      return [...products, ...missions]
+    }
 
     case 'bio':
       return [

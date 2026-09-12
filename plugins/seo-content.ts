@@ -42,8 +42,21 @@ interface Experience {
   featured: boolean
 }
 
+/** Produit personnel : conçu, développé et mis en ligne de bout en bout. */
+interface Project {
+  id: string
+  name: string
+  tagline: string
+  period: string
+  summary: string
+  approach: string
+  outcome: string
+  tags: readonly string[]
+}
+
 export interface Dict {
   about: { name: string; title: string; location: string; bio: string; website: string }
+  projects: readonly Project[]
   experience: readonly Experience[]
   education: readonly { school: string; degree: string; period: string }[]
   certifications: readonly { name: string; issuer: string }[]
@@ -60,6 +73,7 @@ export interface Dict {
     sections: Record<string, string>
     skillGroups: Record<string, string>
     background: { certifications: string }
+    portfolio: { personalProject: string }
   }
 }
 
@@ -68,6 +82,7 @@ export interface Dict {
 const HEADINGS = {
   bio: 'À propos',
   services: 'Prestations',
+  projects: 'Projets personnels',
   skills: 'Compétences',
   experience: 'Expérience professionnelle',
   education: 'Formation',
@@ -139,6 +154,22 @@ export function allSkills(dict: Dict): string[] {
   return [...seen]
 }
 
+/**
+ * Compétences déclarées **plus** technologies réellement employées dans les
+ * produits personnels.
+ *
+ * Vite, Zod, Astro ou RLS n'apparaissent dans aucune famille de compétences,
+ * alors qu'ils portent un projet entier. Les ajouter ici n'invente rien : le
+ * projet qui les emploie est décrit sur la même page, juste au-dessus.
+ */
+function knowsAbout(dict: Dict): string[] {
+  const seen = new Set(allSkills(dict))
+  for (const project of dict.projects) {
+    for (const tag of project.tags) seen.add(tag)
+  }
+  return [...seen]
+}
+
 /** Premier paragraphe de la bio : sert de description partout. */
 function intro(dict: Dict): string {
   return dict.about.bio.split('\n\n')[0]
@@ -192,6 +223,16 @@ function buildFaq(dict: Dict): { question: string; answer: string }[] {
       answer: SERVICES.map((service) => service.name).join(' ; ') + '.',
     },
     {
+      question: `Quels projets personnels ${about.name} a-t-il développés ?`,
+      answer: dict.projects
+        .map(
+          (project) =>
+            `${project.name} (${project.tagline}, ${project.period}) : ${project.summary} ` +
+            `Technologies : ${project.tags.join(', ')}.`,
+        )
+        .join(' '),
+    },
+    {
       question: `Qu’est-ce que le portfolio ${contact.website} ?`,
       answer:
         `Un portfolio interactif : un mini-monde 3D à explorer dans le navigateur, développé ` +
@@ -227,6 +268,29 @@ function servicesHtml(): string {
     (service) =>
       `<article><h3>${esc(service.name)}</h3><p>${esc(service.description)}</p></article>`,
   ).join('')
+}
+
+/**
+ * Produits personnels.
+ *
+ * Le seul endroit du site où une compétence est adossée à une réalisation
+ * nommée, datée et chiffrée. C'est ce qu'un moteur — classique ou génératif —
+ * peut citer sans avoir à croire sur parole une liste de technologies.
+ */
+function projectsHtml(dict: Dict): string {
+  return dict.projects
+    .map((project) => {
+      const tags = project.tags.map((tag) => esc(tag)).join(', ')
+      return (
+        `<article><h3>${esc(project.name)} — ${esc(project.tagline)}</h3>` +
+        `<p>${esc(dict.ui.portfolio.personalProject)} · ${esc(project.period)}</p>` +
+        `<p>${esc(project.summary)}</p>` +
+        `<p>${esc(project.approach)}</p>` +
+        `<p>${esc(project.outcome)}</p>` +
+        `<p>Technologies : ${tags}.</p></article>`
+      )
+    })
+    .join('')
 }
 
 function skillsHtml(dict: Dict): string {
@@ -313,6 +377,7 @@ export function buildFallback(dict: Dict): string {
     `<p>${esc(about.location)}</p></header>` +
     `<section><h2>${HEADINGS.bio}</h2>${bioHtml(dict)}</section>` +
     `<section><h2>${HEADINGS.services}</h2>${servicesHtml()}</section>` +
+    `<section><h2>${HEADINGS.projects}</h2>${projectsHtml(dict)}</section>` +
     `<section><h2>${HEADINGS.skills}</h2>${skillsHtml(dict)}</section>` +
     `<section><h2>${HEADINGS.experience}</h2>${experienceHtml(dict)}</section>` +
     `<section><h2>${HEADINGS.education}</h2>${educationHtml(dict)}</section>` +
@@ -331,7 +396,7 @@ const PROFILE_TITLE = 'Léo Bello — Développeur web freelance React, Next.js 
 const PROFILE_DESCRIPTION =
   'Profil complet de Léo Bello, développeur web full-stack freelance à Marseille : ' +
   'React, Next.js, TypeScript, Node.js, PostgreSQL, intégration d’API et d’IA. ' +
-  'Prestations, compétences, expérience, formation et contact.'
+  'Prestations, projets personnels, compétences, expérience, formation et contact.'
 
 /** Feuille de style de la page texte : sobre, lisible, aucune requête réseau. */
 const PROFILE_STYLE = `
@@ -392,6 +457,7 @@ export function buildProfilePage(dict: Dict, jsonLd: string): string {
     `<a href="${esc(dict.contact.malt)}" rel="me noopener" target="_blank">voir le profil Malt</a>.</p>` +
     `<section><h2>${HEADINGS.bio}</h2>${bioHtml(dict)}</section>` +
     `<section><h2>${HEADINGS.services}</h2>${servicesHtml()}</section>` +
+    `<section><h2>${HEADINGS.projects}</h2>${projectsHtml(dict)}</section>` +
     `<section><h2>${HEADINGS.skills}</h2>${skillsHtml(dict)}</section>` +
     `<section><h2>${HEADINGS.experience}</h2>${experienceHtml(dict)}</section>` +
     `<section><h2>${HEADINGS.education}</h2>${educationHtml(dict)}</section>` +
@@ -435,7 +501,7 @@ function personNode(dict: Dict) {
     // Déclare que ces comptes sont la même personne : c'est ce qui rattache le
     // profil Malt au portfolio dans l'index d'un moteur.
     sameAs: [contact.linkedin, contact.github, contact.malt],
-    knowsAbout: allSkills(dict),
+    knowsAbout: knowsAbout(dict),
     knowsLanguage: ['fr', 'en'],
     alumniOf: dict.education.map((entry) => ({
       '@type': 'EducationalOrganization',
@@ -460,6 +526,38 @@ function personNode(dict: Dict) {
       : {}),
     makesOffer: { '@id': `${SITE_URL}/#services` },
   }
+}
+
+function projectId(project: Project): string {
+  return `${SITE_URL}/#project-${project.id}`
+}
+
+/**
+ * Un nœud par produit personnel.
+ *
+ * `WebApplication` plutôt que `CreativeWork` : ce sont des applications web, et
+ * le type précis est ce qui permet à un moteur de répondre « il a construit une
+ * plateforme de prospection » plutôt que « il a publié quelque chose ».
+ * `author` pointe vers la même personne que tout le reste du graphe — c'est
+ * cette arête qui attribue le travail.
+ */
+function projectNodes(dict: Dict) {
+  return dict.projects.map((project) => ({
+    '@type': 'WebApplication',
+    '@id': projectId(project),
+    name: project.name,
+    disambiguatingDescription: project.tagline,
+    description: `${project.summary} ${project.approach}`,
+    abstract: project.outcome,
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    dateCreated: project.period,
+    inLanguage: 'fr',
+    keywords: project.tags.join(', '),
+    author: { '@id': `${SITE_URL}/#person` },
+    creator: { '@id': `${SITE_URL}/#person` },
+    isPartOf: { '@id': `${SITE_URL}/#website` },
+  }))
 }
 
 /** Offre de services : le nœud que vise une recherche « développeur React freelance ». */
@@ -515,7 +613,7 @@ function websiteNode(dict: Dict) {
  * page est une raison de sanction, pas un raccourci.
  */
 export function buildJsonLd(dict: Dict, page: 'home' | 'profile'): string {
-  const shared = [personNode(dict), serviceNode(dict), websiteNode(dict)]
+  const shared = [personNode(dict), serviceNode(dict), websiteNode(dict), ...projectNodes(dict)]
 
   const pageNodes =
     page === 'home'
@@ -542,6 +640,7 @@ export function buildJsonLd(dict: Dict, page: 'home' | 'profile'): string {
             inLanguage: 'fr',
             isPartOf: { '@id': `${SITE_URL}/#website` },
             mainEntity: { '@id': `${SITE_URL}/#person` },
+            hasPart: dict.projects.map((project) => ({ '@id': projectId(project) })),
           },
           {
             '@type': 'FAQPage',

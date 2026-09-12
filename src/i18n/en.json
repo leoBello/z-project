@@ -107,6 +107,7 @@
       "previous": "Previous",
       "next": "Next",
       "close": "Close",
+      "personalProject": "Personal project",
       "position": "{current} of {total}"
     },
     "chest": {
@@ -151,6 +152,28 @@
     "bio": "Front-end developer specialized in React and TypeScript, I work on ambitious web applications where code readability, interface robustness, and execution quality are essential. I focus on front-end architecture, API integration, performance, testing, and maintainability, with a product-oriented and long-term mindset.\n\nI'm comfortable in environments where the front-end needs to stay reliable as the product grows in complexity: component architecture, state management, advanced forms, PostgreSQL/Supabase integration, code reviews, continuous improvement, and close collaboration with backend, design, and product teams. My goal is to build interfaces that are clear, stable, and durable, without unnecessary complexity.",
     "website": "leobello.dev"
   },
+  "projects": [
+    {
+      "id": "prospeo",
+      "name": "Prospeo",
+      "tagline": "End-to-end automated prospecting",
+      "period": "2026",
+      "summary": "Thousands of tradespeople and small businesses have no website at all, and approaching them one by one costs more than it brings in. Prospeo automates the whole chain: it finds those businesses, builds them a site, puts it online, then sends them a proposal pointing at their own site — already live.",
+      "approach": "Detection through Google Maps, matching against the SIRENE company registry, and scoring that can be replayed on data already collected — criteria can be refined without crawling again. Copy written by an LLM under a strict schema, automatic Git commit and deployment, every step traced and timestamped. Human review before sending, email and SMS, with a database guarantee that a prospect can never be contacted twice.",
+      "outcome": "A long, asynchronous, failure-prone business chain held together end to end: background job orchestration, three third-party APIs, AI-generated content constrained by a schema and therefore verifiable, multi-tenant isolation through RLS and encrypted secrets. 52,000 lines, 115 test files.",
+      "tags": ["React", "Vite", "PostgreSQL", "RLS", "LLM", "Zod", "Astro", "Vercel", "GitHub App", "pnpm monorepo"]
+    },
+    {
+      "id": "signflow",
+      "name": "SignFlow",
+      "tagline": "Job-listing watch, sorted by AI",
+      "period": "2026",
+      "summary": "Looking for a role means re-reading the same listings across four sites that don't talk to each other, to keep three of them. SignFlow does that re-reading at night: four sources merged, republications of the same offer collapsed into a single entry, and one brief waiting in the morning.",
+      "approach": "Every offer is read by AI and checked against real criteria — remote work, pay, engagement length, technologies you no longer want to touch. Each ranking comes with its reason, and changing a criterion re-ranks the whole history instantly: the judgement is recomputed, not frozen at collection time.",
+      "outcome": "Turning a raw feed into a decision: normalising heterogeneous sources, reliable deduplication, AI judgement that is reproducible and auditable, and a data model that accepts rule changes after the fact. Nothing is sent without approval — the product prepares the decision, it does not take it.",
+      "tags": ["React", "Next.js", "TypeScript", "PostgreSQL", "LLM", "Structured output", "Scheduled jobs", "Real time"]
+    }
+  ],
   "experience": [
     {
       "id": "saisoneo",
