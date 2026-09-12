@@ -699,7 +699,7 @@ export function buildProfilePage(dict: Dict, locale: Locale, jsonLd: string): st
     `<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />\n` +
     `<link rel="canonical" href="${url}" />\n` +
     `${alternates}\n` +
-    `<link rel="icon" type="image/svg+xml" href="/favicon.svg" />\n` +
+    `<link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png" />\n` +
     `<meta property="og:type" content="profile" />\n` +
     `<meta property="og:title" content="${esc(copy.title)}" />\n` +
     `<meta property="og:description" content="${esc(copy.description)}" />\n` +
