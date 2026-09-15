@@ -190,6 +190,10 @@
         font-size: clamp(20px, 5vw, 30px);
         letter-spacing: 0.34em;
         text-indent: 0.34em;
+        /* Trois mots capitalisés à 0.34em ne tiennent pas sur un écran étroit.
+           `balance` coupe entre « LÉO BELLO » et « PORTFOLIO », deux lignes de
+           même longueur, plutôt qu'au dernier mot qui passe. */
+        text-wrap: balance;
         text-transform: uppercase;
         text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
       }
@@ -289,7 +293,7 @@
     <div id="boot" role="status" aria-live="polite" aria-label="Chargement du portfolio">
       <div class="boot__inner">
         <div class="boot__triforce" aria-hidden="true"><span></span><span></span><span></span></div>
-        <p class="boot__title">Léo Bello</p>
+        <p class="boot__title">Léo Bello Portfolio</p>
         <div class="boot__bar" aria-hidden="true"><div class="boot__fill"></div></div>
         <p class="boot__hint">Chargement du monde<i>.</i><i>.</i><i>.</i></p>
       </div>
