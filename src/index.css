@@ -396,6 +396,31 @@ canvas {
   d'horizon. C'est ce qui fait que l'image paraît prise dans le même monde que
   la scène, et pas collée depuis ailleurs.
 */
+/* Capture d'un produit réel. Elle prend la place de l'illustration générée,
+   et doit donc en porter le cadre : même zone de grille, même arrondi, même
+   ombre. Sans ça, une diapositive à capture et une diapositive à motif ne
+   cadreraient pas pareil, et la colonne de gauche sauterait d'un projet à
+   l'autre.
+
+   Le rapport est imposé plutôt que subi : les captures d'interface ont des
+   formats quelconques, et une colonne dont la hauteur dépendrait du fichier
+   déposé ferait bouger tout le panneau. `cover` recadre, `top` garde le haut
+   de l'écran — l'en-tête et les premières cartes, là où un produit se
+   reconnaît. */
+.portfolio__shot {
+  grid-area: figure;
+  align-self: start;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  object-position: top center;
+  border-radius: 14px;
+  background: #101712;
+  box-shadow:
+    0 10px 26px rgba(0, 0, 0, 0.32),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+}
+
 .portfolio__illustration {
   grid-area: figure;
   align-self: start;
@@ -629,7 +654,8 @@ canvas {
     gap: 20px 0;
     padding: 22px;
   }
-  .portfolio__illustration { max-width: 260px; justify-self: center; }
+  .portfolio__illustration,
+  .portfolio__shot { max-width: 260px; justify-self: center; }
   /* L'illustration ne remplit plus la colonne : le bouton de fermeture ne
      surplombe plus le titre, la gouttière n'a plus lieu d'être. */
   .portfolio__kicker,
