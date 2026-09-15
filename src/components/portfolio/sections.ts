@@ -87,7 +87,11 @@ export function buildSlides(section: PortfolioSection, dict: Dictionary): Portfo
           accentIndex: products.length + position,
           title: entry.company,
           meta: `${entry.role} · ${entry.period}`,
-          paragraphs: [entry.description],
+          // Même découpage que la biographie : une mission se raconte en
+          // contexte, construction, puis ce qu'elle démontre — le même gabarit
+          // que les produits personnels juste au-dessus. Les missions courtes
+          // n'ont que deux blocs, et celles d'une seule phrase en gardent un.
+          paragraphs: entry.description.split('\n\n'),
           tags: entry.tags,
         }))
 
