@@ -37,6 +37,15 @@ export interface PortfolioSlide {
   motif?: MotifId
   title: string
   meta?: string
+  /**
+   * Capture du produit, quand il y en a une.
+   *
+   * Elle prend la place de l'illustration générée — montrer l'écran réel d'un
+   * produit qu'on a mis en ligne dit plus qu'un motif isométrique, mais
+   * seulement pour les produits personnels : une mission client n'a pas
+   * d'écran qu'on puisse publier.
+   */
+  image?: { src: string; alt: string }
   paragraphs?: readonly string[]
   tags?: readonly string[]
   links?: readonly PortfolioLink[]
@@ -71,6 +80,10 @@ export function buildSlides(section: PortfolioSection, dict: Dictionary): Portfo
         accentIndex: index,
         title: project.name,
         meta: `${dict.ui.portfolio.personalProject} · ${project.tagline} · ${project.period}`,
+        // Chemin vide = pas de capture disponible, on retombe sur l'illustration.
+        image: project.screenshot
+          ? { src: project.screenshot, alt: `${project.name} — ${project.tagline}` }
+          : undefined,
         paragraphs: [project.summary, project.approach, project.outcome],
         tags: project.tags,
       }))

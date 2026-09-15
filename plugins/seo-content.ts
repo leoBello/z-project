@@ -72,6 +72,7 @@ interface Project {
   summary: string
   approach: string
   outcome: string
+  screenshot: string
   tags: readonly string[]
 }
 
@@ -548,8 +549,15 @@ function projectsHtml(dict: Dict, copy: Copy): string {
   return dict.projects
     .map((project) => {
       const tags = project.tags.map((tag) => esc(tag)).join(', ')
+      // La capture est le seul contenu non textuel de la page. Son `alt` porte
+      // le nom et la promesse du produit : c'est ce qu'un lecteur d'écran
+      // annonce, et ce qu'un moteur indexe d'une image.
+      const shot = project.screenshot
+        ? `<p><img src="${esc(project.screenshot)}" alt="${esc(project.name)} — ${esc(project.tagline)}" loading="lazy" decoding="async" /></p>`
+        : ''
       return (
         `<article><h3>${esc(project.name)} — ${esc(project.tagline)}</h3>` +
+        shot +
         `<p>${esc(dict.ui.portfolio.personalProject)} · ${esc(project.period)}</p>` +
         `<p>${esc(project.summary)}</p>` +
         `<p>${esc(project.approach)}</p>` +
@@ -682,6 +690,7 @@ const PROFILE_STYLE = `
   ul { padding-left: 1.2rem; }
   a { color: #7fb8e6; }
   header p { margin: .2rem 0; color: #b9b3a2; }
+  img { width: 100%; height: auto; margin: .8rem 0; border-radius: 10px; border: 1px solid #2a333c; }
   .lede { margin: 1.6rem 0; padding: 1rem 1.2rem; border-left: 3px solid #f5dc95; background: #161d24; }
   footer { margin-top: 3.5rem; padding-top: 1.2rem; border-top: 1px solid #2a333c; font-size: .9rem; color: #b9b3a2; }
 `

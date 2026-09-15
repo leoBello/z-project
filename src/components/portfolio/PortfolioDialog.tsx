@@ -5,7 +5,43 @@ import { useI18n } from '../../i18n/useI18n'
 import { useGameStore } from '../../store/useGameStore'
 import { ProjectIllustration } from './ProjectIllustration'
 import { ProjectStepper } from './ProjectStepper'
-import { buildSlides } from './sections'
+import { buildSlides, type PortfolioSlide } from './sections'
+
+/**
+ * La figure de la diapositive : capture du produit si le contenu en fournit
+ * une, illustration générée sinon.
+ *
+ * Le repli ne sert pas qu'aux diapositives sans capture — un fichier absent ou
+ * illisible y bascule aussi. La figure occupe une zone de la grille du
+ * panneau : la laisser vide y ouvrirait un trou, alors que le motif
+ * isométrique, lui, ne dépend d'aucun fichier et est toujours calculable.
+ */
+function SlideFigure({ slide }: { slide: PortfolioSlide }) {
+  const [failed, setFailed] = useState<string | null>(null)
+  const image = slide.image?.src === failed ? undefined : slide.image
+
+  if (image) {
+    return (
+      <img
+        className="portfolio__shot"
+        src={image.src}
+        alt={image.alt}
+        loading="lazy"
+        decoding="async"
+        onError={() => setFailed(image.src)}
+      />
+    )
+  }
+
+  return (
+    <ProjectIllustration
+      id={slide.id}
+      tags={slide.tags}
+      index={slide.accentIndex}
+      motif={slide.motif}
+    />
+  )
+}
 
 /** Sélecteur des éléments qui peuvent recevoir le focus dans le panneau. */
 const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -141,12 +177,7 @@ function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
           <CloseIcon />
         </button>
 
-        <ProjectIllustration
-          id={slide.id}
-          tags={slide.tags}
-          index={slide.accentIndex}
-          motif={slide.motif}
-        />
+        <SlideFigure slide={slide} />
 
         <div className="portfolio__body">
           <span className="portfolio__kicker">{dict.ui.sections[section]}</span>
