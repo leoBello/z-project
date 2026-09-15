@@ -179,81 +179,81 @@
       "id": "saisoneo",
       "featured": true,
       "company": "Saisoneo",
-      "role": "Full-Stack Developer React / Next.js / TypeScript — Freelance",
+      "role": "Full-Stack Developer React / Next.js — built from scratch, freelance",
       "period": "February 2026 — Present",
       "location": "Marseille · Remote",
-      "description": "Designed and built a seasonal rental management application from scratch: requirements gathering, technical architecture, and data model definition. Full development using TDD: React/TypeScript front-end, Next.js back-end with Supabase and PostgreSQL. Set up a microservices and event-driven architecture focused on performance and scalability. Integrated third-party APIs (SharePoint, Yousign) and implemented OAuth 2.0/SSO authentication with token management. Designed UX/UI mockups, wrote unit tests and technical documentation, deployed via CI/CD pipelines.",
+      "description": "A seasonal rental management application built from scratch, from requirements gathering to production: technical architecture and data model defined from zero, with no existing codebase to inherit.\n\nFully developed with TDD — React / TypeScript front-end, Next.js back-end on Supabase and PostgreSQL — on a microservices, event-driven architecture designed to scale. Third-party integrations with SharePoint and Yousign, OAuth 2.0 / SSO authentication with full token lifecycle management.\n\nA scope owned end to end rather than a single brick handed over: UX/UI mockups, tests written before the code, technical documentation, and deployment through CI/CD pipelines.",
       "tags": ["React", "Next.js", "TypeScript", "Supabase", "PostgreSQL", "TDD", "Microservices", "Event-Driven", "OAuth 2.0", "SSO", "CI/CD"]
     },
     {
       "id": "bleu-tomate",
       "featured": true,
       "company": "Bleu Tomate",
-      "role": "React/TypeScript Frontend Developer — Freelance",
-      "period": "May 2025 — Present",
+      "role": "Front-end Developer React / TypeScript — projects delivered end to end, freelance",
+      "period": "May 2025 — August 2026",
       "location": "Marseille, Provence-Alpes-Côte d'Azur, France",
-      "description": "Integrated into an Agile team, developing and maintaining a large-scale business application for a major client. Contributed to complex features with React and TypeScript in a context of high demands on quality, stability, and code robustness. Wrote and maintained unit tests with Jest and React Testing Library. Participated in code reviews, cross-testing between developers, feature estimation, and Agile ceremonies.",
-      "tags": ["React", "TypeScript", "Jest", "React Testing Library", "Agile"]
+      "description": "Several communication campaigns carried end to end, from gathering the requirement to going live, as the sole technical contact on each project.\n\nScoping and technical architecture, interface mockups, then development: React / TypeScript front-end, API integration, Google Apps Script scripts and Cloud Functions on Firebase.\n\nShipping and follow-up count as much as the code: CI/CD pipelines, unit tests, technical documentation, and reading the KPIs once the project is in production.",
+      "tags": ["React", "TypeScript", "REST API", "Firebase", "Cloud Functions", "Google Apps Script", "CI/CD"]
     },
     {
       "id": "sopra-steria",
       "featured": true,
       "company": "Française des Jeux / Sopra Steria",
-      "role": "Front-end Developer React/TypeScript — Permanent contract",
+      "role": "Full-Stack Developer React / TypeScript — high-volume application, permanent contract",
       "period": "November 2023 — April 2025",
       "location": "Aix-en-Provence, Provence-Alpes-Côte d'Azur, France",
-      "description": "Integrated into an Agile team, developing and maintaining a large-scale business application for a major client. Contributed to complex features with React and TypeScript in a context of high demands on quality, stability, and code robustness. Wrote and maintained unit tests, participated in code reviews and Agile ceremonies.",
-      "tags": ["React", "TypeScript", "Jest", "Agile", "Enterprise"]
+      "description": "A sales performance dashboard for La Française des Jeux: the performance metrics of nearly 29,000 points of sale across France, served continuously to field teams.\n\nComplex features in React, TypeScript, and Redux Toolkit over large data volumes, within a five-person Agile team — two developers, a tech lead, a QA — running SAFe, with PI Plannings alongside design and the Product Manager.\n\nOver eighteen months, quality was a production constraint rather than an intention: test coverage held around 80% (Jest, React Testing Library), code reviews, cross-testing between developers, and feature estimation.",
+      "tags": ["React", "TypeScript", "Redux Toolkit", "Jest", "React Testing Library", "SAFe", "Agile"]
     },
     {
-      "id": "freelance-2023",
+      "id": "ecommerce-billetterie",
       "featured": false,
-      "company": "Freelance",
-      "role": "Web Developer — Freelance",
+      "company": "E-commerce & event ticketing client",
+      "role": "Web Developer React / TypeScript — e-commerce & ticketing, freelance",
       "period": "May 2023 — October 2023",
-      "location": "Remote",
-      "description": "Front-end development covering various needs in React and TypeScript. Form data validation, WordPress module implementation, and Google Sheets scripts to automate business tasks. Worked autonomously with strong adaptability, self-learning, and fast delivery.",
-      "tags": ["React", "TypeScript", "WordPress", "Google Sheets", "Automation"]
+      "location": "Marseille, Provence-Alpes-Côte d'Azur, France",
+      "description": "E-commerce sites and ticketing modules delivered in complete autonomy, from scoping the requirement and estimating it through to development and delivery.\n\nTicketing modules for the events industry, with validation and checking of order data; bespoke WordPress modules and Google Sheets scripts (Apps Script) automating recurring business tasks.",
+      "tags": ["React", "TypeScript", "REST API", "WordPress", "Automation"]
     },
     {
       "id": "yooz",
       "featured": true,
       "company": "Yooz",
-      "role": "Web Developer — Freelance",
+      "role": "Full-Stack Developer React / Node.js — international SaaS platform, freelance",
       "period": "May 2022 — May 2023",
       "location": "Aimargues, Occitanie, France",
-      "description": "Contributed to the maintenance and evolution of a web application. Developed new features in React and Node.js, fixed bugs, and progressively improved the existing production codebase. Wrote documentation, estimated requests, set up REST APIs, and wrote unit tests.",
-      "tags": ["React", "Node.js", "REST API", "Unit testing"]
+      "description": "A SaaS platform for digitising and automating supplier invoices, used in more than 50 countries, from startups to large accounts.\n\nDocument approval workflows with dense business logic — multi-criteria approval chains, routing rules, edge cases — built in React, TypeScript, and Node.js, with REST APIs backed by PostgreSQL.\n\nWorking directly with the product team on software already running in customers' production: estimating requests, unit tests, and technical documentation.",
+      "tags": ["React", "TypeScript", "Node.js", "REST API", "PostgreSQL", "SaaS"]
     },
     {
-      "id": "freelance-2021",
+      "id": "ecommerce-direct",
       "featured": false,
-      "company": "Freelance",
-      "role": "Full-Stack Developer React/Node.js — Freelance",
+      "company": "E-commerce clients — direct engagements",
+      "role": "Full-Stack Developer React / Node.js — integration & shipping, freelance",
       "period": "October 2021 — May 2022",
       "location": "Remote",
-      "description": "Delivered client projects in React and Node.js. Contributed to the design and delivery of a POC, integrated mockups, and built websites focused on clean, fast production.",
-      "tags": ["React", "Node.js", "POC", "Integration"]
+      "description": "Websites shipped to production for e-commerce clients, from mockup to going live.\n\nReact, TypeScript, and Node.js engagements: integrating mockups, adding e-commerce modules and ticketing blocks to existing sites, and contributing to the design and delivery of a POC.",
+      "tags": ["React", "TypeScript", "Node.js", "REST API", "Figma", "JavaScript"]
     },
     {
       "id": "amiltone",
       "featured": false,
       "company": "Amiltone",
-      "role": "Full-Stack Web Developer — Apprenticeship",
+      "role": "Full-Stack Developer React / Java EE — apprenticeship",
       "period": "September 2020 — September 2021",
       "location": "Villeurbanne, Auvergne-Rhône-Alpes, France",
-      "description": "Contributed to application maintenance and change requests on an existing application. Fixed bugs, reviewed code, wrote documentation, and contributed to functional evolutions. Worked in an environment combining React and Java EE.",
-      "tags": ["React", "Java EE", "Maintenance", "Documentation"]
+      "description": "Maintenance and evolution of a business application already in production, on a stack combining React and Java EE.\n\nBuilding change requests, fixing bugs, reviewing code, and writing technical documentation.",
+      "tags": ["React", "Java EE", "REST API", "Maintenance"]
     },
     {
       "id": "sully-group-dev",
       "featured": false,
       "company": "Sully Group",
-      "role": "Full-Stack Developer Java EE | Angular",
+      "role": "Full-Stack Developer Angular / Java EE",
       "period": "September 2019 — July 2020",
       "location": "Grenoble, Auvergne-Rhône-Alpes, France",
-      "description": "Estimated and scoped requests, then delivered front-end and back-end development. Contributed to functional evolutions in a structured framework, writing user and technical documentation.",
-      "tags": ["Java EE", "Angular", "Estimation"]
+      "description": "Front-end and back-end development across several application layers, from estimation through to deployment.\n\nEstimating requests, functional evolutions, regular code reviews, and writing user and technical documentation.",
+      "tags": ["Angular", "Java EE", "HTML5", "CSS3", "Estimation"]
     },
     {
       "id": "sully-group-stage",
@@ -269,10 +269,10 @@
       "id": "lig",
       "featured": true,
       "company": "Grenoble Computer Science Laboratory (LIG)",
-      "role": "Research Intern in Computer Science",
+      "role": "Research Intern in Computer Science — computer vision and robotics",
       "period": "May 2018 — August 2018",
       "location": "Grenoble, Auvergne-Rhône-Alpes, France",
-      "description": "Worked on a machine learning, deep learning, and robotics topic. Built and trained a convolutional neural network with PyTorch, then integrated it into a Pepper robot. Wrote a wiki for researchers documenting the work.",
+      "description": "A research topic at the intersection of machine learning and robotics: giving a Pepper robot the ability to recognise what it sees.\n\nBuilding and training a convolutional neural network with PyTorch, then integrating the model into the robot.\n\nWriting a wiki for the researchers, so the work stayed picked-up-able after the intern left.",
       "tags": ["Machine Learning", "Deep Learning", "PyTorch", "Robotics"]
     }
   ],

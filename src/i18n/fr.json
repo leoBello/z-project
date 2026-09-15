@@ -179,81 +179,81 @@
       "id": "saisoneo",
       "featured": true,
       "company": "Saisoneo",
-      "role": "Développeur Full-Stack React / Next.js / TypeScript — Freelance",
+      "role": "Développeur Full-Stack React / Next.js — conception from scratch, freelance",
       "period": "Février 2026 — Aujourd'hui",
       "location": "Marseille · à distance",
-      "description": "Conception et développement from scratch d'une application de gestion locative saisonnière : recueil des besoins, définition de l'architecture technique et du modèle de données. Développement complet en TDD : front-end React/TypeScript, back-end Next.js avec Supabase et PostgreSQL. Mise en place d'une architecture microservices et event-driven, orientée performance et scalabilité. Intégration d'API tierces (SharePoint, Yousign) et implémentation de l'authentification OAuth 2.0/SSO avec gestion des tokens. Maquettage des interfaces UX/UI, rédaction des tests unitaires et de la documentation technique, déploiement via pipelines CI/CD.",
+      "description": "Une application de gestion locative saisonnière construite from scratch, du recueil du besoin à la mise en production : architecture technique et modèle de données définis de zéro, sans base existante à reprendre.\n\nDéveloppement complet en TDD — front React / TypeScript, back Next.js adossé à Supabase et PostgreSQL — sur une architecture microservices event-driven pensée pour la montée en charge. Intégrations tierces SharePoint et Yousign, authentification OAuth 2.0 / SSO avec gestion du cycle de vie des tokens.\n\nUn périmètre tenu de bout en bout plutôt qu'une brique confiée : maquettage UX/UI, tests écrits avant le code, documentation technique et déploiement par pipelines CI/CD.",
       "tags": ["React", "Next.js", "TypeScript", "Supabase", "PostgreSQL", "TDD", "Microservices", "Event-Driven", "OAuth 2.0", "SSO", "CI/CD"]
     },
     {
       "id": "bleu-tomate",
       "featured": true,
       "company": "Bleu Tomate",
-      "role": "Développeur Frontend React/TypeScript — Freelance",
-      "period": "Mai 2025 — Présent",
+      "role": "Développeur Front-end React / TypeScript — projets livrés de bout en bout, freelance",
+      "period": "Mai 2025 — Août 2026",
       "location": "Marseille, Provence-Alpes-Côte d'Azur, France",
-      "description": "Intégré à une équipe Agile, développement et maintenance d'une application métier à grande échelle pour un grand compte. Contribution sur des fonctionnalités complexes avec React et TypeScript dans un contexte de forte exigence sur la qualité, la stabilité et la robustesse du code. Rédaction et maintenance de tests unitaires avec Jest et React Testing Library. Participation aux revues de code, aux tests croisés entre développeurs, au chiffrage des demandes fonctionnelles et aux cérémonies Agile.",
-      "tags": ["React", "TypeScript", "Jest", "React Testing Library", "Agile"]
+      "description": "Plusieurs campagnes de communication menées de bout en bout, du recueil du besoin à la mise en production, en étant le seul interlocuteur technique de chaque projet.\n\nCadrage et architecture technique, maquettage des interfaces, puis développement : front React / TypeScript, intégration d'API, scripts Google Apps Script et Cloud Functions sur Firebase.\n\nLa mise en ligne et le suivi comptent autant que le code : pipelines CI/CD, tests unitaires, documentation technique et lecture des KPI une fois le projet en production.",
+      "tags": ["React", "TypeScript", "API REST", "Firebase", "Cloud Functions", "Google Apps Script", "CI/CD"]
     },
     {
       "id": "sopra-steria",
       "featured": true,
       "company": "Française des Jeux / Sopra Steria",
-      "role": "Développeur Front-end React/TypeScript — CDI",
+      "role": "Développeur Full-Stack React / TypeScript — application à forte volumétrie, CDI",
       "period": "Novembre 2023 — Avril 2025",
       "location": "Aix-en-Provence, Provence-Alpes-Côte d'Azur, France",
-      "description": "Intégré à une équipe Agile, développement et maintenance d'une application métier à grande échelle pour un grand compte. Contribution sur des fonctionnalités complexes avec React et TypeScript dans un contexte de forte exigence sur la qualité, la stabilité et la robustesse du code. Rédaction et maintenance de tests unitaires, participation aux revues de code et aux cérémonies Agile.",
-      "tags": ["React", "TypeScript", "Jest", "Agile", "Grand compte"]
+      "description": "Application de pilotage commercial pour La Française des Jeux : les métriques de performance de près de 29 000 points de vente répartis sur toute la France, restituées en continu aux équipes terrain.\n\nFonctionnalités complexes en React, TypeScript et Redux Toolkit sur de fortes volumétries de données, au sein d'une équipe Agile de cinq personnes — deux développeurs, un tech lead, un QA — en méthodologie SAFe, avec PI Plannings aux côtés du design et du Product Manager.\n\nSur dix-huit mois, la qualité y est une contrainte de production et pas une intention : couverture de tests maintenue autour de 80 % (Jest, React Testing Library), revues de code, tests croisés entre développeurs et chiffrage des demandes fonctionnelles.",
+      "tags": ["React", "TypeScript", "Redux Toolkit", "Jest", "React Testing Library", "SAFe", "Agile"]
     },
     {
-      "id": "freelance-2023",
+      "id": "ecommerce-billetterie",
       "featured": false,
-      "company": "Freelance",
-      "role": "Développeur web — Freelance",
+      "company": "Client e-commerce & billetterie événementielle",
+      "role": "Développeur Web React / TypeScript — e-commerce & billetterie, freelance",
       "period": "Mai 2023 — Octobre 2023",
-      "location": "Remote",
-      "description": "Développement front-end sur des besoins variés en React et TypeScript. Contrôle de données de formulaires, mise en place de modules WordPress et réalisation de scripts Google Sheets pour automatiser certaines tâches métier. Travail en autonomie avec une forte capacité d'adaptation, d'autoformation et de livraison rapide.",
-      "tags": ["React", "TypeScript", "WordPress", "Google Sheets", "Automatisation"]
+      "location": "Marseille, Provence-Alpes-Côte d'Azur, France",
+      "description": "Sites e-commerce et modules de billetterie livrés en autonomie complète, du cadrage du besoin au chiffrage, puis au développement et à la livraison.\n\nModules de billetterie pour le secteur de l'événementiel, avec contrôle et validation des données de commande ; modules WordPress sur mesure et scripts Google Sheets (Apps Script) automatisant des tâches métier récurrentes.",
+      "tags": ["React", "TypeScript", "API REST", "WordPress", "Automatisation"]
     },
     {
       "id": "yooz",
       "featured": true,
       "company": "Yooz",
-      "role": "Développeur web — Freelance",
+      "role": "Développeur Full-Stack React / Node.js — plateforme SaaS internationale, freelance",
       "period": "Mai 2022 — Mai 2023",
       "location": "Aimargues, Occitanie, France",
-      "description": "Participation à la maintenance et aux évolutions d'une application web. Développement de nouvelles fonctionnalités en React et Node.js, correction de bugs, et amélioration progressive de l'existant en production. Rédaction de documentation, chiffrage des demandes, mise en place d'API REST et rédaction de tests unitaires.",
-      "tags": ["React", "Node.js", "REST API", "Tests unitaires"]
+      "description": "Plateforme SaaS de dématérialisation et d'automatisation des factures fournisseurs, utilisée dans plus de 50 pays, de la startup au grand compte.\n\nWorkflows de validation de documents à logique métier dense — circuits d'approbation multi-critères, règles de routage, cas particuliers — développés en React, TypeScript et Node.js, avec des API REST adossées à PostgreSQL.\n\nTravail en lien direct avec l'équipe produit sur un logiciel déjà en production chez ses clients : chiffrage des demandes, tests unitaires et documentation technique.",
+      "tags": ["React", "TypeScript", "Node.js", "API REST", "PostgreSQL", "SaaS"]
     },
     {
-      "id": "freelance-2021",
+      "id": "ecommerce-direct",
       "featured": false,
-      "company": "Freelance",
-      "role": "Développeur full-stack React/Node.js — Freelance",
+      "company": "Clients e-commerce — missions en direct",
+      "role": "Développeur Full-Stack React / Node.js — intégration & mise en production, freelance",
       "period": "Octobre 2021 — Mai 2022",
-      "location": "Remote",
-      "description": "Réalisation de missions client en React et Node.js. Participation à la conception et à la livraison d'un POC, intégration de maquettes et développement de sites web dans une logique de production rapide et propre.",
-      "tags": ["React", "Node.js", "POC", "Intégration"]
+      "location": "À distance",
+      "description": "Sites web livrés en production pour des clients e-commerce, de la maquette à la mise en ligne.\n\nMissions React, TypeScript et Node.js : intégration de maquettes, ajout de modules e-commerce et de briques de billetterie sur des sites existants, et participation à la conception puis à la livraison d'un POC.",
+      "tags": ["React", "TypeScript", "Node.js", "API REST", "Figma", "JavaScript"]
     },
     {
       "id": "amiltone",
       "featured": false,
       "company": "Amiltone",
-      "role": "Développeur web full-stack — Alternance",
+      "role": "Développeur Full-Stack React / Java EE — alternance",
       "period": "Septembre 2020 — Septembre 2021",
       "location": "Villeurbanne, Auvergne-Rhône-Alpes, France",
-      "description": "Participation à la maintenance applicative et aux demandes d'évolution sur une application existante. Correction de bugs, relecture de code, rédaction de documentation et contribution aux évolutions fonctionnelles. Développement sur un environnement mêlant React et Java EE.",
-      "tags": ["React", "Java EE", "Maintenance", "Documentation"]
+      "description": "Maintenance et évolutions d'une application métier déjà en production, sur un environnement mêlant React et Java EE.\n\nDéveloppement des demandes d'évolution, correction de bugs, relecture de code et rédaction de documentation technique.",
+      "tags": ["React", "Java EE", "API REST", "Maintenance"]
     },
     {
       "id": "sully-group-dev",
       "featured": false,
       "company": "Sully Group",
-      "role": "Développeur fullstack Java EE | Angular",
+      "role": "Développeur Full-Stack Angular / Java EE",
       "period": "Septembre 2019 — Juillet 2020",
       "location": "Grenoble, Auvergne-Rhône-Alpes, France",
-      "description": "Estimation et chiffrage des demandes, puis réalisation des développements front-end et back-end. Contribution à des évolutions fonctionnelles dans un cadre structuré, avec rédaction de documents utilisateurs et techniques.",
-      "tags": ["Java EE", "Angular", "Chiffrage"]
+      "description": "Développements front-end et back-end sur plusieurs couches applicatives, de l'estimation au déploiement.\n\nChiffrage des demandes, évolutions fonctionnelles, revues de code régulières, rédaction de documentation utilisateur et technique.",
+      "tags": ["Angular", "Java EE", "HTML5", "CSS3", "Chiffrage"]
     },
     {
       "id": "sully-group-stage",
@@ -269,10 +269,10 @@
       "id": "lig",
       "featured": true,
       "company": "Laboratoire Informatique de Grenoble (LIG)",
-      "role": "Stagiaire en recherche informatique",
+      "role": "Stagiaire en recherche informatique — vision par ordinateur et robotique",
       "period": "Mai 2018 — Août 2018",
       "location": "Grenoble, Auvergne-Rhône-Alpes, France",
-      "description": "Travail sur un sujet de machine learning, deep learning et robotique. Mise en place et entraînement d'un réseau de neurones convolutif avec PyTorch, puis intégration dans un robot Pepper. Rédaction d'un wiki à destination des chercheurs.",
+      "description": "Un sujet de recherche à l'intersection du machine learning et de la robotique : donner à un robot Pepper la capacité de reconnaître ce qu'il voit.\n\nMise en place et entraînement d'un réseau de neurones convolutif avec PyTorch, puis intégration du modèle dans le robot.\n\nRédaction d'un wiki à destination des chercheurs, pour que le travail reste reprenable après le départ du stagiaire.",
       "tags": ["Machine Learning", "Deep Learning", "PyTorch", "Robotique"]
     }
   ],

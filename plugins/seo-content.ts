@@ -51,7 +51,7 @@ export type Locale = (typeof LOCALES)[number]
  * bouger à chaque déploiement sans qu'un mot ait changé finit par ne plus les
  * croire. À bouger quand le dictionnaire change, pas quand le code change.
  */
-export const CONTENT_UPDATED = '2026-09-12'
+export const CONTENT_UPDATED = '2026-09-15'
 
 interface Experience {
   company: string
@@ -193,6 +193,17 @@ function intro(dict: Dict): string {
   return dict.about.bio.split('\n\n')[0]
 }
 
+/**
+ * Un texte à plusieurs blocs ramené à une ligne.
+ *
+ * Les réponses de FAQ partent dans du JSON-LD, où une valeur est une chaîne :
+ * les sauts de ligne d'une description de mission n'y ont pas de sens et ne
+ * feraient qu'encombrer la donnée structurée.
+ */
+function flatten(text: string): string {
+  return text.split('\n\n').join(' ')
+}
+
 /** La mission en cours, celle que la FAQ et `worksFor` citent. */
 function currentJob(dict: Dict): Experience | undefined {
   return dict.experience.find((job) => job.featured)
@@ -328,7 +339,7 @@ function faqFr(dict: Dict) {
       ? [
           {
             question: `Sur quoi ${about.name} travaille-t-il actuellement ?`,
-            answer: `${job.role} chez ${job.company} (${job.period}, ${job.location}). ${job.description}`,
+            answer: `${job.role} chez ${job.company} (${job.period}, ${job.location}). ${flatten(job.description)}`,
           },
         ]
       : []),
@@ -390,7 +401,7 @@ function faqEn(dict: Dict) {
       ? [
           {
             question: `What is ${about.name} working on right now?`,
-            answer: `${job.role} at ${job.company} (${job.period}, ${job.location}). ${job.description}`,
+            answer: `${job.role} at ${job.company} (${job.period}, ${job.location}). ${flatten(job.description)}`,
           },
         ]
       : []),
@@ -560,10 +571,17 @@ function experienceHtml(dict: Dict): string {
   return dict.experience
     .map((job) => {
       const tags = job.tags.length ? `<p>${job.tags.map((tag) => esc(tag)).join(', ')}</p>` : ''
+      // Une mission est écrite en blocs séparés par une ligne vide. On les
+      // restitue en paragraphes distincts plutôt qu'en un pavé : c'est ce que
+      // lit un moteur, et c'est la même découpe que dans le panneau du jeu.
+      const story = job.description
+        .split('\n\n')
+        .map((paragraph) => `<p>${esc(paragraph)}</p>`)
+        .join('')
       return (
         `<article><h3>${esc(job.role)} — ${esc(job.company)}</h3>` +
         `<p>${esc(job.period)} · ${esc(job.location)}</p>` +
-        `<p>${esc(job.description)}</p>${tags}</article>`
+        `${story}${tags}</article>`
       )
     })
     .join('')
@@ -789,7 +807,7 @@ export function buildLlmsTxt(dicts: Dicts): string {
     '## Current engagement',
     '',
     job
-      ? `- ${job.role} at ${job.company} (${job.period}, ${job.location}). ${job.description}`
+      ? `- ${job.role} at ${job.company} (${job.period}, ${job.location}). ${flatten(job.description)}`
       : '- Available for new engagements.',
     '',
     '## Contact',
