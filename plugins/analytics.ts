@@ -36,8 +36,24 @@ import type { Plugin } from 'vite'
 /** Point de collecte de l'offre hébergée d'Umami. */
 const SCRIPT_URL = 'https://cloud.umami.is/script.js'
 
-/** Seuls domaines depuis lesquels le script émet. Sans protocole. */
-const DOMAINS = 'leobello.dev'
+/**
+ * Seuls domaines depuis lesquels le script émet. Sans protocole.
+ *
+ * **Cette ligne est couplée au domaine canonique servi par Vercel, et le
+ * couplage est muet.** Umami compare `location.hostname` à cette liste par
+ * égalité stricte, sans retirer le moindre préfixe. Le 16 septembre 2026, la
+ * production servait `www.leobello.dev` alors que seule la forme nue figurait
+ * ici : le script se chargeait sur chaque page, puis abandonnait chaque
+ * événement sans un mot. Pas d'erreur en console, pas de requête en échec dans
+ * l'onglet réseau — un tableau de bord vide, et rien qui indique où chercher.
+ *
+ * Les deux formes sont listées alors qu'une seule sert aujourd'hui : `www` est
+ * redirigé en 308 vers la forme nue, donc aucune page n'y est jamais rendue.
+ * C'est délibérément une ceinture de sécurité. Le sens de cette redirection est
+ * un réglage du tableau de bord Vercel, invisible depuis le dépôt, et il a déjà
+ * changé une fois.
+ */
+const DOMAINS = 'leobello.dev,www.leobello.dev'
 
 /** Nom de la variable d'environnement portant l'identifiant du site Umami. */
 const ENV_KEY = 'VITE_UMAMI_WEBSITE_ID'
