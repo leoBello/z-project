@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Plugin } from 'vite'
+import { umamiTag, umamiWebsiteId } from './analytics.ts'
 import {
   buildFallback,
   buildJsonLd,
@@ -67,9 +68,16 @@ function inlineJson(json: string): string {
   return json.replace(/</g, '\\u003c')
 }
 
-function profileHtml(locale: Locale): string {
+/**
+ * `tracking` est passé au build et jamais par le middleware de développement :
+ * les dizaines de rechargements d'une session de travail n'ont rien à faire
+ * dans les statistiques. C'est le pendant de `apply: 'build'` sur le plugin
+ * `analytics`, que ces pages-ci ne traversent pas — elles sont écrites à la
+ * main, pas transformées par Vite.
+ */
+function profileHtml(locale: Locale, tracking: string): string {
   const dict = readDict(locale)
-  return buildProfilePage(dict, locale, inlineJson(buildJsonLd(dict, locale)))
+  return buildProfilePage(dict, locale, inlineJson(buildJsonLd(dict, locale)), tracking)
 }
 
 /** Chemins servis en dev, avec ou sans barre finale. */
@@ -78,8 +86,14 @@ function matches(path: string, target: string): boolean {
 }
 
 export function seo(): Plugin {
+  let tracking = ''
+
   return {
     name: 'seo-fallback',
+
+    configResolved(config) {
+      tracking = umamiTag(umamiWebsiteId(config.env))
+    },
 
     transformIndexHtml: {
       order: 'pre',
@@ -117,7 +131,7 @@ export function seo(): Plugin {
         }
 
         res.setHeader('Content-Type', 'text/html; charset=utf-8')
-        res.end(profileHtml(locale))
+        res.end(profileHtml(locale, ''))
       })
     },
 
@@ -126,7 +140,7 @@ export function seo(): Plugin {
         this.emitFile({
           type: 'asset',
           fileName: `${profilePath(locale)}index.html`,
-          source: profileHtml(locale),
+          source: profileHtml(locale, tracking),
         })
       }
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useProgress } from '@react-three/drei'
+import { track } from '../analytics'
 
 /**
  * Retrait de l'écran de chargement `#boot` (défini dans `index.html`).
@@ -34,22 +35,29 @@ export function BootScreen() {
   useEffect(() => {
     if (removedRef.current) return
 
-    const dismiss = () => {
+    const dismiss = (outcome: 'ready' | 'timeout') => {
       if (removedRef.current) return
       removedRef.current = true
+      /*
+        Mesuré depuis le début de la navigation, pas depuis le montage du
+        composant : c'est l'attente réelle du visiteur, téléchargement du bundle
+        compris. `outcome` distingue une scène vraiment prête d'un filet de
+        sécurité qui a expiré — deux issues que la seule durée confondrait.
+      */
+      track('boot_complete', { ms: Math.round(performance.now()), outcome })
       const el = document.getElementById('boot')
       if (!el) return
       el.classList.add('boot--done')
       window.setTimeout(() => el.remove(), 600)
     }
 
-    const safety = window.setTimeout(dismiss, SAFETY_MS)
+    const safety = window.setTimeout(() => dismiss('timeout'), SAFETY_MS)
 
     const ready = !active && (total === 0 || progress >= 100)
     let minTimer: number | undefined
     if (ready) {
       const remaining = MIN_VISIBLE_MS - (performance.now() - mountedAtRef.current)
-      minTimer = window.setTimeout(dismiss, Math.max(0, remaining))
+      minTimer = window.setTimeout(() => dismiss('ready'), Math.max(0, remaining))
     }
 
     return () => {

@@ -692,11 +692,24 @@ const PROFILE_STYLE = `
 /**
  * Page texte autonome.
  *
- * Elle ne charge ni script ni police distante : c'est volontaire. La page qui
- * porte le référencement doit s'afficher instantanément, quelle que soit la
- * connexion, là où le jeu 3D coûte plusieurs mégaoctets.
+ * Elle ne charge aucune police distante et rien qui bloque son affichage :
+ * c'est volontaire. La page qui porte le référencement doit s'afficher
+ * instantanément, quelle que soit la connexion, là où le jeu 3D coûte plusieurs
+ * mégaoctets.
+ *
+ * `tracking` est la seule exception, et elle se justifie : ce sont ces pages-ci
+ * qui remontent dans les résultats de recherche, donc sans elle le trafic
+ * organique — celui qu'on cherche précisément à mesurer — serait le seul à
+ * rester invisible. Le script pèse ~2 ko et porte `defer` : il ne retarde pas
+ * le rendu. Chaîne vide quand la mesure n'est pas configurée, et toujours en
+ * développement — l'appelant tranche, la page n'a pas à connaître la règle.
  */
-export function buildProfilePage(dict: Dict, locale: Locale, jsonLd: string): string {
+export function buildProfilePage(
+  dict: Dict,
+  locale: Locale,
+  jsonLd: string,
+  tracking: string,
+): string {
   const copy = COPY[locale]
   const twin = COPY[other(locale)]
   const { about } = dict
@@ -730,6 +743,7 @@ export function buildProfilePage(dict: Dict, locale: Locale, jsonLd: string): st
     `<meta name="twitter:card" content="summary_large_image" />\n` +
     `<style>${PROFILE_STYLE}</style>\n` +
     `<script type="application/ld+json">${jsonLd}</script>\n` +
+    tracking +
     `</head>\n<body>\n<main>\n` +
     `<header><h1>${esc(about.name)}</h1>` +
     `<p>${esc(about.title)}</p><p>${esc(about.location)}</p></header>` +

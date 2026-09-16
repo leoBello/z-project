@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { track } from '../analytics'
 import {
   playChestCreak,
   playDamage,
@@ -416,6 +417,7 @@ export const useGameStore = create<GameState>((set, get) => ({
    */
   openLandmark: (id) => {
     if (get().phase !== 'playing') return
+    track('landmark_opened', { landmark: id, via: 'walk' })
     set({ activeLandmark: id, phase: 'paused' })
   },
 
@@ -566,12 +568,27 @@ export const useGameStore = create<GameState>((set, get) => ({
    * `phase === 'playing'`, brisant l'invariant documenté plus haut et ouvrant
    * la modale sur une partie qui tourne toujours (physique et ennemis actifs).
    */
-  resolveTeleport: () =>
+  resolveTeleport: () => {
+    /*
+      Compté ici *en plus* de `openLandmark` : la téléportation est le second
+      chemin vers un monument, et l'omettre attribuerait toute la fréquentation
+      à la marche. Le champ `via` garde les deux distinguables — c'est aussi la
+      seule façon de savoir si le menu de téléportation sert à quelqu'un.
+
+      Hors de l'updater passé à `set`, qui doit rester une fonction pure : la
+      mesure d'audience n'a rien à faire dans le calcul d'un état.
+    */
+    const { teleporting } = get()
+    if (teleporting !== null) {
+      track('landmark_opened', { landmark: teleporting, via: 'teleport' })
+    }
+
     set((state) =>
       state.teleporting === null
         ? state
         : { activeLandmark: state.teleporting, phase: 'paused' },
-    ),
+    )
+  },
 
   finishTeleport: () => set({ teleporting: null }),
 
