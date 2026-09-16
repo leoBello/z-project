@@ -1,5 +1,6 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import { analytics } from './plugins/analytics.ts'
 import { seo } from './plugins/seo.ts'
 
 /**
@@ -28,7 +29,7 @@ import { seo } from './plugins/seo.ts'
  *    de cibler `node_modules/three/` seul, et de le placer en premier.
  */
 export default defineConfig({
-  plugins: [react(), seo()],
+  plugins: [react(), seo(), analytics()],
   build: {
     rolldownOptions: {
       output: {

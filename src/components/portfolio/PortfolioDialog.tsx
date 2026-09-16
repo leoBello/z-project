@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { linkTarget, track } from '../../analytics'
 import { landmarkById, type PortfolioSection } from '../../config/landmarks'
 import { format } from '../../i18n'
 import { useI18n } from '../../i18n/useI18n'
@@ -216,6 +217,12 @@ function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
                     href={link.href}
                     target="_blank"
                     rel="noreferrer noopener"
+                    /*
+                      `onClick` et non `onAuxClick` ou un écouteur de navigation :
+                      la cible est `_blank`, donc la page du jeu n'est jamais
+                      déchargée et l'événement a tout le temps de partir.
+                    */
+                    onClick={() => track('outbound_link', { target: linkTarget(link.href) })}
                   >
                     {link.label}
                   </a>
