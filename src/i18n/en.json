@@ -85,16 +85,12 @@
       "soft_skills": "Soft skills"
     },
     "skillSummaries": {
-      "frontend": "I build React and TypeScript interfaces meant to last: reusable component boundaries, deliberate state management, complex forms, and rendering kept under control performance-wise. I cover it all with unit tests using Jest and React Testing Library, testing behaviour rather than implementation, and I have also shipped Angular applications to production.",
-      "backend": "I design and expose REST APIs with Node.js and Next.js, on a PostgreSQL data model thought through up front rather than inherited by accident. I can pick up an existing back-end, Java EE included, and wire in third-party services — Supabase, Firestore, OAuth 2.0 authentication — without destabilising what already runs.",
-      "cloud_devops": "I deploy and operate my applications on Firebase and Google Cloud, with CI/CD pipelines that run the test suite before every release. I favour small, frequent releases that are easy to verify and to roll back over large, ceremonial deployments.",
-      "data_ml": "Coming from research at the Grenoble Computer Science Laboratory, I trained convolutional neural networks with PyTorch and integrated the resulting model into a Pepper robot. I kept from it the ability to read a paper, understand a model, and honestly assess what an AI component does — or does not — bring to a product.",
-      "tools_methods": "Git every day, demanding and well-argued code reviews, documentation written for whoever picks the project up after me. On an Agile team I estimate, split work into shippable increments, and raise blockers early rather than on demo day.",
-      "soft_skills": "Autonomous on unfamiliar ground: I frame the need, ask the right people the right questions, and move forward without needing to be chased. Curious and rigorous, I keep up with the ecosystem, gladly pass on what I learn, and work naturally with product, design, and back-end teams."
-    },
-    "background": {
-      "certifications": "Certifications",
-      "issuedBy": "Issued by {issuer}"
+      "frontend": "I build React, Next.js, and TypeScript interfaces meant to last: reusable component boundaries, deliberate state management — Redux Toolkit when the data calls for it — complex forms, responsive layouts, and rendering kept under control performance-wise. I cover them with unit tests using Jest, Vitest, and React Testing Library, testing behaviour rather than implementation: on a high-volume sales tracking application, more than 80% coverage sustained over two years. I have also shipped Angular applications to production, and I do the Figma mockups myself when a project has no designer.",
+      "backend": "I design and expose REST APIs with Node.js and Next.js, over a PostgreSQL or Supabase data model thought through up front rather than inherited by accident: schema, constraints, multi-tenant isolation through RLS. Around it come authentication and roles — OAuth 2.0, SSO, token lifecycle — payments, asynchronous background processing, event-driven microservice architectures when the load calls for them, and third-party integrations, SharePoint and Yousign included. I can also pick up an existing back-end, Java EE included, and move it forward without destabilising what already runs.",
+      "cloud_devops": "I deploy and operate what I build: Vercel, Firebase, and Google Cloud, with CI/CD pipelines that replay the test suite before every release. I favour small, frequent releases that are easy to verify and to roll back over large, ceremonial deployments — and I watch the KPIs afterwards, because a shipped feature is not yet a feature that serves anyone.",
+      "data_ml": "I integrate language models where they hold up their end of the bargain: assistants and search over business data, content generation constrained by a strict schema and therefore verifiable, agents that call real tools through the MCP protocol. The technical problem is always the same — framing a non-deterministic output so it becomes usable data, with a human review wherever a mistake is expensive. Coming from research at the Grenoble Computer Science Laboratory, where I trained convolutional neural networks with PyTorch and integrated the resulting model into a Pepper robot, I kept the ability to read a paper, understand a model, and honestly assess what an AI component does — or does not — bring to a product.",
+      "tools_methods": "Code gets written in TDD: the test first, the implementation after, and a suite that runs in continuous integration before every release — unit tests with Jest and Vitest, end-to-end with Playwright. Git every day, demanding and well-argued code reviews, documentation written for whoever picks the project up after me. On an Agile team — Scrum, SAFe, PI Plannings — I estimate, split work into shippable increments, demo every week, and raise blockers early rather than on demo day. Coding assistants are part of the toolkit, provided what they produce gets read line by line.",
+      "soft_skills": "Autonomous on unfamiliar ground: I frame the need, ask the right people the right questions, and move forward without needing to be chased. On several engagements I was the only technical contact, from the first scoping session to the go-live — which means estimating honestly, holding the date I announced, and talking about the product with people who do not write code. Curious and rigorous, I keep up with the ecosystem, gladly pass on what I learn, and work naturally with product, design, and the teams already in place."
     },
     "contactLabels": {
       "email": "Email",
@@ -149,7 +145,7 @@
     "name": "Léo Bello",
     "title": "Full-Stack Developer — React, Next.js, TypeScript, PostgreSQL",
     "location": "Marseille, Provence-Alpes-Côte d'Azur, France",
-    "bio": "Front-end developer specialized in React and TypeScript, I work on ambitious web applications where code readability, interface robustness, and execution quality are essential. I focus on front-end architecture, API integration, performance, testing, and maintainability, with a product-oriented and long-term mindset.\n\nI'm comfortable in environments where the front-end needs to stay reliable as the product grows in complexity: component architecture, state management, advanced forms, PostgreSQL/Supabase integration, code reviews, continuous improvement, and close collaboration with backend, design, and product teams. My goal is to build interfaces that are clear, stable, and durable, without unnecessary complexity.",
+    "bio": "Full-stack developer, seven years spent on applications that are not allowed to break: sales performance tracking across 29,000 points of sale for La Française des Jeux, an invoicing SaaS used in more than fifty countries, a rental management application written from scratch in TDD. I take a product from the interface down to the database, or I pick up an existing one — its debt, its overdue upgrades, its slowness — and ship it tested, documented, and ready for the next developer to take over.\n\nWhat I build: dashboards, back-offices, customer portals, MVPs. On the interface side, React, Next.js, and TypeScript — component architecture, state management, complex forms, rendering kept under control performance-wise. On the server side, REST APIs in Node.js and Next.js over a PostgreSQL or Supabase data model thought through before it is written, and everything around it: authentication and roles, OAuth 2.0 and SSO, payments, third-party integrations, event-driven architectures when the load calls for them, continuous deployment. And AI when it serves the product rather than the pitch: LLM API integration under a strict schema, assistants over business data, tool-calling agents.\n\nWhat holds it all together comes down to a few things: tests written before the code and more than 80% coverage sustained over time, well-argued code reviews, CI/CD pipelines that replay the suite before every release, a demo every week rather than a grand reveal at the end. Prospeo and SignFlow — two products scoped, built, secured, and shipped single-handedly — are the fullest expression of that.",
     "website": "leobello.dev"
   },
   "projects": [
@@ -283,14 +279,13 @@
     { "school": "Université Grenoble Alpes", "degree": "Bachelor's, Computer Science — MIAGE track", "period": "2015 — 2018" },
     { "school": "Lycée Berthollet", "degree": "Scientific Baccalaureate, Mathematics specialization (independent candidate)", "period": "" }
   ],
-  "certifications": [{ "name": "ReactJS Quiz Medium", "issuer": "ReactJS" }],
   "skills": {
-    "frontend": ["React", "Next.js", "TypeScript", "JavaScript", "Angular", "Unit Testing", "React Testing Library", "Jest", "Component Architecture"],
-    "backend": ["Node.js", "Java EE", "REST API", "Firebase Firestore", "PostgreSQL"],
-    "cloud_devops": ["Firebase", "Google Cloud", "Cloud Computing", "CI/CD"],
-    "data_ml": ["Machine Learning", "Deep Learning", "PyTorch", "Neural Networks", "Robotics"],
-    "tools_methods": ["Git", "Code Review", "Agile", "WordPress", "Google Sheets", "Google Analytics", "Technical Documentation"],
-    "soft_skills": ["Autonomy", "Rigor", "Self-Learning", "Technology Watch", "Entrepreneurship", "Cross-team Collaboration"]
+    "frontend": ["React", "Next.js", "TypeScript", "JavaScript", "Redux Toolkit", "Tailwind CSS", "Angular", "Component Architecture", "React Testing Library", "Jest", "Vitest"],
+    "backend": ["Node.js", "REST API", "PostgreSQL", "Supabase", "Firebase Firestore", "Java EE", "Data Modelling", "Authentication and Roles", "Google Cloud Functions"],
+    "cloud_devops": ["Vercel", "Firebase", "Google Cloud", "Cloud Computing", "CI/CD", "GitHub Actions", "GitLab CI", "pnpm Monorepo"],
+    "data_ml": ["LLM API Integration", "OpenAI", "Claude", "Tool-Calling Agents", "MCP", "Machine Learning", "Deep Learning", "PyTorch", "Neural Networks", "Robotics"],
+    "tools_methods": ["Git", "TDD", "Code Review", "Playwright", "Agile / SAFe", "Estimation", "Technical Documentation", "SEO", "AI-Assisted Development", "WordPress", "Google Apps Script", "Google Analytics"],
+    "soft_skills": ["Autonomy", "Requirements Framing", "Rigor", "Sole Technical Contact", "Self-Learning", "Technology Watch", "Entrepreneurship", "Cross-team Collaboration", "Professional English"]
   },
   "contact": {
     "email": "leobello.wd@gmail.com",

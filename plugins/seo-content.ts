@@ -81,7 +81,6 @@ export interface Dict {
   projects: readonly Project[]
   experience: readonly Experience[]
   education: readonly { school: string; degree: string; period: string }[]
-  certifications: readonly { name: string; issuer: string }[]
   skills: Record<string, readonly string[]>
   contact: {
     email: string
@@ -94,7 +93,6 @@ export interface Dict {
   ui: {
     sections: Record<string, string>
     skillGroups: Record<string, string>
-    background: { certifications: string }
     portfolio: { personalProject: string }
   }
 }
@@ -603,11 +601,7 @@ function educationHtml(dict: Dict): string {
     })
     .join('')
 
-  const certs = dict.certifications
-    .map((cert) => `<li>${esc(cert.name)} — ${esc(cert.issuer)}</li>`)
-    .join('')
-
-  return `<ul>${schools}</ul><h3>${esc(dict.ui.background.certifications)}</h3><ul>${certs}</ul>`
+  return `<ul>${schools}</ul>`
 }
 
 /**
@@ -865,12 +859,6 @@ function personNode(dict: Dict, locale: Locale) {
     alumniOf: dict.education.map((entry) => ({
       '@type': 'EducationalOrganization',
       name: entry.school,
-    })),
-    hasCredential: dict.certifications.map((cert) => ({
-      '@type': 'EducationalOccupationalCredential',
-      name: cert.name,
-      credentialCategory: 'certificate',
-      recognizedBy: { '@type': 'Organization', name: cert.issuer },
     })),
     hasOccupation: {
       '@type': 'Occupation',
