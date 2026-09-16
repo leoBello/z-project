@@ -92,10 +92,6 @@
       "tools_methods": "Git every day, demanding and well-argued code reviews, documentation written for whoever picks the project up after me. On an Agile team I estimate, split work into shippable increments, and raise blockers early rather than on demo day.",
       "soft_skills": "Autonomous on unfamiliar ground: I frame the need, ask the right people the right questions, and move forward without needing to be chased. Curious and rigorous, I keep up with the ecosystem, gladly pass on what I learn, and work naturally with product, design, and back-end teams."
     },
-    "background": {
-      "certifications": "Certifications",
-      "issuedBy": "Issued by {issuer}"
-    },
     "contactLabels": {
       "email": "Email",
       "linkedin": "LinkedIn",
@@ -283,7 +279,6 @@
     { "school": "Université Grenoble Alpes", "degree": "Bachelor's, Computer Science — MIAGE track", "period": "2015 — 2018" },
     { "school": "Lycée Berthollet", "degree": "Scientific Baccalaureate, Mathematics specialization (independent candidate)", "period": "" }
   ],
-  "certifications": [{ "name": "ReactJS Quiz Medium", "issuer": "ReactJS" }],
   "skills": {
     "frontend": ["React", "Next.js", "TypeScript", "JavaScript", "Angular", "Unit Testing", "React Testing Library", "Jest", "Component Architecture"],
     "backend": ["Node.js", "Java EE", "REST API", "Firebase Firestore", "PostgreSQL"],

@@ -92,10 +92,6 @@
       "tools_methods": "Git au quotidien, revues de code exigeantes et argumentées, documentation écrite pour la personne qui reprendra le projet après moi. En équipe Agile, je chiffre, je découpe les sujets en incréments livrables et je signale tôt ce qui coince, pas le jour de la démo.",
       "soft_skills": "Autonome sur un sujet neuf : je cadre le besoin, je pose les questions aux bonnes personnes et j'avance sans qu'on ait à me relancer. Curieux et rigoureux, je fais de la veille, je transmets volontiers ce que j'apprends et je travaille naturellement avec le produit, le design et le back-end."
     },
-    "background": {
-      "certifications": "Certifications",
-      "issuedBy": "Délivrée par {issuer}"
-    },
     "contactLabels": {
       "email": "E-mail",
       "linkedin": "LinkedIn",
@@ -283,7 +279,6 @@
     { "school": "Université Grenoble Alpes", "degree": "Licence, Informatique — option MIAGE", "period": "2015 — 2018" },
     { "school": "Lycée Berthollet", "degree": "Baccalauréat Scientifique, spécialité Mathématiques (candidat libre)", "period": "" }
   ],
-  "certifications": [{ "name": "ReactJS Quiz Medium", "issuer": "ReactJS" }],
   "skills": {
     "frontend": ["React", "Next.js", "TypeScript", "JavaScript", "Angular", "Tests unitaires", "React Testing Library", "Jest", "Architecture de composants"],
     "backend": ["Node.js", "Java EE", "REST API", "Firebase Firestore", "PostgreSQL"],

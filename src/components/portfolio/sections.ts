@@ -137,8 +137,8 @@ export function buildSlides(section: PortfolioSection, dict: Dictionary): Portfo
         tags: dict.skills[group],
       }))
 
-    case 'background': {
-      const education = dict.education.map((entry, index) => ({
+    case 'background':
+      return dict.education.map((entry, index) => ({
         id: `education-${index}`,
         accentIndex: index,
         motif: 'strata' as const,
@@ -148,21 +148,6 @@ export function buildSlides(section: PortfolioSection, dict: Dictionary): Portfo
         meta: entry.period || undefined,
         paragraphs: [entry.degree],
       }))
-
-      return [
-        ...education,
-        {
-          id: 'certifications',
-          accentIndex: education.length,
-          motif: 'pipeline' as const,
-          title: dict.ui.background.certifications,
-          paragraphs: dict.certifications.map((certification) =>
-            format(dict.ui.background.issuedBy, { issuer: certification.issuer }),
-          ),
-          tags: dict.certifications.map((certification) => certification.name),
-        },
-      ]
-    }
 
     case 'contact':
       return [
