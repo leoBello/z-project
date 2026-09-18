@@ -145,10 +145,21 @@ revient sur le bouton d'agrandissement à la fermeture.
 ### Repli quand une image ne charge pas
 
 `SlideFigure` tient aujourd'hui un `failed: string | null`. Il devient un
-`Set<string>` : une photo en échec sort de la liste, les autres restent, et
-c'est seulement quand elles ont toutes échoué qu'on retombe sur
-`ProjectIllustration`. Un projet dont une capture sur trois manque n'a pas à
+`Set<string>` tenu par le panneau : une photo en échec sort de la liste, les
+autres restent, et c'est seulement quand elles ont toutes échoué qu'on retombe
+sur `ProjectIllustration`. Un projet dont une capture sur trois manque n'a pas à
 perdre les deux autres.
+
+**Corrigé à l'implémentation.** Le plan prévoyait de détecter l'échec avec
+l'attribut `onError` des balises affichées. Il ne marche pas ici : sur le build
+de production, en coupant une capture, le navigateur émet bien un événement
+`error` — visible depuis un écouteur de capture posé sur `document` — mais le
+gestionnaire React n'en fait rien et l'image morte reste affichée. La détection
+est donc faite par le panneau, qui sonde chaque chemin avec une `Image`
+construite à la main : du DOM nu, dont l'`onerror` part toujours, servi depuis
+la même entrée de cache que la balise affichée donc sans coût réseau, et chargé
+sans attendre là où les vignettes sont en `loading="lazy"`. Les trois composants
+de rendu n'ont ainsi aucune prop `onFailed` à se passer.
 
 ## Mise en page
 
