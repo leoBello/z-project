@@ -72,11 +72,47 @@ function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
     setPhoto(0)
   }, [])
 
+  // Le garde évite un rendu pour rien quand un chemin est signalé deux fois,
+  // et surtout la boucle : l'effet ci-dessous dépend de `failed`, donc un
+  // ensemble d'identité neuve à chaque signalement le relancerait sans fin.
   const markFailed = useCallback((src: string) => {
-    setFailed((previous) => new Set(previous).add(src))
+    setFailed((previous) => (previous.has(src) ? previous : new Set(previous).add(src)))
   }, [])
 
   const closeZoom = useCallback(() => setZoomed(false), [])
+
+  /*
+    Vérification des captures, faite ici et pas sur les `<img>` affichées.
+
+    L'attribut `onError` de React s'est révélé inutilisable pour ça, et ce n'est
+    pas une supposition : sur le build de production, en coupant une capture, le
+    navigateur émet bien un événement `error` — on le voit depuis un écouteur de
+    capture posé sur `document` — mais le gestionnaire React n'en fait rien et
+    l'image morte reste affichée.
+
+    Une `Image` construite à la main n'a pas ce problème : c'est du DOM nu, son
+    `onerror` part toujours. Elle ne coûte rien de plus en réseau, le navigateur
+    servant la même URL à la balise affichée et à cette sonde depuis la même
+    entrée de cache.
+
+    Les chemins déjà signalés sont sautés, sans quoi l'effet se relancerait
+    indéfiniment sur sa propre dépendance.
+  */
+  useEffect(() => {
+    if (!slide?.photos) return
+    let alive = true
+    for (const one of slide.photos) {
+      if (failed.has(one.src)) continue
+      const probe = new Image()
+      probe.onerror = () => {
+        if (alive) markFailed(one.src)
+      }
+      probe.src = one.src
+    }
+    return () => {
+      alive = false
+    }
+  }, [slide, failed, markFailed])
 
   useEffect(() => {
     closeButton.current?.focus()
@@ -193,7 +229,6 @@ function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
             setZoomed(true)
             track('project_photo_opened', { project: slide.id, index: current })
           }}
-          onFailed={markFailed}
           openRef={openButton}
         />
 

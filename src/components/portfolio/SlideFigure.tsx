@@ -12,7 +12,6 @@ interface SlideFigureProps {
   current: number
   onSelect: (index: number) => void
   onOpen: () => void
-  onFailed: (src: string) => void
   /** Le panneau y rend le focus quand le plein écran se ferme. */
   openRef: RefObject<HTMLButtonElement | null>
 }
@@ -36,7 +35,6 @@ export function SlideFigure({
   current,
   onSelect,
   onOpen,
-  onFailed,
   openRef,
 }: SlideFigureProps) {
   const { dict } = useI18n()
@@ -80,7 +78,6 @@ export function SlideFigure({
             alt={photo.caption}
             loading="lazy"
             decoding="async"
-            onError={() => onFailed(photo.src)}
           />
           <span className="portfolio__expand" aria-hidden="true">
             <ExpandIcon />
@@ -114,7 +111,9 @@ export function SlideFigure({
         )}
       </div>
 
-      {many && <PhotoStrip photos={photos} current={current} onSelect={onSelect} />}
+      {many && (
+        <PhotoStrip photos={photos} current={current} onSelect={onSelect} />
+      )}
     </div>
   )
 }

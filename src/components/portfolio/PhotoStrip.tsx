@@ -25,7 +25,12 @@ interface PhotoStripProps {
  * que la barre de défilement est masquée : elle couperait la rangée en deux
  * pour dire la même chose, en moins discret.
  */
-export function PhotoStrip({ photos, current, onSelect, variant = 'panel' }: PhotoStripProps) {
+export function PhotoStrip({
+  photos,
+  current,
+  onSelect,
+  variant = 'panel',
+}: PhotoStripProps) {
   const { dict } = useI18n()
   const active = useRef<HTMLLIElement>(null)
 
@@ -61,7 +66,12 @@ export function PhotoStrip({ photos, current, onSelect, variant = 'panel' }: Pho
             >
               {/* `alt` vide : le bouton porte déjà le libellé, et une vignette
                   annoncée deux fois est une vignette annoncée en trop. */}
-              <img src={photo.src} alt="" loading="lazy" decoding="async" />
+              <img
+                src={photo.src}
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
             </button>
           </li>
         )
