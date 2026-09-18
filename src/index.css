@@ -845,6 +845,200 @@ canvas {
   outline-offset: 2px;
 }
 
+/* --- Photo en plein écran -------------------------------------------------- */
+
+/*
+  Troisième écran modal du jeu, posé par-dessus le panneau. Même grammaire de
+  voile que `.portfolio`, en nettement plus sombre : ce qu'on vient voir ici est
+  une image, et tout ce qui reste visible autour lui vole de la lumière.
+*/
+.lightbox {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 28px 26px;
+  background: radial-gradient(
+    120% 90% at 50% 42%,
+    rgba(9, 14, 11, 0.93) 0%,
+    rgba(3, 6, 4, 0.985) 100%
+  );
+  backdrop-filter: blur(10px);
+  color: var(--hud-fg);
+  animation: portfolio-in 180ms ease-out;
+}
+
+/*
+  Le panneau ne transparaît pas sous la photo. Le voile ci-dessus est presque
+  opaque mais pas tout à fait, et sur mobile le bouton de fermeture du panneau
+  tombe pile derrière celui du plein écran : on voyait deux croix l'une sur
+  l'autre. `visibility` plutôt que `display` pour ne pas défaire la mise en page
+  du panneau à chaque aller-retour.
+*/
+.portfolio__panel[inert] {
+  visibility: hidden;
+}
+
+.lightbox__bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.lightbox__kicker {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #f5dc95;
+  opacity: 0.8;
+}
+
+/* Pousse le bouton de fermeture à droite, et tient la place même sans compteur.
+   Chiffres tabulaires : sinon la ligne se décale d'un demi-caractère entre
+   « 1 / 4 » et « 2 / 4 ». */
+.lightbox__position {
+  flex-grow: 1;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.55;
+}
+
+.lightbox__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(12, 18, 14, 0.5);
+  color: var(--hud-fg);
+  opacity: 0.8;
+  transition: opacity 140ms ease, background 140ms ease, border-color 140ms ease,
+    transform 140ms ease;
+}
+
+.lightbox__close svg {
+  display: block;
+  width: 17px;
+  height: 17px;
+}
+
+.lightbox__close:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.26);
+}
+
+.lightbox__close:active { transform: scale(0.94); }
+
+/* `min-height: 0` : sans lui, un élément flex ne descend pas sous la hauteur de
+   son contenu, et une capture haute pousserait la légende hors de l'écran. */
+.lightbox__stage {
+  position: relative;
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  margin-top: 10px;
+}
+
+/* `contain` et non `cover` : la vignette du panneau recadre pour tenir sa
+   colonne, le plein écran est justement l'endroit où l'on voit l'écran entier. */
+.lightbox__image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #101712;
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  animation: portfolio-panel-in 220ms cubic-bezier(0.22, 0.8, 0.28, 1);
+}
+
+/* Plus grands que ceux du panneau : ici il y a la place, et ce sont les seuls
+   contrôles de l'écran. */
+.lightbox__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(8, 12, 9, 0.62);
+  backdrop-filter: blur(6px);
+  color: var(--hud-fg);
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.lightbox__arrow--prev { left: 6px; }
+.lightbox__arrow--next { right: 6px; }
+
+.lightbox__arrow svg {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+
+.lightbox__arrow:hover {
+  background: rgba(245, 220, 149, 0.16);
+  border-color: rgba(245, 220, 149, 0.5);
+  color: #f5dc95;
+}
+
+.lightbox__caption {
+  margin: 18px 0 0;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: 0.72;
+}
+
+/*
+  La pellicule reprend du service à 116 px : c'est la largeur à partir de
+  laquelle une capture d'interface redevient lisible, et la raison pour laquelle
+  elle n'a pas cette taille dans le panneau.
+
+  `width: fit-content` et marges automatiques plutôt que `justify-content:
+  center` : centrer un conteneur qui défile en coupe le début, qui devient
+  inatteignable.
+*/
+.portfolio__strip--lightbox {
+  gap: 8px;
+  margin: 16px auto 0;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.portfolio__strip--lightbox .portfolio__strip-item {
+  flex: 0 0 116px;
+}
+
+.lightbox__hint {
+  margin: 16px 0 0;
+  text-align: center;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.34;
+}
+
+.lightbox__close:focus-visible,
+.lightbox__arrow:focus-visible {
+  outline: 2px solid #f5dc95;
+  outline-offset: 2px;
+}
+
 /* Sous cette largeur, l'illustration passe au-dessus du texte : à deux
    colonnes, la description tomberait à quatre mots par ligne. */
 @media (max-width: 720px) {
@@ -862,6 +1056,24 @@ canvas {
   .portfolio__kicker,
   .portfolio__title { padding-right: 0; }
   .portfolio__title { font-size: 24px; }
+
+  .lightbox { padding: 16px 12px 22px; }
+  /* Au doigt, des flèches au milieu des bords de l'écran ne se touchent pas
+     d'une main. Elles descendent au bas de la photo, où le pouce arrive. */
+  .lightbox__arrow {
+    top: auto;
+    bottom: 8px;
+    transform: none;
+    width: 48px;
+    height: 48px;
+  }
+  .lightbox__arrow--prev { left: 12px; }
+  .lightbox__arrow--next { right: 12px; }
+  /* 116 px de vignette ne tiennent pas dans 390 px d'écran, et les réduire
+     redonnerait les rectangles gris. Le compteur du haut suffit. */
+  .portfolio__strip--lightbox { display: none; }
+  /* Les raccourcis clavier ne concernent personne ici. */
+  .lightbox__hint { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -877,6 +1089,10 @@ canvas {
   .portfolio__photo-arrow,
   .portfolio__thumb { transition: none; }
   .portfolio__strip { scroll-behavior: auto; }
+  .lightbox,
+  .lightbox__image { animation-duration: 1ms; }
+  .lightbox__close,
+  .lightbox__arrow { transition: none; }
 }
 
 /* --- Cœurs, dégâts, game over ---------------------------------------------- */
@@ -1209,6 +1425,21 @@ canvas {
   display: flex;
   align-items: stretch;
   pointer-events: auto;
+  transition: opacity 180ms ease;
+}
+
+/*
+  Le menu reste accessible par-dessus le panneau d'un lieu — c'est ainsi qu'on
+  passe d'une section à l'autre sans refermer. Mais il est ancré au bord gauche,
+  à mi-hauteur, exactement là où le plein écran pose son chevron « photo
+  précédente » : il le recouvrait et le rendait inatteignable.
+
+  `:has()` plutôt qu'un drapeau porté jusqu'ici : le plein écran est un état du
+  panneau, et le menu n'a aucune raison de le connaître.
+*/
+body:has(.lightbox) .teleport-menu {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .teleport-menu__tab {
