@@ -104,7 +104,13 @@
       "next": "Next",
       "close": "Close",
       "personalProject": "Personal project",
-      "position": "{current} of {total}"
+      "position": "{current} of {total}",
+      "photoPrevious": "Previous photo",
+      "photoNext": "Next photo",
+      "photoSelect": "View photo {current} of {total}",
+      "photoOpen": "Enlarge photo",
+      "photoClose": "Close full screen",
+      "photoHint": "← → navigate · Esc to close"
     },
     "chest": {
       "action": "Open the chest",

@@ -408,17 +408,18 @@ canvas {
    de l'écran — l'en-tête et les premières cartes, là où un produit se
    reconnaît. */
 .portfolio__shot {
-  grid-area: figure;
-  align-self: start;
+  display: block;
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: cover;
   object-position: top center;
-  border-radius: 14px;
-  background: #101712;
-  box-shadow:
-    0 10px 26px rgba(0, 0, 0, 0.32),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+  transition: transform 300ms cubic-bezier(0.22, 0.8, 0.28, 1);
+}
+
+/* Un glissement d'échelle, pas un saut : la capture répond au survol sans
+   quitter son cadre, que `overflow: hidden` sur le bouton retient. */
+.portfolio__open:hover .portfolio__shot {
+  transform: scale(1.02);
 }
 
 .portfolio__illustration {
@@ -431,6 +432,203 @@ canvas {
   box-shadow:
     0 10px 26px rgba(0, 0, 0, 0.32),
     inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+}
+
+/* --- Carrousel photo du panneau -------------------------------------------- */
+
+/*
+  La capture occupait la zone `figure` toute seule. Elle a maintenant un
+  contenant — capture, chevrons, pellicule — qui prend sa place dans la grille.
+  L'illustration générée, elle, continue d'y aller directement : c'est le seul
+  cas où la figure n'a rien autour d'elle.
+*/
+.portfolio__figure {
+  grid-area: figure;
+  align-self: start;
+  min-width: 0;
+}
+
+.portfolio__frame {
+  position: relative;
+}
+
+/*
+  Le cadre de la capture est porté par le bouton et non par l'image : c'est lui
+  qu'on survole, lui qui reçoit le focus, et c'est sa découpe qui doit retenir
+  le léger agrandissement de l'image au survol.
+*/
+.portfolio__open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #101712;
+  box-shadow:
+    0 10px 26px rgba(0, 0, 0, 0.32),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+}
+
+/*
+  Quatre coins, en bas à droite, discrets au repos. Ils disent que la capture
+  s'ouvre en grand sans mettre un bouton en travers de l'image.
+*/
+.portfolio__expand {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(8, 12, 9, 0.6);
+  backdrop-filter: blur(6px);
+  color: var(--hud-fg);
+  opacity: 0.45;
+  transition: opacity 180ms ease, background 140ms ease;
+}
+
+.portfolio__expand svg {
+  display: block;
+  width: 13px;
+  height: 13px;
+}
+
+.portfolio__open:hover .portfolio__expand,
+.portfolio__open:focus-visible .portfolio__expand {
+  opacity: 1;
+  background: rgba(8, 12, 9, 0.8);
+}
+
+/*
+  Chevrons de photo : ronds comme ceux du pied de panneau mais dix pixels plus
+  petits, posés sur l'image et invisibles au repos. Ils ne doivent pas
+  concurrencer la navigation entre diapositives, qui est la navigation
+  principale du panneau.
+*/
+.portfolio__photo-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(8, 12, 9, 0.62);
+  backdrop-filter: blur(6px);
+  color: var(--hud-fg);
+  opacity: 0;
+  transition: opacity 180ms ease, background 140ms ease, border-color 140ms ease,
+    color 140ms ease;
+}
+
+.portfolio__photo-arrow--prev { left: 8px; }
+.portfolio__photo-arrow--next { right: 8px; }
+
+.portfolio__photo-arrow svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+}
+
+/* `focus-within` et pas seulement `hover` : au clavier, les chevrons doivent
+   apparaître quand la tabulation entre dans la figure. */
+.portfolio__frame:hover .portfolio__photo-arrow,
+.portfolio__frame:focus-within .portfolio__photo-arrow {
+  opacity: 1;
+}
+
+.portfolio__photo-arrow:hover {
+  background: rgba(245, 220, 149, 0.16);
+  border-color: rgba(245, 220, 149, 0.5);
+  color: #f5dc95;
+}
+
+.portfolio__strip {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-behavior: smooth;
+  /* La barre système, claire et épaisse, couperait la rangée en deux pour dire
+     ce que l'amorce de la vignette suivante dit déjà. */
+  scrollbar-width: none;
+}
+
+.portfolio__strip::-webkit-scrollbar { display: none; }
+
+/*
+  Une seule règle pour les deux cas de figure.
+
+  `flex-basis: 30%` : trois vignettes pleines par rangée et la quatrième
+  amorcée au bord droit quand il y a beaucoup de photos — c'est cette amorce
+  qui annonce qu'il y en a d'autres, sans ajouter de chrome.
+
+  `flex-grow: 1` : quand il en reste peu, elles occupent toute la largeur. À
+  deux photos chacune prend la moitié de la colonne, 142 px au lieu de 87 — une
+  capture d'interface y est encore lisible.
+
+  `flex-shrink: 0` : sans lui, cinq vignettes se tasseraient à 54 px au lieu de
+  déborder, et redeviendraient les rectangles gris qu'on cherche à éviter.
+*/
+.portfolio__strip-item {
+  flex: 1 0 30%;
+  display: flex;
+  scroll-snap-align: start;
+}
+
+.portfolio__thumb {
+  flex-grow: 1;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #101712;
+  /* Pas plus bas : le panneau est sombre, et une capture en thème sombre y
+     disparaîtrait tout à fait. Ce qui distingue la vignette courante est son
+     liseré doré, pas l'effacement des autres. */
+  opacity: 0.55;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: opacity 160ms ease, box-shadow 160ms ease;
+}
+
+.portfolio__thumb img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  /* Le haut d'une capture — en-tête et premières cartes — est ce à quoi on
+     reconnaît un écran. Même cadrage que la grande capture. */
+  object-position: top center;
+}
+
+.portfolio__thumb:hover { opacity: 0.85; }
+
+/* Liseré doré plutôt qu'une bordure ajoutée : `inset` ne prend pas de place et
+   la rangée ne sursaute pas d'une vignette à l'autre. Même doré que la pastille
+   courante du stepper — c'est le même code couleur pour « vous êtes ici ». */
+.portfolio__thumb--active,
+.portfolio__thumb--active:hover {
+  opacity: 1;
+  box-shadow: inset 0 0 0 1.5px #f5dc95;
+}
+
+/* Pas de survol au doigt : ce qui ne se montre qu'au survol ne se montrerait
+   jamais. */
+@media (hover: none) {
+  .portfolio__photo-arrow,
+  .portfolio__expand { opacity: 0.9; }
 }
 
 .portfolio__body {
@@ -639,7 +837,10 @@ canvas {
 
 .portfolio__close:focus-visible,
 .portfolio__arrow:focus-visible,
-.portfolio__dot:focus-visible {
+.portfolio__dot:focus-visible,
+.portfolio__open:focus-visible,
+.portfolio__photo-arrow:focus-visible,
+.portfolio__thumb:focus-visible {
   outline: 2px solid #f5dc95;
   outline-offset: 2px;
 }
@@ -655,7 +856,7 @@ canvas {
     padding: 22px;
   }
   .portfolio__illustration,
-  .portfolio__shot { max-width: 260px; justify-self: center; }
+  .portfolio__figure { max-width: 260px; justify-self: center; }
   /* L'illustration ne remplit plus la colonne : le bouton de fermeture ne
      surplombe plus le titre, la gouttière n'a plus lieu d'être. */
   .portfolio__kicker,
@@ -670,7 +871,12 @@ canvas {
   .portfolio__close,
   .portfolio__link,
   .portfolio__arrow,
-  .portfolio__dot-mark { transition: none; }
+  .portfolio__dot-mark,
+  .portfolio__shot,
+  .portfolio__expand,
+  .portfolio__photo-arrow,
+  .portfolio__thumb { transition: none; }
+  .portfolio__strip { scroll-behavior: auto; }
 }
 
 /* --- Cœurs, dégâts, game over ---------------------------------------------- */

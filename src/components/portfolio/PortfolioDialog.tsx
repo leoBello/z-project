@@ -5,48 +5,9 @@ import { format } from '../../i18n'
 import { useI18n } from '../../i18n/useI18n'
 import { useGameStore } from '../../store/useGameStore'
 import { ChevronIcon, CloseIcon } from './icons'
-import { ProjectIllustration } from './ProjectIllustration'
 import { ProjectStepper } from './ProjectStepper'
-import { buildSlides, type PortfolioSlide } from './sections'
-
-/**
- * La figure de la diapositive : capture du produit si le contenu en fournit
- * une, illustration générée sinon.
- *
- * Le repli ne sert pas qu'aux diapositives sans capture — un fichier absent ou
- * illisible y bascule aussi. La figure occupe une zone de la grille du
- * panneau : la laisser vide y ouvrirait un trou, alors que le motif
- * isométrique, lui, ne dépend d'aucun fichier et est toujours calculable.
- */
-function SlideFigure({ slide }: { slide: PortfolioSlide }) {
-  // Un `Set` et non un seul chemin : une capture en échec ne doit pas faire
-  // tomber les autres avec elle.
-  const [failed, setFailed] = useState<ReadonlySet<string>>(() => new Set())
-  const photos = slide.photos?.filter((one) => !failed.has(one.src)) ?? []
-  const photo = photos[0]
-
-  if (photo) {
-    return (
-      <img
-        className="portfolio__shot"
-        src={photo.src}
-        alt={photo.caption}
-        loading="lazy"
-        decoding="async"
-        onError={() => setFailed((previous) => new Set(previous).add(photo.src))}
-      />
-    )
-  }
-
-  return (
-    <ProjectIllustration
-      id={slide.id}
-      tags={slide.tags}
-      index={slide.accentIndex}
-      motif={slide.motif}
-    />
-  )
-}
+import { buildSlides } from './sections'
+import { SlideFigure } from './SlideFigure'
 
 /** Sélecteur des éléments qui peuvent recevoir le focus dans le panneau. */
 const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -67,18 +28,50 @@ interface PortfolioPanelProps {
 function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
   const { dict } = useI18n()
   const [index, setIndex] = useState(0)
+  const [photo, setPhoto] = useState(0)
+  // Un `Set` partagé par toutes les diapositives : un chemin est unique à un
+  // projet, et une capture morte le reste quand on revient dessus.
+  const [failed, setFailed] = useState<ReadonlySet<string>>(() => new Set())
   const panel = useRef<HTMLDivElement>(null)
   const closeButton = useRef<HTMLButtonElement>(null)
+  const openButton = useRef<HTMLButtonElement>(null)
 
   const slides = useMemo(() => buildSlides(section, dict), [section, dict])
   const total = slides.length
 
+  // `at()` plutôt qu'un accès direct : ces trois valeurs sont lues par les
+  // hooks ci-dessous, donc calculées avant le garde de sortie, et rien ne
+  // garantit qu'il y ait une diapositive à ce moment-là.
+  const slide = slides.at(index)
+  // Une capture en échec sort de la liste, les autres restent : un projet dont
+  // un fichier sur trois manque n'a pas à perdre les deux autres.
+  const photos = slide?.photos?.filter((one) => !failed.has(one.src)) ?? []
+  // La liste a pu rétrécir sous l'index : on le borne ici plutôt que de laisser
+  // passer un `undefined` jusqu'à `<img src>`.
+  const current = photos.length > 0 ? Math.min(photo, photos.length - 1) : 0
+
   // Navigation circulaire : une flèche grisée au premier écran oblige le joueur
   // à deviner pourquoi elle ne répond pas.
+  //
+  // Les deux chemins qui changent de diapositive remettent la photo à zéro —
+  // sans ça, on ouvrirait le projet suivant sur la troisième photo du
+  // précédent.
   const go = useCallback(
-    (step: number) => setIndex((previous) => (previous + step + total) % total),
+    (step: number) => {
+      setIndex((previous) => (previous + step + total) % total)
+      setPhoto(0)
+    },
     [total],
   )
+
+  const showSlide = useCallback((next: number) => {
+    setIndex(next)
+    setPhoto(0)
+  }, [])
+
+  const markFailed = useCallback((src: string) => {
+    setFailed((previous) => new Set(previous).add(src))
+  }, [])
 
   useEffect(() => {
     closeButton.current?.focus()
@@ -122,9 +115,7 @@ function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [go, onClose, total])
 
-  if (total === 0) return null
-
-  const slide = slides[index]
+  if (!slide) return null
 
   return (
     <div className="portfolio">
@@ -145,7 +136,15 @@ function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
           <CloseIcon />
         </button>
 
-        <SlideFigure slide={slide} />
+        <SlideFigure
+          slide={slide}
+          photos={photos}
+          current={current}
+          onSelect={setPhoto}
+          onOpen={() => undefined}
+          onFailed={markFailed}
+          openRef={openButton}
+        />
 
         <div className="portfolio__body">
           <span className="portfolio__kicker">{dict.ui.sections[section]}</span>
@@ -213,7 +212,7 @@ function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
               <ChevronIcon direction="left" />
             </button>
 
-            <ProjectStepper total={total} current={index} onSelect={setIndex} />
+            <ProjectStepper total={total} current={index} onSelect={showSlide} />
 
             <button
               type="button"

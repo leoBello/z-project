@@ -104,7 +104,13 @@
       "next": "Suivant",
       "close": "Fermer",
       "personalProject": "Projet personnel",
-      "position": "{current} sur {total}"
+      "position": "{current} sur {total}",
+      "photoPrevious": "Photo précédente",
+      "photoNext": "Photo suivante",
+      "photoSelect": "Voir la photo {current} sur {total}",
+      "photoOpen": "Agrandir la photo",
+      "photoClose": "Fermer le plein écran",
+      "photoHint": "← → naviguer · Échap fermer"
     },
     "chest": {
       "action": "Ouvrir le coffre",
