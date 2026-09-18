@@ -4,85 +4,14 @@ import { landmarkById, type PortfolioSection } from '../../config/landmarks'
 import { format } from '../../i18n'
 import { useI18n } from '../../i18n/useI18n'
 import { useGameStore } from '../../store/useGameStore'
-import { ProjectIllustration } from './ProjectIllustration'
+import { ChevronIcon, CloseIcon } from './icons'
+import { PhotoLightbox } from './PhotoLightbox'
 import { ProjectStepper } from './ProjectStepper'
-import { buildSlides, type PortfolioSlide } from './sections'
-
-/**
- * La figure de la diapositive : capture du produit si le contenu en fournit
- * une, illustration générée sinon.
- *
- * Le repli ne sert pas qu'aux diapositives sans capture — un fichier absent ou
- * illisible y bascule aussi. La figure occupe une zone de la grille du
- * panneau : la laisser vide y ouvrirait un trou, alors que le motif
- * isométrique, lui, ne dépend d'aucun fichier et est toujours calculable.
- */
-function SlideFigure({ slide }: { slide: PortfolioSlide }) {
-  const [failed, setFailed] = useState<string | null>(null)
-  const image = slide.image?.src === failed ? undefined : slide.image
-
-  if (image) {
-    return (
-      <img
-        className="portfolio__shot"
-        src={image.src}
-        alt={image.alt}
-        loading="lazy"
-        decoding="async"
-        onError={() => setFailed(image.src)}
-      />
-    )
-  }
-
-  return (
-    <ProjectIllustration
-      id={slide.id}
-      tags={slide.tags}
-      index={slide.accentIndex}
-      motif={slide.motif}
-    />
-  )
-}
+import { buildSlides } from './sections'
+import { SlideFigure } from './SlideFigure'
 
 /** Sélecteur des éléments qui peuvent recevoir le focus dans le panneau. */
 const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-
-/*
-  Glyphes tracés plutôt que typographiés.
-
-  Les caractères `×`, `←` et `→` n'occupent pas le centre de leur cadratin et
-  varient d'une police système à l'autre : dans un bouton rond, ils tombent
-  toujours un peu haut et un peu à gauche, et aucun réglage de `line-height` ne
-  rattrape ça de façon portable. Un tracé SVG, lui, est centré par construction.
-*/
-function CloseIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
-
-function ChevronIcon({ direction }: { direction: 'left' | 'right' }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        d={direction === 'left' ? 'M14.5 5.5 8 12l6.5 6.5' : 'M9.5 5.5 16 12l-6.5 6.5'}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
 
 interface PortfolioPanelProps {
   section: PortfolioSection
@@ -100,28 +29,125 @@ interface PortfolioPanelProps {
 function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
   const { dict } = useI18n()
   const [index, setIndex] = useState(0)
+  const [photo, setPhoto] = useState(0)
+  // Un `Set` partagé par toutes les diapositives : un chemin est unique à un
+  // projet, et une capture morte le reste quand on revient dessus.
+  const [failed, setFailed] = useState<ReadonlySet<string>>(() => new Set())
+  const [zoomed, setZoomed] = useState(false)
   const panel = useRef<HTMLDivElement>(null)
+  const lightbox = useRef<HTMLDivElement>(null)
   const closeButton = useRef<HTMLButtonElement>(null)
+  const openButton = useRef<HTMLButtonElement>(null)
 
   const slides = useMemo(() => buildSlides(section, dict), [section, dict])
   const total = slides.length
 
+  // `at()` plutôt qu'un accès direct : ces trois valeurs sont lues par les
+  // hooks ci-dessous, donc calculées avant le garde de sortie, et rien ne
+  // garantit qu'il y ait une diapositive à ce moment-là.
+  const slide = slides.at(index)
+  // Une capture en échec sort de la liste, les autres restent : un projet dont
+  // un fichier sur trois manque n'a pas à perdre les deux autres.
+  const photos = slide?.photos?.filter((one) => !failed.has(one.src)) ?? []
+  // La liste a pu rétrécir sous l'index : on le borne ici plutôt que de laisser
+  // passer un `undefined` jusqu'à `<img src>`.
+  const current = photos.length > 0 ? Math.min(photo, photos.length - 1) : 0
+
   // Navigation circulaire : une flèche grisée au premier écran oblige le joueur
   // à deviner pourquoi elle ne répond pas.
+  //
+  // Les deux chemins qui changent de diapositive remettent la photo à zéro —
+  // sans ça, on ouvrirait le projet suivant sur la troisième photo du
+  // précédent.
   const go = useCallback(
-    (step: number) => setIndex((previous) => (previous + step + total) % total),
+    (step: number) => {
+      setIndex((previous) => (previous + step + total) % total)
+      setPhoto(0)
+    },
     [total],
   )
+
+  const showSlide = useCallback((next: number) => {
+    setIndex(next)
+    setPhoto(0)
+  }, [])
+
+  // Le garde évite un rendu pour rien quand un chemin est signalé deux fois,
+  // et surtout la boucle : l'effet ci-dessous dépend de `failed`, donc un
+  // ensemble d'identité neuve à chaque signalement le relancerait sans fin.
+  const markFailed = useCallback((src: string) => {
+    setFailed((previous) => (previous.has(src) ? previous : new Set(previous).add(src)))
+  }, [])
+
+  const closeZoom = useCallback(() => setZoomed(false), [])
+
+  /*
+    Vérification des captures, faite ici et pas sur les `<img>` affichées.
+
+    L'attribut `onError` de React s'est révélé inutilisable pour ça, et ce n'est
+    pas une supposition : sur le build de production, en coupant une capture, le
+    navigateur émet bien un événement `error` — on le voit depuis un écouteur de
+    capture posé sur `document` — mais le gestionnaire React n'en fait rien et
+    l'image morte reste affichée.
+
+    Une `Image` construite à la main n'a pas ce problème : c'est du DOM nu, son
+    `onerror` part toujours. Elle ne coûte rien de plus en réseau, le navigateur
+    servant la même URL à la balise affichée et à cette sonde depuis la même
+    entrée de cache.
+
+    Les chemins déjà signalés sont sautés, sans quoi l'effet se relancerait
+    indéfiniment sur sa propre dépendance.
+  */
+  useEffect(() => {
+    if (!slide?.photos) return
+    let alive = true
+    for (const one of slide.photos) {
+      if (failed.has(one.src)) continue
+      const probe = new Image()
+      probe.onerror = () => {
+        if (alive) markFailed(one.src)
+      }
+      probe.src = one.src
+    }
+    return () => {
+      alive = false
+    }
+  }, [slide, failed, markFailed])
 
   useEffect(() => {
     closeButton.current?.focus()
   }, [])
 
+  /*
+    Retour du focus après le plein écran.
+
+    Dans un effet et non dans le gestionnaire de fermeture : au moment du clic,
+    le panneau porte encore `inert`, et un élément inerte refuse le focus — la
+    tabulation repartait donc de `<body>`, c'est-à-dire du haut de la page,
+    alors que le panneau était toujours ouvert. Ici, React a déjà retiré
+    l'attribut.
+
+    Le drapeau évite de voler le focus au montage, où il revient au bouton de
+    fermeture du panneau.
+  */
+  const wasZoomed = useRef(false)
+  useEffect(() => {
+    if (zoomed) {
+      wasZoomed.current = true
+      return
+    }
+    if (!wasZoomed.current) return
+    wasZoomed.current = false
+    openButton.current?.focus()
+  }, [zoomed])
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault()
-        onClose()
+        // Deux écrans empilés, une seule touche : elle ferme le plus haut.
+        if (zoomed) closeZoom()
+        else onClose()
         return
       }
       if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
@@ -129,16 +155,31 @@ function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
         // un conflit : la partie est en pause et `Player` sort de sa boucle dès
         // la première ligne. On les intercepte quand même pour empêcher le
         // défilement de la page.
+        //
+        // Elles changent de photo en plein écran et de diapositive dans le
+        // panneau : une touche, un sens, selon ce qui est ouvert.
         event.preventDefault()
-        if (total > 1) go(event.key === 'ArrowLeft' ? -1 : 1)
+        const step = event.key === 'ArrowLeft' ? -1 : 1
+        if (zoomed) {
+          if (photos.length > 1) {
+            setPhoto((previous) => (previous + step + photos.length) % photos.length)
+          }
+        } else if (total > 1) {
+          go(step)
+        }
         return
       }
-      if (event.key !== 'Tab' || !panel.current) return
+      if (event.key !== 'Tab') return
 
       // Piège à focus. Sans lui, `Tab` sort du panneau et va se poser sur le
       // canvas ou la barre d'adresse, alors que le reste de la page est inerte :
       // l'utilisateur au clavier perd sa position sans rien voir.
-      const focusable = Array.from(panel.current.querySelectorAll<HTMLElement>(FOCUSABLE))
+      //
+      // Il suit l'écran du dessus : tant que le plein écran est ouvert, c'est
+      // lui qui retient le focus, et le panneau est `inert`.
+      const scope = zoomed ? lightbox.current : panel.current
+      if (!scope) return
+      const focusable = Array.from(scope.querySelectorAll<HTMLElement>(FOCUSABLE))
       if (focusable.length === 0) return
       const first = focusable[0]
       const last = focusable[focusable.length - 1]
@@ -153,11 +194,9 @@ function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [go, onClose, total])
+  }, [closeZoom, go, onClose, photos.length, total, zoomed])
 
-  if (total === 0) return null
-
-  const slide = slides[index]
+  if (!slide) return null
 
   return (
     <div className="portfolio">
@@ -167,6 +206,9 @@ function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="portfolio-title"
+        // Tant que le plein écran est ouvert, les boutons du panneau ne doivent
+        // être atteignables ni au pointeur ni à la tabulation.
+        inert={zoomed}
       >
         <button
           ref={closeButton}
@@ -178,7 +220,17 @@ function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
           <CloseIcon />
         </button>
 
-        <SlideFigure slide={slide} />
+        <SlideFigure
+          slide={slide}
+          photos={photos}
+          current={current}
+          onSelect={setPhoto}
+          onOpen={() => {
+            setZoomed(true)
+            track('project_photo_opened', { project: slide.id, index: current })
+          }}
+          openRef={openButton}
+        />
 
         <div className="portfolio__body">
           <span className="portfolio__kicker">{dict.ui.sections[section]}</span>
@@ -246,7 +298,7 @@ function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
               <ChevronIcon direction="left" />
             </button>
 
-            <ProjectStepper total={total} current={index} onSelect={setIndex} />
+            <ProjectStepper total={total} current={index} onSelect={showSlide} />
 
             <button
               type="button"
@@ -270,6 +322,19 @@ function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
           </p>
         )}
       </div>
+
+      {/* Frère du panneau et non son enfant : il le recouvre entièrement, et le
+          panneau devient `inert` derrière lui. */}
+      {zoomed && photos.length > 0 && (
+        <PhotoLightbox
+          rootRef={lightbox}
+          photos={photos}
+          current={current}
+          title={slide.title}
+          onSelect={setPhoto}
+          onClose={closeZoom}
+        />
+      )}
     </div>
   )
 }

@@ -21,6 +21,20 @@ export interface PortfolioLink {
   href: string
 }
 
+export interface PortfolioPhoto {
+  /** Chemin servi depuis `public/`. Sensible à la casse en production. */
+  src: string
+  /**
+   * Légende de la photo.
+   *
+   * Elle sert deux fois : attribut `alt` de l'image, et ligne affichée sous la
+   * photo en plein écran. Un `alt` dérivé du nom du projet — « Prospeo —
+   * Prospection automatisée » — ne dit pas ce qu'on regarde ; une légende
+   * écrite, si.
+   */
+  caption: string
+}
+
 export interface PortfolioSlide {
   /** Clé stable. Amorce le tirage de l'illustration et sert de `key` React. */
   id: string
@@ -38,14 +52,17 @@ export interface PortfolioSlide {
   title: string
   meta?: string
   /**
-   * Capture du produit, quand il y en a une.
+   * Captures du produit, quand il y en a.
    *
-   * Elle prend la place de l'illustration générée — montrer l'écran réel d'un
-   * produit qu'on a mis en ligne dit plus qu'un motif isométrique, mais
-   * seulement pour les produits personnels : une mission client n'a pas
+   * Elles prennent la place de l'illustration générée — montrer les écrans
+   * réels d'un produit qu'on a mis en ligne dit plus qu'un motif isométrique,
+   * mais seulement pour les produits personnels : une mission client n'a pas
    * d'écran qu'on puisse publier.
+   *
+   * Plusieurs plutôt qu'une : un produit ne se raconte pas depuis un seul
+   * écran, et le panneau sait maintenant les faire défiler.
    */
-  image?: { src: string; alt: string }
+  photos?: readonly PortfolioPhoto[]
   paragraphs?: readonly string[]
   tags?: readonly string[]
   links?: readonly PortfolioLink[]
@@ -80,10 +97,10 @@ export function buildSlides(section: PortfolioSection, dict: Dictionary): Portfo
         accentIndex: index,
         title: project.name,
         meta: `${dict.ui.portfolio.personalProject} · ${project.tagline} · ${project.period}`,
-        // Chemin vide = pas de capture disponible, on retombe sur l'illustration.
-        image: project.screenshot
-          ? { src: project.screenshot, alt: `${project.name} — ${project.tagline}` }
-          : undefined,
+        // Tableau vide = pas de capture disponible, on retombe sur
+        // l'illustration. `undefined` plutôt qu'un tableau vide : le panneau
+        // n'a alors qu'un seul cas d'absence à connaître.
+        photos: project.screenshots.length > 0 ? project.screenshots : undefined,
         paragraphs: [project.summary, project.approach, project.outcome],
         tags: project.tags,
       }))

@@ -42,6 +42,18 @@ interface Events {
   boot_complete: { ms: number; outcome: 'ready' | 'timeout' }
   /** Le panneau d'un monument s'ouvre : une section du portfolio est lue. */
   landmark_opened: { landmark: LandmarkId; via: 'walk' | 'teleport' }
+  /**
+   * Une capture de projet est ouverte en plein écran.
+   *
+   * Répond à la seule question que posent les captures : est-ce qu'on les
+   * regarde. `index` dit si les gens vont au-delà de la première — une série
+   * qu'on ne parcourt jamais ne mérite pas qu'on la remplisse.
+   *
+   * Émis à l'ouverture seulement, jamais à chaque changement de photo :
+   * l'offre gratuite d'Umami compte les événements, et parcourir une série de
+   * cinq en produirait cinq pour une seule intention.
+   */
+  project_photo_opened: { project: string; index: number }
   /** Un lien sortant du portfolio est cliqué (contact, projet, réseau). */
   outbound_link: { target: string }
 }
