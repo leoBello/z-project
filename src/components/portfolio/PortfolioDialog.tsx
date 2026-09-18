@@ -18,18 +18,21 @@ import { buildSlides, type PortfolioSlide } from './sections'
  * isométrique, lui, ne dépend d'aucun fichier et est toujours calculable.
  */
 function SlideFigure({ slide }: { slide: PortfolioSlide }) {
-  const [failed, setFailed] = useState<string | null>(null)
-  const image = slide.image?.src === failed ? undefined : slide.image
+  // Un `Set` et non un seul chemin : une capture en échec ne doit pas faire
+  // tomber les autres avec elle.
+  const [failed, setFailed] = useState<ReadonlySet<string>>(() => new Set())
+  const photos = slide.photos?.filter((one) => !failed.has(one.src)) ?? []
+  const photo = photos[0]
 
-  if (image) {
+  if (photo) {
     return (
       <img
         className="portfolio__shot"
-        src={image.src}
-        alt={image.alt}
+        src={photo.src}
+        alt={photo.caption}
         loading="lazy"
         decoding="async"
-        onError={() => setFailed(image.src)}
+        onError={() => setFailed((previous) => new Set(previous).add(photo.src))}
       />
     )
   }
