@@ -10,19 +10,19 @@ export const PARRY = {
   /**
    * Durée de la garde ouverte par un appui.
    *
-   * Le signal paraît `cueLeadMs` avant l'impact, donc il faut appuyer entre 160
-   * et 420 ms après l'avoir vu. Le temps de réaction simple médian est d'environ
+   * Le signal paraît `cueLeadMs` avant l'impact, donc il faut appuyer entre 180
+   * et 500 ms après l'avoir vu. Le temps de réaction simple médian est d'environ
    * 250 ms : la fenêtre est *centrée* dessus, elle ne le frôle pas. C'est
    * difficile, jamais injuste.
    */
-  windowMs: 260,
+  windowMs: 320,
   /**
    * Immobilisation de la parade après la fin d'une garde qui n'a rien arrêté.
    *
    * La pièce maîtresse de tout l'équilibrage. Un appui qui part trop tôt ne rate
-   * pas la parade : il la *consomme*. 450 ms de récupération après 260 ms de
-   * garde, c'est 710 ms sans défense — plus que le plus long télégraphe du
-   * Lynel. Un appui anticipé ne peut donc pas couvrir le coup qu'il anticipait.
+   * pas la parade : il la *consomme*. 450 ms de récupération après 320 ms de
+   * garde, c'est 770 ms sans défense — plus que le télégraphe du balayage, qui
+   * est le coup sur lequel la parade s'apprend. Un appui anticipé ne peut donc pas couvrir le coup qu'il anticipait.
    *
    * Et un appui *pendant* la récupération la relance (voir `pressParry`) : qui
    * martèle reste verrouillé tant qu'il martèle. C'est la seule règle qui rende
@@ -32,10 +32,16 @@ export const PARRY = {
   /**
    * Avance du signal sur l'impact.
    *
-   * 420 ms pour une fenêtre de 260 : la bande réactive utile est
-   * `[impact − 260, impact]`, atteinte en réagissant entre 160 et 420 ms.
+   * 500 ms pour une fenêtre de 320 : la bande réactive utile est
+   * `[impact − 320, impact]`, atteinte en réagissant entre 180 et 500 ms.
+   *
+   * Premier réglage : 420 pour 260, soit une exigence de 160 à 420 ms. Sur le
+   * papier c'était centré sur le temps de réaction médian ; à l'essai, personne
+   * n'y arrivait — parce qu'il ne s'agit pas de réagir à un signal *attendu*,
+   * mais de le repérer dans une mêlée en mouvement, ce qui coûte de deux à trois
+   * cents millisecondes de plus. Desserré d'autant.
    */
-  cueLeadMs: 420,
+  cueLeadMs: 500,
   /** Ouverture offerte par une parade réussie. Deux coups d'épée y rentrent. */
   punishMs: 1300,
   /**

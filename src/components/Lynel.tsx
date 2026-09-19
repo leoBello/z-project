@@ -146,7 +146,8 @@ const lynelDebug = {
   now: 0,
 }
 if (import.meta.env.DEV) {
-  ;(window as unknown as Record<string, unknown>).__lynel = lynelDebug
+  // `__lynel` porte déjà la table des attaques : celui-ci est l'état vivant.
+  ;(window as unknown as Record<string, unknown>).__lynelState = lynelDebug
 }
 
 const toPlayer = new Vector3()
@@ -364,6 +365,20 @@ export function Lynel() {
         playerTransform.position.z - ARENA_CENTER[2],
       )
       if (playerFromCenter < ARENA_R - 1.5) store.startBossFight()
+      /*
+        Et il se termine si le joueur quitte l'arène.
+
+        Les barrières sont censées l'en empêcher, mais elles ne couvrent que les
+        deux brèches : il reste la chute hors de l'île, le filet de sécurité qui
+        le repose au point d'arrivée, et le menu de téléportation. Sans cette
+        sortie, le combat restait « engagé » à quarante-sept unités de la
+        rotonde — caméra serrée sur un joueur seul, et barrières dressées en
+        travers de la seule entrée. Mesuré : c'est exactement ce qui arrivait.
+
+        La marge est large (le double du rayon) pour qu'un pas de côté au bord du
+        dallage ne coupe pas le combat en deux.
+      */
+      if (playerFromCenter > ARENA_R * 2) store.endBossFight(false)
     }
 
     // --- Mort ---------------------------------------------------------------
@@ -578,6 +593,31 @@ export function Lynel() {
       targetYaw = angle
     }
 
+    /*
+      La laisse : il ne sort pas du dallage.
+
+      Rien ne l'y retenait. Les barrières ne ferment que les deux brèches, et
+      entre deux piliers il n'y a aucun collider : en poursuivant le joueur — ou
+      en finissant une charge — il passait la lèvre du cœur, tombait les 3,6
+      unités jusqu'au jardin, et **ne pouvait plus remonter**, la falaise étant à
+      2,7 de pente contre 0,5 de praticable. Le boss disparaissait du combat sans
+      mourir, et se laissait achever sans jamais réagir.
+
+      On annule la composante **radiale sortante** plutôt que la vitesse entière :
+      annuler tout le vecteur le collerait au bord dès qu'il l'effleure, alors
+      qu'il doit pouvoir continuer à longer le pourtour pour contourner le
+      joueur.
+    */
+    if (fromCenter > ARENA_R - 1) {
+      const outX = (position.x - ARENA_CENTER[0]) / fromCenter
+      const outZ = (position.z - ARENA_CENTER[2]) / fromCenter
+      const outward = velocityX * outX + velocityZ * outZ
+      if (outward > 0) {
+        velocityX -= outward * outX
+        velocityZ -= outward * outZ
+      }
+    }
+
     rb.setLinvel({ x: velocityX, y: rb.linvel().y, z: velocityZ }, true)
     state.yaw = dampAngle(state.yaw, targetYaw, 9, delta)
     group.rotation.y = state.yaw
@@ -662,7 +702,10 @@ export function Lynel() {
         state.chargeUntil = now + ((ARENA_R * 2) / CHARGE_SPEED) * 1000
         state.chargeHit = false
         state.pose = 'charge'
-        state.poseUntil = now + CHARGE_STUN_MS
+        // Pas de `poseUntil` ici : une charge dure ce que dure sa course — jusqu'à
+        // 1,9 s si elle part du bord opposé — et la borner à 1,4 s faisait
+        // reprendre la pose de repos en pleine course, à onze unités par seconde.
+        // C'est la laisse et l'impact qui la terminent, pas un minuteur de pose.
       } else if (attack.id === 'volley') {
         /*
           Trois flèches, et pas une ligne de neuf à écrire : `fireProjectile`
@@ -702,7 +745,12 @@ export function Lynel() {
     // Le retour au repos est décidé ici et nulle part ailleurs : la pose de fin
     // de coup se tient `FOLLOW_THROUGH_MS`, celle de l'étourdissement tient
     // jusqu'au bout de l'ouverture.
-    if (state.pending === null && now > state.staggerUntil && now > state.poseUntil) {
+    if (
+      state.pending === null &&
+      state.chargeDir === null &&
+      now > state.staggerUntil &&
+      now > state.poseUntil
+    ) {
       state.pose = 'repos'
     }
     rig.current?.setPose(state.pose)
