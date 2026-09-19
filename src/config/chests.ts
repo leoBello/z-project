@@ -1,5 +1,5 @@
 import type { ChestId, ItemId } from '../types/game'
-import { NAKANO, TEMPLE, type Landmark } from './landmarks'
+import { NAKANO, RUINS, STELE, TEMPLE, type Landmark } from './landmarks'
 
 /**
  * Coffres au trésor de la carte.
@@ -155,7 +155,81 @@ export const NAKANO_CHEST = define({
   interactRadius: 2.6,
 })
 
-export const CHESTS: readonly Chest[] = [TEMPLE_CHEST, NAKANO_CHEST]
+/**
+ * Coffre de la Grande Stèle — la lame maudite.
+ *
+ * Posé en `[-5.5, -1.0]` sur la terrasse, à mi-chemin entre le pied de la stèle
+ * et le bord. Les deux nombres sortent des trois mêmes contraintes que les
+ * coffres précédents :
+ *
+ *  - **5,59 du centre**, angles du coffre à 6,41 : la terrasse est plate
+ *    jusqu'à 7 (`STELE.radius`), le coffre ne peut donc ni flotter ni
+ *    s'enfoncer d'un côté ;
+ *  - **7,78 séparent le coffre du marqueur**, posé en local `[0, 4.5]`. Les
+ *    deux zones d'interaction font 3 et 2,6 : leur somme vaut 5,6, elles ne
+ *    peuvent donc pas se recouvrir, et `F` n'a jamais à arbitrer entre ouvrir
+ *    le coffre et ouvrir le panneau des compétences ;
+ *  - **au sud-est du monument** en coordonnées monde — `(-21,6 ; 32,4)` pour un
+ *    centre à `(-25 ; 28)`. C'est la contrainte qui a décidé du **signe** des
+ *    deux coordonnées locales : `[5.5, 1.0]` satisfaisait les deux premières
+ *    mais tombait au *nord*, derrière le monument, et la caméra est fixe et
+ *    tournée vers le nord. Un coffre posé là est un coffre que personne ne
+ *    voit.
+ *
+ * Le cap est tourné vers le marqueur, donc vers le joueur qui vient de lire la
+ * stèle : c'est de là qu'on arrive, et un coffre d'équerre avec la terrasse se
+ * serait lu comme une pièce du dallage.
+ */
+export const STELE_CHEST = define({
+  id: 'stele-chest',
+  landmark: STELE,
+  local: [-5.5, -1.0],
+  yaw: 0.72,
+  item: 'cursed-blade',
+  interactRadius: 2.6,
+})
+
+/**
+ * Coffre des Ruines de l'Île — les écailles.
+ *
+ * **Le placement le plus contraint de la carte**, et le seul qui ait dû se
+ * plier au relief plutôt que l'inverse : les ruines n'ont pas de terrasse
+ * (`RUINS.radius` vaut zéro, voir la note qui l'explique). Le plateau naturel
+ * de l'île est plat *à la valeur près* jusqu'à 5,2 seulement, puis il plonge —
+ * c'est mesuré, et c'est déjà ce qui avait fait resserrer le dallage pour que
+ * la braise ne flotte pas.
+ *
+ * Le coffre tient donc dans une couronne étroite :
+ *
+ *  - **4,3 du centre**, angles à 5,12 : ils tiennent dans la zone strictement
+ *    plate, à huit centimètres près. Un coffre posé dix centimètres plus loin
+ *    aurait un angle dans la pente ;
+ *  - **9,1 du marqueur**, posé en local `[0, 4.8]` : le coffre est à l'opposé
+ *    exact, la marge sur les 5,6 nécessaires est confortable pour une fois.
+ *
+ * Le placement raconte quelque chose, et c'est la raison d'avoir mis *cet*
+ * objet *là* : **ce qui rend la mer gratuite est de l'autre côté de la mer.**
+ * On arrive par le gué, au ralenti ; la braise fait face à l'arrivée, le coffre
+ * est derrière les ruines ; et toutes les traversées suivantes sont libres.
+ * L'île est le seul endroit de la carte qui permette cette leçon.
+ */
+export const RUINS_CHEST = define({
+  id: 'ruins-chest',
+  landmark: RUINS,
+  local: [0, -4.3],
+  // De biais, comme les autres. Le joueur contourne les ruines pour arriver,
+  // il n'aborde donc pas le coffre de face.
+  yaw: 2.8,
+  item: 'fishman-scales',
+  interactRadius: 2.6,
+})
+
+export const CHESTS: readonly Chest[] = [
+  TEMPLE_CHEST,
+  NAKANO_CHEST,
+  STELE_CHEST,
+  RUINS_CHEST,
+]
 
 /** Retrouve un coffre par son identifiant. */
 export function chestById(id: ChestId): Chest | undefined {

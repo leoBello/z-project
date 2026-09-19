@@ -114,7 +114,8 @@
     },
     "chest": {
       "action": "Open the chest",
-      "kicker": "Treasure"
+      "kicker": "Treasure",
+      "equip": "Equip now"
     },
     "inventory": {
       "open": "Open the inventory",
@@ -139,6 +140,18 @@
         "meta": "Found in the chest at Nakano Temple",
         "description": "A long, barely curved blade on a two-handed grip bound in midnight blue, its only guard a disc of bronze. They say it was drawn from the islet itself, and no one explains why the temple that kept it never had a priest.",
         "effect": "sword damage doubled"
+      },
+      "cursed-blade": {
+        "name": "Kitetsu Blade",
+        "meta": "Found in the Great Stele's chest",
+        "description": "A short, broad blade, chipped in three places, with an edge that reflects nothing. The smith who signed his work this way died rich and alone: his blades cut through anything, and none who carried one grew old. This one weighs more than its size lets on.",
+        "effect": "sword damage tripled, but damage taken doubled"
+      },
+      "fishman-scales": {
+        "name": "Fishman Scales",
+        "meta": "Found in the Island Ruins chest",
+        "description": "A handful of pearlescent scales, each as wide as a palm, still supple and warm to the touch. Tied at the belt, the water stops holding you back — dry land, on the other hand, never promised you anything.",
+        "effect": "full speed through open water, but 15% slower on land"
       }
     },
     "language": {

@@ -8,6 +8,7 @@ import { Enemies } from './components/Enemies'
 import { Environment } from './components/Environment'
 import { GameClock } from './components/GameClock'
 import { HUD } from './components/HUD'
+import { KeyboardGuard } from './components/KeyboardGuard'
 import { LanguageToggle } from './components/LanguageToggle'
 import { Minimap } from './components/Minimap'
 import { PhysicsGate } from './components/PhysicsGate'
@@ -45,6 +46,10 @@ export default function App() {
 
   return (
     <KeyboardControls map={controlMap}>
+      {/* Sous `KeyboardControls` et avant tout le reste : il ne rend rien, il
+          remet les touches à plat quand la fenêtre perd le focus. Sans lui,
+          une commande restée enfoncée avale l'appui suivant. */}
+      <KeyboardGuard />
       <Canvas
         // "percentage" = PCFShadowMap ; PCFSoft est déprécié depuis three 0.185.
         shadows="percentage"

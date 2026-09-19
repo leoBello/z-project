@@ -232,6 +232,76 @@ function LootShape({ id, accent }: { id: ItemId; accent: string }) {
     )
   }
 
+  if (id === 'cursed-blade') {
+    return (
+      <>
+        {/* Dressée comme le katana — c'est la pose des armes longues dans le
+            faisceau — mais deux fois plus courte et large, et sans pointe : à
+            cette taille, ce sont les proportions qui distinguent les deux
+            lames, pas le détail. */}
+        <mesh castShadow position={[0, 0.12, 0]}>
+          <boxGeometry args={[0.075, 0.42, 0.028]} />
+          <meshToonMaterial
+            gradientMap={toonGradient}
+            color="#2e2630"
+            emissive={accent}
+            emissiveIntensity={0.5}
+          />
+        </mesh>
+        {/* Le fil, sur la tranche : la seule chose qui brille sur cette arme,
+            et la seule qui la sauve de se lire comme une barre de fer. */}
+        <mesh position={[0.042, 0.12, 0]}>
+          <boxGeometry args={[0.014, 0.42, 0.03]} />
+          <meshToonMaterial
+            gradientMap={toonGradient}
+            color={accent}
+            emissive={accent}
+            emissiveIntensity={1.2}
+          />
+        </mesh>
+        {/* Garde droite, pas un disque. */}
+        <mesh position={[0, -0.12, 0]}>
+          <boxGeometry args={[0.2, 0.035, 0.06]} />
+          <meshToonMaterial gradientMap={toonGradient} color="#3b3340" />
+        </mesh>
+        <mesh castShadow position={[0, -0.25, 0]}>
+          <boxGeometry args={[0.05, 0.2, 0.05]} />
+          <meshToonMaterial gradientMap={toonGradient} color="#4a3325" />
+        </mesh>
+      </>
+    )
+  }
+
+  if (id === 'fishman-scales') {
+    return (
+      <>
+        {/* Trois écailles en éventail, pas une seule plus grande : c'est le
+            recouvrement qui fait lire « peau » plutôt que « caillou », et il
+            faut au moins trois pièces pour qu'il se voie. */}
+        {[
+          [-0.16, -0.04, 0.35],
+          [0, 0.06, 0],
+          [0.16, -0.04, -0.35],
+        ].map(([x, y, tilt]) => (
+          <mesh key={x} castShadow position={[x, y, 0]} rotation={[0.2, 0, tilt]}>
+            <sphereGeometry args={[0.15, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshToonMaterial
+              gradientMap={toonGradient}
+              color="#dff4f8"
+              emissive={accent}
+              emissiveIntensity={0.55}
+            />
+          </mesh>
+        ))}
+        {/* La lanière, derrière : sans elle, trois coquilles flottent. */}
+        <mesh position={[0, 0.12, -0.04]} rotation={[0, 0, 0.12]}>
+          <boxGeometry args={[0.42, 0.03, 0.03]} />
+          <meshToonMaterial gradientMap={toonGradient} color="#6b533c" />
+        </mesh>
+      </>
+    )
+  }
+
   return (
     <>
       <mesh castShadow>

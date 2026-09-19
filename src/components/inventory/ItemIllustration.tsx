@@ -241,9 +241,238 @@ function KusanagiKatana() {
   )
 }
 
+/** Teintes partagées avec la lame 3D. Voir `CursedBlade` dans `HeroPlaceholder`. */
+const KITETSU = {
+  steel: '#2e2630',
+  steelShade: '#1d1823',
+  edge: '#b03a3a',
+  edgeGlow: '#e0645c',
+  guard: '#3b3340',
+  grip: '#4a3325',
+  cord: '#241a20',
+  notch: '#17121d',
+} as const
+
+/**
+ * Lame de Kitetsu.
+ *
+ * Elle reprend la **diagonale** du katana, et c'est délibéré : c'est le seul
+ * cadrage qui donne sa longueur à une arme dans un rectangle debout, et les deux
+ * cartes doivent pouvoir se comparer. Tout le reste s'en écarte, parce que les
+ * deux armes occupent le même emplacement et s'excluent — le joueur choisit
+ * entre elles, il faut donc qu'une image suffise à les distinguer.
+ *
+ * La lame s'arrête aux deux tiers du cadre là où le katana le traverse d'un coin
+ * à l'autre. Elle est deux fois plus large, presque noire au lieu du blanc
+ * bleuté, coupée droit à la pointe au lieu du biseau, et sa garde est une barre
+ * et non un disque. Reste le fil, en rouge sourd : la seule chose qui accroche
+ * la lumière sur toute l'arme, et la seule qui dise qu'elle n'est pas simplement
+ * abîmée.
+ *
+ * Le halo est du même rouge, et non doré : l'or est la couleur du trésor dans
+ * tout le jeu, et cette lame n'est pas un butin — c'est un marché.
+ */
+function KitetsuBlade() {
+  // Trois ébréchures sur le dos, à des hauteurs inégales : régulières, elles
+  // auraient fait une scie, donc un outil.
+  const notches: ReadonlyArray<[number, number, number]> = [
+    [127.6, 166, -18],
+    [151.6, 142, 8],
+    [173.7, 119.9, -6],
+  ]
+
+  return (
+    <svg viewBox="0 0 320 300" role="img" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="kitetsu-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#1b1016" />
+          <stop offset="100%" stopColor="#4d2f36" />
+        </linearGradient>
+        <radialGradient id="kitetsu-halo" cx="0.5" cy="0.5" r="0.6">
+          <stop offset="0%" stopColor={KITETSU.edgeGlow} stopOpacity="0.34" />
+          <stop offset="100%" stopColor={KITETSU.edgeGlow} stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <rect width="320" height="300" fill="url(#kitetsu-sky)" />
+      <circle cx="160" cy="150" r="150" fill="url(#kitetsu-halo)" />
+
+      {/* Deux traits d'ombre seulement, et épais, là où le katana en porte trois
+          fins : celui-ci ne file pas, il tombe. */}
+      {[0, 1].map((i) => (
+        <path
+          key={i}
+          d={`M${64 + i * 22} ${244 - i * 14} L${218 + i * 22} ${90 - i * 14}`}
+          stroke={KITETSU.edge}
+          strokeWidth="4"
+          strokeLinecap="round"
+          opacity={0.16 - i * 0.06}
+        />
+      ))}
+
+      {/* Poignée courte, à une main : elle tient dans le coin, sans la longue
+          remontée à deux mains du katana. */}
+      <path d="M50 262 L82 230 L96 244 L64 276 Z" fill={KITETSU.grip} />
+      {[0, 1, 2].map((i) => (
+        <path
+          key={`wrap-${i}`}
+          d={`M${56 + i * 11} ${270 - i * 11} l12 -12 l5 5 l-12 12 z`}
+          fill={KITETSU.cord}
+        />
+      ))}
+
+      {/* Garde : une barre droite en travers, l'écart le plus lisible avec le
+          disque du katana. */}
+      <path d="M82 194 L118 230 L110 238 L74 202 Z" fill={KITETSU.guard} />
+
+      {/* Lame, large et courte. Le dos est plus sombre encore que le corps :
+          c'est ce dégradé, et non un contour, qui lui donne son épaisseur. */}
+      <path d="M98.8 194.8 L194.8 98.8 L213.2 117.2 L117.2 213.2 Z" fill={KITETSU.steel} />
+      <path d="M98.8 194.8 L194.8 98.8 L201 105 L105 201 Z" fill={KITETSU.steelShade} />
+
+      {/* Pointe coupée droit : la lame est brisée net, elle n'est pas effilée. */}
+      <path d="M194.8 98.8 L206 87.6 L224.4 106 L213.2 117.2 Z" fill={KITETSU.steel} />
+
+      {/* Le fil, plaqué sur la tranche. Volontairement fin : c'est le contraste
+          qui le fait exister, et l'élargir aurait fait une arme de lave. */}
+      <path d="M117.2 213.2 L213.2 117.2 L218.4 122.4 L122.4 218.4 Z" fill={KITETSU.edge} />
+      <path
+        d="M120 216 L216 120"
+        stroke={KITETSU.edgeGlow}
+        strokeWidth="2"
+        strokeLinecap="round"
+        opacity="0.8"
+      />
+
+      {/* Les ébréchures, en creux dans le dos. Peintes en presque noir plutôt
+          qu'à la couleur du fond : celui-ci est un dégradé, aucune teinte fixe
+          ne s'y confondrait sur toute la hauteur de la lame. */}
+      {notches.map(([x, y, angle]) => (
+        <path
+          key={`${x}-${y}`}
+          d={`M${x} ${y} l14 -14 l4 12 z`}
+          fill={KITETSU.notch}
+          transform={`rotate(${angle} ${x} ${y})`}
+        />
+      ))}
+    </svg>
+  )
+}
+
+/** Teintes de la nacre. Aucun équivalent 3D : l'objet ne se porte pas à vue. */
+const SCALES = {
+  body: '#dff4f8',
+  shade: '#9fd0de',
+  deep: '#5aa6bb',
+  ridge: '#ffffff',
+  cord: '#6b533c',
+  accent: '#7fd4e8',
+} as const
+
+/**
+ * Écailles de l'Homme-Poisson.
+ *
+ * Le seul objet du jeu qui **ne se voit pas sur le personnage** : une babiole
+ * nouée à la ceinture n'a pas de silhouette à montrer. La carte est donc le seul
+ * endroit où le joueur le regardera vraiment, et elle doit porter toute la
+ * lecture à elle seule.
+ *
+ * Six écailles en pyramide 3–2–1, largement débordantes les unes sur les autres.
+ * L'empilement compte autant que la forme : trois écailles posées côte à côte se
+ * lisent comme des pétales, donc comme une plante ; recouvertes, elles
+ * redeviennent une peau.
+ *
+ * La lumière vient d'en haut à gauche et s'arrête net au bord de chaque écaille,
+ * sans dégradé le long de la surface. C'est la convention de cel-shading du jeu,
+ * et c'est aussi ce qui fait lire la nacre : une matière qui renvoie par
+ * plaques, pas par reflets doux.
+ */
+function FishmanScales() {
+  /** Centres des six écailles, de la rangée du fond à celle de devant. */
+  const layout: ReadonlyArray<[number, number, number]> = [
+    [92, 84, 1],
+    [160, 76, 1.08],
+    [228, 84, 1],
+    [126, 132, 1.06],
+    [194, 132, 1.06],
+    [160, 186, 1.14],
+  ]
+
+  return (
+    <svg viewBox="0 0 320 300" role="img" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="scales-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#0f2733" />
+          <stop offset="100%" stopColor="#2f6577" />
+        </linearGradient>
+        <radialGradient id="scales-halo" cx="0.5" cy="0.42" r="0.58">
+          <stop offset="0%" stopColor={SCALES.accent} stopOpacity="0.4" />
+          <stop offset="100%" stopColor={SCALES.accent} stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <rect width="320" height="300" fill="url(#scales-sky)" />
+      <circle cx="160" cy="126" r="145" fill="url(#scales-halo)" />
+
+      {/* Trois rais de lumière obliques : ils disent « sous l'eau » sans qu'on
+          ait à dessiner une surface ni une ligne d'horizon, qui auraient l'une
+          comme l'autre imposé un point de vue au cadre. */}
+      {[0, 1, 2].map((i) => (
+        <path
+          key={i}
+          d={`M${-40 + i * 96} 0 L${30 + i * 96} 0 L${-60 + i * 96} 300 L${-120 + i * 96} 300 Z`}
+          fill={SCALES.accent}
+          opacity={0.07}
+        />
+      ))}
+
+      {/* La lanière qui les tient, passée derrière la rangée du fond : sans
+          elle, les écailles flottent, et « nouées à la ceinture » ne se lit plus
+          nulle part. */}
+      <path
+        d="M36 74 C110 42 210 42 284 74"
+        stroke={SCALES.cord}
+        strokeWidth="9"
+        fill="none"
+        strokeLinecap="round"
+      />
+
+      {layout.map(([x, y, scale]) => (
+        <g key={`${x}-${y}`} transform={`translate(${x} ${y}) scale(${scale})`}>
+          {/* Corps de l'écaille : arrondie en haut, pointe en bas. */}
+          <path
+            d="M-30 0 c0 -16 13 -25 30 -25 s30 9 30 25 c0 22 -15 40 -30 52 c-15 -12 -30 -30 -30 -52 z"
+            fill={SCALES.body}
+            stroke={SCALES.deep}
+            strokeWidth="2.5"
+          />
+          {/* Ombre portée sur le tiers droit, coupée net. */}
+          <path d="M6 -24 c14 2 24 10 24 24 c0 22 -15 40 -30 52 l0 -76 z" fill={SCALES.shade} />
+          {/* Nervure centrale, du sommet à la pointe. */}
+          <path
+            d="M0 -18 L0 22"
+            stroke={SCALES.deep}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            opacity="0.55"
+          />
+          {/* L'éclat, en haut à gauche : deux plaques et rien entre les deux. */}
+          <path d="M-20 -10 c2 -8 9 -12 16 -13 l-3 9 c-6 1 -10 4 -13 8 z" fill={SCALES.ridge} />
+        </g>
+      ))}
+
+      {/* Fond de sable : la même crête que sous la tenue, pour que l'objet soit
+          posé quelque part et non suspendu au milieu du cadre. */}
+      <path d="M0 268 L92 252 L160 262 L244 248 L320 266 L320 300 L0 300 Z" fill="#12313d" />
+    </svg>
+  )
+}
+
 const ILLUSTRATIONS: Record<ItemId, () => React.JSX.Element> = {
   'zoro-garb': ZoroGarb,
   kusanagi: KusanagiKatana,
+  'cursed-blade': KitetsuBlade,
+  'fishman-scales': FishmanScales,
 }
 
 export function ItemIllustration({ id }: { id: ItemId }) {

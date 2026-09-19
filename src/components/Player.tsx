@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useKeyboardControls } from '@react-three/drei'
 import {
@@ -13,7 +13,7 @@ import { playFootstep, playJump, playSwing } from '../audio/sfx'
 import type { Control } from '../config/controls'
 import { isTouchDevice } from '../config/device'
 import { ATTACK, PLAYER } from '../config/gameplay'
-import { outfitOf, skinTraits } from '../config/items'
+import { outfitOf, traitsOf } from '../config/items'
 import { WORLD } from '../config/world'
 import { enemyRegistry } from '../state/enemyRegistry'
 import { isHitStopped, now as gameNow } from '../state/gameClock'
@@ -126,11 +126,13 @@ export function Player() {
 
   const [subscribeKeys, getKeys] = useKeyboardControls<Control>()
 
-  // Aptitudes du skin porté : vitesse au sol et détente. Le sélecteur renvoie
-  // l'entrée de la table, donc **la même référence** tant que le skin ne change
-  // pas — un objet construit à la volée ici re-rendrait le contrôleur à chaque
-  // notification du store, quelle que soit la valeur.
-  const traits = useGameStore((state) => skinTraits(outfitOf(state.equipped)))
+  // Aptitudes de l'équipement porté : vitesse au sol, détente, et aisance en
+  // mer. On s'abonne à `equipped` — dont la référence ne change qu'à un vrai
+  // changement d'équipement — puis on mémoïse. Appeler `traitsOf` dans le
+  // sélecteur aurait re-rendu le contrôleur à **chaque** notification du store,
+  // la fonction construisant un objet neuf à chaque appel.
+  const equipped = useGameStore((state) => state.equipped)
+  const traits = useMemo(() => traitsOf(equipped, outfitOf(equipped)), [equipped])
   const { world, rapier } = useRapier()
   const camera = useThree((state) => state.camera)
 
@@ -264,7 +266,12 @@ export function Player() {
     const feetHeight = position.y + FEET_OFFSET
     const wading = feetHeight < WORLD.waterLevel
     const topSpeed = PLAYER.speed * traits.speed
-    const speed = (wading ? topSpeed * PLAYER.waterSpeedFactor : topSpeed) * speedScale
+    // Borné à 1 : on ne nage jamais plus vite qu'on ne court. La borne est ici
+    // et non dans la table des objets pour que celle-ci n'ait pas à connaître
+    // le réglage qu'elle corrige — et pour qu'un second objet aquatique ne
+    // puisse pas, en se cumulant, faire de la mer un raccourci.
+    const waterFactor = Math.min(1, PLAYER.waterSpeedFactor * traits.water)
+    const speed = (wading ? topSpeed * waterFactor : topSpeed) * speedScale
 
     // --- 3. Application de la vélocité --------------------------------------
     // On pilote directement la vélocité linéaire plutôt que d'appliquer des

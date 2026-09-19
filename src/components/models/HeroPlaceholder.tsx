@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Outlines } from '@react-three/drei'
 import { DoubleSide, Group, MathUtils } from 'three'
-import { skinTraits, type OutfitId, type WeaponId } from '../../config/items'
+import type { OutfitId, WeaponId } from '../../config/items'
 import { ATTACK, PLAYER } from '../../config/gameplay'
 import { isHitStopped, now as gameNow } from '../../state/gameClock'
 import { playerTransform } from '../../state/playerTransform'
@@ -183,9 +183,25 @@ const SWING_TORSO = [
 interface HeroProps {
   outfit?: OutfitId
   weapon?: WeaponId
+  /**
+   * Vitesse de pointe du personnage, en unités par seconde.
+   *
+   * Passée en prop et non recalculée ici : elle ne dépend plus du seul skin
+   * depuis qu'une babiole peut la modifier, et ce composant ne reçoit pas
+   * l'équipement complet qu'il faudrait pour la déduire. C'est `HeroModel`, qui
+   * lit déjà le store, qui la calcule.
+   *
+   * Le défaut correspond au skin de départ, pour que le rig reste montable seul
+   * — dans un banc d'essai ou une page de test, il n'y a pas de store.
+   */
+  topSpeed?: number
 }
 
-export function HeroPlaceholder({ outfit = 'luffy', weapon = 'fists' }: HeroProps) {
+export function HeroPlaceholder({
+  outfit = 'luffy',
+  weapon = 'fists',
+  topSpeed = PLAYER.speed,
+}: HeroProps) {
   const torso = useRef<Group>(null)
   const head = useRef<Group>(null)
   const headwear = useRef<Group>(null)
@@ -205,9 +221,6 @@ export function HeroPlaceholder({ outfit = 'luffy', weapon = 'fists' }: HeroProp
   const barehanded = weapon === 'fists'
   /** Inclinaison au repos de la pièce de tête. Chapeau posé plat, cheveux non. */
   const headwearRest = isZoro ? -0.1 : -0.05
-  /** Vitesse de pointe du skin : référence de l'intensité du cycle de marche. */
-  const topSpeed = PLAYER.speed * skinTraits(outfit).speed
-
   useFrame((state, rawDelta) => {
     if (!torso.current || !legL.current || !legR.current) return
     if (!armL.current || !armR.current || !head.current || !headwear.current) return
@@ -314,6 +327,7 @@ export function HeroPlaceholder({ outfit = 'luffy', weapon = 'fists' }: HeroProp
         </group>
         <group ref={armR} position={[-0.24, SHOULDER_Y - HIP_Y, 0]}>
           <Arm palette={palette} zoro={isZoro} fist={barehanded} side={-1} />
+          {weapon === 'cursed' && <CursedBlade palette={palette} />}
           {weapon === 'katana' && <Katana palette={palette} />}
           {weapon === 'sword' && <Sword palette={palette} />}
         </group>
@@ -894,6 +908,99 @@ function Katana({ palette }: { palette: Palette }) {
       <mesh castShadow position={[0, 1.36, -0.073]} rotation={[0.11, 0, Math.PI]}>
         <coneGeometry args={[0.037, 0.13, 4]} />
         <meshToonMaterial color={palette.blade} gradientMap={toonGradient} />
+      </mesh>
+    </group>
+  )
+}
+
+/** Acier de la lame maudite : sombre et mat, il ne renvoie rien. */
+const CURSED_STEEL = '#2e2630'
+/** Le fil, et lui seul. C'est la seule chose qui brille sur cette arme. */
+const CURSED_EDGE = '#b03a3a'
+
+/**
+ * Lame maudite.
+ *
+ * Elle doit se distinguer du katana **en une image**, parce que les deux se
+ * portent au même emplacement et s'excluent : le joueur qui ouvre son
+ * inventaire doit savoir laquelle il a au poing sans lire l'étiquette. Trois
+ * écarts s'en chargent, et ils vont tous dans le même sens — celui d'une arme
+ * plus courte et plus brutale :
+ *
+ *  - **la longueur.** 0,62 contre 1,06 pour le katana, poignée comprise. C'est
+ *    une lame qu'on tient à une main, et la silhouette le dit de loin ;
+ *  - **la teinte.** Un acier presque noir au lieu du blanc bleuté, avec le
+ *    seul fil en rouge sourd. Une lame claire à ébréchures se serait lue comme
+ *    un katana abîmé, pas comme une autre arme ;
+ *  - **les ébréchures.** Trois encoches taillées dans le dos, à des hauteurs
+ *    inégales : régulières, elles auraient fait une scie, donc un outil.
+ *
+ * Pas de tsuba : la garde est une simple barre droite. Le disque est la
+ * signature du katana, et la lui reprendre aurait annulé les trois écarts
+ * ci-dessus.
+ */
+function CursedBlade({ palette }: { palette: Palette }) {
+  return (
+    <group position={[-0.02, -0.28, 0.02]} rotation={[0.2, 0, -0.08]}>
+      {/* Poignée courte, à une main, ligaturée serré. */}
+      <mesh castShadow position={[0, 0.09, 0]}>
+        <boxGeometry args={[0.052, 0.19, 0.052]} />
+        <meshToonMaterial color={palette.grip} gradientMap={toonGradient} />
+      </mesh>
+      {[0.03, 0.09, 0.15].map((y) => (
+        <mesh key={y} castShadow position={[0, y, 0]}>
+          <boxGeometry args={[0.064, 0.025, 0.064]} />
+          <meshToonMaterial color={CURSED_STEEL} gradientMap={toonGradient} />
+        </mesh>
+      ))}
+
+      {/* Garde : une barre droite, pas un disque. */}
+      <mesh castShadow position={[0, 0.2, 0]}>
+        <boxGeometry args={[0.2, 0.035, 0.07]} />
+        <meshToonMaterial color={CURSED_STEEL} gradientMap={toonGradient} />
+      </mesh>
+
+      {/* Lame, large et courte. Même discipline que le katana : le contour
+          n'est posé que sur le tronçon principal, sinon deux contours se
+          croisent au raccord et tracent une arête noire en travers. */}
+      <mesh castShadow position={[0, 0.46, -0.01]} rotation={[0.03, 0, 0]}>
+        <boxGeometry args={[0.078, 0.5, 0.03]} />
+        <meshToonMaterial
+          color={CURSED_STEEL}
+          gradientMap={toonGradient}
+          emissive={CURSED_EDGE}
+          emissiveIntensity={0.18}
+        />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      {/* Le fil, plaqué sur la tranche : une fine lamelle rouge, la seule chose
+          qui accroche la lumière sur toute l'arme. */}
+      <mesh position={[0.04, 0.46, -0.01]}>
+        <boxGeometry args={[0.012, 0.5, 0.032]} />
+        <meshToonMaterial
+          color={CURSED_EDGE}
+          gradientMap={toonGradient}
+          emissive={CURSED_EDGE}
+          emissiveIntensity={0.7}
+        />
+      </mesh>
+
+      {/* Trois ébréchures, taillées dans le dos à hauteurs inégales. Ce sont
+          des creux de la couleur du décor derrière : à cette échelle, un vrai
+          trou dans la géométrie aurait coûté une découpe pour un pixel. */}
+      {[0.3, 0.47, 0.63].map((y, index) => (
+        <mesh key={y} position={[-0.038, y, -0.01]} rotation={[0, 0, 0.5 - index * 0.2]}>
+          <boxGeometry args={[0.026, 0.038, 0.034]} />
+          <meshToonMaterial color={palette.outline} gradientMap={toonGradient} />
+        </mesh>
+      ))}
+
+      {/* Pointe coupée droit, presque carrée : la lame est brisée net, pas
+          effilée. */}
+      <mesh castShadow position={[0, 0.73, -0.008]}>
+        <boxGeometry args={[0.07, 0.06, 0.03]} />
+        <meshToonMaterial color={CURSED_STEEL} gradientMap={toonGradient} />
       </mesh>
     </group>
   )
