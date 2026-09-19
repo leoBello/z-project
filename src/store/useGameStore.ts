@@ -216,6 +216,20 @@ export interface GameState {
    * une seconde source de vérité à côté de la table des objets.
    */
   swordDamage: () => number
+  /**
+   * Dégâts réellement subis pour une agression de `amount`, équipement compris.
+   *
+   * Miroir exact de `swordDamage()`, et pour les mêmes raisons : une fonction
+   * et non un champ, parce qu'un champ tenu à jour à chaque équipement serait
+   * une seconde source de vérité à côté de la table des objets ; arrondie,
+   * parce que les cœurs sont des entiers.
+   *
+   * Le plancher à 1 n'est pas de la prudence gratuite : le jour où une babiole
+   * défensive divisera les dégâts par deux, elle doit rendre les coups moins
+   * chers, pas gratuits. Sans lui, le premier multiplicateur sous 0,5 rendrait
+   * le joueur immortel.
+   */
+  damageTaken: (amount: number) => number
   /** Ouvre l'inventaire et met la partie en pause. */
   openInventory: () => void
   /** Referme l'inventaire, et la carte d'objet avec lui. */
@@ -250,6 +264,11 @@ export interface GameState {
   /**
    * Referme la carte du coffre : l'objet entre à l'inventaire et la main est
    * rendue au jeu. Le coffre, lui, reste ouvert — il l'est depuis `openChest`.
+   *
+   * `equip` porte la trouvaille dans la foulée, pour le bouton de la carte de
+   * révélation. C'est un paramètre et non une action séparée parce que les deux
+   * gestes sont indissociables : l'objet n'existe dans le sac qu'à partir de
+   * cette fermeture, et `equipItem` refuse ce qu'on ne possède pas.
    */
   finishChest: (equip?: boolean) => void
   /**
@@ -264,11 +283,6 @@ export interface GameState {
    * de voir la dispersion inverse des braises et la destination avant que la
    * modale n'apparaisse (voir `TeleportOverlay`).
    */
-   *
-   * `equip` porte la trouvaille dans la foulée, pour le bouton de la carte de
-   * révélation. C'est un paramètre et non une action séparée parce que les deux
-   * gestes sont indissociables : l'objet n'existe dans le sac qu'à partir de
-   * cette fermeture, et `equipItem` refuse ce qu'on ne possède pas.
   resolveTeleport: () => void
   /** Efface l'état de téléportation, en fin d'animation. */
   finishTeleport: () => void
@@ -340,10 +354,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   runId: 0,
 
   damagePlayer: (amount = 1) => {
-    const { phase, hearts, isInvulnerable } = get()
+    const { phase, hearts, isInvulnerable, damageTaken } = get()
     if (phase !== 'playing' || isInvulnerable()) return
 
-    const next = Math.max(0, hearts - amount)
+    // L'appelant dit ce qu'il inflige, l'équipement dit ce que ça coûte. Les
+    // ennemis n'ont donc pas à connaître la table des objets.
+    const next = Math.max(0, hearts - damageTaken(amount))
     playDamage()
     set({
       hearts: next,
@@ -365,6 +381,17 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Arrondi parce que rien n'interdira un multiplicateur fractionnaire un
     // jour, et que les points de vie des ennemis, eux, sont des entiers.
     return Math.round(SWORD_DAMAGE * (weapon?.attackMultiplier ?? 1))
+  },
+
+  damageTaken: (amount) => {
+    const worn = Object.values(get().equipped)
+    // Produit sur tout l'équipement et non lecture d'un seul emplacement : rien
+    // n'interdit qu'une tenue et une arme se paient toutes les deux.
+    let multiplier = 1
+    for (const id of worn) {
+      multiplier *= itemById(id)?.damageMultiplier ?? 1
+    }
+    return Math.max(1, Math.round(amount * multiplier))
   },
 
   healPlayer: (amount = 1) => {
@@ -547,6 +574,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       // qui restait au moment où la tenue a été retirée.
       bonusCarry: item ? { ...state.bonusCarry, [item.id]: item.bonusHearts } : state.bonusCarry,
     })
+
+    // Après le `set`, jamais avant : `equipItem` relit le store et refuse un
+    // objet absent de `items`. Il n'y entre qu'à la ligne du dessus.
+    if (equip && item) get().equipItem(item.id)
   },
 
   /**
@@ -574,10 +605,6 @@ export const useGameStore = create<GameState>((set, get) => ({
    */
   resolveTeleport: () => {
     /*
-
-    // Après le `set`, jamais avant : `equipItem` relit le store et refuse un
-    // objet absent de `items`. Il n'y entre qu'à la ligne du dessus.
-    if (equip && item) get().equipItem(item.id)
       Compté ici *en plus* de `openLandmark` : la téléportation est le second
       chemin vers un monument, et l'omettre attribuerait toute la fréquentation
       à la marche. Le champ `via` garde les deux distinguables — c'est aussi la

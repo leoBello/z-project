@@ -140,6 +140,18 @@
         "meta": "Trouvé dans le coffre du Temple de Nakano",
         "description": "Une lame longue et à peine courbe, montée sur une poignée de deux mains ligaturée de bleu nuit, avec pour seule garde un disque de bronze. On la dit tirée de l'îlot lui-même, et personne n'explique pourquoi le temple qui la gardait n'a jamais eu de prêtre.",
         "effect": "dégâts d'épée multipliés par deux"
+      },
+      "cursed-blade": {
+        "name": "Lame de Kitetsu",
+        "meta": "Trouvée dans le coffre de la Grande Stèle",
+        "description": "Une lame courte et large, ébréchée en trois endroits, dont le fil ne reflète rien. Le forgeron qui signait ainsi mourut riche et seul : ses lames tranchaient tout, et aucun de ceux qui les ont portées n'a vieilli. Celle-ci pèse plus lourd que sa taille ne le laisse croire.",
+        "effect": "dégâts d'épée multipliés par trois, mais dégâts reçus doublés"
+      },
+      "fishman-scales": {
+        "name": "Écailles de l'Homme-Poisson",
+        "meta": "Trouvées dans le coffre des Ruines de l'Île",
+        "description": "Une poignée d'écailles nacrées, larges comme la paume, encore souples et tièdes au toucher. Nouées à la ceinture, l'eau cesse de vous retenir — mais la terre ferme, elle, ne vous a jamais rien promis.",
+        "effect": "la mer se traverse à pleine vitesse, mais la course au sol perd 15 %"
       }
     },
     "language": {

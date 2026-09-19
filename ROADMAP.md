@@ -127,9 +127,24 @@ et découpage du bundle.
   longue en main droite. L'effet est volontairement brutal — les PV des ennemis
   sont des entiers de 2 et 3, donc l'octorok tombe en un coup au lieu de deux et
   le moblin en deux au lieu de trois. Un bonus plus fin n'aurait rien changé
+- **Lame de Kitetsu** (coffre de la Grande Stèle) : dégâts d'épée ×3 mais
+  **dégâts reçus ×2**. Le premier palier qui change quelque chose que Kusanagi
+  ne change pas déjà — à ×3 les deux espèces tombent d'un coup. Le prix se lit à
+  la seconde où il se paie : cinq cœurs ne laissent plus que deux fautes
+- **Écailles de l'Homme-Poisson** (coffre des Ruines de l'Île) : la mer se
+  traverse à pleine vitesse, la course au sol perd 15 %. **La première babiole
+  du jeu** — la famille `trinket` existait depuis le début sans objet pour
+  l'occuper, et c'est elle qui fait exister le système à trois emplacements : la
+  lame et les écailles se portent ensemble. C'est aussi le seul objet qui change
+  la *carte* et non les échanges de coups, et il est **de l'autre côté de la
+  mer** : la première traversée se fait au ralenti, les suivantes sont libres
+- **Les effets d'un objet se composent** (`traitsOf`) : le skin dit ce qu'est le
+  corps, chaque objet porté multiplie par-dessus. Un effet ajouté à `Item` doit
+  aussi entrer dans `hasEffect`, sans quoi la carte de l'objet s'affiche muette
 - Les dégâts sont lus **au moment du coup** (`swordDamage()` dans le store) et
   non mémorisés : l'inventaire met la partie en pause, l'arme peut donc changer
-  entre deux frappes sans que l'ennemi en soit averti
+  entre deux frappes sans que l'ennemi en soit averti. Les dégâts **reçus**
+  suivent la même règle et la même forme (`damageTaken()`)
 - Le renvoi de projectile reste à 1 dégât : c'est une parade, pas une frappe
 - Réserve de cœurs jaunes mémorisée par objet (`bonusCarry`) : retirer puis
   remettre une tenue ne soigne pas gratuitement
@@ -307,6 +322,18 @@ et découpage du bundle.
 tout appui plus court qu'une frame tombait entre deux sondages. Passés en
 événementiel.
 
+**Appuis clavier perdus, deuxième fois — la touche restée enfoncée.**
+`KeyboardControls` de drei n'écoute que `keydown` et `keyup` sur la fenêtre. Un
+Alt+Tab, un changement d'onglet ou un clic dans une autre application, touche
+encore enfoncée, emporte le `keyup` : la commande reste *enfoncée* dans l'état
+interne de drei, définitivement. Le personnage se remettait à marcher tout seul
+au retour, et surtout **l'appui suivant sur cette touche ne faisait rien** — un
+abonné réagit à la transition relâché → enfoncé, et une touche déjà enfoncée ne
+transitionne pas. D'où le « parfois F n'ouvre pas le coffre », sans rien à
+l'écran pour l'expliquer. Corrigé par `<KeyboardGuard />`, qui renvoie un
+`keyup` de synthèse sur chaque touche déclarée à la perte de focus. Même famille
+que ci-dessus : l'événement d'entrée qu'on n'a pas vu passer ne se rattrape pas.
+
 **Vitesse dépendante du framerate.** Rapier *moyenne* les coefficients de
 friction des deux corps en contact : joueur à 0 sur sol à 1 donnait 0,5. Le sol
 freinait le joueur pendant les sous-pas physiques enchaînés entre deux frames,
@@ -322,18 +349,6 @@ seuils extrêmes n'étaient jamais atteints. Corrigé en étalant la valeur.
 **Coups d'épée qui ne portent pas.** La hitbox testait « sommes-nous à
 l'intérieur de la fenêtre de dégâts ? », soit un intervalle de 135 ms
 échantillonné dans une boucle à cadence variable : sur une machine lente, une
-**Appuis clavier perdus, deuxième fois — la touche restée enfoncée.**
-`KeyboardControls` de drei n'écoute que `keydown` et `keyup` sur la fenêtre. Un
-Alt+Tab, un changement d'onglet ou un clic dans une autre application, touche
-encore enfoncée, emporte le `keyup` : la commande reste *enfoncée* dans l'état
-interne de drei, définitivement. Le personnage se remettait à marcher tout seul
-au retour, et surtout **l'appui suivant sur cette touche ne faisait rien** — un
-abonné réagit à la transition relâché → enfoncé, et une touche déjà enfoncée ne
-transitionne pas. D'où le « parfois F n'ouvre pas le coffre », sans rien à
-l'écran pour l'expliquer. Corrigé par `<KeyboardGuard />`, qui renvoie un
-`keyup` de synthèse sur chaque touche déclarée à la perte de focus. Même famille
-que ci-dessus : l'événement d'entrée qu'on n'a pas vu passer ne se rattrape pas.
-
 frame sur deux tombait à côté. Le coup est maintenant évalué **une seule fois
 par swing**, dès la première frame suivant l'ouverture de la fenêtre, et marqué
 consommé qu'il touche ou non. Exactement le même piège que le sondage clavier.

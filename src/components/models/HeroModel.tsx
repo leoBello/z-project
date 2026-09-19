@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { Mesh, type Group } from 'three'
-import { outfitOf, weaponOf } from '../../config/items'
+import { outfitOf, traitsOf, weaponOf } from '../../config/items'
+import { PLAYER } from '../../config/gameplay'
 import { useGameStore } from '../../store/useGameStore'
 import { HeroPlaceholder } from './HeroPlaceholder'
 import { SafeModel } from './SafeModel'
@@ -53,9 +54,20 @@ export function HeroModel() {
   // store, quelle que soit la valeur.
   const outfit = useGameStore((state) => outfitOf(state.equipped))
   const weapon = useGameStore((state) => weaponOf(state.equipped, outfitOf(state.equipped)))
+  // Un **nombre** et non l'objet d'aptitudes : `traitsOf` en construit un neuf à
+  // chaque appel, et un sélecteur qui le renverrait tel quel re-rendrait à
+  // chaque notification du store. Le rig n'a de toute façon besoin que de la
+  // vitesse, qui lui sert de référence pour l'intensité du cycle de marche —
+  // sans elle, les jambes battent la mesure d'un personnage qui ne court plus à
+  // cette allure dès qu'une babiole modifie sa vitesse.
+  const topSpeed = useGameStore(
+    (state) => PLAYER.speed * traitsOf(state.equipped, outfitOf(state.equipped)).speed,
+  )
 
   return (
-    <SafeModel fallback={<HeroPlaceholder outfit={outfit} weapon={weapon} />}>
+    <SafeModel
+      fallback={<HeroPlaceholder outfit={outfit} weapon={weapon} topSpeed={topSpeed} />}
+    >
       <HeroGltf />
     </SafeModel>
   )
