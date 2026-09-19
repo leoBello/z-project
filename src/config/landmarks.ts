@@ -1,4 +1,5 @@
 import type { LandmarkId } from '../types/game'
+import { PLAYER } from './gameplay'
 
 /**
  * Points d'intérêt : les lieux construits de la carte.
@@ -312,4 +313,28 @@ export const PORTFOLIO_LANDMARKS: readonly PortfolioLandmark[] = LANDMARKS.filte
 /** Retrouve un lieu par son identifiant. */
 export function landmarkById(id: LandmarkId): Landmark | undefined {
   return LANDMARKS.find((landmark) => landmark.id === id)
+}
+
+/**
+ * Où une téléportation dépose le joueur devant un monument, et dans quel sens.
+ *
+ * Deux séquences le demandent : le vol de braises de `TeleportOverlay`, et le
+ * voyage de retour depuis l'Île Céleste, qui dépose au monument et non au
+ * portail (voir `WorldTransition`). Les deux doivent poser le joueur au même
+ * endroit exactement — deux copies du calcul, et un jour l'une des deux
+ * l'enfonce dans le sol pendant que l'autre le fait flotter.
+ *
+ * On vise la **braise** et non le centre du monument : c'est elle qui porte
+ * l'ancre d'interaction, et arriver ailleurs demanderait de marcher jusqu'à
+ * elle. L'altitude reprend la relation de `Player.tsx` entre le sol et le
+ * centre de la capsule, et le cap regarde le monument — on arrive face à lui.
+ */
+export function landmarkArrival(landmark: Landmark) {
+  const { x, z } = landmark.interact
+  return {
+    x,
+    y: landmark.altitude + PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius,
+    z,
+    yaw: Math.atan2(landmark.x - x, landmark.z - z),
+  }
 }

@@ -127,6 +127,14 @@ et découpage du bundle.
   d'élévation — la caméra plonge de 17° pour un demi-champ de 24°, le bord haut
   de l'image est à 7°, et tout ce qui dépasse est hors cadre pour toujours. Sa
   brume est cuite dans ses couleurs, le brouillard du jeu saturant à 200
+- **Le menu de voyage rapide y ramène le continent avec lui.** Les monuments
+  n'existent que sur le continent : une entrée du menu choisie depuis l'île
+  déclenche donc le voile de voyage, et non le vol de braises, avec le lieu
+  visé porté par `transitLandmark`. On est déposé devant sa braise au lieu du
+  portail, et sa page s'ouvre au retrait du voile. Le vol de braises joue une
+  ligne de temps fermée, qui ne saurait pas attendre qu'un continent soit monté
+  et dessiné — sans ce détour, le joueur était posé aux coordonnées du monument
+  dans le vide de l'île, et le filet de chute le ramenait au point d'arrivée
 - Spec et plan : `docs/superpowers/specs/2026-09-19-ile-celeste-design.md`,
   maquette 3D conservée dans `docs/maquettes/`
 - En développement, `window.__skyIsland` expose le relief : en rendu logiciel le
