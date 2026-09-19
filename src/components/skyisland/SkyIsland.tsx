@@ -1,7 +1,9 @@
 import { SKY_PORTAL } from '../../config/portal'
 import { Portal } from '../environment/Portal'
+import { Flora } from './Flora'
 import { Ruins } from './Ruins'
 import { SkyTerrain } from './Terrain'
+import { SkyWater } from './Water'
 import { useSkyMaterials } from './palette'
 
 /**
@@ -27,6 +29,8 @@ export default function SkyIsland() {
     <>
       <SkyTerrain materials={materials} />
       <Ruins materials={materials} />
+      <SkyWater materials={materials} />
+      <Flora materials={materials} />
 
       {/* Le jumeau de celui de Nakano, au point d'arrivée. Le même composant :
           deux portails qui divergeraient au premier réglage de l'anneau
