@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { spawnFor } from '../config/portal'
+import { arrivalFor, arrivalYaw } from '../config/portal'
 import { playerBody } from '../state/playerBody'
 import { playerTransform } from '../state/playerTransform'
 import { useGameStore } from '../store/useGameStore'
@@ -104,23 +104,45 @@ function Transit({ to }: { to: MapId }) {
       }
       if (cancelled) return
 
-      const spawn = spawnFor(transit)
       arriveOnMap()
 
+      /*
+        On attend que la carte soit montée **avant** de poser le joueur, et
+        l'ordre est tout sauf indifférent.
+
+        Le joueur était posé juste après `arriveOnMap()`, donc avant que React
+        n'ait commité quoi que ce soit — et il se retrouvait au point de départ
+        du continent, au centre de la carte, alors qu'il venait d'arriver dans
+        le ciel. La raison tient au chargement différé : au tout premier rendu,
+        `lazy()` suspend le temps de résoudre sa promesse, même quand le module
+        est déjà en mémoire. React remonte alors le sous-arbre suspendu, le
+        `<RigidBody>` du joueur est recréé, et il reprend la position littérale
+        de sa prop — `PLAYER.spawn`. Notre `setTranslation` était écrasé.
+
+        Le retour vers le continent ne montrait rien, puisque rien n'y est
+        chargé en différé, donc rien n'y suspend : le défaut n'apparaissait que
+        dans un sens, ce qui est exactement ce qui le rendait difficile à lire.
+
+        Après le premier `afterPaint`, tout est monté et plus rien ne peut
+        déplacer le joueur à notre place.
+      */
+      await afterPaint()
+      if (cancelled) return
+
+      const spawn = arrivalFor(transit)
       playerBody.current?.setTranslation(spawn, true)
       playerBody.current?.setLinvel({ x: 0, y: 0, z: 0 }, true)
       // `Player.tsx` n'écrit `playerTransform` que dans son propre `useFrame`,
       // qui ne fait rien hors de la phase `playing`. Sans cette écriture
       // manuelle, `CameraRig` — qui n'a lui aucune garde de phase — suivrait
-      // l'ancienne position pendant tout le retrait du voile, et l'île se
+      // l'ancienne position pendant tout le retrait du voile, et la carte se
       // découvrirait de travers.
       playerTransform.position.set(spawn.x, spawn.y, spawn.z)
-      // Cap au nord, dans les deux sens : la caméra regarde le nord, le joueur
-      // doit donc arriver face à ce qu'elle montre.
-      playerTransform.yaw = Math.PI
+      // Dos au portail, dans les deux sens — voir `arrivalYaw`.
+      playerTransform.yaw = arrivalYaw(transit)
 
-      // La frame lourde — démontage du continent, montage de l'île — se joue
-      // ici, sous le voile encore opaque. On ne découvre qu'après.
+      // Une seconde image, pour que la caméra ait rattrapé le joueur avant
+      // qu'on ne découvre quoi que ce soit.
       await afterPaint()
       if (cancelled) return
 

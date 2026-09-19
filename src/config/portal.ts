@@ -116,3 +116,51 @@ export function spawnFor(map: MapId) {
   if (map === 'sky') return SKY_SPAWN
   return { x: PLAYER.spawn[0], y: PLAYER.spawn[1], z: PLAYER.spawn[2] }
 }
+
+/**
+ * Où le joueur ressort du portail de Nakano, en revenant de l'île.
+ *
+ * Trois unités **au-delà** du portail sur son axe, c'est-à-dire du côté d'où
+ * l'on arrive à pied : le joueur en sort dos à l'anneau, face au pont, comme
+ * quiconque vient de franchir une porte. Le poser sur l'anneau même l'aurait
+ * fait apparaître dans une géométrie qu'il traverse, et le poser derrière
+ * l'aurait envoyé contre la pagode.
+ */
+const RETURN_STEP = 3
+
+const CONTINENT_RETURN = (() => {
+  const x = PORTAL.x + RETURN_STEP * Math.sin(NAKANO.yaw)
+  const z = PORTAL.z + RETURN_STEP * Math.cos(NAKANO.yaw)
+  return {
+    x,
+    // Le sol réel, comme pour le portail lui-même : on est dans le raccord de
+    // la terrasse, où l'altitude du monument ne vaut plus.
+    y: sampleHeight(x, z) + PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius,
+    z,
+  }
+})()
+
+/**
+ * Où un **voyage** dépose, par opposition à `spawnFor`, qui dit où l'on
+ * **réapparaît** après une chute.
+ *
+ * Deux questions différentes, et les confondre était une erreur qui se voyait
+ * tout de suite : revenir de l'île renvoyait le joueur au point de départ de la
+ * partie, au centre du continent, à cent trente unités du portail qu'il venait
+ * de franchir. Une porte ramène là d'où l'on est parti ; c'est même à peu près
+ * la seule chose qu'on attende d'une porte.
+ */
+export function arrivalFor(map: MapId) {
+  return map === 'sky' ? SKY_SPAWN : CONTINENT_RETURN
+}
+
+/**
+ * Cap à l'arrivée, pour que le joueur sorte **dos au portail**.
+ *
+ * Sur l'île, l'anneau est au sud du point d'arrivée : on regarde donc le nord,
+ * c'est-à-dire l'île. À Nakano, l'anneau regarde le sud-ouest et l'on en sort de
+ * ce côté : on garde le cap du monument, et l'on fait face au pont.
+ */
+export function arrivalYaw(map: MapId) {
+  return map === 'sky' ? Math.PI : NAKANO.yaw
+}

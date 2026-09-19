@@ -1,4 +1,4 @@
-import { lazy, useMemo, useRef } from 'react'
+import { Suspense, lazy, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Object3D, type DirectionalLight } from 'three'
 import { playerTransform } from '../state/playerTransform'
@@ -101,8 +101,21 @@ function Lighting() {
  *
  * `lazy` et non un import direct : c'est ce qui fait de tout le sous-arbre de
  * l'île un fragment de bundle à part, que l'accueil du site ne télécharge
- * jamais. La frontière `<Suspense>` dont `lazy` a besoin est déjà posée dans
- * `App.tsx`, autour de toute la scène — il n'y en a pas de seconde à ajouter.
+ * jamais.
+ *
+ * **Elle a sa propre frontière `<Suspense>`, et c'est indispensable.** Celle
+ * d'`App.tsx` entoure toute la scène — joueur et physique compris. Y laisser
+ * l'île suspendre détachait donc le sous-arbre entier : `playerBody.current`
+ * repassait à `null`, la position que la transition venait d'écrire tombait
+ * dans le vide, et le `<RigidBody>` du joueur se recréait à la valeur littérale
+ * de sa prop, `PLAYER.spawn`. Le joueur arrivait au centre du continent alors
+ * qu'il venait d'entrer dans le ciel, tombait, et le filet de sécurité le
+ * ramenait au portail — d'où l'impression que « la position change puis
+ * revient ».
+ *
+ * Le défaut ne se voyait **que dans un sens** : le retour vers le continent ne
+ * charge rien en différé, donc rien n'y suspend. C'est ce qui le rendait
+ * difficile à lire.
  */
 const SkyIsland = lazy(() => import('./skyisland/SkyIsland'))
 
@@ -140,7 +153,9 @@ export function Environment() {
           <SkyIslandDistant />
         </>
       ) : (
-        <SkyIsland />
+        <Suspense fallback={null}>
+          <SkyIsland />
+        </Suspense>
       )}
     </>
   )
