@@ -18,12 +18,15 @@
 | 05 — caméra du jeu pour un boss | **Caméra d'arène rapprochée**, activée à l'entrée du combat. Task 4. |
 | Signal de fenêtre de parade | **Demandé en plus** : anneau au sol sous le joueur, dans le calque de combat. Task 1, Step 5. |
 
-## Questions encore ouvertes
+## Questions tranchées après le plan
 
-Elles ne bloquent aucune tâche avant celle qui les porte, et chacune a un défaut assumé dans le plan. À confirmer avant d'attaquer la tâche indiquée.
+| # | Question | Réponse |
+|---|---|---|
+| 02 | La parade marche-t-elle sur les Moblins ? | **Oui.** Intégré à la Task 1 (Step 8) : c'est aussi ce qui rend la parade apprenable sur le continent, bien avant l'île. |
+| 03 | Trois phases ou deux ? | **Trois.** La Task 6 n'est plus optionnelle. |
+| 04 | Que donne la victoire ? | **Un réceptacle de cœur** (Task 7). Une quatrième tenue viendra plus tard, dans un chantier à part. |
 
-| # | Question | Défaut retenu | Tâche concernée |
-|---|---|---|---|
+---|---|---|---|
 | 02 | La parade marche-t-elle sur les Moblins ? | **Non pour l'instant.** La touche et la mécanique sont générales ; seules les attaques qui appellent `offerParry()` sont parables, et seul le Lynel le fait. Étendre au Moblin sera une ligne dans `Enemy.tsx`. | Task 1 |
 | 03 | Trois phases ou deux ? | **Trois**, mais la phase III est la Task 6 et rien d'autre n'en dépend : la retirer, c'est ne pas faire la tâche. | Task 6 |
 | 04 | Que donne la victoire ? | **Un réceptacle de cœur**, qui réutilise `claimHeartContainer()` et `<HeartContainer>` tels quels. La quatrième tenue coûte un `ItemId`, une illustration d'inventaire (~400 lignes, cf. `ItemIllustration.tsx`) et deux entrées i18n. | Task 7 |
@@ -88,7 +91,7 @@ Elles ne bloquent aucune tâche avant celle qui les porte, et chacune a un défa
 
 ## Task 1 : la parade, côté joueur
 
-La mécanique complète, sans aucun ennemi qui la sollicite. À la fin de cette tâche, `__parry.offer(600)` dans la console allume l'anneau au sol sous le joueur pendant 600 ms, la touche lève une garde visible, et marteler la touche verrouille la parade. C'est autonome et c'est vérifiable sans le boss.
+La mécanique complète, et son premier client : le Moblin. À la fin de cette tâche, la parade se joue pour de vrai sur le continent — un Moblin annonce son coup, l'anneau s'allume, un appui juste annule les dégâts et le repousse. `__parry.offer()` reste disponible pour tester sans ennemi.
 
 **Files:**
 - Create: `src/config/parry.ts`
@@ -101,6 +104,8 @@ La mécanique complète, sans aucun ennemi qui la sollicite. À la fin de cette 
 - Modify: `src/components/CombatOverlay.tsx`
 - Modify: `src/components/models/HeroPlaceholder.tsx`
 - Modify: `src/audio/sfx.ts`
+- Modify: `src/config/enemies.ts`
+- Modify: `src/components/Enemy.tsx`
 - Modify: `src/i18n/fr.json`, `src/i18n/en.json`
 - Modify: `src/state/playerTransform.ts`
 
@@ -115,6 +120,7 @@ La mécanique complète, sans aucun ennemi qui la sollicite. À la fin de cette 
   - `pressParry(now: number): 'guard' | 'guarding' | 'locked'`
   - `consumeParry(now: number): boolean`
   - `resetParry(): void`
+  - `EnemyStats.parryable: boolean` — l'attaque de corps-à-corps de cette espèce se pare-t-elle ?
 
 ---
 
@@ -700,7 +706,107 @@ Modifier `src/index.css`. Dans la section des contrôles tactiles, à côté de 
 
 > Relever les valeurs exactes de `.touch-button` et `.touch-button--attack` dans le fichier et n'écrire ici que les écarts.
 
-- [ ] **Step 8 : les libellés**
+- [ ] **Step 8 : le Moblin, premier client**
+
+Modifier `src/config/enemies.ts`. Dans l'interface `EnemyStats`, après `ranged` :
+
+```ts
+  /**
+   * L'attaque de corps-à-corps se pare-t-elle ?
+   *
+   * Un drapeau par espèce et non une règle générale, parce que la parade n'a de
+   * sens que sur un coup *annoncé*. Le projectile de l'Octorok se renvoie déjà
+   * au coup d'épée — c'est un autre geste, qui existe depuis le début et n'a
+   * pas à changer.
+   */
+  parryable: boolean
+```
+
+Et dans `ENEMIES` : `parryable: false` pour `octorok`, `parryable: true` pour `moblin`.
+
+```ts
+    // Son télégraphe dure 420 ms, exactement `PARRY.cueLeadMs` : l'offre
+    // couvre donc toute la préparation, et le signal s'allume à la frame même
+    // où le Moblin se ramasse. Ce n'est pas une coïncidence qu'on subit, c'est
+    // la raison pour laquelle `cueLeadMs` vaut 420 — la parade s'apprend sur
+    // lui avant d'arriver sur l'île.
+    parryable: true,
+```
+
+Modifier `src/components/Enemy.tsx`, dans le bloc « Attaque : préparation, puis résolution » (lignes 525-557).
+
+À l'ouverture de la préparation :
+
+```ts
+    if (ready && !state.windupPending) {
+      state.windupPending = true
+      state.windupStartedAt = now
+      if (stats.parryable) offerParry(spawn.id, now + stats.telegraphMs)
+    }
+```
+
+À l'annulation — l'offre part avec le coup, sinon l'anneau reste allumé sous un joueur qui n'a plus rien à parer :
+
+```ts
+    if (state.windupPending && (frozen || state.state !== 'attack')) {
+      state.windupPending = false
+      cancelParry(spawn.id)
+    }
+```
+
+À la résolution, remplacer la branche de corps-à-corps :
+
+```ts
+      } else if (stats.parryable && consumeParry(now)) {
+        /*
+          Paré.
+
+          Aucun multiplicateur de dégâts ici, contrairement au Lynel : un Moblin
+          a 3 points de vie, et une ouverture à dégâts triplés le tuerait d'un
+          coup. La parade deviendrait une exécution, et le continent se
+          traverserait en appuyant sur R. Sa récompense est l'ouverture elle-même
+          — il est repoussé et ne peut plus frapper pendant `punishMs`, le temps
+          de placer deux coups ordinaires.
+
+          Gel, secousse et son jouent en temps réel, pendant le gel : même
+          raison que la mort d'un ennemi, plus haut dans ce fichier.
+        */
+        state.lastAttackAt = now + PARRY.punishMs
+        knockback.set(position.x - playerTransform.position.x, 0, position.z - playerTransform.position.z)
+        if (knockback.lengthSq() > 1e-6) {
+          knockback.normalize().multiplyScalar(HIT_KNOCKBACK)
+          rb.setLinvel({ x: knockback.x, y: 2, z: knockback.z }, true)
+        }
+        hitStop(PARRY.hitStopMs)
+        shake(0.1, 140)
+        playParrySuccess()
+      } else {
+        useGameStore.getState().damagePlayer(stats.damage)
+      }
+```
+
+`state.lastAttackAt` est posé **dans le futur**, et c'est voulu : le test `now - state.lastAttackAt > stats.attackCooldownMs` repousse alors la prochaine préparation de `punishMs + attackCooldownMs`. Aucun nouvel état à ajouter à la machine.
+
+Et dans la branche de mort (`killEnemy`), à côté de la mise à jour du registre :
+
+```ts
+  // Un Moblin tué pendant sa préparation laisserait son offre derrière lui :
+  // l'anneau resterait allumé et une parade partirait dans le vide.
+  cancelParry(spawnId)
+```
+
+Imports à ajouter en tête d'`Enemy.tsx` :
+
+```ts
+import { PARRY } from '../config/parry'
+import { cancelParry, consumeParry, offerParry } from '../state/parry'
+```
+
+et `playParrySuccess` à l'import existant de `../audio/sfx`.
+
+> **Plusieurs Moblins à la fois.** L'état de parade n'a qu'une offre : si deux Moblins préparent un coup en même temps, le second écrase l'offre du premier, et l'anneau suit le plus récent. C'est acceptable — la garde, elle, est indépendante de l'offre et pare le premier coup qui arrive, quel qu'il soit. Une garde ne pare qu'un coup (`consumeParry` la consomme) : deux Moblins synchrones coûtent donc un cœur même au joueur parfait, ce qui est la bonne leçon.
+
+- [ ] **Step 9 : les libellés**
 
 Modifier `src/i18n/fr.json` :
 
@@ -727,7 +833,7 @@ Modifier `src/i18n/en.json`, aux mêmes emplacements :
 ```
 (dans `hud` et dans `touch`)
 
-- [ ] **Step 9 : vérifier**
+- [ ] **Step 10 : vérifier**
 
 ```bash
 npm run build && npm run lint
@@ -754,14 +860,23 @@ __parry.state.recoveryUntil // repoussé à chaque appui
 
 Vérifier aussi, sur mobile ou en émulation tactile, que le troisième bouton apparaît et lève la garde.
 
-- [ ] **Step 10 : commit**
+Puis, en jeu, contre un Moblin sur le continent :
+
+- Pendant que le Moblin se ramasse, l'anneau violet s'allume sous le joueur.
+- Appuyer sur R pendant la pulsation : aucun cœur perdu, gel bref, le Moblin est repoussé et ne frappe plus pendant ~1,3 s.
+- Ne rien faire : le coup porte comme avant.
+- S'éloigner pendant la préparation : l'anneau s'éteint.
+- Un Octorok n'allume jamais l'anneau, et son projectile se renvoie toujours au coup d'épée.
+
+- [ ] **Step 11 : commit**
 
 ```bash
 git add src/config/parry.ts src/state/parry.ts src/config/controls.ts \
   src/state/touchInput.ts src/state/playerTransform.ts \
   src/components/Player.tsx src/components/TouchControls.tsx src/index.css \
   src/components/CombatOverlay.tsx src/components/models/HeroPlaceholder.tsx \
-  src/audio/sfx.ts src/i18n/fr.json src/i18n/en.json
+  src/audio/sfx.ts src/config/enemies.ts src/components/Enemy.tsx \
+  src/i18n/fr.json src/i18n/en.json
 git commit -m "feat: la parade, et l'anneau qui dit quand elle est possible
 
 Une touche, R, et une regle : un appui ouvre 260 ms de garde puis 450 ms de
@@ -775,7 +890,10 @@ perdu. Il est sous le joueur et non sur l'ennemi, parce qu'un joueur qui
 surveille ses coeurs ne regarde pas la bete, et qu'un boss passe dans le dos
 n'a plus aucun signal a offrir.
 
-Personne ne fait encore d'offre : __parry.offer() la simule.
+Le Moblin en est le premier client : son telegraphe de 420 ms vaut exactement
+l'avance du signal, donc la parade s'apprend sur le continent avant l'ile. Sans
+multiplicateur de degats pour lui — a 3 PV, il mourrait d'un coup, et le
+continent se traverserait en appuyant sur R.
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ```
@@ -907,6 +1025,10 @@ Modifier `src/config/enemies.ts` — ajouter l'entrée `lynel` à `ENEMIES`, **a
     halfHeight: 1.0,
     minimapColor: '#d8dce6',
     ranged: false,
+    // Sans effet réel : `Lynel.tsx` ne passe pas par la branche d'attaque
+    // d'`Enemy.tsx`, et décide attaque par attaque via `LYNEL_ATTACKS`. Mais le
+    // champ est obligatoire, et `true` dit la vérité sur son coup de base.
+    parryable: true,
   },
 ```
 
@@ -2258,8 +2380,6 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ## Task 6 : phase III — la crinière, et la feinte
 
-> **Tâche optionnelle** — voir la question 03 des questions ouvertes. Rien d'autre n'en dépend.
-
 Le souffle, l'onde de choc, et la feinte : la seule mécanique du combat qui demande de *désapprendre*.
 
 **Files:**
@@ -2429,8 +2549,6 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ## Task 7 : la récompense, et la trace
 
-> **Confirmer la question 04 avant de commencer.** Le défaut retenu est le réceptacle de cœur.
-
 **Files:**
 - Modify: `src/components/Lynel.tsx`
 - Modify: `src/types/game.ts`
@@ -2516,4 +2634,4 @@ Relecture du plan contre la maquette, faite après rédaction.
 
 **Corrigé pendant la revue :** le nom de l'action du réceptacle (`claimHeartContainer`), la signature réelle de `tone()`, trois sons référencés mais jamais définis (tous écrits à la Task 1), un anneau d'onde appelé sans exister (il réutilise maintenant le pool des morts), une condition d'annulation illisible, et une interface de modèle qui annonçait des props là où le corps de la tâche passait par une ref.
 
-**Ce que le plan ne fait pas,** et que la maquette laissait ouvert : la parade n'est pas étendue aux Moblins (question 02), et la récompense n'est pas une quatrième tenue (question 04). Les deux sont des ajouts, pas des reprises.
+**Ce que le plan ne fait pas :** la quatrième tenue, prévue plus tard dans un chantier à part (question 04).
