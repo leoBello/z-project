@@ -15,6 +15,7 @@ import { NAKANO } from '../../config/landmarks'
 import {
   SKY_COLORS,
   rimRadius,
+  surfaceRelief,
   topHeight,
   underHeight,
   underRadius,
@@ -120,7 +121,11 @@ function coarseSurface(under: boolean) {
     for (let s = 0; s <= SECTORS; s++) {
       const theta = (s / SECTORS) * Math.PI * 2
       const r = under ? underRadius(t, theta) : t * rimRadius(theta)
-      const y = under ? underHeight(t, theta) : topHeight(r, theta)
+      // Le relief de surface est compté ici aussi, alors qu'il est invisible à
+      // cinq cents unités : c'est lui qui fait tomber le bord du dessus
+      // exactement sur `rimHeight`, donc exactement sur le haut du socle. Sans
+      // lui, la silhouette s'ouvrirait sur le ciel comme l'île l'a fait.
+      const y = under ? underHeight(t, theta) : topHeight(r, theta) + surfaceRelief(r, theta)
       positions.push(Math.sin(theta) * r, y, Math.cos(theta) * r)
     }
   }

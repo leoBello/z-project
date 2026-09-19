@@ -967,8 +967,11 @@ function buildTop() {
       const theta = (s / SECTORS) * Math.PI * 2;
       const r = t * rimRadius(theta);
       const grain = noise(r * 0.09, theta * 3.1);
-      const relief = grain * (0.1 + 0.42 * smoothstep(16, 46, r));
-      positions.push(Math.sin(theta) * r, topHeight(r, theta) + relief, Math.cos(theta) * r);
+      positions.push(
+        Math.sin(theta) * r,
+        topHeight(r, theta) + surfaceRelief(r, theta),
+        Math.cos(theta) * r
+      );
 
       // La couleur dit la pente, donc où l'on peut marcher : pelouse sur les
       // plateaux et les rampes, pierre nue sur les falaises.
@@ -998,6 +1001,29 @@ function buildTop() {
   return faceted(geometry);
 }
 
+/**
+ * Altitude du **bord** de l'île, en un cap donné.
+ *
+ * C'est la cote de couture entre le dessus et le socle, et elle doit être
+ * calculée, jamais écrite. `RIM_DROP` décrit la profondeur *à laquelle la lèvre
+ * finit de retomber*, c'est-à-dire à partir de r = 55 — mais le contour réel
+ * ondule entre 52,6 et 57,6. Aux caps où il n'atteint que 52,6, le raccord de
+ * lèvre n'est parcouru qu'au douzième et le bord s'arrête à −0,09.
+ *
+ * Coudre le socle sur `RIM_DROP` en dur ouvrait une fente de 1,70 unité sur une
+ * bonne partie de la circonférence — et comme les deux surfaces sont à simple
+ * épaisseur, on voyait le ciel au travers.
+ */
+function rimHeight(theta) {
+  const r = rimRadius(theta);
+  return topHeight(r, theta) + surfaceRelief(r, theta);
+}
+
+/** Relief de surface : les bosses qui s'ajoutent au profil des terrasses. */
+function surfaceRelief(r, theta) {
+  return noise(r * 0.09, theta * 3.1) * (0.1 + 0.42 * smoothstep(16, 46, r));
+}
+
 function underRadius(t, theta) {
   const crag = noise(theta * 4.3, t * 7.7) * (1 - t) * 0.16;
   return t * rimRadius(theta) * (1 + crag);
@@ -1005,7 +1031,7 @@ function underRadius(t, theta) {
 
 function underHeight(t, theta) {
   const crag = noise(theta * 4.3, t * 7.7) * (1 - t) * 0.16;
-  return RIM_DROP - DEPTH * (1 - Math.pow(t, 0.55)) + crag * 12;
+  return rimHeight(theta) - DEPTH * (1 - Math.pow(t, 0.55)) + crag * 12;
 }
 
 function buildUnder() {
@@ -2178,7 +2204,7 @@ function buildImpostor() {
       for (let s = 0; s <= SECT; s++) {
         const theta = (s / SECT) * Math.PI * 2;
         const r = under ? underRadius(t, theta) : t * rimRadius(theta);
-        const y = under ? underHeight(t, theta) : topHeight(r, theta);
+        const y = under ? underHeight(t, theta) : topHeight(r, theta) + surfaceRelief(r, theta);
         positions.push(Math.sin(theta) * r, y, Math.cos(theta) * r);
       }
     }

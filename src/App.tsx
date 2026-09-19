@@ -8,6 +8,7 @@ import { Enemies } from './components/Enemies'
 import { Environment } from './components/Environment'
 import { GameClock } from './components/GameClock'
 import { HUD } from './components/HUD'
+import { InteractionKey } from './components/InteractionKey'
 import { KeyboardGuard } from './components/KeyboardGuard'
 import { KonamiCode } from './components/KonamiCode'
 import { LanguageToggle } from './components/LanguageToggle'
@@ -65,6 +66,10 @@ export default function App() {
           Canvas et sans rien demander à `KeyboardControls` : une suite d'appuis
           n'est pas un état de commande. Voir l'en-tête du composant. */}
       <KonamiCode />
+      {/* La touche d'interaction, hors du Canvas et hors du décor : elle vaut
+          pour toutes les cartes. Rangée dans `<Landmarks>`, elle disparaissait
+          avec le continent et le portail du retour ne répondait plus. */}
+      <InteractionKey />
       <Canvas
         // "percentage" = PCFShadowMap ; PCFSoft est déprécié depuis three 0.185.
         shadows="percentage"

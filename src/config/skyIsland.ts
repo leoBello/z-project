@@ -198,6 +198,29 @@ export function rimRadius(theta: number) {
 }
 
 /**
+ * Altitude du **bord** de l'île, en un cap donné.
+ *
+ * C'est la cote de couture entre le dessus et le socle, et elle doit être
+ * calculée, jamais écrite. `RIM_DROP` décrit la profondeur *à laquelle la lèvre
+ * finit de retomber*, c'est-à-dire à partir de r = 55 — mais le contour réel
+ * ondule entre 52,6 et 57,6. Aux caps où il n'atteint que 52,6, le raccord de
+ * lèvre n'est parcouru qu'au douzième : le bord du dessus s'y arrête à −0,09.
+ *
+ * Coudre le socle sur `RIM_DROP` en dur ouvrait donc une fente de plus d'un
+ * mètre sur une bonne partie de la circonférence — et comme les deux surfaces
+ * sont à simple épaisseur, on voyait le ciel au travers. C'est exactement le
+ * genre de défaut qu'aucun calcul ne signale et qu'une capture montre tout de
+ * suite.
+ *
+ * Le relief de surface en fait partie : il monte jusqu'à ±0,52 au bord, et
+ * l'oublier rouvrirait la moitié de la fente.
+ */
+export function rimHeight(theta: number) {
+  const r = rimRadius(theta)
+  return topHeight(r, theta) + surfaceRelief(r, theta)
+}
+
+/**
  * Le socle, paramétré de 1 (la lèvre) à 0 (la pointe).
  *
  * Le profil `1 − t^0,55` est ce qui distingue Laputa d'un simple cône : la masse
@@ -206,7 +229,8 @@ export function rimRadius(theta: number) {
  *
  * Le bruit de roche s'annule à `t = 1`, et c'est indispensable : c'est là que
  * cette surface doit coudre exactement avec le dessus, sans un interstice par
- * lequel on verrait le vide.
+ * lequel on verrait le vide. À `t = 1`, le rayon vaut donc `rimRadius(θ)` et
+ * l'altitude `rimHeight(θ)` — les deux cotes exactes du bord du dessus.
  */
 export function underRadius(t: number, theta: number) {
   const crag = islandNoise(theta * 4.3, t * 7.7) * (1 - t) * 0.16
@@ -215,7 +239,7 @@ export function underRadius(t: number, theta: number) {
 
 export function underHeight(t: number, theta: number) {
   const crag = islandNoise(theta * 4.3, t * 7.7) * (1 - t) * 0.16
-  return RIM_DROP - ISLAND_DEPTH * (1 - Math.pow(t, 0.55)) + crag * 12
+  return rimHeight(theta) - ISLAND_DEPTH * (1 - Math.pow(t, 0.55)) + crag * 12
 }
 
 /**
@@ -276,6 +300,7 @@ if (import.meta.env.DEV) {
     topHeight,
     topSlope,
     rimRadius,
+    rimHeight,
     underRadius,
     underHeight,
     surfaceRelief,

@@ -15,10 +15,10 @@ import {
   CORE_Y,
   RAMPS_INNER,
   RAMPS_OUTER,
-  RIM_DROP,
   TREE_TOP,
   WALL_R,
   rampFactor,
+  rimHeight,
   rimRadius,
   topHeight,
   underHeight,
@@ -175,8 +175,10 @@ function buildFlora(materials: SkyMaterials) {
           new Vector3(
             Math.sin(twist) * radius,
             // Au premier point on remonte au-dessus de la lèvre : la liane doit
-            // naître dans l'herbe, pas sous le rebord.
-            k === 0 ? RIM_DROP + 0.8 : underHeight(t, twist) + 0.3,
+            // naître dans l'herbe, pas sous le rebord. Sur `rimHeight` et non
+            // sur `RIM_DROP`, qui n'est la cote du bord qu'aux caps où le
+            // contour atteint 55 — ailleurs la liane partirait dans le vide.
+            k === 0 ? rimHeight(twist) + 0.8 : underHeight(t, twist) + 0.3,
             Math.cos(twist) * radius,
           ),
         )

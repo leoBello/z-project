@@ -17,7 +17,7 @@ import {
   CORE_Y,
   RAMPS_INNER,
   RAMPS_OUTER,
-  RIM_DROP,
+  rimHeight,
   rimRadius,
   topHeight,
 } from '../../config/skyIsland'
@@ -120,6 +120,10 @@ function buildWater(materials: SkyMaterials) {
     for (let i = 0; i < 4; i++) {
       const theta = RAMPS_OUTER[i % 3] + (i === 3 ? 1.05 : 0.08)
       const radius = rimRadius(theta) - 0.8
+      // La cote du bord **à ce cap précis**, et non `RIM_DROP` : le contour
+      // ondule de cinq unités, et une échancrure posée sur la cote nominale
+      // flotterait ou s'enfoncerait selon l'endroit.
+      const rim = rimHeight(theta)
       const x = Math.sin(theta) * radius
       const z = Math.cos(theta) * radius
       const length = 26 + random() * 12
@@ -130,7 +134,7 @@ function buildWater(materials: SkyMaterials) {
         faceted(new CylinderGeometry(1.7, 1.7, 1.2, 6)),
         materials.stoneMid,
       )
-      notch.position.set(x, RIM_DROP + 0.2, z)
+      notch.position.set(x, rim + 0.2, z)
       group.add(notch)
 
       // La lame : elle s'élargit et s'amincit en tombant.
@@ -138,11 +142,11 @@ function buildWater(materials: SkyMaterials) {
         new CylinderGeometry(0.9, 1.9, length, 7, 1, true),
         materials.fall,
       )
-      blade.position.set(x, RIM_DROP - length / 2 + 0.4, z)
+      blade.position.set(x, rim - length / 2 + 0.4, z)
       group.add(blade)
 
       const crest = new Mesh(faceted(new IcosahedronGeometry(1.7, 0)), materials.foam)
-      crest.position.set(x, RIM_DROP - 0.2, z)
+      crest.position.set(x, rim - 0.2, z)
       crest.scale.set(1.3, 0.7, 1.3)
       group.add(crest)
 
@@ -161,7 +165,7 @@ function buildWater(materials: SkyMaterials) {
             depthWrite: false,
           }),
         )
-        const y = RIM_DROP - length * (0.55 + t * 0.42)
+        const y = rim - length * (0.55 + t * 0.42)
         blob.position.set(x + (random() - 0.5) * 2, y, z + (random() - 0.5) * 2)
         blob.scale.set(1.5, 0.75, 1.5)
         group.add(blob)
