@@ -229,6 +229,20 @@ export interface GameState {
    */
   transit: MapId | null
   /**
+   * Lieu à ouvrir à l'arrivée du voyage en cours, ou `null`.
+   *
+   * Non nul quand le voyage n'a pas été demandé par un portail mais par le menu
+   * de téléportation, depuis une carte où les monuments n'existent pas. Il
+   * change deux choses au voyage, et deux seulement : on est déposé devant le
+   * monument au lieu du portail, et la modale du lieu s'ouvre au retrait du
+   * voile. Le reste de la séquence — attente du fragment, démontage de la carte
+   * de départ, image effectivement dessinée — est exactement le même, et c'est
+   * bien pourquoi la téléportation emprunte ce chemin plutôt que le sien : le
+   * vol de braises de `TeleportOverlay` joue une ligne de temps fermée, qui ne
+   * sait pas attendre qu'un continent soit monté.
+   */
+  transitLandmark: LandmarkId | null
+  /**
    * Un portail est à portée. Même rôle que `nearbyChest`, et même discipline :
    * écrit uniquement sur transition, jamais à chaque frame.
    *
@@ -335,8 +349,10 @@ export interface GameState {
   finishChest: (equip?: boolean) => void
   /**
    * Démarre une téléportation vers `id` : gèle la partie et déclenche
-   * l'overlay. Sans effet si une téléportation est déjà en cours, si la
-   * partie est terminée, ou si `id` est déjà le lieu affiché.
+   * l'overlay. Depuis une autre carte, c'est le voile de voyage qui s'en charge
+   * — voir `transitLandmark`. Sans effet si une téléportation ou un voyage est
+   * déjà en cours, si la partie est terminée, ou si `id` est déjà le lieu
+   * affiché.
    */
   teleportTo: (id: LandmarkId) => void
   /**
@@ -370,8 +386,18 @@ export interface GameState {
   enterMap: (to: MapId) => boolean
   /** Bascule effectivement de carte, sous le voile opaque. */
   arriveOnMap: () => void
-  /** Retire le voile et rend la main au jeu, en fin de séquence. */
+  /**
+   * Retire le voile et rend la main au jeu, en fin de séquence — ou ouvre la
+   * modale du lieu quand le voyage en portait un (`transitLandmark`).
+   */
   finishTransit: () => void
+  /**
+   * Abandonne le voyage en cours : le joueur n'a pas bougé, rien ne s'ouvre.
+   *
+   * Distinct de `finishTransit` précisément parce que celui-ci ouvrirait la
+   * modale d'un lieu devant lequel le joueur n'a jamais été déposé.
+   */
+  abortTransit: () => void
   /** Relance une partie depuis zéro. */
   reset: () => void
 }
@@ -401,6 +427,7 @@ const initialState = {
   portalOpenedAt: null as number | null,
   location: 'continent' as MapId,
   transit: null as MapId | null,
+  transitLandmark: null as LandmarkId | null,
   nearbyPortal: false,
 }
 
@@ -704,16 +731,42 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   /**
-   * Refusée dans trois cas : partie terminée, téléportation déjà en cours
-   * (anti-spam-clic), ou lieu déjà affiché. Sinon, gèle tout immédiatement —
-   * qu'on parte de `playing` (en pleine balade) ou de `paused` (en train de
-   * lire un autre lieu : sa modale se ferme aussitôt, cachée par les
-   * braises qui montent).
+   * Refusée dans quatre cas : partie terminée, téléportation déjà en cours
+   * (anti-spam-clic), voyage entre cartes en cours, ou lieu déjà affiché.
+   * Sinon, gèle tout immédiatement — qu'on parte de `playing` (en pleine
+   * balade) ou de `paused` (en train de lire un autre lieu : sa modale se ferme
+   * aussitôt, cachée par les braises qui montent).
+   *
+   * **Depuis une autre carte, elle passe par le voyage et non par les braises.**
+   * Les monuments appartiennent au continent : y poser le joueur sans ramener
+   * sa carte le déposait dans le vide de l'Île Céleste, où il tombait dès la
+   * fin de la séquence — le filet de chute le renvoyait au point d'arrivée de
+   * l'île, et le menu paraissait ne plus rien faire. Le voile de `transit` est
+   * le seul chemin qui sache attendre qu'une carte soit montée et dessinée ;
+   * `transitLandmark` lui dit où déposer et quoi ouvrir à l'arrivée.
    */
   teleportTo: (id) => {
-    const { phase, activeLandmark, teleporting } = get()
-    if (phase === 'gameover' || teleporting !== null) return
+    const { phase, activeLandmark, teleporting, transit, location } = get()
+    if (phase === 'gameover' || teleporting !== null || transit !== null) return
     if (phase === 'paused' && activeLandmark === id) return
+
+    if (location !== 'continent') {
+      // Même son que le portail : c'est le même voyage, et le distinguer
+      // laisserait entendre qu'il se passe autre chose.
+      playPortal()
+      set({
+        phase: 'paused',
+        activeLandmark: null,
+        transit: 'continent',
+        transitLandmark: id,
+        // L'invite disparaît avec le départ, comme dans `enterMap` : on peut
+        // très bien lancer la téléportation en se tenant devant le portail de
+        // l'île, et son invite resterait affichée sous le voile.
+        nearbyPortal: false,
+      })
+      return
+    }
+
     set({ phase: 'paused', activeLandmark: null, teleporting: id })
   },
 
@@ -827,6 +880,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({
       phase: 'paused',
       transit: to,
+      // Un franchissement de portail ne porte aucun lieu : écrit explicitement
+      // plutôt que supposé nul, pour qu'aucun voyage ne puisse hériter de la
+      // destination d'un autre.
+      transitLandmark: null,
       // L'invite disparaît avec le départ, sinon elle resterait affichée sous
       // le voile le temps que le joueur s'éloigne du portail à l'arrivée.
       nearbyPortal: false,
@@ -851,7 +908,30 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ location: transit })
   },
 
-  finishTransit: () => set({ transit: null, phase: 'playing' }),
+  finishTransit: () => {
+    // Hors du `set`, comme la mesure d'audience de `resolveTeleport` : un
+    // updater d'état n'appelle pas le tableau de bord. Même `via` que là-bas —
+    // c'est le même geste du joueur, seul le chemin technique diffère.
+    const { transitLandmark } = get()
+    if (transitLandmark !== null) {
+      track('landmark_opened', { landmark: transitLandmark, via: 'teleport' })
+    }
+
+    set((state) =>
+      state.transitLandmark === null
+        ? { transit: null, phase: 'playing' }
+        : {
+            transit: null,
+            transitLandmark: null,
+            // La partie reste en pause : ce voyage ne se termine pas sur une
+            // balade mais sur la page qu'on était venu lire.
+            activeLandmark: state.transitLandmark,
+            phase: 'paused',
+          },
+    )
+  },
+
+  abortTransit: () => set({ transit: null, transitLandmark: null, phase: 'playing' }),
 
   // Les collections sont réécrites explicitement : `initialState` est un objet
   // unique partagé par toutes les parties, et en réutiliser les tableaux (ou

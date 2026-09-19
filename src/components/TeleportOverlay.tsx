@@ -1,10 +1,8 @@
 import { useEffect } from 'react'
 import type { CSSProperties } from 'react'
 import { EMBER_OFFSETS } from '../config/embers'
-import { PLAYER } from '../config/gameplay'
-import { landmarkById } from '../config/landmarks'
-import { playerBody } from '../state/playerBody'
-import { playerTransform } from '../state/playerTransform'
+import { landmarkArrival, landmarkById } from '../config/landmarks'
+import { placePlayer } from '../state/playerBody'
 import { useGameStore } from '../store/useGameStore'
 
 
@@ -47,24 +45,10 @@ export function TeleportOverlay() {
       const landmark = landmarkById(teleporting)
       if (!landmark) return
 
-      const x = landmark.interact.x
-      const z = landmark.interact.z
-      // Même relation que `Player.tsx` entre la hauteur du sol et le centre
-      // de la capsule : le joueur atterrit posé, ni enfoncé ni flottant.
-      const y = landmark.altitude + PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius
-      // Face au monument, pas de dos.
-      const yaw = Math.atan2(landmark.x - x, landmark.z - z)
-
-      playerBody.current?.setTranslation({ x, y, z }, true)
-      playerBody.current?.setLinvel({ x: 0, y: 0, z: 0 }, true)
-
-      // `Player.tsx` n'écrit `playerTransform` que dans son propre
-      // `useFrame`, qui ne fait rien tant que la phase n'est pas `playing`.
-      // Sans cette écriture manuelle, `CameraRig` — qui n'a lui aucune garde
-      // de phase — continuerait de suivre l'ancienne position pendant toute
-      // la lecture de la modale.
-      playerTransform.position.set(x, y, z)
-      playerTransform.yaw = yaw
+      // Posé devant la braise et face au monument — le même point d'arrivée que
+      // le voyage de retour depuis l'Île Céleste, qui appelle la même table.
+      const arrival = landmarkArrival(landmark)
+      placePlayer(arrival, arrival.yaw)
     }, WARP_AT_MS)
 
     // Fin de séquence : les braises ont fini de se disperser et le palier

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
+import { landmarkArrival, landmarkById } from '../config/landmarks'
 import { arrivalFor, arrivalYaw } from '../config/portal'
-import { playerBody } from '../state/playerBody'
-import { playerTransform } from '../state/playerTransform'
+import { placePlayer } from '../state/playerBody'
 import { useGameStore } from '../store/useGameStore'
 import type { MapId } from '../types/game'
 import { EmberVeil } from './EmberVeil'
@@ -66,6 +66,16 @@ function afterPaint() {
 function Transit({ to }: { to: MapId }) {
   const arriveOnMap = useGameStore((state) => state.arriveOnMap)
   const finishTransit = useGameStore((state) => state.finishTransit)
+  const abortTransit = useGameStore((state) => state.abortTransit)
+  /*
+    Le lieu à rejoindre, quand le voyage n'a pas été demandé par un portail mais
+    par le menu de téléportation — voir `transitLandmark` dans le store.
+
+    Lu une fois pour toutes : il est écrit dans le même `set` que `transit`, donc
+    avant que ce composant n'existe, et remis à `null` par `finishTransit`, donc
+    après qu'il a fini. Il ne change jamais pendant la vie de l'instance.
+  */
+  const landmark = useGameStore((state) => state.transitLandmark)
   const [phase, setPhase] = useState<'covering' | 'revealing'>('covering')
   const transit = to
 
@@ -99,7 +109,7 @@ function Transit({ to }: { to: MapId }) {
           qu'elle n'en vaut, et le second essai réussit presque toujours — voir
           la remise à zéro de la mémoïsation dans `preload.ts`.
         */
-        if (!cancelled) finishTransit()
+        if (!cancelled) abortTransit()
         return
       }
       if (cancelled) return
@@ -129,17 +139,22 @@ function Transit({ to }: { to: MapId }) {
       await afterPaint()
       if (cancelled) return
 
-      const spawn = arrivalFor(transit)
-      playerBody.current?.setTranslation(spawn, true)
-      playerBody.current?.setLinvel({ x: 0, y: 0, z: 0 }, true)
-      // `Player.tsx` n'écrit `playerTransform` que dans son propre `useFrame`,
-      // qui ne fait rien hors de la phase `playing`. Sans cette écriture
-      // manuelle, `CameraRig` — qui n'a lui aucune garde de phase — suivrait
-      // l'ancienne position pendant tout le retrait du voile, et la carte se
-      // découvrirait de travers.
-      playerTransform.position.set(spawn.x, spawn.y, spawn.z)
-      // Dos au portail, dans les deux sens — voir `arrivalYaw`.
-      playerTransform.yaw = arrivalYaw(transit)
+      /*
+        Un voyage demandé par le menu de téléportation ne dépose pas au portail
+        mais devant le monument : c'est tout ce qu'on était venu chercher, et
+        traverser le continent à pied depuis Nakano ne serait pas un voyage
+        rapide. Le lieu introuvable retombe sur l'arrivée du portail plutôt que
+        de ne rien faire — sortir d'ici sans poser le joueur le laisserait au
+        point d'où il est parti, c'est-à-dire dans le vide de l'autre carte.
+      */
+      const destination = landmark ? landmarkById(landmark) : undefined
+      if (destination) {
+        const arrival = landmarkArrival(destination)
+        placePlayer(arrival, arrival.yaw)
+      } else {
+        // Dos au portail, dans les deux sens — voir `arrivalYaw`.
+        placePlayer(arrivalFor(transit), arrivalYaw(transit))
+      }
 
       // Une seconde image, pour que la caméra ait rattrapé le joueur avant
       // qu'on ne découvre quoi que ce soit.
@@ -156,7 +171,7 @@ function Transit({ to }: { to: MapId }) {
       cancelled = true
       clearTimeout(endTimer)
     }
-  }, [transit, arriveOnMap, finishTransit])
+  }, [transit, landmark, arriveOnMap, finishTransit, abortTransit])
 
   return <EmberVeil phase={phase} durationMs={phase === 'covering' ? COVER_MS : REVEAL_MS} />
 }
