@@ -5,7 +5,7 @@ import { useFrame } from '@react-three/fiber'
 import { MeshBasicMaterial } from 'three'
 import type { BufferGeometry, Group, Material, Quaternion } from 'three'
 import type { EnemyMaterials } from './models'
-import { useLynelMaterials } from './lynelMaterials'
+import { LYNEL_COLORS, useLynelMaterials } from './lynelMaterials'
 import type { LynelMaterials } from './lynelMaterials'
 import { isHitStopped } from '../../state/gameClock'
 import {
@@ -501,13 +501,33 @@ export const LynelModel = forwardRef<LynelRig, LynelModelProps>(function LynelMo
   /** La pose visée. `Lynel.tsx` l'écrit depuis son `useFrame`. */
   const target = useRef<LynelPose>('repos')
 
-  // `setRage` reste vide : c'est la Task 6 qui allume la crinière et la veine.
-  // Elle existe déjà pour que l'interface ne change plus d'ici là.
   useImperativeHandle(ref, () => ({
     setPose: (pose: LynelPose) => {
       target.current = pose
     },
-    setRage: () => {},
+    /**
+     * La phase III : la crinière et la veine de la lame s'allument.
+     *
+     * Un **émissif** sur les matériaux toon, et non une seconde palette. C'est
+     * le seul moyen, dans un rendu cel-shadé à trois marches, de faire *briller*
+     * quelque chose : le toon écrase les demi-teintes, donc une crinière
+     * repeinte en violet resterait mate — elle serait violette, pas allumée. Un
+     * émissif la fait franchir le seuil de bloom du jeu (0,82) sur les seules
+     * faces éclairées, et c'est là que naît l'éclat.
+     *
+     * Écrit sans garde : les matériaux appartiennent à cette instance
+     * (`useLynelMaterials` en construit un jeu par Lynel), donc repeindre ici ne
+     * touche rien d'autre dans la scène. Et l'appel vient d'un `useFrame` qui
+     * passe le même booléen à chaque frame — affecter une couleur identique ne
+     * coûte rien, alors qu'un `needsUpdate` en coûterait.
+     */
+    setRage: (on: boolean) => {
+      materials.accent.emissive.set(on ? LYNEL_COLORS.glow : 0x000000)
+      materials.accent.emissiveIntensity = on ? 0.75 : 0
+      mats.maneCool.emissive.set(on ? LYNEL_COLORS.glow : 0x000000)
+      mats.maneCool.emissiveIntensity = on ? 0.55 : 0
+      mats.halo.opacity = on ? 0.9 : 0.45
+    },
   }))
 
   useFrame((_, rawDelta) => {
