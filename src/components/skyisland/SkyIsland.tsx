@@ -1,5 +1,6 @@
 import { SKY_PORTAL } from '../../config/portal'
 import { Portal } from '../environment/Portal'
+import { LynelPreview } from '../enemies/LynelPreview'
 import { Flora } from './Flora'
 import { Ruins } from './Ruins'
 import { SkyTerrain } from './Terrain'
@@ -34,6 +35,9 @@ export default function SkyIsland() {
           deux portails qui divergeraient au premier réglage de l'anneau
           seraient un défaut qu'on ne verrait qu'en faisant l'aller-retour. */}
       <Portal at={SKY_PORTAL} openedAt={ALREADY_OPEN} />
+
+      {/* Provisoire — remplacé par <Lynel> à la tâche suivante. */}
+      <LynelPreview />
     </>
   )
 }

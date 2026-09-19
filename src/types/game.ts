@@ -23,7 +23,25 @@ export type MapId = 'continent' | 'sky'
 export type EnemyState = 'idle' | 'patrol' | 'chase' | 'attack' | 'dead'
 
 /** Familles d'ennemis. Ajouter une variante ici suffit à l'enregistrer. */
-export type EnemyKind = 'octorok' | 'moblin'
+export type EnemyKind = 'octorok' | 'moblin' | 'lynel'
+
+/**
+ * Les trois phases du Lynel.
+ *
+ * Elles ne changent pas ses statistiques, elles changent la *liste* de ce qu'il
+ * peut faire. Un boss qui devient plus rapide est le même boss en moins
+ * lisible ; un boss qui apprend une attaque de plus est un autre combat.
+ */
+export type LynelPhase = 'sword' | 'arena' | 'rage'
+
+/** Les six attaques. La table vit dans `config/lynel.ts`. */
+export type LynelAttackId =
+  | 'sweep'
+  | 'thrust'
+  | 'stomp'
+  | 'charge'
+  | 'volley'
+  | 'breath'
 
 /** Description statique d'un ennemi, telle que posée dans un biome. */
 export interface EnemySpawn {
