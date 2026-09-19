@@ -4,9 +4,8 @@ Mini-jeu 3D navigateur inspiré de Zelda, pour portfolio front-end.
 Direction artistique : **diorama low-poly cozy** — cel-shading, FOV étroit,
 tilt-shift. La recette caméra + post-traitement du HD-2D, appliquée à de la 3D.
 
-Dernière mise à jour : 27 août 2026 — occlusion de la canopée, renvoi des
-projectiles, réceptacle de cœur au temple, écume, lune, son, réglage de qualité
-et découpage du bundle.
+Dernière mise à jour : 20 septembre 2026 — le Lynel argenté, boss de la rotonde
+de l'Île Céleste, et la parade qui va avec.
 
 ---
 
@@ -142,6 +141,85 @@ et découpage du bundle.
   montée pour juger une pente — il faut pouvoir l'interroger. C'est ce crochet
   qui a rattrapé une rampe annoncée à 0,45 de moyenne mais qui passait 0,68 à
   mi-course, la dérivée d'un `smoothstep` culminant à 1,5 fois sa moyenne
+
+### Le Lynel argenté — le boss de la rotonde
+- **Un gardien de 4,3 unités**, deux fois et trois quarts le joueur, qui attend
+  au centre de la rotonde. 36 points de vie, deux cœurs par coup d'épée, trois
+  sur sa charge. Géométrie originale portée depuis une maquette validée à part
+  (`docs/maquettes/2026-09-19-lynel-argente.html`), qui reste la référence des
+  cotes et des six poses
+- **Sa machine à états est à lui** (`components/Lynel.tsx`), et non une
+  troisième entrée dans celle d'`Enemy.tsx` : celle-ci décrit une espèce par
+  *une* attaque et ne sait ni enchaîner des séquences ni changer de phase. Tout
+  ce qui est partagé est repris tel quel — registre de minimap, hitbox d'épée,
+  renvoi de projectile, gel du coup fatal, séquence de mort
+- **Trois phases qui ajoutent des attaques au lieu d'accélérer.** L'épée
+  (balayage, estoc), puis l'arène (charge, triple tir), puis la rage (souffle,
+  onde de choc, feintes). Un boss qui devient plus rapide est le même boss en
+  moins lisible ; un boss qui apprend une attaque de plus est un autre combat
+- **Une règle de lecture unique** : ce qui est paré est annoncé par la
+  crinière, ce qui ne l'est pas est annoncé par les pattes. Le joueur n'a pas
+  six animations à mémoriser, il regarde d'abord où naît le mouvement
+- **Il est tenu en laisse au bord du dallage**, et ce n'est pas du confort :
+  rien ne l'y retenait, les barrières ne fermant que les deux brèches. En
+  poursuivant le joueur il franchissait la lèvre, tombait de 3,6 unités dans le
+  jardin, et ne pouvait plus remonter — la falaise est à 2,7 de pente contre 0,5
+  de praticable. Il disparaissait du combat sans mourir. On annule la composante
+  radiale sortante de sa vitesse, pas la vitesse entière : il doit pouvoir
+  continuer à longer le pourtour
+- **L'arbre a reculé derrière l'arène pour qu'elle existe.** Il était enraciné
+  au centre de la rotonde, tronc de 5,4 de rayon, et le bassin doré qui alimente
+  les canaux y était aussi : il ne restait qu'un couloir de cinq unités et
+  demie. L'eau ne pouvant pas suivre l'arbre dans le jardin — une source 3,6
+  unités plus bas n'alimente pas des canaux qui partent d'en haut —, elle sort
+  maintenant des racines au bord de la rotonde et fait le tour de l'arène dans
+  une rigole
+- **La caméra se rapproche dans l'arène**, à 12 de haut pour 14 de recul. Aux
+  cotes ordinaires (11 pour 21), une créature de 4,3 occupe un cinquième de la
+  hauteur de l'image ; là, un quart. Premier réglage raté et instructif : posée
+  plus bas pour grossir le boss, elle ne plongeait plus que de 6,6° et on voyait
+  l'arène par la tranche — grossir le boss ne sert à rien si on ne voit plus où
+  l'on met les pieds
+- **L'île rend trois cœurs à la première arrivée**, et le gardien laisse un
+  réceptacle là où il tombe — pas dans un coffre : un coffre raconterait que la
+  récompense était rangée là depuis toujours
+- En développement, `window.__lynelState` expose l'état vivant du combat (pose,
+  attaque en préparation, étourdissement, charge) avec les instants rendus
+  relatifs à maintenant. Même raison que `__lastSwing` : la machine à états se
+  joue en fractions de seconde sur une carte où la physique ne se simule pas en
+  rendu logiciel — elle ne peut pas être observée, il faut pouvoir la lire.
+  C'est ce crochet qui a montré que la parade, soupçonnée de figer le boss,
+  relâchait bien son étourdissement en 1,3 s
+
+### La parade
+- **Une touche, `R`, et une seule règle** : un appui ouvre 320 ms de garde puis
+  450 ms de récupération, et un appui pendant la récupération la **relance**.
+  Marteler revient donc à ne jamais sortir de la récupération, ce qui est la
+  seule façon de rendre la mécanique incontournable plutôt que décorative
+- **Pas `Maj.`**, qui était le candidat évident : Windows ouvre la boîte des
+  touches rémanentes au bout de cinq appuis rapprochés, et un combat à la parade
+  en produit cinq en dix secondes. La boîte vole le focus, donc la partie, et
+  aucune page web ne peut l'empêcher
+- **L'anneau au sol dit les trois états avec une seule forme** : violet pulsé
+  quand un coup parable arrive, or plein pendant la garde, rouge bref sur un
+  appui perdu. Il est sous le joueur et non sur la bête — quelqu'un qui surveille
+  ses cœurs, ou qui a le boss dans le dos, doit quand même voir venir
+- **Le signal ne s'allume que sur la part réactive du télégraphe**, 500 ms avant
+  l'impact. Un balayage dure 620 ms : signaler dès le début donnerait 120 ms
+  pendant lesquelles appuyer *paraît* juste sans l'être, ce qui est la pire des
+  leçons
+- **Réglée à l'essai, pas sur le papier.** Première version : 260 ms de fenêtre
+  annoncée 420 ms à l'avance, soit une exigence de 160 à 420 ms — centrée sur le
+  temps de réaction simple médian. Personne n'y arrivait, parce qu'il ne s'agit
+  pas de réagir à un signal *attendu* mais de le repérer dans une mêlée en
+  mouvement, ce qui coûte deux à trois cents millisecondes de plus
+- **Le Moblin en est le premier client**, et c'est ce qui rend la parade
+  apprenable sur le continent bien avant l'île. Sans multiplicateur de dégâts
+  pour lui : à 3 points de vie, une ouverture triplée le tuerait d'un coup et le
+  continent se traverserait en appuyant sur `R`
+- Une attaque est parable si sa table le déclare (`parryable` dans
+  `EnemyStats`, `LYNEL_ATTACKS`) : étendre la parade à une espèce de plus est un
+  drapeau, pas une refonte
 
 ### Objets et inventaire
 - Table déclarative dans `src/config/items.ts` : un objet y déclare ce qu'il
