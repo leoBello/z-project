@@ -15,9 +15,10 @@ import {
 } from 'three'
 import {
   ARENA_CLEAR_R,
-  GUTTER_R,
   RAMPS_INNER,
   RAMPS_OUTER,
+  SOURCE_TIP_R,
+  SOURCE_TIP_Y,
   TREE_BASE_Y,
   TREE_THETA,
   TREE_TOP,
@@ -94,7 +95,6 @@ function keepOutOfArena<T extends BufferGeometry>(geometry: T, origin: Vector3) 
     position.setX(i, x * k - origin.x)
     position.setZ(i, z * k - origin.z)
   }
-  position.needsUpdate = true
   return geometry
 }
 
@@ -174,6 +174,9 @@ function buildFlora() {
       // Sur la prairie et dans les quartiers de l'enceinte, jamais sur l'arène :
       // c'est le sol du futur combat, il doit rester nu.
       const r = random() < 0.62 ? 36 + random() * 14 : 17 + random() * 10
+      // Tirée avant les exclusions, comme la rotation des touffes plus bas : un
+      // tirage sauté décalerait toute la suite et redistribuerait le bosquet.
+      const scale = 0.8 + random() * 0.9
       // Rien ne pousse dans l'axe d'une rampe : ce sont les chemins, et un
       // arbre au milieu d'une montée se lit comme un obstacle qu'il faudrait
       // pouvoir couper.
@@ -182,7 +185,7 @@ function buildFlora() {
       }
       // Ni dans le tronc du grand arbre, qui pousse à cette distance-là.
       if (inTreeTrunk(Math.sin(theta) * r, Math.cos(theta) * r)) continue
-      group.add(smallTree(materials, r, theta, 0.8 + random() * 0.9, random))
+      group.add(smallTree(materials, r, theta, scale, random))
     }
   }
 
@@ -351,7 +354,7 @@ function buildFlora() {
       pas la taille du tronc, qui dit que l'arbre a mangé la forteresse.
 
       Celles qui regardent l'arène (à ±70° de la direction du centre) remontent
-      la falaise du cœur et **s'arrêtent au rebord**, à `GUTTER_R + 0,4` du
+      la falaise du cœur et **s'arrêtent au rebord**, à `SOURCE_TIP_R` du
       centre. Elles n'entrent pas sur le dallage parce que c'est le sol du
       combat : une racine d'une unité y serait un mur pour un personnage sans
       autostep, ou, sans collider, un obstacle qu'on traverse. Et c'est de leur
@@ -397,7 +400,7 @@ function buildFlora() {
       croiseraient.
     */
     const central = climbing.reduce((a, b) => (Math.abs(b.offset) < Math.abs(a.offset) ? b : a))
-    const tipR = GUTTER_R + 0.4
+    const tipR = SOURCE_TIP_R
     for (const { theta, offset } of climbing) {
       const tipTheta = TREE_THETA - (offset - central.offset) * 0.45
       const start = new Vector3(Math.sin(theta) * 2.6, 0, Math.cos(theta) * 2.6).add(TREE_AT)
@@ -409,20 +412,30 @@ function buildFlora() {
         const r = Math.hypot(at.x, at.z)
         const polar = Math.atan2(at.x, at.z)
         // Elle sort du tronc en arc, comme les autres, puis épouse le terrain :
-        // la falaise est la seule prise qu'elle ait pour monter au cœur. Sur
-        // le rebord, sa pointe se redresse de 0,7 — assez pour que le bec de
-        // la source, posé à `CORE_Y + 1` dans `Water.tsx`, verse de haut.
+        // la falaise est la seule prise qu'elle ait pour monter au cœur.
         const arch = TREE_BASE_Y + 4.2 * (1 - t) * (1 - t)
-        const ground =
-          topHeight(r, polar) + surfaceRelief(r, polar) + 0.3 + 0.7 * smoothstep(0.75, 1, t)
+        const ground = topHeight(r, polar) + surfaceRelief(r, polar) + 0.3
         at.y = Math.max(arch, ground)
+        // Puis elle se cabre sur le rebord et sa pointe rejoint **exactement**
+        // `SOURCE_TIP_Y`, où `Water.tsx` pose le bec de la source : les deux
+        // cotes viennent du même endroit, elles ne peuvent donc pas diverger.
+        at.y += (SOURCE_TIP_Y - at.y) * smoothstep(0.55, 1, t)
         points.push(at.sub(TREE_AT))
       }
-      const root = taperedTube(new CatmullRomCurve3(points), 24, 0.85, 0.22)
+      // La pointe reste épaisse (0,6) : c'est elle qui porte le bec doré, et un
+      // bec d'une unité de rayon posé sur un fil de 0,2 flotterait.
+      const root = taperedTube(new CatmullRomCurve3(points), 24, 0.85, 0.6)
       tree.add(new Mesh(faceted(keepOutOfArena(root, TREE_AT)), materials.bark))
     }
 
     // Couronne large et étagée : à cette hauteur, une boule serait une sucette.
+    //
+    // Elle déborde au-dessus de l'arène, dix unités plus haut que le dallage, et
+    // elle passe par la **brèche** de la coupole : la masse la plus avancée est
+    // au cap 4,18 rad, entre les quartiers de pierre qui subsistent (le suivant
+    // commence à 4,30). Douze centièmes de radian de marge — retoucher
+    // `TREE_THETA` ou ces décalages sans revoir `COURSES` dans `Ruins.tsx` ferait
+    // traverser la maçonnerie par les feuilles.
     const blobs: [number, number, number, number, boolean][] = [
       [0, trunkH + 2.6, 0, 9.2, true],
       [-8.4, trunkH + 0.4, 3.8, 6.2, false],

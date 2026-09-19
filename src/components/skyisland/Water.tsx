@@ -17,6 +17,8 @@ import {
   GUTTER_R,
   RAMPS_INNER,
   RAMPS_OUTER,
+  SOURCE_TIP_R,
+  SOURCE_TIP_Y,
   TREE_THETA,
   rimHeight,
   rimRadius,
@@ -40,7 +42,10 @@ import { SKY_COLORS, SKY_MATERIALS } from './palette'
  * l'ouvrage qui le porte), et se jette par-dessus la lèvre en quatre cascades.
  *
  * L'argument tient toujours depuis que la source a quitté le centre : elle se
- * voit, c'est le bec doré au bout des racines, et le filet qui en tombe.
+ * voit — le bec doré au bout des racines, le filet qui en tombe et l'écume au
+ * point d'impact. Depuis le sud de l'arène, un pilier de la rotonde peut la
+ * masquer ; elle réapparaît dès qu'on se déplace, et c'est pour ça qu'elle est
+ * à l'échelle des cascades du bord et non à celle d'un ornement.
  *
  * Une cascade, ce sont **trois choses et pas une** : la lame qui tombe, l'écume
  * au point de rupture, et la brume en bas là où le jet se désagrège. Sans le
@@ -98,30 +103,61 @@ function buildWater() {
     lip.position.y = y + 0.42
     group.add(lip)
 
-    // Le bec, au bout de la racine centrale, et le filet qui tombe dans la
-    // rigole. Court : la racine s'arrête à 0,4 de l'axe de la rigole, et sa
-    // pointe redressée est à `CORE_Y + 1` (voir `Flora.tsx`) — l'eau n'a qu'un
-    // pas à faire.
-    const spoutR = GUTTER_R + 0.4
-    const spoutY = CORE_Y + 1
-    const spout = new Mesh(faceted(new ConeGeometry(0.32, 0.9, 6)), materials.goldBright)
-    spout.position.set(Math.sin(TREE_THETA) * spoutR, spoutY, Math.cos(TREE_THETA) * spoutR)
-    // Couché vers le centre, pointe en avant, piqué de 20° vers la rigole.
-    spout.rotation.set(Math.PI / 2 + 0.35, TREE_THETA + Math.PI, 0, 'YXZ')
+    /*
+      Le bec, au bout de la racine centrale, et le filet qui en tombe.
+
+      **À l'échelle des autres eaux de l'île**, et c'est le point : une lame de
+      cascade fait 0,9 à 1,9 de rayon, et un bec de trois dixièmes posé au ras de
+      la rigole ne se lisait pas depuis la caméra de jeu, qui regarde l'arène de
+      vingt-quatre unités. Or c'est cette source-là que l'en-tête invoque pour
+      dire d'où vient l'eau ; invisible, elle ne prouvait rien.
+
+      La racine se cabre donc jusqu'à `SOURCE_TIP_Y` — deux unités au-dessus du
+      dallage — et le bec verse de là : le filet fait un mètre et demi de chute,
+      assez pour se voir, et l'écume au point d'impact termine la lecture, comme
+      pour les quatre cascades du bord.
+    */
+    /** Une unité de rayon : celui d'une lame de cascade, la plus fine (0,9). */
+    const SPOUT_R = 1
+    const SPOUT_H = 2
+    /*
+      L'inclinaison est **calculée**, pas choisie : le bec prend appui sur la
+      pointe de la racine, en arrière de l'axe de la rigole, et c'est l'angle qui
+      ramène sa pointe exactement à l'aplomb de cet axe. Réglé à l'œil, il
+      verserait sur le dallage au premier déplacement de la rigole.
+    */
+    const SPOUT_TILT = Math.acos((SOURCE_TIP_R - GUTTER_R) / (SPOUT_H / 2))
+    const spoutR = SOURCE_TIP_R
+    const spout = new Mesh(
+      faceted(new ConeGeometry(SPOUT_R, SPOUT_H, 6)),
+      materials.goldBright,
+    )
+    spout.position.set(
+      Math.sin(TREE_THETA) * spoutR,
+      SOURCE_TIP_Y,
+      Math.cos(TREE_THETA) * spoutR,
+    )
+    spout.rotation.set(Math.PI / 2 + SPOUT_TILT, TREE_THETA + Math.PI, 0, 'YXZ')
     group.add(spout)
 
+    // Le filet part de la pointe du bec — calculée, pas devinée — et tombe dans
+    // la rigole.
     const surface = y + 0.2
-    const trickleTop = spoutY - 0.45 * Math.sin(0.35)
+    const fallR = spoutR - Math.cos(SPOUT_TILT) * (SPOUT_H / 2)
+    const fallTop = SOURCE_TIP_Y - Math.sin(SPOUT_TILT) * (SPOUT_H / 2)
+    const fx = Math.sin(TREE_THETA) * fallR
+    const fz = Math.cos(TREE_THETA) * fallR
     const trickle = new Mesh(
-      new CylinderGeometry(0.12, 0.22, trickleTop - surface, 6, 1, true),
+      new CylinderGeometry(0.4, 0.5, fallTop - surface, 7, 1, true),
       materials.fall,
     )
-    trickle.position.set(
-      Math.sin(TREE_THETA) * GUTTER_R,
-      (surface + trickleTop) / 2,
-      Math.cos(TREE_THETA) * GUTTER_R,
-    )
+    trickle.position.set(fx, (surface + fallTop) / 2, fz)
     group.add(trickle)
+
+    const splash = new Mesh(faceted(new IcosahedronGeometry(0.45, 0)), materials.foam)
+    splash.position.set(fx, surface + 0.1, fz)
+    splash.scale.set(1.2, 0.6, 1.2)
+    group.add(splash)
   }
 
   // --- Trois canaux qui descendent les terrasses ----------------------------

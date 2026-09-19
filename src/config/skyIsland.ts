@@ -91,8 +91,33 @@ export function rotundaPierAngle(i: number) {
  * bassin. C'est la promesse de cette tâche, et le contrôle de fin la mesure.
  */
 export const ARENA_CLEAR_R = 12.8
-/** La rigole qui ceinture la rotonde, entre les piliers (11,5) et la falaise (14). */
-export const GUTTER_R = 12.6
+/*
+  La rigole qui ceinture la rotonde, et pourquoi ce rayon-là exactement.
+
+  Il est tenu des deux côtés. En dessous, les socles des piliers : ils débordent
+  de 1,25 de part et d'autre du cercle des piliers (11,5), donc jusqu'à 12,75, et
+  une rigole plus près leur passerait au travers. Au-dessus, la falaise du cœur,
+  qui commence à 14 : une rigole plus loin déborderait dans la pente. À 13,35, sa
+  pierre occupe 12,8 à 13,9 — elle dégage les socles et reste sur le plat.
+*/
+export const GUTTER_R = 13.35
+
+/*
+  Où se tient la source : la pointe des racines grimpantes et le bec doré qui s'y
+  pose. Les deux cotes vivent ici parce que `Flora.tsx` pose la racine et
+  `Water.tsx` le bec, et que deux valeurs écrites chacune de son côté finiraient
+  par diverger — le bec verserait dans le vide.
+
+  En arrière de l'axe de la rigole (0,9) et non à son aplomb : c'est le recul
+  qu'il faut au bec, long de deux unités et piqué vers l'intérieur, pour verser
+  **dans** le caniveau et non sur le dallage.
+
+  Deux unités au-dessus du dallage et non une : à une, le filet ne faisait qu'un
+  demi-mètre de haut et la source ne se lisait pas depuis la caméra de jeu, qui
+  regarde l'arène de vingt-quatre unités.
+*/
+export const SOURCE_TIP_R = GUTTER_R + 0.9
+export const SOURCE_TIP_Y = CORE_Y + 2.2
 
 /**
  * Rampes : trois par marche, décalées de 60° d'un étage à l'autre.
