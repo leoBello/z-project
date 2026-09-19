@@ -4,7 +4,7 @@ import { Group, Mesh, Vector3 } from 'three'
 import { now as gameNow } from '../../state/gameClock'
 import { playerTransform } from '../../state/playerTransform'
 import { useGameStore } from '../../store/useGameStore'
-import type { LandmarkId } from '../../types/game'
+import type { HeartSourceId } from '../../types/game'
 import { heartGeometry } from '../models/heartGeometry'
 import { toonGradient } from '../models/toonGradient'
 
@@ -38,7 +38,8 @@ const CONTAINER_SIZE = 0.42
 const worldAnchor = new Vector3()
 
 interface HeartContainerProps {
-  landmarkId: LandmarkId
+  /** Le monument qui le porte — ou la rotonde, après la chute du Lynel. */
+  sourceId: HeartSourceId
   /** Position **locale**, dans le repère du monument. */
   position: [number, number, number]
   /** Distance de ramassage, en unités monde. */
@@ -46,7 +47,7 @@ interface HeartContainerProps {
 }
 
 export function HeartContainer({
-  landmarkId,
+  sourceId,
   position,
   radius = 3.2,
 }: HeartContainerProps) {
@@ -56,7 +57,7 @@ export function HeartContainer({
 
   // Abonnement au store plutôt que lecture par frame : l'objet disparaît une
   // seule fois dans la partie, ce n'est pas une valeur à sonder à 60 fps.
-  const claimed = useGameStore((state) => state.heartContainers.includes(landmarkId))
+  const claimed = useGameStore((state) => state.heartContainers.includes(sourceId))
 
   useFrame(() => {
     const node = mesh.current
@@ -79,7 +80,7 @@ export function HeartContainer({
     const dy = playerTransform.position.y - worldAnchor.y
     if (Math.hypot(dx, dz) > radius || Math.abs(dy) > 3.5) return
 
-    useGameStore.getState().claimHeartContainer(landmarkId)
+    useGameStore.getState().claimHeartContainer(sourceId)
   })
 
   if (claimed) return null

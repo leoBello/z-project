@@ -2,6 +2,7 @@ import { SKY_PORTAL } from '../../config/portal'
 import { Portal } from '../environment/Portal'
 import { Lynel } from '../Lynel'
 import { ArenaGate } from './ArenaGate'
+import { RotundaReward } from './RotundaReward'
 import { Flora } from './Flora'
 import { Ruins } from './Ruins'
 import { SkyTerrain } from './Terrain'
@@ -42,6 +43,7 @@ export default function SkyIsland() {
       <Lynel />
       {/* Elles ne paraissent que pendant le combat : voir `bossState`. */}
       <ArenaGate />
+      <RotundaReward />
     </>
   )
 }

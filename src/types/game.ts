@@ -75,6 +75,18 @@ export interface Annihilation {
 export type LandmarkId = 'temple' | 'pyramid' | 'stele' | 'statue' | 'ruins' | 'nakano'
 
 /**
+ * D'où peut venir un réceptacle de cœur.
+ *
+ * Les monuments, et la rotonde — qui n'est **pas** un monument et ne doit pas en
+ * devenir un : une entrée dans `LANDMARKS` creuse une terrasse, interdit la
+ * végétation, paraît sur la minimap dès la première frame et entre dans le menu
+ * de téléportation. Le réceptacle de la rotonde n'existe qu'après la mort du
+ * Lynel ; l'annoncer sur la carte dès le départ le déflorerait. Même
+ * raisonnement que le portail de l'île, qui n'est pas un monument non plus.
+ */
+export type HeartSourceId = LandmarkId | 'rotunda'
+
+/**
  * Identifiant d'objet ramassable. La table vit dans `config/items.ts`, et les
  * libellés dans `src/i18n/*.json` sous `ui.items`.
  */

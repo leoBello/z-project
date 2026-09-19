@@ -24,6 +24,7 @@ import type {
   ChestId,
   GamePhase,
   ItemId,
+  HeartSourceId,
   LandmarkId,
   MapId,
 } from '../types/game'
@@ -117,7 +118,7 @@ export interface GameState {
    * doit rester pris quand on revient sur place, et un compteur ne saurait pas
    * *lequel* a déjà été ramassé.
    */
-  heartContainers: LandmarkId[]
+  heartContainers: HeartSourceId[]
   /**
    * Lieu dont le panneau est ouvert. Non nul implique `phase === 'paused'`.
    */
@@ -293,7 +294,7 @@ export interface GameState {
    * refaite au passage. Retourne faux s'il était déjà pris, pour que
    * l'appelant sache s'il doit faire disparaître l'objet.
    */
-  claimHeartContainer: (id: LandmarkId) => boolean
+  claimHeartContainer: (id: HeartSourceId) => boolean
   /** Marque un lieu comme trouvé. Sans effet s'il l'était déjà. */
   discoverLandmark: (id: LandmarkId) => void
   /** Ouvre le panneau d'un lieu et met la partie en pause. */
@@ -438,7 +439,7 @@ const initialState = {
   lastHitAt: -Infinity,
   kills: 0,
   discovered: [] as LandmarkId[],
-  heartContainers: [] as LandmarkId[],
+  heartContainers: [] as HeartSourceId[],
   items: [] as ItemId[],
   equipped: {} as Equipment,
   openedChests: [] as ChestId[],
