@@ -1,5 +1,5 @@
 import type { ChestId, ItemId } from '../types/game'
-import { NAKANO, RUINS, STELE, TEMPLE, type Landmark } from './landmarks'
+import { NAKANO, PYRAMID, RUINS, STELE, TEMPLE, type Landmark } from './landmarks'
 
 /**
  * Coffres au trésor de la carte.
@@ -83,6 +83,43 @@ export const TEMPLE_CHEST = define({
   local: [6.2, 7.6],
   yaw: -0.5,
   item: 'zoro-garb',
+  interactRadius: 2.6,
+})
+
+/**
+ * Coffre de la Pyramide — la tenue du Clan.
+ *
+ * Posé en `[6.5, 10.5]` dans le repère de la pyramide, et les trois nombres
+ * sont mesurés, pas choisis à l'œil :
+ *
+ *  - **z = 10,5 contre une base à 8** (demi-largeur du monument) le met deux
+ *    unités et demie en avant du premier gradin, donc hors de tous ses
+ *    colliders — et surtout visiblement *sur le parvis* plutôt que contre le
+ *    mur. Une première version à `z = 9` le collait à l'angle sud-est, où il se
+ *    lisait comme une pierre du monument ;
+ *  - **6,52 unités séparent le coffre du marqueur bleu** du point d'intérêt, en
+ *    local `[0, 11]`. Les deux zones d'interaction font 3 et 2,6 : leur somme
+ *    vaut 5,6, elles ne peuvent donc pas se recouvrir. Sans cette marge, `F`
+ *    aurait eu à arbitrer entre ouvrir le coffre et ouvrir le portfolio, et
+ *    l'invite du HUD aurait clignoté entre les deux dans la zone commune ;
+ *  - **12,3 unités du centre** le laissent sur la partie parfaitement plate de
+ *    la terrasse (rayon 13), donc à l'altitude 4,3 exactement — un coffre à
+ *    cheval sur le fondu du relief flotterait d'un côté et s'enfoncerait de
+ *    l'autre.
+ *
+ * Il est par ailleurs **au sud du monument** en coordonnées monde — `z = 46,5`
+ * pour un centre à 36 — seul côté que la caméra, fixe et tournée vers le nord,
+ * montre d'un bâtiment de cette hauteur.
+ *
+ * Le cap est légèrement de biais : posé d'équerre avec la pyramide, le coffre
+ * se lisait comme une pièce du bâtiment plutôt que comme un objet déposé là.
+ */
+export const PYRAMID_CHEST = define({
+  id: 'pyramid-chest',
+  landmark: PYRAMID,
+  local: [6.5, 10.5],
+  yaw: -0.42,
+  item: 'madara-garb',
   interactRadius: 2.6,
 })
 
@@ -226,6 +263,7 @@ export const RUINS_CHEST = define({
 
 export const CHESTS: readonly Chest[] = [
   TEMPLE_CHEST,
+  PYRAMID_CHEST,
   NAKANO_CHEST,
   STELE_CHEST,
   RUINS_CHEST,

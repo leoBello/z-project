@@ -31,7 +31,7 @@ export type ItemSlot = ItemKind
  * Le premier est celui du départ de partie : c'est lui que `outfitOf` renvoie
  * quand l'emplacement est vide, et il n'existe donc aucun objet qui le donne.
  */
-export type OutfitId = 'luffy' | 'zoro'
+export type OutfitId = 'luffy' | 'zoro' | 'madara'
 
 /**
  * Ce que le personnage tient en main droite. Voir `HeroPlaceholder`.
@@ -88,6 +88,11 @@ export const NEUTRAL_TRAITS: SkinTraits = { speed: 1, jump: 1, water: 1 }
 const SKIN_TRAITS: Record<OutfitId, SkinTraits> = {
   luffy: { speed: 1, jump: 1.2, water: 1 },
   zoro: { speed: 1.18, jump: 1, water: 1 },
+  // Le seul skin dont les deux aptitudes de déplacement sont *en dessous* du
+  // réglage de base : c'est une tenue de guerre, lamelles laquées et manteau
+  // long, et elle se paie au pas. Ce qu'elle rend est ailleurs — un cœur jaune
+  // de plus que la tenue du bretteur. Voir `MADARA_GARB`.
+  madara: { speed: 0.92, jump: 0.95, water: 1 },
 }
 
 export interface Item {
@@ -143,10 +148,10 @@ export interface Item {
 /**
  * Tenue du Chasseur de Pirates — le second skin.
  *
- * Le seul objet du jeu qui change le personnage lui-même, et pas seulement ses
- * vêtements : manteau, haramaki, deux fourreaux, coupe verte et œil clos. C'est
- * assumé — une simple tenue de rechange ne se serait pas vue à cette échelle de
- * silhouette, et l'objet doit valoir la montée jusqu'au Temple.
+ * Il change le personnage lui-même, et pas seulement ses vêtements : manteau,
+ * haramaki, deux fourreaux, coupe verte et œil clos. C'est assumé — une simple
+ * tenue de rechange ne se serait pas vue à cette échelle de silhouette, et
+ * l'objet doit valoir la montée jusqu'au Temple.
  *
  * Il donne des cœurs **et** de la vitesse, mais ce n'est pas un gain sec : le
  * skin de départ saute nettement plus haut, et cette détente-là se perd en
@@ -170,6 +175,41 @@ export const ZORO_GARB: Item = {
   traits: NEUTRAL_TRAITS,
   outfit: 'zoro',
   accent: '#6fa83c',
+}
+
+/**
+ * Tenue du Clan — le troisième skin.
+ *
+ * Elle occupe le **même emplacement** que la tenue du bretteur : on ne porte
+ * qu'une tenue à la fois, et trouver la seconde ne retire pas la première de
+ * l'inventaire. C'est tout l'intérêt d'avoir gardé un emplacement par famille —
+ * le joueur choisit une silhouette, il ne la subit pas dans l'ordre où les
+ * coffres tombent.
+ *
+ * Trois cœurs jaunes, un de plus que toutes les autres tenues, et c'est la
+ * seule chose qu'elle donne. Les deux autres skins ont chacun une aptitude au
+ * dessus du réglage de base — la détente pour le premier, la vitesse au sol
+ * pour le second — et celui-ci est **en dessous des deux** (voir `SKIN_TRAITS`).
+ * L'échange se lit donc d'un coup : c'est la tenue qui encaisse, pas celle qui
+ * se déplace. Un troisième skin qui aurait ajouté des cœurs *et* de la vitesse
+ * aurait rendu les deux autres sans objet dès son ouverture.
+ *
+ * L'accent est un cramoisi laqué, repris des lamelles du plastron. Il voisine
+ * avec le rouge de la lame maudite, seule autre teinte chaude de l'inventaire ;
+ * les deux se séparent par la valeur — celui-ci est franc et saturé, celui de
+ * la lame est un sang séché, sombre et sourd.
+ */
+export const MADARA_GARB: Item = {
+  id: 'madara-garb',
+  kind: 'outfit',
+  bonusHearts: 3,
+  attackMultiplier: 1,
+  damageMultiplier: 1,
+  // Comme pour la tenue du bretteur : le poids de cette armure n'est pas ici
+  // mais dans `SKIN_TRAITS`, parce qu'il vient du skin, pas du vêtement.
+  traits: NEUTRAL_TRAITS,
+  outfit: 'madara',
+  accent: '#c8443f',
 }
 
 /**
@@ -265,7 +305,13 @@ export const FISHMAN_SCALES: Item = {
   accent: '#7fd4e8',
 }
 
-export const ITEMS: readonly Item[] = [ZORO_GARB, KUSANAGI, CURSED_BLADE, FISHMAN_SCALES]
+export const ITEMS: readonly Item[] = [
+  ZORO_GARB,
+  MADARA_GARB,
+  KUSANAGI,
+  CURSED_BLADE,
+  FISHMAN_SCALES,
+]
 
 /** Retrouve un objet par son identifiant. */
 export function itemById(id: ItemId): Item | undefined {
@@ -317,6 +363,19 @@ export function outfitOf(equipment: Equipment): OutfitId {
 }
 
 /**
+ * Arme portée par un skin qui n'a rien trouvé.
+ *
+ * Une table et non une suite de ternaires : au deuxième skin armé d'office, la
+ * condition inversée (« tout le monde sauf le premier ») devenait un piège — le
+ * skin ajouté héritait silencieusement du défaut du voisin.
+ */
+const DEFAULT_WEAPON: Record<OutfitId, WeaponId> = {
+  luffy: 'fists',
+  zoro: 'sword',
+  madara: 'sword',
+}
+
+/**
  * Ce que le personnage tient, pour l'équipement courant.
  *
  * Contrairement à `outfitOf`, le défaut n'est pas constant : **il dépend du
@@ -328,7 +387,7 @@ export function outfitOf(equipment: Equipment): OutfitId {
 export function weaponOf(equipment: Equipment, outfit: OutfitId): WeaponId {
   const id = equipment.weapon
   const equipped = id ? itemById(id)?.weapon : undefined
-  return equipped ?? (outfit === 'zoro' ? 'sword' : 'fists')
+  return equipped ?? DEFAULT_WEAPON[outfit]
 }
 
 /**

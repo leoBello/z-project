@@ -19,7 +19,7 @@ import { toonGradient } from './toonGradient'
  * Convention : l'avant du modèle est +Z, la main droite du personnage est
  * donc du côté -X (right = forward × up en repère main droite).
  *
- * **Les deux skins sont des habillages d'un rig unique.** Quand le second est
+ * **Les skins sont des habillages d'un rig unique.** Quand le second est
  * arrivé, la tentation était d'écrire un second personnage à côté ; ça aurait
  * fait deux cycles de marche à régler, deux animations d'attaque à garder
  * synchrones, et la garantie qu'elles divergent au premier ajustement. Ce qui
@@ -29,15 +29,30 @@ import { toonGradient } from './toonGradient'
  * a aucune. Le squelette et toutes les animations sont partagés, y compris le
  * coup porté : le bras qui frappe suit la même courbe qu'il tienne une lame ou
  * un poing, seule la traînée de `StrikeArc` change de forme.
+ *
+ * Les pièces propres à chaque skin sont réunies dans **une seule table**,
+ * `SKINS` : buste, visage, pièce de tête et réglages de son ressort. Tant qu'il
+ * n'y en avait que deux, elles se choisissaient par un booléen `isZoro` semé
+ * dans le corps du composant ; le troisième skin transformait chacun de ces
+ * points en « tout le monde sauf celui-là », et un skin ajouté aurait hérité en
+ * silence de l'habillage du voisin.
  */
 
 /** Palette d'un skin. Tous les skins déclarent exactement ces teintes. */
 interface Palette {
   /** Vêtement de buste : gilet ouvert, ou manteau long. */
   garment: string
-  /** Bas du corps : short, ou pantalon. */
+  /**
+   * Bas du corps : short, pantalon, ou bandes de lin.
+   *
+   * Le lin du clan habille aussi ses avant-bras : c'est la même pièce de tissu
+   * enroulée aux deux endroits, elle n'a donc pas de teinte à elle.
+   */
   trouser: string
-  /** Ceinture ventrale : écharpe nouée, ou haramaki. */
+  /**
+   * Ceinture ventrale : écharpe nouée, haramaki, ou ceinture du clan — qui
+   * teinte aussi son col montant et un rang de lamelles sur deux.
+   */
   belt: string
   skin: string
   /** Peau assombrie. Les cicatrices, et elles seules. */
@@ -51,9 +66,12 @@ interface Palette {
   cord: string
   eye: string
   outline: string
-  /** Teinte d'appoint : paille du chapeau, ou laque des fourreaux. */
+  /** Teinte d'appoint : paille du chapeau, laque des fourreaux, ou lamelles. */
   gear: string
-  /** Liseré de la pièce d'appoint : ruban du chapeau, ou tsuba des fourreaux. */
+  /**
+   * Liseré de la pièce d'appoint : ruban du chapeau, tsuba des fourreaux, ou
+   * ligature d'or des lamelles.
+   */
   gearTrim: string
 }
 
@@ -64,10 +82,12 @@ interface Palette {
  * existe un : la carte de l'objet doit montrer ce qu'on va voir courir dans
  * l'herbe.
  *
- * Les deux skins doivent surtout se distinguer **l'un de l'autre** en un coup
+ * Les skins doivent surtout se distinguer **les uns des autres** en un coup
  * d'œil, à 21 unités de recul. Ils le font par la valeur autant que par la
  * teinte : le premier est clair et chaud sur un buste nu, le second sombre et
- * froid sous un manteau long qui double la largeur de la silhouette.
+ * froid sous un manteau long qui double la largeur de la silhouette, le
+ * troisième sombre et *chaud* — le seul dont la masse sombre soit coupée de
+ * cramoisi et d'or, et le seul que sa chevelure prolonge jusqu'aux reins.
  */
 const OUTFITS: Record<OutfitId, Palette> = {
   luffy: {
@@ -111,6 +131,93 @@ const OUTFITS: Record<OutfitId, Palette> = {
     outline: '#171226',
     gear: '#1b1822',
     gearTrim: '#d8a93f',
+  },
+  // Le prune et le cramoisi n'existent nulle part ailleurs dans le jeu : le
+  // rouge des cœurs est plus clair et ne vit qu'au HUD, aucune confusion n'est
+  // possible, et le contre-jour parme de la scène détache cette silhouette-là
+  // du décor mieux qu'aucune autre.
+  madara: {
+    garment: '#4b4062',
+    // Les bandages de lin, qui tiennent lieu de bas et de manches. La teinte
+    // est volontairement à peine cassée : du blanc pur aurait brillé plus que
+    // la lame de l'épée.
+    trouser: '#ece4d4',
+    belt: '#7d1f22',
+    skin: '#f0c39c',
+    scar: '#c98a5e',
+    hair: '#1a1723',
+    boot: '#2f2a3d',
+    blade: '#dde6ef',
+    guard: '#d8a93f',
+    grip: '#3a2a1e',
+    cord: '#2f4f66',
+    eye: '#1b1626',
+    // Contour plus froid que celui des deux autres : un cerne brun sur du
+    // prune vire au marron sale.
+    outline: '#161226',
+    gear: '#a8302f',
+    gearTrim: '#d8a93f',
+  },
+}
+
+/**
+ * Habillage d'un skin : ce que le rig monte sur son squelette.
+ *
+ * Les quatre nombres décrivent le **ressort de la pièce de tête**, le détail
+ * qui vend l'animation : elle traîne d'un pas derrière le mouvement. Ils sont
+ * ici et pas dans les composants parce qu'ils vivent dans `useFrame`, sur un
+ * groupe que le rig anime lui-même — un chapeau posé en équilibre, une coupe
+ * courte et une crinière qui descend aux reins n'ont ni la même masse ni la
+ * même liberté.
+ */
+interface Skin {
+  torso: (props: { palette: Palette }) => React.JSX.Element
+  face: (props: { palette: Palette }) => React.JSX.Element
+  headwear: (props: { palette: Palette }) => React.JSX.Element
+  /** Inclinaison au repos. Un chapeau est posé à plat, des cheveux non. */
+  rest: number
+  /** Retard au pas, puis basculement en l'air. */
+  swing: number
+  air: number
+  /**
+   * Roulis latéral, qui suit les épaules.
+   *
+   * Nul pour tout ce qui tient au crâne : une coupe courte qui roule sur l'axe
+   * Z se lit comme un défaut, une masse posée ou pendante se lit comme du poids.
+   */
+  roll: number
+}
+
+const SKINS: Record<OutfitId, Skin> = {
+  luffy: {
+    torso: StrawHatTorso,
+    face: StrawHatFace,
+    headwear: StrawHat,
+    rest: -0.05,
+    swing: 0.14,
+    air: 0.3,
+    roll: 0.05,
+  },
+  zoro: {
+    torso: SwordsmanTorso,
+    face: SwordsmanFace,
+    headwear: CroppedHair,
+    rest: -0.1,
+    swing: 0.1,
+    air: 0.22,
+    roll: 0,
+  },
+  // La crinière est de loin la plus ample des trois pièces de tête : c'est une
+  // masse libre qui descend au bas du dos, alors que le chapeau ne fait que
+  // rebondir sur un crâne et la coupe courte que frémir.
+  madara: {
+    torso: ClanTorso,
+    face: ClanFace,
+    headwear: Mane,
+    rest: -0.06,
+    swing: 0.16,
+    air: 0.34,
+    roll: 0.09,
   },
 }
 
@@ -216,11 +323,16 @@ export function HeroPlaceholder({
   const airBlend = useRef(0)
 
   const palette = OUTFITS[outfit]
-  const isZoro = outfit === 'zoro'
+  const skin = SKINS[outfit]
   /** Mains nues : la main droite ne porte rien, et les deux poings grossissent. */
   const barehanded = weapon === 'fists'
-  /** Inclinaison au repos de la pièce de tête. Chapeau posé plat, cheveux non. */
-  const headwearRest = isZoro ? -0.1 : -0.05
+  // Majuscules : ce sont des composants, et JSX ne monte que ce qui commence
+  // par une capitale — en minuscule, `<skin.torso />` partirait chercher une
+  // balise HTML de ce nom.
+  const Torso = skin.torso
+  const Face = skin.face
+  const Headwear = skin.headwear
+
   useFrame((state, rawDelta) => {
     if (!torso.current || !legL.current || !legR.current) return
     if (!armL.current || !armR.current || !head.current || !headwear.current) return
@@ -293,40 +405,33 @@ export function HeroPlaceholder({
     head.current.rotation.x = -0.1 * run * ground
 
     // La pièce de tête traîne derrière le mouvement — le détail qui vend
-    // l'animation. Le chapeau et la coupe partagent ce ressort à un pas de
-    // retard ; seules leurs amplitudes diffèrent. Le chapeau est de loin le
-    // plus ample des deux : c'est une masse posée sur le crâne, rien ne la
-    // retient, alors que des cheveux courts ne font que frémir.
+    // l'animation. Toutes partagent ce ressort à un pas de retard ; seules
+    // leurs amplitudes diffèrent, et elles sont déclarées par le skin.
     const lag = Math.sin(stridePhase.current - 0.6)
-    headwear.current.rotation.x = isZoro
-      ? headwearRest - lag * 0.1 * run - air * 0.22
-      : headwearRest - lag * 0.14 * run - air * 0.3
-    // Le balancement latéral n'existe que pour le chapeau : une coupe courte
-    // qui roule sur l'axe Z se lit comme un défaut, un bord de paille qui suit
-    // les épaules se lit comme du poids.
-    if (!isZoro) headwear.current.rotation.z = lag * 0.05 * run
+    headwear.current.rotation.x = skin.rest - lag * skin.swing * run - air * skin.air
+    headwear.current.rotation.z = lag * skin.roll * run
   })
 
   return (
     <group>
       {/* --- Jambes : pivot à la hauteur des hanches --- */}
       <group ref={legL} position={[0.12, HIP_Y, 0]}>
-        <Leg palette={palette} zoro={isZoro} />
+        <Leg palette={palette} outfit={outfit} />
       </group>
       <group ref={legR} position={[-0.12, HIP_Y, 0]}>
-        <Leg palette={palette} zoro={isZoro} />
+        <Leg palette={palette} outfit={outfit} />
       </group>
 
       {/* --- Buste : porte les bras et la tête --- */}
       <group ref={torso} position={[0, HIP_Y, 0]}>
-        {isZoro ? <SwordsmanTorso palette={palette} /> : <StrawHatTorso palette={palette} />}
+        <Torso palette={palette} />
 
         {/* --- Bras : pivot à l'épaule --- */}
         <group ref={armL} position={[0.24, SHOULDER_Y - HIP_Y, 0]}>
-          <Arm palette={palette} zoro={isZoro} fist={barehanded} side={1} />
+          <Arm palette={palette} outfit={outfit} fist={barehanded} side={1} />
         </group>
         <group ref={armR} position={[-0.24, SHOULDER_Y - HIP_Y, 0]}>
-          <Arm palette={palette} zoro={isZoro} fist={barehanded} side={-1} />
+          <Arm palette={palette} outfit={outfit} fist={barehanded} side={-1} />
           {weapon === 'cursed' && <CursedBlade palette={palette} />}
           {weapon === 'katana' && <Katana palette={palette} />}
           {weapon === 'sword' && <Sword palette={palette} />}
@@ -348,11 +453,11 @@ export function HeroPlaceholder({
             </mesh>
           ))}
 
-          {isZoro ? <SwordsmanFace palette={palette} /> : <StrawHatFace palette={palette} />}
+          <Face palette={palette} />
 
-          {/* Pièce de tête, animée séparément : chapeau ou coupe. */}
-          <group ref={headwear} position={[0, 0.16, 0]} rotation={[headwearRest, 0, 0]}>
-            {isZoro ? <CroppedHair palette={palette} /> : <StrawHat palette={palette} />}
+          {/* Pièce de tête, animée séparément : chapeau, coupe ou crinière. */}
+          <group ref={headwear} position={[0, 0.16, 0]} rotation={[skin.rest, 0, 0]}>
+            <Headwear palette={palette} />
           </group>
         </group>
       </group>
@@ -360,9 +465,39 @@ export function HeroPlaceholder({
   )
 }
 
-/** Jambe : mollet nu sous un short, ou pantalon sombre dans une botte. */
-function Leg({ palette, zoro }: { palette: Palette; zoro: boolean }) {
-  if (zoro) {
+/**
+ * Jambe : mollet nu sous un short, pantalon sombre dans une botte, ou mollet
+ * bandé de lin sur une sandale plate.
+ */
+function Leg({ palette, outfit }: { palette: Palette; outfit: OutfitId }) {
+  if (outfit === 'madara') {
+    return (
+      <group>
+        <mesh castShadow position={[0, -0.16, 0]}>
+          <capsuleGeometry args={[0.075, 0.16, 4, 10]} />
+          <meshToonMaterial color={palette.trouser} gradientMap={toonGradient} />
+        </mesh>
+
+        {/* Bandages : trois anneaux qui débordent du mollet. Ce sont les
+            interstices entre eux, et non les anneaux, qui font lire du tissu
+            enroulé plutôt qu'une guêtre d'une seule pièce. */}
+        {[-0.1, -0.18, -0.26].map((y) => (
+          <mesh key={y} castShadow position={[0, y, 0]}>
+            <cylinderGeometry args={[0.086, 0.086, 0.05, 10]} />
+            <meshToonMaterial color={palette.trouser} gradientMap={toonGradient} />
+          </mesh>
+        ))}
+
+        <mesh castShadow position={[0, -0.35, 0.02]}>
+          <boxGeometry args={[0.17, 0.1, 0.22]} />
+          <meshToonMaterial color={palette.boot} gradientMap={toonGradient} />
+          <Outlines thickness={OUTLINE} color={palette.outline} />
+        </mesh>
+      </group>
+    )
+  }
+
+  if (outfit === 'zoro') {
     return (
       <group>
         <mesh castShadow position={[0, -0.17, 0]}>
@@ -419,32 +554,73 @@ function Leg({ palette, zoro }: { palette: Palette; zoro: boolean }) {
   )
 }
 
-/** Bras et main, suspendus sous le pivot d'épaule. Nus dans les deux skins. */
+/**
+ * Bras et main, suspendus sous le pivot d'épaule.
+ *
+ * Nus dans les deux premiers skins, pris dans le lin et les lamelles pour le
+ * troisième — c'est le seul dont le bras porte quelque chose, et c'est ce qui
+ * élargit sa silhouette vue de face.
+ */
 function Arm({
   palette,
-  zoro,
+  outfit,
   fist,
   side,
 }: {
   palette: Palette
-  zoro: boolean
+  outfit: OutfitId
   /** Main nue et fermée : la main grossit, parce qu'elle est l'arme. */
   fist: boolean
-  /** +1 pour le bras gauche du modèle, -1 pour le droit. Oriente le bandana. */
+  /** +1 pour le bras gauche du modèle, -1 pour le droit. Oriente l'épaulière. */
   side: number
 }) {
+  const clan = outfit === 'madara'
+
   return (
     <group>
       <mesh castShadow position={[0, -0.14, 0]}>
-        <capsuleGeometry args={[zoro ? 0.06 : 0.058, 0.17, 4, 10]} />
-        <meshToonMaterial color={palette.skin} gradientMap={toonGradient} />
+        <capsuleGeometry args={[outfit === 'luffy' ? 0.058 : 0.06, 0.17, 4, 10]} />
+        {/* Le bras du clan est pris dans le lin jusqu'au poignet : c'est le
+            tissu qu'on voit, pas la peau. */}
+        <meshToonMaterial
+          color={clan ? palette.trouser : palette.skin}
+          gradientMap={toonGradient}
+        />
         <Outlines thickness={OUTLINE} color={palette.outline} />
       </mesh>
+
+      {/* Épaulière à lamelles : trois plaques qui s'écartent vers l'extérieur.
+          C'est la pièce la plus reconnaissable de la tenue du clan, et la seule
+          qui élargisse vraiment la silhouette vue de face. */}
+      {clan &&
+        [0, 1, 2].map((row) => (
+          <mesh
+            key={row}
+            castShadow
+            position={[side * (0.03 + row * 0.022), 0.02 - row * 0.062, 0]}
+            rotation={[0, 0, side * -0.22]}
+          >
+            <boxGeometry args={[0.15, 0.055, 0.19]} />
+            <meshToonMaterial
+              color={row % 2 === 0 ? palette.gear : palette.belt}
+              gradientMap={toonGradient}
+            />
+            {row === 0 && <Outlines thickness={OUTLINE} color={palette.outline} />}
+          </mesh>
+        ))}
+
+      {/* Bandage d'avant-bras, sous l'épaulière. */}
+      {clan && (
+        <mesh castShadow position={[0, -0.2, 0]}>
+          <cylinderGeometry args={[0.07, 0.07, 0.11, 10]} />
+          <meshToonMaterial color={palette.trouser} gradientMap={toonGradient} />
+        </mesh>
+      )}
 
       {/* Bandana noué au biceps gauche, donc du côté qui balance librement
           pendant l'attaque : le seul détail de la tenue qui s'anime sans un
           ressort de plus. */}
-      {zoro && side > 0 && (
+      {outfit === 'zoro' && side > 0 && (
         <>
           <mesh castShadow position={[0, -0.08, 0]}>
             <cylinderGeometry args={[0.073, 0.073, 0.09, 10]} />
@@ -635,6 +811,103 @@ function SwordsmanTorso({ palette }: { palette: Palette }) {
 }
 
 /**
+ * Buste du troisième skin : manteau long et fermé, plastron de lamelles.
+ *
+ * C'est le seul des trois dont le vêtement de buste ne s'ouvre pas. Les deux
+ * autres montrent un torse nu entre deux pans, et c'est ce qui les fait lire
+ * comme des combattants ; celui-ci montre une armure, et une armure ouverte sur
+ * la poitrine n'en est plus une. La silhouette y gagne au passage la seule
+ * forme en cloche des trois — 0,36 de rayon en bas contre 0,30 et 0,37 pour des
+ * pans qui, eux, laissent voir au travers.
+ */
+function ClanTorso({ palette }: { palette: Palette }) {
+  return (
+    <>
+      <mesh castShadow position={[0, 0.26, 0]}>
+        <cylinderGeometry args={[0.21, 0.36, 0.6, 14]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      {/* Ceinture, fine : le plastron occupe déjà toute la hauteur du buste, un
+          haramaki de plus l'aurait coupé en deux. */}
+      <mesh castShadow position={[0, 0.16, 0]}>
+        <cylinderGeometry args={[0.27, 0.28, 0.07, 14]} />
+        <meshToonMaterial color={palette.belt} gradientMap={toonGradient} />
+      </mesh>
+
+      <ClanArmor palette={palette} />
+    </>
+  )
+}
+
+/**
+ * Plastron du clan : lamelles laquées, col montant et longs pans dans le dos.
+ *
+ * Trois rangs seulement, alternés clair et sombre, avec deux ligatures d'or
+ * verticales. Un rang de plus et les lamelles devenaient des rayures : à cette
+ * échelle, sous une caméra qui recule de 21 unités, c'est l'alternance qu'on
+ * lit, pas le compte.
+ */
+function ClanArmor({ palette }: { palette: Palette }) {
+  return (
+    <>
+      {/*
+        Les lamelles sont **posées en avant du manteau**, pas centrées sur lui.
+
+        C'est un correctif, et il vaut d'être noté : à `z = 0.02`, une plaque de
+        0,30 d'épaisseur ne dépassait que de 0,17 vers l'avant, alors que le
+        manteau fait déjà 0,24 à 0,27 de rayon à cette hauteur — l'armure était
+        donc intégralement enfouie dedans, et le personnage se lisait comme une
+        robe unie avec deux épaulières rouges. C'est le même piège que la
+        balafre du bretteur : il faut sortir du volume qu'on habille, pas s'y
+        loger.
+      */}
+      {[0, 1, 2].map((row) => (
+        <group key={row}>
+          <mesh castShadow position={[0, 0.42 - row * 0.088, 0.1]}>
+            <boxGeometry args={[0.44, 0.08, 0.34]} />
+            <meshToonMaterial
+              color={row % 2 === 0 ? palette.gear : palette.belt}
+              gradientMap={toonGradient}
+            />
+            <Outlines thickness={OUTLINE} color={palette.outline} />
+          </mesh>
+          {/* Ligature : deux fils d'or qui traversent les lamelles. */}
+          {[0.12, -0.12].map((x) => (
+            <mesh key={x} position={[x, 0.42 - row * 0.088, 0.265]}>
+              <boxGeometry args={[0.026, 0.082, 0.02]} />
+              <meshToonMaterial color={palette.gearTrim} gradientMap={toonGradient} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+
+      {/* Col montant, ouvert vers l'arrière : c'est la pièce qui, plus que
+          l'armure elle-même, dit « clan » d'un seul coup d'œil. */}
+      <mesh castShadow position={[0, 0.5, -0.04]} rotation={[-0.24, 0, 0]}>
+        <cylinderGeometry args={[0.29, 0.2, 0.24, 10, 1, true]} />
+        {/* Cylindre ouvert : sans `DoubleSide`, on voit à travers le col dès
+            que le personnage se présente de trois quarts arrière. */}
+        <meshToonMaterial color={palette.belt} gradientMap={toonGradient} side={DoubleSide} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      {/* Deux longs pans dans le dos. Ils ne sont pas animés : à la vitesse de
+          course, le rebond du buste les fait déjà bouger, et un ressort de plus
+          n'apportait qu'un flottement mou. */}
+      {[0.13, -0.13].map((x) => (
+        <mesh key={x} castShadow position={[x, -0.02, -0.31]} rotation={[0.16, 0, 0]}>
+          <boxGeometry args={[0.17, 0.56, 0.05]} />
+          <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+          <Outlines thickness={OUTLINE} color={palette.outline} />
+        </mesh>
+      ))}
+    </>
+  )
+}
+
+/**
  * Visage du premier skin.
  *
  * Le sourire est un **arc de tore**, pas une texture : trois primitives pour la
@@ -742,6 +1015,56 @@ function SwordsmanFace({ palette }: { palette: Palette }) {
 }
 
 /**
+ * Visage du troisième skin : front mangé par la frange, bouche fermée.
+ *
+ * Les trois visages se distinguent par la **bouche** avant tout le reste, parce
+ * que c'est le seul trait qui reste lisible une fois la pièce de tête
+ * reconnue : un sourire en arc pour le premier, une ligne droite pour le
+ * second, et pour celui-ci une ligne plus courte et plus basse — une bouche
+ * qu'on ne voit pas parler.
+ *
+ * Les yeux restent haut et la frange descend jusqu'à eux : c'est ce qui donne
+ * le regard couvert, et c'est un réglage à cinq centimètres près. Deux
+ * centimètres plus bas, la frange mange les yeux et il ne reste qu'un casque
+ * noir ; deux centimètres plus haut, le front se dégage et le personnage
+ * redevient avenant.
+ */
+function ClanFace({ palette }: { palette: Palette }) {
+  return (
+    <>
+      {/* Frange, aplatie sur le crâne. */}
+      <mesh castShadow position={[0, 0.11, 0.03]} scale={[1, 0.62, 1]}>
+        <sphereGeometry args={[0.265, 16, 14]} />
+        <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
+      </mesh>
+
+      {/* Mèches qui retombent devant les tempes : c'est ce qui fait passer la
+          coupe de « cheveux courts sombres » à « crinière », de face comme de
+          profil — la masse arrière, elle, ne se voit pas de face. */}
+      {[0.2, -0.2].map((x) => (
+        <mesh key={x} castShadow position={[x, -0.06, 0.16]} rotation={[0.22, 0, 0]}>
+          <boxGeometry args={[0.09, 0.34, 0.06]} />
+          <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
+        </mesh>
+      ))}
+
+      {/* yeux : la face regarde +Z */}
+      {[0.09, -0.09].map((x) => (
+        <mesh key={x} position={[x, 0.01, 0.235]} scale={[0.5, 1, 0.4]}>
+          <sphereGeometry args={[0.045, 10, 10]} />
+          <meshBasicMaterial color={palette.eye} />
+        </mesh>
+      ))}
+
+      <mesh position={[0, -0.1, 0.222]}>
+        <boxGeometry args={[0.085, 0.016, 0.01]} />
+        <meshBasicMaterial color={palette.eye} />
+      </mesh>
+    </>
+  )
+}
+
+/**
  * Chapeau de paille.
  *
  * La pièce qui porte tout le skin. Son bord fait **0,44 de rayon contre 0,26
@@ -806,6 +1129,72 @@ function CroppedHair({ palette }: { palette: Palette }) {
           rotation={[spike.tilt + 0.5, 0, spike.x * 1.2]}
         >
           <coneGeometry args={[0.075, spike.long ? 0.33 : 0.26, 5]} />
+          <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
+        </mesh>
+      ))}
+    </>
+  )
+}
+
+/**
+ * Crinière du clan.
+ *
+ * Trois pièces, et la répartition compte plus que le nombre :
+ *
+ *  - une **masse arrière**, poussée franchement derrière la tête. La première
+ *    version la centrait sur le crâne : elle débordait alors jusque devant les
+ *    yeux et le personnage portait un casque noir, visage compris. Une
+ *    chevelure se voit *derrière* une tête, sinon c'est une cagoule ;
+ *  - une **traîne** qui descend jusqu'au bas du dos. C'est elle qui fait la
+ *    silhouette : sans elle, la coupe reste courte quel que soit le nombre de
+ *    pointes qu'on ajoute autour. Elle vit dans le groupe animé, donc elle
+ *    balaie avec un pas de retard sur la marche — le détail qui la fait lire
+ *    comme des cheveux et non comme une cape ;
+ *  - des **pointes** irrégulières qui découpent le contour. Leur longueur et
+ *    leur écartement suivent une progression volontairement inégale : une
+ *    couronne régulière se lit comme un oursin. C'est le même raisonnement que
+ *    les plaques de mousse de la pyramide — ce qui fait vivant, c'est
+ *    l'irrégularité du contour.
+ */
+const MANE_SPIKES: ReadonlyArray<{ x: number; y: number; z: number; len: number; tilt: number }> = [
+  { x: 0.24, y: 0.02, z: -0.3, len: 0.6, tilt: 1.05 },
+  { x: -0.24, y: 0.02, z: -0.3, len: 0.64, tilt: 1.05 },
+  { x: 0.34, y: -0.16, z: -0.2, len: 0.5, tilt: 1.45 },
+  { x: -0.34, y: -0.16, z: -0.2, len: 0.47, tilt: 1.45 },
+  { x: 0.13, y: 0.16, z: -0.32, len: 0.52, tilt: 0.62 },
+  { x: -0.15, y: 0.14, z: -0.32, len: 0.56, tilt: 0.64 },
+  { x: 0, y: 0.22, z: -0.26, len: 0.42, tilt: 0.34 },
+]
+
+function Mane({ palette }: { palette: Palette }) {
+  return (
+    <>
+      {/* Masse arrière : elle donne le volume, les pointes ne font que le
+          découper. Son centre est à `z = -0.24`, donc franchement en arrière
+          du crâne — c'est ce décalage qui dégage le visage. */}
+      <mesh castShadow position={[0, -0.04, -0.24]} scale={[1.15, 1.02, 1.25]}>
+        <sphereGeometry args={[0.26, 14, 12]} />
+        <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      {/* Traîne, apex vers le bas : large aux épaules, effilée au creux des
+          reins. Elle traverse le manteau, et c'est voulu — des cheveux
+          retombent *sur* un vêtement, ils ne s'arrêtent pas à son bord. */}
+      <mesh castShadow position={[0, -0.62, -0.3]} rotation={[0.1, 0, Math.PI]}>
+        <coneGeometry args={[0.3, 1.05, 7]} />
+        <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      {MANE_SPIKES.map((spike) => (
+        <mesh
+          key={`${spike.x}:${spike.y}`}
+          castShadow
+          position={[spike.x, spike.y, spike.z]}
+          rotation={[spike.tilt, 0, spike.x * 1.1]}
+        >
+          <coneGeometry args={[0.1, spike.len, 5]} />
           <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
         </mesh>
       ))}

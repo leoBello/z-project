@@ -33,6 +33,24 @@ const GLYPHS: Record<ItemId, React.JSX.Element> = {
       />
     </>
   ),
+  'madara-garb': (
+    <>
+      {/* Manteau fermé : une seule masse qui s'évase, là où le manteau du
+          bretteur s'ouvre sur une échancrure. C'est ce plein contre ce vide qui
+          sépare les deux cases d'un coup d'œil, avant la couleur. */}
+      <path d="M8 5l4-1.6L16 5l3 3-2 2-1-1v11H8V9L7 10 5 8z" fill="currentColor" opacity="0.9" />
+      {/* Trois lamelles du plastron, en creux. Trois et pas deux : c'est
+          l'empilement qui dit « armure », deux traits font une couture. */}
+      <path
+        d="M9.4 10.2h5.2M9.4 12.6h5.2M9.4 15h5.2"
+        stroke="#171226"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+      {/* Col montant, qui dépasse des épaules. */}
+      <path d="M9.2 6.4 12 5.6l2.8 0.8-0.6 1.5L12 7.2l-2.2 0.7z" fill="#171226" opacity="0.75" />
+    </>
+  ),
   kusanagi: (
     <>
       {/* Lame en diagonale : à 44 pixels, c'est l'inclinaison qui distingue une
