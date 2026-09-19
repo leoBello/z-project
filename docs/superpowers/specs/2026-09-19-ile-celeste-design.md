@@ -44,7 +44,7 @@ propose aujourd'hui aucune interaction. Ce lot lui en donne une.
 | Sujet | Décision |
 |---|---|
 | Forme générale | Trois terrasses concentriques — prairie (r 34→55, alt. 0), enceinte (r 16→32, alt. +3,6), rotonde (r 0→14, alt. +7,2). Socle inversé de 46 de profondeur. Diamètre 110. |
-| Franchissement | Falaise de pente 1,8 partout, sauf trois couloirs de rampe par marche, de pente 0,45. Les rampes du haut sont décalées de 60° de celles du bas. |
+| Franchissement | Falaise de pente 2,7 au plus raide partout, sauf trois couloirs de rampe par marche, dont la pente **culmine** à 0,45. Les rampes du haut sont décalées de 60° de celles du bas. |
 | Arrivée | Plein sud, en `(0, 0, 48)`. Imposé par la caméra, fixe et tournée vers le nord. |
 | Vestiges | Enceinte crevée de brèches, porte au sud dans l'axe de la rampe, quatre tours, salle à colonnes, rotonde à coupole en encorbellement, aqueduc de sept travées, allée de statues. |
 | Dorures | Six pièces seulement : frise d'enceinte, tympan de la porte, flèche de la grande tour, chapiteaux, coupole plaquée, mosaïque de l'arène. Elles ne subsistent que sur les pans restés debout. |

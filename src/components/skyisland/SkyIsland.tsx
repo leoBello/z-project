@@ -1,7 +1,7 @@
-import { CuboidCollider, RigidBody } from '@react-three/rapier'
 import { SKY_PORTAL } from '../../config/portal'
 import { Portal } from '../environment/Portal'
-import { toonGradient } from '../models/toonGradient'
+import { SkyTerrain } from './Terrain'
+import { useSkyMaterials } from './palette'
 
 /**
  * L'Île Céleste — le point d'entrée du fragment chargé à la demande.
@@ -12,47 +12,35 @@ import { toonGradient } from '../models/toonGradient'
  * configurer, mais il y a une règle à tenir — voir l'en-tête de ce fichier-là.
  *
  * L'export est **par défaut**, parce que `React.lazy` n'accepte que ça.
- */
-
-/** Rayon de l'île. Provisoire : la tâche 2 apporte le vrai relief. */
-const PLACEHOLDER_RADIUS = 55
-
-/**
- * Instant d'ouverture du portail du retour.
  *
- * `0` et non `Date.now()` : la valeur ne sert qu'à l'animation de dépliement,
- * qui compare à l'horloge de jeu. Un zéro la place très loin dans le passé, donc
- * l'anneau est déjà déplié à la première frame — ce qu'on veut, puisque le
- * joueur vient d'en sortir : le voir se percer derrière soi n'aurait aucun sens.
+ * Les matériaux sont créés ici, une fois, et descendus en props. Chaque pièce
+ * pourrait les construire de son côté ; elle en fabriquerait alors un jeu
+ * complet, et l'île en compterait quatre ou cinq exemplaires pour un résultat
+ * identique. C'est aussi ce qui garantit qu'une retouche de la pierre se voie
+ * partout à la fois.
  */
-const ALREADY_OPEN = 0
-
 export default function SkyIsland() {
+  const materials = useSkyMaterials()
+
   return (
     <>
-      <RigidBody type="fixed" colliders={false} friction={1}>
-        {/*
-          Terrain provisoire : un disque plat, le temps que le relief arrive.
-
-          Il est là pour que la transition entre les deux cartes se vérifie toute
-          seule, sans dépendre de la géométrie qui viendra ensuite — c'est la
-          seule chose que cette étape prétend livrer, et elle doit pouvoir être
-          jugée sans le reste.
-        */}
-        <CuboidCollider
-          args={[PLACEHOLDER_RADIUS, 0.5, PLACEHOLDER_RADIUS]}
-          position={[0, -0.5, 0]}
-        />
-        <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <circleGeometry args={[PLACEHOLDER_RADIUS, 48]} />
-          <meshToonMaterial gradientMap={toonGradient} color="#8fbf63" />
-        </mesh>
-      </RigidBody>
+      <SkyTerrain materials={materials} />
 
       {/* Le jumeau de celui de Nakano, au point d'arrivée. Le même composant :
           deux portails qui divergeraient au premier réglage de l'anneau
-          seraient un bug qu'on ne verrait qu'en faisant l'aller-retour. */}
+          seraient un défaut qu'on ne verrait qu'en faisant l'aller-retour. */}
       <Portal at={SKY_PORTAL} openedAt={ALREADY_OPEN} />
     </>
   )
 }
+
+/**
+ * Instant d'ouverture du portail du retour.
+ *
+ * `0` et non l'horloge courante : la valeur ne sert qu'à l'animation de
+ * dépliement, qui la compare au temps de jeu. Un zéro la place très loin dans le
+ * passé, donc l'anneau est déjà déplié à la première frame — ce qu'on veut,
+ * puisque le joueur vient d'en sortir. Le voir se percer derrière soi n'aurait
+ * aucun sens.
+ */
+const ALREADY_OPEN = 0
