@@ -74,6 +74,7 @@ src/
     environment/faceted.ts    normales par face, partagé par le décor
     environment/windMaterial.ts  matériau toon + vent en vertex shader
     GameClock.tsx             avance l'horloge de jeu, avant tout le monde
+    KeyboardGuard.tsx         relâche les touches quand la fenêtre perd le focus
     LanguageToggle.tsx        sélecteur FR / EN
     portfolio/PortfolioDialog.tsx  panneau des projets, navigation, focus
     portfolio/ProjectStepper.tsx   pastilles de progression

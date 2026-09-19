@@ -322,6 +322,18 @@ seuils extrêmes n'étaient jamais atteints. Corrigé en étalant la valeur.
 **Coups d'épée qui ne portent pas.** La hitbox testait « sommes-nous à
 l'intérieur de la fenêtre de dégâts ? », soit un intervalle de 135 ms
 échantillonné dans une boucle à cadence variable : sur une machine lente, une
+**Appuis clavier perdus, deuxième fois — la touche restée enfoncée.**
+`KeyboardControls` de drei n'écoute que `keydown` et `keyup` sur la fenêtre. Un
+Alt+Tab, un changement d'onglet ou un clic dans une autre application, touche
+encore enfoncée, emporte le `keyup` : la commande reste *enfoncée* dans l'état
+interne de drei, définitivement. Le personnage se remettait à marcher tout seul
+au retour, et surtout **l'appui suivant sur cette touche ne faisait rien** — un
+abonné réagit à la transition relâché → enfoncé, et une touche déjà enfoncée ne
+transitionne pas. D'où le « parfois F n'ouvre pas le coffre », sans rien à
+l'écran pour l'expliquer. Corrigé par `<KeyboardGuard />`, qui renvoie un
+`keyup` de synthèse sur chaque touche déclarée à la perte de focus. Même famille
+que ci-dessus : l'événement d'entrée qu'on n'a pas vu passer ne se rattrape pas.
+
 frame sur deux tombait à côté. Le coup est maintenant évalué **une seule fois
 par swing**, dès la première frame suivant l'ouverture de la fenêtre, et marqué
 consommé qu'il touche ou non. Exactement le même piège que le sondage clavier.
