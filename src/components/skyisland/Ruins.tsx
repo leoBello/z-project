@@ -20,10 +20,14 @@ import {
   CORE_Y,
   GARDEN_Y,
   RAMPS_INNER,
+  ROTUNDA_PIERS,
+  ROTUNDA_R,
+  ROTUNDA_RUINED_BAYS,
   WALL_H,
   WALL_R,
   islandNoise,
   rampFactor,
+  rotundaPierAngle,
   topHeight,
 } from '../../config/skyIsland'
 import { seededRandom, smoothstep } from '../../config/world'
@@ -57,11 +61,14 @@ import { SKY_COLORS, SKY_MATERIALS } from './palette'
  * ne bouge jamais.
  */
 
-/** Rayon de la rotonde, et nombre de ses piliers. */
-const ROTUNDA_R = 11.5
-const PIERS = 10
-/** Les deux travées effondrées : ce sont elles qui ouvrent l'arène. */
-const RUINED_BAYS = [3, 7]
+/*
+  Les travées écroulées de la rotonde, lues comme des indices quelconques.
+
+  L'export est un tuple `as const` pour que le combat puisse s'en servir tel
+  quel ; `includes` sur un tuple littéral refuse pourtant un `number`, d'où
+  cette vue élargie plutôt qu'une seconde copie des valeurs.
+*/
+const RUINED_BAYS: readonly number[] = ROTUNDA_RUINED_BAYS
 
 /** Un bloc posé et orienté dans le repère polaire de l'île. */
 function block(
@@ -361,8 +368,8 @@ function buildRuins() {
     const base = CORE_Y
     const random = seededRandom(0x30d3)
 
-    for (let i = 0; i < PIERS; i++) {
-      const theta = (i / PIERS) * Math.PI * 2 + 0.31
+    for (let i = 0; i < ROTUNDA_PIERS; i++) {
+      const theta = rotundaPierAngle(i)
       const ruined = RUINED_BAYS.includes(i)
       const height = ruined ? 1.2 + random() * 1.4 : ARCH_CLEAR + 1.8
 
@@ -397,7 +404,7 @@ function buildRuins() {
       impost.rotation.y = theta
       group.add(impost)
 
-      if (RUINED_BAYS.includes((i + 1) % PIERS)) continue
+      if (RUINED_BAYS.includes((i + 1) % ROTUNDA_PIERS)) continue
 
       /*
         L'arc jeté vers le pilier suivant, posé sur le **milieu de la corde** et
@@ -408,9 +415,9 @@ function buildRuins() {
         `1 − cos(π/n)`. Placé sur le cercle, l'arc déborde vers l'extérieur et
         ses naissances flottent à côté des piliers au lieu d'y reposer.
       */
-      const mid = theta + Math.PI / PIERS
-      const chordR = ROTUNDA_R * Math.cos(Math.PI / PIERS)
-      const span = 2 * ROTUNDA_R * Math.sin(Math.PI / PIERS)
+      const mid = theta + Math.PI / ROTUNDA_PIERS
+      const chordR = ROTUNDA_R * Math.cos(Math.PI / ROTUNDA_PIERS)
+      const span = 2 * ROTUNDA_R * Math.sin(Math.PI / ROTUNDA_PIERS)
 
       const arc = new Mesh(
         faceted(new TorusGeometry(span / 2, 0.42, 4, 12, Math.PI)),
@@ -433,8 +440,9 @@ function buildRuins() {
 
     /*
       Ce qui reste de la coupole, et c'est la pièce maîtresse : **elle était
-      couverte d'or**. Trois quartiers subsistent, le reste est ouvert au ciel —
-      c'est par là que l'arbre est sorti.
+      couverte d'or**. Trois quartiers subsistent, le reste est ouvert au ciel :
+      la coupole s'est effondrée seule, sous son propre poids, quand plus
+      personne n'était là pour l'entretenir.
 
       **Un encorbellement et non une calotte.** Une portion de sphère aplatie,
       vue depuis le sol de l'arène, se présente par la tranche : elle se lit
@@ -450,7 +458,7 @@ function buildRuins() {
       les deux matières — exactement ce qu'on voit sur un dôme crevé.
     */
     const SPRING =
-      base + ARCH_CLEAR + 1.8 + (2 * ROTUNDA_R * Math.sin(Math.PI / PIERS)) / 2 + 0.55
+      base + ARCH_CLEAR + 1.8 + (2 * ROTUNDA_R * Math.sin(Math.PI / ROTUNDA_PIERS)) / 2 + 0.55
     const DOME_RISE = 7.5
 
     const COURSES: [number, number, [number, number][]][] = [

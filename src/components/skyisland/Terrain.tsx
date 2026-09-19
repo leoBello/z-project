@@ -123,7 +123,7 @@ function buildTop(sectors: number, rings: number, colored: boolean) {
           let color = mixColor(SKY_COLORS.lawn, SKY_COLORS.lawnDark, 0.34 + grain * 0.26)
           color = color.lerp(new Color(SKY_COLORS.stoneDark), smoothstep(0.55, 1.3, topSlope(r, theta)))
           color = color.lerp(new Color(SKY_COLORS.stoneMid), smoothstep(50, 55.5, r))
-          // Dallage de l'arène, au pied de l'arbre.
+          // Dallage de l'arène.
           color = color.lerp(new Color(SKY_COLORS.stone), smoothstep(13, 9, r) * 0.75)
           return color
         }
