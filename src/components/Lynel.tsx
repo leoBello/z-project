@@ -22,6 +22,7 @@ import {
 import { ATTACK } from '../config/gameplay'
 import {
   ARENA_CENTER,
+  ARENA_R,
   LYNEL_ATTACKS,
   PUNISH_MULTIPLIER,
   RECENTER_RADIUS,
@@ -85,6 +86,23 @@ const ENGAGE_RANGE = 3
  * l'attaque n'aurait aucune fin visible, seulement un début.
  */
 const FOLLOW_THROUGH_MS = 420
+/**
+ * Souffle imposé entre la résolution d'une attaque et l'ouverture de la
+ * suivante, quelle qu'elle soit.
+ *
+ * Sans lui, les temps de recharge sont **par attaque** : le balayage résolu, le
+ * coup d'estoc est aussitôt éligible, son télégraphe s'ouvre à la frame
+ * suivante et son impact tombe 400 ms plus tard — à l'intérieur des 1 100 ms
+ * d'invulnérabilité du joueur (`INVULNERABILITY_MS`). Le second coup de chaque
+ * paire ne pouvait donc **jamais** blesser, ce qui enseigne exactement le
+ * contraire de ce combat : que rater une parade ne coûte rien.
+ *
+ * 750, et le nombre se déduit : il faut que deux impacts soient séparés de plus
+ * de 1 100 ms, et le plus court des télégraphes en apporte 400. 700 suffirait
+ * tout juste ; 750 laisse la marge, et donne au geste de suite (420 ms) le temps
+ * de se voir avant la garde suivante.
+ */
+const RECOVERY_MS = 750
 
 // Vecteurs de travail partagés : alloués une fois, pas soixante fois par seconde.
 const toPlayer = new Vector3()
@@ -116,6 +134,8 @@ interface LynelRuntime {
    * coup : le Moblin se ramasse et se détend sur une seule courbe.
    */
   poseUntil: number
+  /** Avant cet instant, aucun nouveau télégraphe ne s'ouvre. Voir `RECOVERY_MS`. */
+  nextAttackAt: number
 }
 
 /**
@@ -136,9 +156,23 @@ function pickAttack(
   const candidates = attacksFor(state.phase).filter(
     (attack) =>
       now - state.lastUsedAt[attack.id] > attack.cooldownMs &&
-      // Une attaque de mêlée lancée hors de portée est un coup dans le vide qui
-      // dure une seconde : le joueur apprend à rester loin et le combat s'arrête.
-      (attack.reach >= distance - 1 || attack.phase !== 'sword'),
+      /*
+        Sa portée exacte, et pas une unité de rab.
+
+        Le filtre tolérait `reach >= distance - 1`, ce qui n'a de sens que si la
+        bête se rapproche pendant qu'elle prépare son coup. Elle ne le fait pas :
+        un télégraphe engagé cloue les sabots, précisément pour que l'esquive
+        existe. La tolérance ne produisait donc pas des coups serrés, elle
+        produisait des coups manqués — les deux premiers de chaque engagement
+        partaient d'un mètre trop loin, brûlaient leur recharge et ne touchaient
+        rien. Mesuré : premier estoc à 5,4 pour une portée de 4,4.
+
+        Le même filtre vaut pour toutes les phases. Il valait auparavant pour la
+        seule mêlée, si bien que le piétinement (portée 6,6) devenait éligible
+        jusqu'à 14 tout en s'annulant au-delà de 8,6 : il aurait ouvert puis
+        annulé un télégraphe à chaque frame, sans jamais consommer sa recharge.
+      */
+      attack.reach >= distance,
   )
   if (candidates.length === 0) return null
   return candidates[Math.floor(Math.random() * candidates.length)]
@@ -224,6 +258,7 @@ export function Lynel() {
     yaw: 0,
     pose: 'repos',
     poseUntil: -Infinity,
+    nextAttackAt: -Infinity,
   })
 
   // Inscription au registre : la minimap y prend son point argenté, le calque de
@@ -255,6 +290,26 @@ export function Lynel() {
     const state = runtime.current
     const store = useGameStore.getState()
     const position = rb.translation()
+
+    /*
+      L'engagement se mesure sur la distance du **joueur au centre de l'arène**,
+      et non sur sa distance au Lynel.
+
+      La différence compte : mesurée sur la bête, l'entrée en combat dépendrait
+      de l'endroit où elle se trouve au moment où le joueur franchit l'arcade, et
+      les barrières se fermeraient tantôt derrière lui, tantôt devant. Mesurée
+      sur le centre, elle se déclenche toujours au même endroit — c'est le lieu
+      qui engage, pas la bête.
+
+      `startBossFight` est idempotent : on peut l'appeler à chaque frame.
+    */
+    if (state.deathAt === -Infinity && store.phase === 'playing') {
+      const playerFromCenter = Math.hypot(
+        playerTransform.position.x - ARENA_CENTER[0],
+        playerTransform.position.z - ARENA_CENTER[2],
+      )
+      if (playerFromCenter < ARENA_R - 1.5) store.startBossFight()
+    }
 
     // --- Mort ---------------------------------------------------------------
     // Avant tout le reste, comme dans `Enemy.tsx` : un boss tué puis abandonné
@@ -434,6 +489,7 @@ export function Lynel() {
     if (
       state.pending === null &&
       now > state.staggerUntil &&
+      now > state.nextAttackAt &&
       !frozen &&
       distance < stats.detectRadius
     ) {
@@ -478,6 +534,7 @@ export function Lynel() {
       state.pending = null
       state.lastUsedAt[attack.id] = now
       state.poseUntil = now + FOLLOW_THROUGH_MS
+      state.nextAttackAt = now + RECOVERY_MS
 
       if (attack.parryable && consumeParry(now)) {
         /*
@@ -614,6 +671,10 @@ function damage(
     marker.state = 'dead'
     marker.hp = 0
   }
+
+  // Les barrières s'ouvrent et la caméra se rouvre. L'état reste `defeated`
+  // pour toute la partie : on ne rengage pas un boss mort en repassant par là.
+  useGameStore.getState().endBossFight(true)
 
   // Les trois retours qui font la différence entre « il a disparu » et « je
   // l'ai eu ». Tous en temps réel : ils doivent jouer pendant le gel.

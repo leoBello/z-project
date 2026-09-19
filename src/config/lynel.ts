@@ -187,8 +187,21 @@ export const LYNEL_ATTACKS: Record<LynelAttackId, LynelAttack> = {
 }
 
 /** Les attaques disponibles dans une phase donnée, dans l'ordre de la table. */
-export function attacksFor(phase: LynelPhase): LynelAttack[] {
-  const unlocked: LynelPhase[] =
-    phase === 'sword' ? ['sword'] : phase === 'arena' ? ['sword', 'arena'] : ['sword', 'arena', 'rage']
-  return Object.values(LYNEL_ATTACKS).filter((attack) => unlocked.includes(attack.phase))
+/**
+ * Les attaques disponibles par phase, construites **une fois** au chargement.
+ *
+ * Elles étaient filtrées à l'appel, et l'appel a lieu à chaque frame tant que le
+ * Lynel est en position d'attaquer : trois tableaux jetables par image, cent
+ * quatre-vingts par seconde, pour un résultat qui ne change jamais. Le projet
+ * refuse ce déchet ailleurs — `LynelModel` porte une constante entière pour
+ * éviter un seul tableau de clés par frame.
+ */
+const BY_PHASE: Record<LynelPhase, readonly LynelAttack[]> = {
+  sword: Object.values(LYNEL_ATTACKS).filter((a) => a.phase === 'sword'),
+  arena: Object.values(LYNEL_ATTACKS).filter((a) => a.phase !== 'rage'),
+  rage: Object.values(LYNEL_ATTACKS),
+}
+
+export function attacksFor(phase: LynelPhase): readonly LynelAttack[] {
+  return BY_PHASE[phase]
 }
