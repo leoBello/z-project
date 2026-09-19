@@ -30,7 +30,7 @@ import {
 import { seededRandom, smoothstep } from '../../config/world'
 import { toonGradient } from '../models/toonGradient'
 import { faceted } from '../environment/faceted'
-import { SKY, type SkyMaterials } from './palette'
+import { SKY_COLORS, type SkyMaterials } from './palette'
 
 /**
  * Les vestiges de l'Île Céleste.
@@ -205,7 +205,7 @@ function buildRuins(materials: SkyMaterials) {
     // dit au joueur que c'est là qu'on entre.
     const apron = new Mesh(
       new CircleGeometry(5.4, 20, Math.PI * 0.72, Math.PI * 0.56),
-      toon({ color: SKY.stoneMid }),
+      toon({ color: SKY_COLORS.stoneMid }),
     )
     apron.rotation.x = -Math.PI / 2
     apron.position.set(0, base + 0.05, WALL_R)
@@ -467,8 +467,8 @@ function buildRuins(materials: SkyMaterials) {
         const skin = new Mesh(
           faceted(new CylinderGeometry(radius - 0.5, radius + 0.15, 1.5, 22, 1, true, start, length)),
           toon({
-            color: SKY.gold,
-            emissive: SKY.gold,
+            color: SKY_COLORS.gold,
+            emissive: SKY_COLORS.gold,
             emissiveIntensity: 0.2,
             side: DoubleSide,
           }),
@@ -480,7 +480,7 @@ function buildRuins(materials: SkyMaterials) {
           faceted(
             new CylinderGeometry(radius - 0.95, radius - 0.3, 1.5, 20, 1, true, start + 0.03, length - 0.06),
           ),
-          toon({ color: SKY.stoneMid, side: DoubleSide }),
+          toon({ color: SKY_COLORS.stoneMid, side: DoubleSide }),
         )
         core.position.y = y
         group.add(core)
@@ -490,7 +490,7 @@ function buildRuins(materials: SkyMaterials) {
     // Dallage de l'arène, posé au ras du sol.
     const floor = new Mesh(
       new RingGeometry(0.4, ROTUNDA_R - 0.8, 40, 1),
-      toon({ color: SKY.stone }),
+      toon({ color: SKY_COLORS.stone }),
     )
     floor.rotation.x = -Math.PI / 2
     floor.position.y = base + 0.06

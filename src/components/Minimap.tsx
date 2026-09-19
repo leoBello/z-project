@@ -4,6 +4,13 @@ import { useI18n } from '../i18n/useI18n'
 import { ENEMIES } from '../config/enemies'
 import { LANDMARKS } from '../config/landmarks'
 import { PORTAL } from '../config/portal'
+import {
+  ISLAND_MAP_SIZE,
+  SKY_COLORS,
+  rimRadius,
+  topHeight,
+  topSlope,
+} from '../config/skyIsland'
 import { WORLD, classifyBiome, sampleHeight } from '../config/world'
 import { enemyRegistry } from '../state/enemyRegistry'
 import { playerTransform } from '../state/playerTransform'
@@ -103,6 +110,73 @@ function renderWorldMap() {
   return canvas
 }
 
+/**
+ * Fond de carte de l'Île Céleste, rendu une seule fois comme celui du continent.
+ *
+ * Un **second rendu** et non une généralisation du premier, et c'est un choix :
+ * le continent est un champ de hauteurs sur grille carrée avec des biomes, l'île
+ * est un disque à terrasses. Une fonction qui couvrirait les deux prendrait en
+ * paramètre tout ce qui les distingue, c'est-à-dire tout — on aurait écrit deux
+ * fonctions en une, avec un `if` au milieu.
+ *
+ * Le hors-île est laissé **transparent** et non peint en bleu : il n'y a pas de
+ * mer autour, il n'y a rien. C'est ce vide qui dit, d'un seul coup d'œil sur la
+ * carte, qu'on est sur un caillou en l'air.
+ */
+function renderIslandMap() {
+  const canvas = document.createElement('canvas')
+  canvas.width = MAP_RESOLUTION
+  canvas.height = MAP_RESOLUTION
+
+  const context = canvas.getContext('2d')
+  if (!context) return canvas
+
+  const image = context.createImageData(MAP_RESOLUTION, MAP_RESOLUTION)
+  const step = ISLAND_MAP_SIZE / MAP_RESOLUTION
+  const half = ISLAND_MAP_SIZE / 2
+
+  const toRgb = (hex: number): [number, number, number] => [
+    (hex >> 16) & 0xff,
+    (hex >> 8) & 0xff,
+    hex & 0xff,
+  ]
+  const lawn = toRgb(SKY_COLORS.lawn)
+  const stone = toRgb(SKY_COLORS.stoneMid)
+
+  for (let py = 0; py < MAP_RESOLUTION; py++) {
+    const z = -half + py * step
+    for (let px = 0; px < MAP_RESOLUTION; px++) {
+      const x = -half + px * step
+      const index = (py * MAP_RESOLUTION + px) * 4
+
+      const r = Math.hypot(x, z)
+      const theta = Math.atan2(x, z)
+      if (r > rimRadius(theta)) {
+        // Hors de l'île : rien. L'alpha à zéro laisse voir le cadre au travers.
+        image.data[index + 3] = 0
+        continue
+      }
+
+      // Les falaises en pierre, les plateaux et les rampes en herbe : la carte
+      // dit donc où l'on peut monter, exactement comme le terrain lui-même. Les
+      // deux lisent `topSlope`, ils ne peuvent pas se contredire.
+      const slope = Math.min(1, topSlope(r, theta) / 1.4)
+      // Ombrage de relief : les terrasses se détachent parce que leur talus est
+      // sombre, pas parce qu'on aurait dessiné un cercle par-dessus.
+      const shade = 0.72 + 0.28 * (topHeight(r, theta) / 7.2)
+
+      for (let c = 0; c < 3; c++) {
+        const value = lawn[c] * (1 - slope) + stone[c] * slope
+        image.data[index + c] = Math.min(255, value * shade)
+      }
+      image.data[index + 3] = 255
+    }
+  }
+
+  context.putImageData(image, 0, 0)
+  return canvas
+}
+
 interface MinimapProps {
   /** Marqueurs additionnels. Vide pour l'instant, prêt pour les ennemis. */
   markers?: MinimapMarker[]
@@ -117,7 +191,19 @@ interface MinimapProps {
  */
 export function Minimap({ markers = [] }: MinimapProps) {
   const { dict } = useI18n()
+  const location = useGameStore((state) => state.location)
+  /*
+    Les deux fonds sont rendus **à la demande et mémoïsés séparément** : celui
+    de l'île n'est calculé qu'au premier voyage, et celui du continent n'est
+    jamais recalculé au retour. Échantillonner un relief coûte une cinquantaine
+    de millisecondes pour quarante-huit mille pixels — le refaire à chaque
+    aller-retour se verrait.
+  */
   const worldMap = useMemo(renderWorldMap, [])
+  const islandMap = useMemo(
+    () => (location === 'sky' ? renderIslandMap() : null),
+    [location],
+  )
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const markersRef = useRef(markers)
   markersRef.current = markers
@@ -140,74 +226,87 @@ export function Minimap({ markers = [] }: MinimapProps) {
     let frame = 0
     let lastBiome: BiomeId | null = null
 
+    const sky = location === 'sky'
+    // Le cadrage suit la carte : l'île tient dans 130 unités, le continent dans
+    // 200. Une seule échelle pour les deux rendrait l'île minuscule au milieu
+    // d'un vide, ce qui est exact et illisible.
+    const extent = sky ? ISLAND_MAP_SIZE : WORLD.size
     const toPixels = (x: number, z: number) => ({
-      px: ((x + WORLD.half) / WORLD.size) * size,
-      py: ((z + WORLD.half) / WORLD.size) * size,
+      px: ((x + extent / 2) / extent) * size,
+      py: ((z + extent / 2) / extent) * size,
     })
 
     const draw = () => {
       const { position, yaw } = playerTransform
 
       context.clearRect(0, 0, size, size)
-      context.drawImage(worldMap, 0, 0, size, size)
+      context.drawImage(islandMap ?? worldMap, 0, 0, size, size)
 
-      // Ennemis : lus directement dans le registre, qui est mis à jour par
-      // chaque ennemi dans son propre useFrame. Aucun state React n'est
-      // impliqué, donc aucun re-render à 60 fps.
-      for (const enemy of enemyRegistry.values()) {
-        const { px, py } = toPixels(enemy.x, enemy.z)
-        context.fillStyle = ENEMIES[enemy.kind].minimapColor
-        context.beginPath()
-        context.arc(px, py, 2.6, 0, Math.PI * 2)
-        context.fill()
-      }
+      /*
+        Ennemis, monuments et portail n'existent que sur le continent, et le
+        test est ici plutôt que dans chacune des trois boucles : sur l'île, le
+        registre est vide et `LANDMARKS` parle d'une autre carte — dessiner ses
+        losanges reviendrait à poser le Temple du Sommet au milieu du ciel.
+      */
+      if (!sky) {
+        // Ennemis : lus directement dans le registre, qui est mis à jour par
+        // chaque ennemi dans son propre useFrame. Aucun state React n'est
+        // impliqué, donc aucun re-render à 60 fps.
+        for (const enemy of enemyRegistry.values()) {
+          const { px, py } = toPixels(enemy.x, enemy.z)
+          context.fillStyle = ENEMIES[enemy.kind].minimapColor
+          context.beginPath()
+          context.arc(px, py, 2.6, 0, Math.PI * 2)
+          context.fill()
+        }
 
-      // Monuments : un losange, pas un point. La forme suffit à les distinguer
-      // des ennemis sans avoir à mémoriser un code couleur — et ils restent
-      // affichés avant d'être découverts, parce que c'est ce qui donne au
-      // joueur une destination.
-      for (const landmark of LANDMARKS) {
-        const { px, py } = toPixels(landmark.x, landmark.z)
-        context.save()
-        context.translate(px, py)
-        context.rotate(Math.PI / 4)
-        context.fillStyle = landmark.minimapColor
-        context.strokeStyle = 'rgba(20, 30, 24, 0.85)'
-        context.lineWidth = 1.2
-        context.fillRect(-2.6, -2.6, 5.2, 5.2)
-        context.strokeRect(-2.6, -2.6, 5.2, 5.2)
-        context.restore()
-      }
+        // Monuments : un losange, pas un point. La forme suffit à les distinguer
+        // des ennemis sans avoir à mémoriser un code couleur — et ils restent
+        // affichés avant d'être découverts, parce que c'est ce qui donne au
+        // joueur une destination.
+        for (const landmark of LANDMARKS) {
+          const { px, py } = toPixels(landmark.x, landmark.z)
+          context.save()
+          context.translate(px, py)
+          context.rotate(Math.PI / 4)
+          context.fillStyle = landmark.minimapColor
+          context.strokeStyle = 'rgba(20, 30, 24, 0.85)'
+          context.lineWidth = 1.2
+          context.fillRect(-2.6, -2.6, 5.2, 5.2)
+          context.strokeRect(-2.6, -2.6, 5.2, 5.2)
+          context.restore()
+        }
 
-      // Portail de l'Île Céleste : un **anneau** qui pulse, et rien d'autre sur
-      // cette carte n'a cette forme. Les ennemis sont des points pleins, les
-      // monuments des losanges, le joueur un triangle : le vocabulaire est déjà
-      // pris trois fois, et un quatrième point violet aurait obligé le joueur à
-      // retenir un code couleur. Un anneau se reconnaît sans être appris — et
-      // c'est un anneau parce que c'est ce à quoi ressemble le portail.
-      //
-      // Lu sans abonnement, comme le registre des ennemis : la minimap tourne
-      // dans sa propre boucle et ne se re-rend jamais.
-      if (useGameStore.getState().portalOpenedAt !== null) {
-        const { px, py } = toPixels(PORTAL.x, PORTAL.z)
-        // Sur `performance.now()` et non l'horloge de jeu : cette boucle est
-        // celle du navigateur, et un repère figé sur une carte ouverte pendant
-        // une pause n'aurait aucun sens — c'est une interface, pas le monde.
-        const pulse = 0.5 + Math.sin(performance.now() * 0.0042) * 0.5
-        context.save()
-        context.strokeStyle = PORTAL_MINIMAP_COLOR
-        context.lineWidth = 2
-        context.beginPath()
-        context.arc(px, py, 3.4 + pulse * 1.6, 0, Math.PI * 2)
-        context.stroke()
-        // Le halo ne pulse pas en phase avec l'anneau : il s'efface quand
-        // celui-ci s'ouvre, ce qui donne une onde plutôt qu'un clignotement.
-        context.globalAlpha = 0.35 * (1 - pulse)
-        context.lineWidth = 3
-        context.beginPath()
-        context.arc(px, py, 6.5, 0, Math.PI * 2)
-        context.stroke()
-        context.restore()
+        // Portail de l'Île Céleste : un **anneau** qui pulse, et rien d'autre sur
+        // cette carte n'a cette forme. Les ennemis sont des points pleins, les
+        // monuments des losanges, le joueur un triangle : le vocabulaire est déjà
+        // pris trois fois, et un quatrième point violet aurait obligé le joueur à
+        // retenir un code couleur. Un anneau se reconnaît sans être appris — et
+        // c'est un anneau parce que c'est ce à quoi ressemble le portail.
+        //
+        // Lu sans abonnement, comme le registre des ennemis : la minimap tourne
+        // dans sa propre boucle et ne se re-rend jamais.
+        if (useGameStore.getState().portalOpenedAt !== null) {
+          const { px, py } = toPixels(PORTAL.x, PORTAL.z)
+          // Sur `performance.now()` et non l'horloge de jeu : cette boucle est
+          // celle du navigateur, et un repère figé sur une carte ouverte pendant
+          // une pause n'aurait aucun sens — c'est une interface, pas le monde.
+          const pulse = 0.5 + Math.sin(performance.now() * 0.0042) * 0.5
+          context.save()
+          context.strokeStyle = PORTAL_MINIMAP_COLOR
+          context.lineWidth = 2
+          context.beginPath()
+          context.arc(px, py, 3.4 + pulse * 1.6, 0, Math.PI * 2)
+          context.stroke()
+          // Le halo ne pulse pas en phase avec l'anneau : il s'efface quand
+          // celui-ci s'ouvre, ce qui donne une onde plutôt qu'un clignotement.
+          context.globalAlpha = 0.35 * (1 - pulse)
+          context.lineWidth = 3
+          context.beginPath()
+          context.arc(px, py, 6.5, 0, Math.PI * 2)
+          context.stroke()
+          context.restore()
+        }
       }
 
       for (const marker of markersRef.current) {
@@ -237,14 +336,19 @@ export function Minimap({ markers = [] }: MinimapProps) {
       context.stroke()
       context.restore()
 
-      const current = classifyBiome(
-        position.x,
-        position.z,
-        sampleHeight(position.x, position.z),
-      )
-      if (current !== lastBiome) {
-        lastBiome = current
-        setBiome(current)
+      // Le libellé sous la carte nomme le biome sur le continent, et la carte
+      // elle-même dans le ciel : l'île n'a pas de biomes, et « Prairie » y
+      // serait à la fois vrai et hors sujet.
+      if (!sky) {
+        const current = classifyBiome(
+          position.x,
+          position.z,
+          sampleHeight(position.x, position.z),
+        )
+        if (current !== lastBiome) {
+          lastBiome = current
+          setBiome(current)
+        }
       }
 
       frame = requestAnimationFrame(draw)
@@ -252,13 +356,15 @@ export function Minimap({ markers = [] }: MinimapProps) {
 
     frame = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(frame)
-  }, [worldMap])
+  }, [worldMap, islandMap, location])
 
   return (
     <div className="minimap">
       <canvas ref={canvasRef} className="minimap__canvas" />
       <span className="minimap__north">{dict.ui.minimap.north}</span>
-      <span className="minimap__label">{dict.ui.biomes[biome]}</span>
+      <span className="minimap__label">
+        {location === 'sky' ? dict.ui.maps.sky : dict.ui.biomes[biome]}
+      </span>
     </div>
   )
 }

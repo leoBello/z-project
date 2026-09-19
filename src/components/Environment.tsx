@@ -5,6 +5,7 @@ import { playerTransform } from '../state/playerTransform'
 import { useGameStore } from '../store/useGameStore'
 import { useQualityStore } from '../store/useQualityStore'
 import { Bridge } from './environment/Bridge'
+import { SkyIslandDistant } from './environment/SkyIslandDistant'
 import { Landmarks } from './environment/Landmarks'
 import { Terrain } from './environment/Terrain'
 import { Vegetation } from './environment/Vegetation'
@@ -134,6 +135,9 @@ export function Environment() {
               monument, c'est une pièce du relief au même titre que la mer. */}
           <Bridge />
           <Landmarks />
+          {/* Montée avec le continent et jamais avec l'île : quand on y est,
+              on est dessus. */}
+          <SkyIslandDistant />
         </>
       ) : (
         <SkyIsland />

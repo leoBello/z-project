@@ -11,7 +11,7 @@ import {
 } from '../../config/skyIsland'
 import { smoothstep } from '../../config/world'
 import { faceted } from '../environment/faceted'
-import { SKY, mixColor, type SkyMaterials } from './palette'
+import { SKY_COLORS, mixColor, type SkyMaterials } from './palette'
 
 /**
  * Le terrain de l'Île Céleste : son dessus, son socle, et de quoi marcher
@@ -120,11 +120,11 @@ function buildTop(sectors: number, rings: number, colored: boolean) {
           // elle doit donc être dérivée de la pente réelle, jamais d'un rayon
           // écrit à la main qui finirait par mentir.
           const grain = islandNoise(r * 0.09, theta * 3.1)
-          let color = mixColor(SKY.lawn, SKY.lawnDark, 0.34 + grain * 0.26)
-          color = color.lerp(new Color(SKY.stoneDark), smoothstep(0.55, 1.3, topSlope(r, theta)))
-          color = color.lerp(new Color(SKY.stoneMid), smoothstep(50, 55.5, r))
+          let color = mixColor(SKY_COLORS.lawn, SKY_COLORS.lawnDark, 0.34 + grain * 0.26)
+          color = color.lerp(new Color(SKY_COLORS.stoneDark), smoothstep(0.55, 1.3, topSlope(r, theta)))
+          color = color.lerp(new Color(SKY_COLORS.stoneMid), smoothstep(50, 55.5, r))
           // Dallage de l'arène, au pied de l'arbre.
-          color = color.lerp(new Color(SKY.stone), smoothstep(13, 9, r) * 0.75)
+          color = color.lerp(new Color(SKY_COLORS.stone), smoothstep(13, 9, r) * 0.75)
           return color
         }
       : null,
@@ -140,11 +140,11 @@ function buildUnder() {
     underRadius,
     underHeight,
     (t) => {
-      let color = mixColor(SKY.rock, SKY.rockDeep, 1 - t)
+      let color = mixColor(SKY_COLORS.rock, SKY_COLORS.rockDeep, 1 - t)
       // La roche s'allume en approchant du cristal, qui est enchâssé dans la
       // pointe. C'est le seul éclairage de cette face, que le soleil n'atteint
       // jamais.
-      color = color.lerp(new Color(SKY.crystal), smoothstep(0.34, 0.02, t) * 0.62)
+      color = color.lerp(new Color(SKY_COLORS.crystal), smoothstep(0.34, 0.02, t) * 0.62)
       return color
     },
     true,

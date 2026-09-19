@@ -1,46 +1,8 @@
 import { useMemo } from 'react'
 import { Color, DoubleSide, MeshBasicMaterial, MeshToonMaterial } from 'three'
+import { SKY_COLORS } from '../../config/skyIsland'
 import { toonGradient } from '../models/toonGradient'
 
-/**
- * La palette de l'Île Céleste, et ses matériaux.
- *
- * **La pierre est grise, pas blonde**, et c'est le choix qui sépare cette île du
- * reste du monde. Le calcaire chaud (`#d8c890`) est celui des ruines de l'île du
- * continent ; si la forteresse céleste partageait sa palette, elle aurait l'air
- * d'avoir été bâtie par les mêmes gens. Elle ne doit pas.
- */
-export const SKY = {
-  lawn: 0x8fbf63,
-  lawnDark: 0x5f9147,
-  stone: 0xc2c1b2,
-  stoneMid: 0x9d9d8e,
-  stoneDark: 0x6c6d62,
-  moss: 0x6f9a4e,
-  /*
-    L'or, en trois valeurs.
-
-    `gold` est l'or lavé par la pluie, celui des arêtes et des saillies ;
-    `goldDim` l'or terni des creux, qui a viré au brun-vert ; `goldBright` ne
-    sert qu'aux quelques pièces que la lumière frappe de plein fouet. Trois
-    valeurs et pas une, parce qu'un or uniforme se lit comme de la peinture
-    jaune — ce qui fait l'or, c'est l'écart entre ce qui brille et ce qui ne
-    brille plus.
-  */
-  gold: 0xd9a441,
-  goldDim: 0x8a6c33,
-  goldBright: 0xf3d789,
-  rock: 0x7d7365,
-  rockDeep: 0x3d3548,
-  bark: 0x6b5540,
-  leaf: 0x4f9a4a,
-  leafDark: 0x36753f,
-  water: 0xcfe6f5,
-  foam: 0xf2fbff,
-  /** Le violet du cristal. Le même que celui du portail, et pour cause. */
-  crystal: 0x8b3ff0,
-  crystalPale: 0xe6ccff,
-} as const
 
 /** Mélange deux couleurs, en allouant une seule fois par appel. */
 export function mixColor(a: number, b: number, t: number) {
@@ -73,23 +35,23 @@ export function useSkyMaterials() {
     return {
       /** Le terrain, dont les couleurs sont portées par les sommets. */
       terrain: toon({ vertexColors: true, side: DoubleSide }),
-      stone: toon({ color: SKY.stone }),
-      stoneMid: toon({ color: SKY.stoneMid }),
-      stoneDark: toon({ color: SKY.stoneDark }),
-      moss: toon({ color: SKY.moss }),
-      bark: toon({ color: SKY.bark }),
-      leaf: toon({ color: SKY.leaf }),
-      leafDark: toon({ color: SKY.leafDark }),
-      gold: toon({ color: SKY.gold, emissive: SKY.gold, emissiveIntensity: 0.32 }),
-      goldDim: toon({ color: SKY.goldDim }),
+      stone: toon({ color: SKY_COLORS.stone }),
+      stoneMid: toon({ color: SKY_COLORS.stoneMid }),
+      stoneDark: toon({ color: SKY_COLORS.stoneDark }),
+      moss: toon({ color: SKY_COLORS.moss }),
+      bark: toon({ color: SKY_COLORS.bark }),
+      leaf: toon({ color: SKY_COLORS.leaf }),
+      leafDark: toon({ color: SKY_COLORS.leafDark }),
+      gold: toon({ color: SKY_COLORS.gold, emissive: SKY_COLORS.gold, emissiveIntensity: 0.32 }),
+      goldDim: toon({ color: SKY_COLORS.goldDim }),
       goldBright: toon({
-        color: SKY.goldBright,
-        emissive: SKY.gold,
+        color: SKY_COLORS.goldBright,
+        emissive: SKY_COLORS.gold,
         emissiveIntensity: 0.55,
       }),
       /** L'eau qui **coule** : bassin, canaux, filet de l'aqueduc. */
       water: new MeshBasicMaterial({
-        color: SKY.water,
+        color: SKY_COLORS.water,
         transparent: true,
         opacity: 0.55,
         side: DoubleSide,
@@ -103,14 +65,14 @@ export function useSkyMaterials() {
        * l'île. Ce qui fait une chute d'eau, c'est qu'on voit le ciel au travers.
        */
       fall: new MeshBasicMaterial({
-        color: SKY.water,
+        color: SKY_COLORS.water,
         transparent: true,
         opacity: 0.26,
         side: DoubleSide,
         depthWrite: false,
       }),
       foam: new MeshBasicMaterial({
-        color: SKY.foam,
+        color: SKY_COLORS.foam,
         transparent: true,
         opacity: 0.4,
         depthWrite: false,
@@ -118,3 +80,6 @@ export function useSkyMaterials() {
     }
   }, [])
 }
+
+/** Réexporté : les pièces de l'île n'ont ainsi qu'un seul import à faire. */
+export { SKY_COLORS }

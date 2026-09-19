@@ -64,6 +64,63 @@ const RAMP_HALF = 0.21
  */
 export const FALL_LIMIT = -20
 
+// --- Palette ----------------------------------------------------------------
+
+/**
+ * Les couleurs de l'île.
+ *
+ * Elles vivent ici, dans le module d'arithmétique, et non à côté des matériaux
+ * qui les consomment — parce que **deux mondes en ont besoin** : le fragment de
+ * l'île, et la silhouette lointaine qui reste dans le tronc commun. Les laisser
+ * dans `components/skyisland/palette.ts` obligerait le tronc à importer un
+ * module du fragment, ce qui suffirait à tirer l'île entière dans le bundle
+ * d'accueil et à annuler tout le découpage.
+ *
+ * **La pierre est grise, pas blonde**, et c'est le choix qui sépare cette île du
+ * reste du monde. Le calcaire chaud est celui des ruines de l'île du continent ;
+ * si la forteresse céleste partageait sa palette, elle aurait l'air d'avoir été
+ * bâtie par les mêmes gens. Elle ne doit pas.
+ */
+export const SKY_COLORS = {
+  lawn: 0x8fbf63,
+  lawnDark: 0x5f9147,
+  stone: 0xc2c1b2,
+  stoneMid: 0x9d9d8e,
+  stoneDark: 0x6c6d62,
+  moss: 0x6f9a4e,
+  /*
+    L'or, en trois valeurs.
+
+    `gold` est l'or lavé par la pluie, celui des arêtes et des saillies ;
+    `goldDim` l'or terni des creux, qui a viré au brun-vert ; `goldBright` ne
+    sert qu'aux quelques pièces que la lumière frappe de plein fouet. Trois
+    valeurs et pas une, parce qu'un or uniforme se lit comme de la peinture
+    jaune — ce qui fait l'or, c'est l'écart entre ce qui brille et ce qui ne
+    brille plus.
+  */
+  gold: 0xd9a441,
+  goldDim: 0x8a6c33,
+  goldBright: 0xf3d789,
+  rock: 0x7d7365,
+  rockDeep: 0x3d3548,
+  bark: 0x6b5540,
+  leaf: 0x4f9a4a,
+  leafDark: 0x36753f,
+  water: 0xcfe6f5,
+  foam: 0xf2fbff,
+  /** Le violet du cristal. Le même que celui du portail, et pour cause. */
+  crystal: 0x8b3ff0,
+  crystalPale: 0xe6ccff,
+  /**
+   * Le bleu vers lequel la silhouette lointaine est fondue.
+   *
+   * C'est le `glow` d'horizon de `StarrySky` — la bande lumineuse juste
+   * au-dessus de la ligne d'horizon. Une brume peinte vers une autre teinte que
+   * celle du ciel qui l'entoure se verrait comme un décalque.
+   */
+  haze: 0x6a7cbd,
+} as const
+
 // --- Le relief --------------------------------------------------------------
 
 /**

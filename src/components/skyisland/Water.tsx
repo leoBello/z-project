@@ -24,7 +24,7 @@ import {
 import { seededRandom } from '../../config/world'
 import { now as gameNow } from '../../state/gameClock'
 import { faceted } from '../environment/faceted'
-import { SKY, type SkyMaterials } from './palette'
+import { SKY_COLORS, type SkyMaterials } from './palette'
 
 /**
  * L'eau de l'Île Céleste, et le cristal qui la porte.
@@ -155,7 +155,7 @@ function buildWater(materials: SkyMaterials) {
         const blob = new Mesh(
           faceted(new IcosahedronGeometry(2.6 + t * 4.5, 1)),
           new MeshBasicMaterial({
-            color: SKY.foam,
+            color: SKY_COLORS.foam,
             transparent: true,
             opacity: 0.2 * (1 - t * 0.7),
             depthWrite: false,
@@ -185,7 +185,7 @@ function buildWater(materials: SkyMaterials) {
   */
   const crystal = new Mesh(
     faceted(new OctahedronGeometry(6, 0)),
-    new MeshBasicMaterial({ color: SKY.crystalPale }),
+    new MeshBasicMaterial({ color: SKY_COLORS.crystalPale }),
   )
   crystal.position.y = CRYSTAL_Y
   crystal.scale.set(1, 1.9, 1)
@@ -194,7 +194,7 @@ function buildWater(materials: SkyMaterials) {
   const halo = new Mesh(
     new OctahedronGeometry(11, 0),
     new MeshBasicMaterial({
-      color: SKY.crystal,
+      color: SKY_COLORS.crystal,
       transparent: true,
       opacity: 0.28,
       depthWrite: false,
