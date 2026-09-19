@@ -75,16 +75,28 @@ export function parryOffered(now: number) {
  * « avant le signal » de l'appui « après » avec deux durées différentes. La
  * distinction était inutile : la même formule punit déjà l'anticipation, parce
  * que 260 + 450 = 710 ms dépassent le plus long télégraphe du Lynel.
+ *
+ * L'ordre des deux tests compte : la garde doit être sondée **avant** la
+ * récupération, parce que `recoveryUntil` vaut toujours `guardUntil +
+ * recoveryMs` tant que la garde est active — donc `now < recoveryUntil` est
+ * déjà vrai pour tout appui fait pendant la garde elle-même. Tester la
+ * récupération en premier ferait tomber un second appui *pendant une garde
+ * qui tient encore* dans la branche `'locked'`, ce qui raccourcirait la
+ * récupération déjà programmée et allumerait à tort le flash raté — sur un
+ * appui qui, lui, n'a rien manqué.
  */
 export function pressParry(now: number): 'guard' | 'guarding' | 'locked' {
+  // Déjà en garde : un second appui ne la prolonge pas, et ne touche à rien
+  // d'autre. Sans cette branche testée en premier, on retomberait dans le test
+  // de récupération ci-dessous — toujours vrai pendant la garde, puisque
+  // `recoveryUntil > guardUntil` par construction.
+  if (now < parry.guardUntil) return 'guarding'
+
   if (now < parry.recoveryUntil) {
     parry.recoveryUntil = now + PARRY.recoveryMs
     parry.whiffedAt = now
     return 'locked'
   }
-  // Déjà en garde : un second appui ne la prolonge pas. Sans cette branche, on
-  // pourrait tenir la garde ouverte indéfiniment en appuyant tous les 250 ms.
-  if (now < parry.guardUntil) return 'guarding'
 
   parry.guardUntil = now + PARRY.windowMs
   parry.recoveryUntil = parry.guardUntil + PARRY.recoveryMs

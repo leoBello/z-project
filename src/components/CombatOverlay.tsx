@@ -40,6 +40,14 @@ const PLAYER_FEET_DROP = 0.8
 const PARRY_RING_RADIUS = 1.35
 /** Nombre de segments de l'anneau projeté. En dessous de 24, on voit le polygone. */
 const PARRY_RING_SEGMENTS = 32
+/**
+ * Durée du flash rouge sur un appui raté, en millisecondes.
+ *
+ * Propre à l'anneau, pas empruntée à `PARRY.windowMs` : c'est la durée d'un
+ * retour visuel, pas une règle de gameplay, et les deux n'ont aucune raison
+ * de rester égales si l'une des deux change un jour.
+ */
+const PARRY_WHIFF_FLASH_MS = 260
 
 const point = makeScreenPoint()
 const anchor = makeScreenPoint()
@@ -319,7 +327,7 @@ function drawParryRing(
   const now = gameNow()
   const offered = parryOffered(now)
   const guarding = now < parry.guardUntil
-  const whiffed = now - parry.whiffedAt < 260
+  const whiffed = now - parry.whiffedAt < PARRY_WHIFF_FLASH_MS
 
   if (!offered && !guarding && !whiffed) return
 
@@ -348,7 +356,7 @@ function drawParryRing(
   } else {
     color = '#d0563f'
     lineWidth = 3
-    alpha = 0.7 * (1 - (now - parry.whiffedAt) / 260)
+    alpha = 0.7 * (1 - (now - parry.whiffedAt) / PARRY_WHIFF_FLASH_MS)
   }
 
   context.save()
