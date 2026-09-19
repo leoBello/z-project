@@ -147,9 +147,8 @@ export interface GameState {
    *
    * Non nul pendant toute la séquence : de l'appui sur la touche jusqu'à la
    * fermeture de la carte. Le coffre s'en sert pour animer sa colonne de
-   * lumière et faire flotter l'objet, la carte pour masquer son bouton
-   * d'équipement — on ne demande pas au joueur d'arbitrer avant qu'il ait lu ce
-   * qu'il vient de trouver.
+   * lumière et faire flotter l'objet, la carte pour choisir son action de
+   * sortie — porter la trouvaille tout de suite, ou la ranger dans le sac.
    */
   chestReveal: ChestId | null
   /**
@@ -252,7 +251,7 @@ export interface GameState {
    * Referme la carte du coffre : l'objet entre à l'inventaire et la main est
    * rendue au jeu. Le coffre, lui, reste ouvert — il l'est depuis `openChest`.
    */
-  finishChest: () => void
+  finishChest: (equip?: boolean) => void
   /**
    * Démarre une téléportation vers `id` : gèle la partie et déclenche
    * l'overlay. Sans effet si une téléportation est déjà en cours, si la
@@ -265,6 +264,11 @@ export interface GameState {
    * de voir la dispersion inverse des braises et la destination avant que la
    * modale n'apparaisse (voir `TeleportOverlay`).
    */
+   *
+   * `equip` porte la trouvaille dans la foulée, pour le bouton de la carte de
+   * révélation. C'est un paramètre et non une action séparée parce que les deux
+   * gestes sont indissociables : l'objet n'existe dans le sac qu'à partir de
+   * cette fermeture, et `equipItem` refuse ce qu'on ne possède pas.
   resolveTeleport: () => void
   /** Efface l'état de téléportation, en fin d'animation. */
   finishTeleport: () => void
@@ -527,7 +531,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ activeItem: chest.item })
   },
 
-  finishChest: () => {
+  finishChest: (equip = false) => {
     const state = get()
     if (state.chestReveal === null) return
     const chest = chestById(state.chestReveal)
@@ -570,6 +574,10 @@ export const useGameStore = create<GameState>((set, get) => ({
    */
   resolveTeleport: () => {
     /*
+
+    // Après le `set`, jamais avant : `equipItem` relit le store et refuse un
+    // objet absent de `items`. Il n'y entre qu'à la ligne du dessus.
+    if (equip && item) get().equipItem(item.id)
       Compté ici *en plus* de `openLandmark` : la téléportation est le second
       chemin vers un monument, et l'omettre attribuerait toute la fréquentation
       à la marche. Le champ `via` garde les deux distinguables — c'est aussi la

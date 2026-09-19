@@ -43,12 +43,12 @@ interface ItemCardProps {
   /**
    * Contexte d'ouverture.
    *
-   * `reveal` — la carte sort d'un coffre : pas de bouton d'équipement, et la
-   * fermeture rend la main au jeu. On ne demande pas au joueur d'arbitrer sur
-   * une tenue qu'il découvre à l'instant ; l'inventaire est là pour ça, et il
-   * vient de recevoir la pastille qui le lui dit.
-   * `inventory` — la carte est consultée depuis le sac : équipement possible,
-   * la fermeture revient à la grille.
+   * `reveal` — la carte sort d'un coffre : le bouton porte la trouvaille et
+   * ferme dans le même geste, la croix la range simplement dans le sac. La
+   * fermeture, quelle qu'elle soit, rend la main au jeu.
+   * `inventory` — la carte est consultée depuis le sac : le bouton bascule
+   * entre porter et retirer sans quitter la carte, la fermeture revient à la
+   * grille.
    */
   context: 'reveal' | 'inventory'
   onClose: () => void
@@ -62,7 +62,7 @@ interface ItemCardProps {
  * qui divergent au premier changement de maquette, alors que c'est exactement
  * le même objet qu'on regarde.
  */
-export function ItemCard({ id, context, onClose }: ItemCardProps) {
+export function ItemCard({ id, context, onClose, onEquip }: ItemCardProps) {
   // Résolu avant les hooks parce que le sélecteur d'équipement en a besoin, et
   // qu'un hook ne peut pas vivre après le `return null` qui suit.
   const item = itemById(id)
@@ -78,6 +78,14 @@ export function ItemCard({ id, context, onClose }: ItemCardProps) {
 
   // Mémoïsé : `useDialogFocus` le garde en dépendance de son écouteur clavier,
   // et une fonction recréée à chaque rendu le réabonnerait sans arrêt.
+  /**
+   * Équipe l'objet et ferme la carte. Attendu en `reveal`, ignoré ailleurs.
+   *
+   * Confié à l'appelant plutôt que joué ici : à la révélation, l'objet n'est
+   * pas encore dans le sac — c'est la fermeture du coffre qui l'y met, et elle
+   * seule sait enchaîner les deux dans le bon ordre.
+   */
+  onEquip?: () => void
   const close = useCallback(() => onClose(), [onClose])
   useDialogFocus(panel, close)
 
@@ -139,7 +147,7 @@ export function ItemCard({ id, context, onClose }: ItemCardProps) {
             </p>
           )}
 
-          {context === 'inventory' && (
+          {context === 'inventory' ? (
             <button
               type="button"
               className={`item-card__action${isWorn ? ' item-card__action--worn' : ''}`}
@@ -153,3 +161,13 @@ export function ItemCard({ id, context, onClose }: ItemCardProps) {
     </div>
   )
 }
+          ) : (
+            /* À la révélation, le bouton n'a pas d'état à basculer : un objet
+               qui sort du coffre n'est jamais porté, et le retirer se fait
+               depuis le sac. Il dit donc « maintenant » — ce qu'on décline en
+               fermant la carte. */
+            onEquip && (
+              <button type="button" className="item-card__action" onClick={onEquip}>
+                {dict.ui.chest.equip}
+              </button>
+            )

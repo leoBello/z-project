@@ -114,7 +114,8 @@
     },
     "chest": {
       "action": "Open the chest",
-      "kicker": "Treasure"
+      "kicker": "Treasure",
+      "equip": "Equip now"
     },
     "inventory": {
       "open": "Open the inventory",

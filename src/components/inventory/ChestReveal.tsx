@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { CHEST_SEQUENCE, chestById } from '../../config/chests'
 import { useGameStore } from '../../store/useGameStore'
 import { ItemCard } from './ItemCard'
@@ -24,6 +24,13 @@ export function ChestReveal() {
   const resolveChest = useGameStore((state) => state.resolveChest)
   const finishChest = useGameStore((state) => state.finishChest)
 
+  // Deux sorties pour la même carte, et deux fonctions mémoïsées plutôt qu'une
+  // lambda posée dans le JSX : `ItemCard` garde sa fermeture en dépendance d'un
+  // écouteur clavier (voir `useDialogFocus`), qu'une fonction recréée à chaque
+  // rendu réabonnerait sans arrêt.
+  const close = useCallback(() => finishChest(), [finishChest])
+  const equip = useCallback(() => finishChest(true), [finishChest])
+
   useEffect(() => {
     if (!chestReveal) return
     const timer = setTimeout(resolveChest, CHEST_SEQUENCE.cardAt)
@@ -43,9 +50,12 @@ export function ChestReveal() {
         La carte n'apparaît qu'à `resolveChest`, pas dès l'ouverture : la
         montrer plus tôt reviendrait à jouer l'animation derrière un rideau.
         Sa fermeture — et elle seule — fait entrer l'objet à l'inventaire et
-        rend la main au jeu.
+        rend la main au jeu. Équiper depuis la carte passe par la même porte,
+        parce qu'il n'y a rien à porter tant qu'on n'a pas franchi celle-là.
       */}
-      {activeItem && <ItemCard id={activeItem} context="reveal" onClose={finishChest} />}
+      {activeItem && (
+        <ItemCard id={activeItem} context="reveal" onClose={close} onEquip={equip} />
+      )}
     </>
   )
 }

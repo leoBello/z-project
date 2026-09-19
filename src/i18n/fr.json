@@ -114,7 +114,8 @@
     },
     "chest": {
       "action": "Ouvrir le coffre",
-      "kicker": "Trésor"
+      "kicker": "Trésor",
+      "equip": "Équiper maintenant"
     },
     "inventory": {
       "open": "Ouvrir l'inventaire",
