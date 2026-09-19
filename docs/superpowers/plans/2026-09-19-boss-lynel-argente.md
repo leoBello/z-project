@@ -1389,7 +1389,8 @@ Décidée après la Task 2, quand le Lynel s'est retrouvé planté dans le tronc
   - `TREE_THETA = 3.9`, `TREE_R = 21`, `TREE_BASE_Y = GARDEN_Y` et `treePosition(): [number, number, number]`
   - `ROTUNDA_R = 11.5`, `ROTUNDA_PIERS = 10`, `ROTUNDA_PIER_PHASE = 0.31`, `ROTUNDA_RUINED_BAYS = [3, 7] as const`, `rotundaPierAngle(i: number): number`
   - `ARENA_CLEAR_R = 12.8` — rayon autour du centre où rien de l'arbre, des racines ni de la source ne peut se trouver
-  - `GUTTER_R = 12.6` — rayon de la rigole qui ceinture la rotonde
+  - `GUTTER_R = 13.35` — rayon de la rigole qui ceinture la rotonde
+  - `SOURCE_TIP_Y = CORE_Y + 2.2` et `SOURCE_TIP_R = GUTTER_R + 0.9` — où les racines déposent l'eau et où le bec la rend
 
 ---
 
@@ -1450,8 +1451,26 @@ export function rotundaPierAngle(i: number) {
  * bassin. C'est la promesse de cette tâche, et le contrôle de fin la mesure.
  */
 export const ARENA_CLEAR_R = 12.8
-/** La rigole qui ceinture la rotonde, entre les piliers (11,5) et la falaise (14). */
-export const GUTTER_R = 12.6
+/*
+  La rigole qui ceinture la rotonde, et une cote tenue des deux côtés.
+
+  Les socles des piliers s'étendent jusqu'à 12,75 du centre, et la falaise du
+  cœur commence à 14. Avec une section de 0,55, l'anneau doit donc tenir entre
+  13,3 et 13,45 : en dessous il traverse les dix socles, au-dessus il déborde
+  dans le vide. Mesuré à 12,6 au premier essai, il coupait chaque socle.
+*/
+export const GUTTER_R = 13.35
+
+/**
+ * Où les racines déposent l'eau, et où le bec la rend — rayon et altitude.
+ *
+ * Partagées, parce que les deux sont dessinées dans deux fichiers différents :
+ * sans ces constantes, elles ne coïncident que par chance arithmétique. À
+ * `CORE_Y + 1` la chute ne faisait qu'un demi-mètre et ne se lisait pas ; la
+ * racine se cabre donc à 2,2 au-dessus du dallage.
+ */
+export const SOURCE_TIP_R = GUTTER_R + 0.9
+export const SOURCE_TIP_Y = CORE_Y + 2.2
 ```
 
 Modifier `src/components/skyisland/Ruins.tsx` : supprimer ses constantes locales `ROTUNDA_R`, `PIERS`, `RUINED_BAYS` et le littéral `0.31` (ligne 365), et utiliser à la place les exports ci-dessus (`rotundaPierAngle(i)` pour l'angle). Changement pur, aucune géométrie ne doit bouger. Mettre à jour le commentaire de la coupole (vers la ligne 437) : l'arbre ne sort plus par la brèche, la coupole s'est effondrée seule. Garder la phrase sur l'or.
@@ -1506,6 +1525,7 @@ npm run build && npm run lint
 
 Contrôles navigateur (recette dans `.superpowers/sdd/browser-check.md`) :
 
+- **La source se voit.** Le bec et le filet doivent se lire depuis la caméra du jeu, à l'échelle des autres pièces d'eau de l'île (les lames de cascade font 0,9 à 1,9 de rayon). Un premier essai à 0,32 de rayon pour 0,49 de haut était invisible.
 - **La promesse, mesurée** : avec un crochet de développement temporaire (à retirer avant le commit), parcourir les sommets en coordonnées monde de tous les maillages de l'arbre, des racines et de l'eau, et vérifier qu'aucun sommet au-dessus de `CORE_Y - 0.5` n'est à moins de `ARENA_CLEAR_R` du centre (x, z) — **sauf** la rigole elle-même (rayon `GUTTER_R` ± sa section) et le bec. Rapporter la distance minimale trouvée.
 - Captures depuis la caméra du jeu : (1) depuis le point d'arrivée sur la prairie, vue au nord — la rotonde devant, l'arbre derrière ; (2) depuis l'arcade de la rotonde — le dallage libre et le Lynel visible en entier au centre ; (3) la source : les racines qui s'accrochent au rebord et l'eau qui tombe dans la rigole ; (4) depuis le continent, la silhouette lointaine. Les regarder avec l'outil Read.
 - On ne traverse plus le tronc : téléporter le joueur contre le tronc et vérifier qu'il est arrêté.
