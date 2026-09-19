@@ -143,19 +143,30 @@ et découpage du bundle.
   d'emplacement) : on porte la tenue *et* l'arme. Un emplacement unique aurait
   été plus court à écrire et faux à jouer — la deuxième trouvaille serait
   devenue un renoncement à la première
-- **Deux skins, un seul rig.** Le joueur démarre en Luffy — torse nu, gilet
-  rouge, chapeau de paille, poings nus — et trouve le skin de Zoro dans un
-  coffre. Palette, pièce de tête, vêtement de buste, membres et visage changent ;
-  le squelette, le cycle de marche et le coup porté sont partagés
+- **Trois skins, un seul rig.** Le joueur démarre en Luffy — torse nu, gilet
+  rouge, chapeau de paille, poings nus — et trouve les skins de Zoro et du Clan
+  dans des coffres. Palette, pièce de tête, vêtement de buste, membres et visage
+  changent ; le squelette, le cycle de marche et le coup porté sont partagés.
+  Les pièces de chaque skin sont réunies dans **une table** (`SKINS` dans
+  `HeroPlaceholder.tsx`) et non choisies par un booléen semé dans le composant :
+  à deux skins la condition « tout le monde sauf l'autre » marchait encore, au
+  troisième elle faisait hériter le nouveau venu de l'habillage du voisin
 - **Aptitude par skin** (`SkinTraits` dans `items.ts`) et non par objet : le skin
   de départ n'a pas d'objet, une aptitude portée par l'objet aurait donc laissé
   le début de partie sans aucune. Luffy saute 44 % plus haut (×1,2 sur
-  `jumpSpeed`, et la hauteur varie comme le carré), Zoro court 18 % plus vite —
-  le second skin est un échange, pas un gain sec
+  `jumpSpeed`, et la hauteur varie comme le carré), Zoro court 18 % plus vite,
+  la tenue du Clan est en dessous des deux — chaque skin est un échange, pas un
+  gain sec
 - **L'arme par défaut dépend du skin**, l'arme trouvée non : mains nues pour
-  Luffy, un de ses propres sabres pour Zoro, et le katana s'équipe sur les deux
+  Luffy, une lame pour les deux autres, et le katana s'équipe sur les trois
 - **Tenue du Chasseur de Pirates** (coffre du Temple du Sommet) : +2 cœurs
   jaunes, silhouette de bretteur, déplacement plus rapide
+- **Tenue du Clan** (coffre de la Pyramide de la Jungle) : +3 cœurs jaunes —
+  un de plus que toute autre tenue — mais course à 92 % et détente à 95 %. Elle
+  occupe **le même emplacement** que la tenue du bretteur : les deux se trouvent,
+  une seule se porte, et le joueur choisit sa silhouette au lieu de la subir dans
+  l'ordre où tombent les coffres. C'est la tenue qui encaisse, là où les deux
+  autres se déplacent
 - **Katana de Kusanagi** (coffre du temple de Nakano) : dégâts d'épée ×2, lame
   longue en main droite. L'effet est volontairement brutal — les PV des ennemis
   sont des entiers de 2 et 3, donc l'octorok tombe en un coup au lieu de deux et
@@ -663,6 +674,7 @@ codé.
 | Vie, phase de partie, score | `src/store/useGameStore.ts` |
 | Effets d'un objet : cœurs bonus, multiplicateur d'attaque, silhouette, arme | `src/config/items.ts` |
 | Vitesse et détente d'un skin | `SKIN_TRAITS` dans `src/config/items.ts` |
+| Pièces montées par un skin (buste, visage, tête) | `SKINS` dans `src/components/models/HeroPlaceholder.tsx` |
 | Apparence d'un skin (palette, pièces, visage) | `OUTFITS` dans `src/components/models/HeroPlaceholder.tsx` |
 | Dégâts d'un coup d'épée arme nue | `SWORD_DAMAGE` dans `src/store/useGameStore.ts` |
 | Emplacements d'équipement (un par famille d'objet) | `ItemKind` dans `src/config/items.ts` |
