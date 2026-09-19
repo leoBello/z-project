@@ -6,9 +6,21 @@ import { useIsTouchDevice } from '../config/device'
 import { cameraView } from '../state/cameraView'
 import { playerTransform } from '../state/playerTransform'
 import { sampleShake } from '../state/cameraShake'
+import { useGameStore } from '../store/useGameStore'
 
-/** Position de la caméra relative au joueur, en coordonnées monde. */
-const OFFSET = new Vector3(...CAMERA.offset)
+/** Les deux cadrages : celui du jeu, et celui du combat de boss. */
+const FREE_OFFSET = new Vector3(...CAMERA.offset)
+const ARENA_OFFSET = new Vector3(...CAMERA.arena.offset)
+/**
+ * Décalage courant, interpolé entre les deux.
+ *
+ * C'est le **décalage** qu'on lisse, et pas la position finale, parce que la
+ * position finale suit déjà le joueur : y mélanger un second lissage ferait
+ * dépendre la vitesse du changement de cadrage de la vitesse de course. On veut
+ * l'inverse — l'arène se referme au même rythme qu'on marche ou qu'on soit à
+ * l'arrêt.
+ */
+const offset = new Vector3().copy(FREE_OFFSET)
 const desiredPosition = new Vector3()
 const desiredTarget = new Vector3()
 const shakeOffset = new Vector3()
@@ -41,7 +53,19 @@ export function CameraRig() {
       started.current = true
     }
 
-    desiredPosition.copy(playerTransform.position).add(OFFSET)
+    /*
+      Le passage d'un cadrage à l'autre, et pourquoi il n'y a pas de transition
+      à écrire.
+
+      Le rig lisse déjà la position et le point visé à chaque frame, en
+      `1 - exp(-lambda * dt)`. Il suffit donc de déplacer la *cible* : le lissage
+      existant fait le mouvement, et l'entrée dans l'arène ne se distingue pas
+      d'un pas de côté un peu ample.
+    */
+    const arena = useGameStore.getState().bossState === 'fighting'
+    offset.lerp(arena ? ARENA_OFFSET : FREE_OFFSET, t)
+
+    desiredPosition.copy(playerTransform.position).add(offset)
     // Le lissage travaille sur une position **non secouée**, et la secousse
     // n'est ajoutée qu'ensuite. Lerper depuis la position secouée reviendrait à
     // poursuivre le tremblement : le lissage l'absorberait en partie et en
@@ -53,7 +77,13 @@ export function CameraRig() {
     // Sur mobile, on vise plus bas : le joueur remonte au centre, au-dessus des
     // contrôles tactiles. Le rig lerpe déjà `desiredTarget` chaque frame, donc
     // le changement de valeur s'applique en douceur, sans transition à coder.
-    desiredTarget.y += isTouch ? CAMERA.lookAtHeightMobile : CAMERA.lookAtHeight
+    desiredTarget.y += arena
+      ? isTouch
+        ? CAMERA.arena.lookAtHeightMobile
+        : CAMERA.arena.lookAtHeight
+      : isTouch
+        ? CAMERA.lookAtHeightMobile
+        : CAMERA.lookAtHeight
     lookAt.current.lerp(desiredTarget, t)
     // Visée calculée depuis la position non secouée : la caméra tremble en
     // translation sans se réorienter, et c'est le monde qui bouge à l'écran.

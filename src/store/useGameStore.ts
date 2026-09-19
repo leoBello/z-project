@@ -220,6 +220,17 @@ export interface GameState {
    */
   location: MapId
   /**
+   * Où en est le combat contre le Lynel.
+   *
+   * Dans le store et non dans `Lynel.tsx`, parce que trois consommateurs qui ne
+   * se connaissent pas en dépendent : la caméra, qui se rapproche ; les
+   * barrières qui ferment les travées écroulées ; et le portail du retour. Le
+   * tenir dans le composant du boss obligerait chacun d'eux à aller le chercher
+   * là-bas, c'est-à-dire dans le fragment de l'île, que le tronc commun ne doit
+   * pas importer.
+   */
+  bossState: 'idle' | 'fighting' | 'defeated'
+  /**
    * Carte vers laquelle un voyage est en cours, ou `null`.
    *
    * Distinct de `location` exactement comme `teleporting` l'est de
@@ -377,6 +388,10 @@ export interface GameState {
 
   /** Signale qu'un portail est à portée, ou qu'il ne l'est plus. */
   setNearbyPortal: (near: boolean) => void
+  /** Le joueur entre dans l'arène : le combat commence. Idempotent. */
+  startBossFight: () => void
+  /** Le combat s'arrête, vaincu ou non. */
+  endBossFight: (defeated: boolean) => void
   /**
    * Part vers l'autre carte : gèle la partie et lève le voile.
    *
@@ -426,6 +441,7 @@ const initialState = {
   annihilation: null as Annihilation | null,
   portalOpenedAt: null as number | null,
   location: 'continent' as MapId,
+  bossState: 'idle' as 'idle' | 'fighting' | 'defeated',
   transit: null as MapId | null,
   transitLandmark: null as LandmarkId | null,
   nearbyPortal: false,
@@ -483,6 +499,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       hearts: next,
       lastHitAt: gameNow(),
       phase: next === 0 ? 'gameover' : 'playing',
+      // Le combat s'arrête avec le joueur. Sans ça, les barrières resteraient
+      // fermées et la caméra serrée pendant tout l'écran de fin.
+      bossState: next === 0 && get().bossState === 'fighting' ? 'idle' : get().bossState,
     })
   },
 
@@ -861,6 +880,30 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   /** Même discipline que les monuments et les coffres : écriture sur transition. */
   setNearbyPortal: (near) => set({ nearbyPortal: near }),
+
+  startBossFight: () => {
+    // Idempotent, et ce n'est pas de la prudence : le Lynel l'appelle depuis sa
+    // boucle, donc potentiellement soixante fois par seconde tant que le joueur
+    // est dans l'arène. Sans cette garde, chaque frame écrirait dans le store et
+    // re-rendrait tout ce qui s'y abonne.
+    if (get().bossState !== 'idle') return
+    set({ bossState: 'fighting' })
+    track('boss_engaged', { phase: 'sword' })
+  },
+
+  endBossFight: (defeated) => {
+    /*
+      Les deux sorties ne sont pas symétriques.
+
+      Vaincu, le combat ne peut plus reprendre : l'état reste `defeated` pour
+      toute la partie, les barrières s'ouvrent et la caméra se rouvre. Mort, le
+      joueur repart du continent et le Lynel remonte avec ses 36 points de vie —
+      d'où le retour à `idle`, qui autorise un second engagement.
+    */
+    if (get().bossState !== 'fighting') return
+    set({ bossState: defeated ? 'defeated' : 'idle' })
+    if (defeated) track('boss_defeated', { hearts: get().hearts })
+  },
 
   /**
    * Part vers l'autre carte.
