@@ -42,6 +42,16 @@ export const MAX_HEARTS = 5
 export const INVULNERABILITY_MS = 1100
 
 /**
+ * Cœurs rendus à l'arrivée sur l'Île Céleste, une fois par partie.
+ *
+ * Trois, et le nombre se déduit du boss : le Lynel retire deux cœurs par coup
+ * d'épée et trois sur sa charge. Trois cœurs de plus, c'est deux parades ratées
+ * qu'on peut encaisser au lieu d'une — assez pour apprendre le geste, trop peu
+ * pour se passer de l'apprendre.
+ */
+export const SKY_BOON_HEARTS = 3
+
+/**
  * Dégâts d'un coup d'épée, arme nue.
  *
  * Les armes de l'inventaire *multiplient* cette valeur plutôt que d'en déclarer
@@ -230,6 +240,8 @@ export interface GameState {
    * pas importer.
    */
   bossState: 'idle' | 'fighting' | 'defeated'
+  /** Les trois cœurs de l'arrivée sur l'île ont-ils déjà été donnés ? */
+  skyBoonTaken: boolean
   /**
    * Carte vers laquelle un voyage est en cours, ou `null`.
    *
@@ -441,6 +453,7 @@ const initialState = {
   annihilation: null as Annihilation | null,
   portalOpenedAt: null as number | null,
   location: 'continent' as MapId,
+  skyBoonTaken: false,
   bossState: 'idle' as 'idle' | 'fighting' | 'defeated',
   transit: null as MapId | null,
   transitLandmark: null as LandmarkId | null,
@@ -948,6 +961,28 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Hors du `set`, comme la mesure d'audience de `resolveTeleport` : un
     // updater d'état n'appelle pas le tableau de bord.
     if (transit === 'sky') track('sky_island_entered', { via: 'portal' })
+
+    /*
+      L'île rend trois cœurs, une seule fois.
+
+      Elle est un aller sans retour tant que le Lynel est debout : on y arrive
+      avec ce qu'il restait de la traversée du continent, et un joueur arrivé à
+      deux cœurs n'a aucune chance contre un boss qui en retire deux par coup.
+      Trois de plus, c'est deux erreurs de parade encaissables au lieu d'une.
+
+      Un acquis définitif comme un réceptacle, et non des cœurs jaunes : ceux-là
+      appartiennent à l'équipement, et changer de tenue sur l'île les effacerait
+      (voir `stripSlot`). Et la vie est refaite au passage, capacité comprise —
+      arriver entamé devant le gardien serait puni sans que rien ne l'ait
+      annoncé.
+    */
+    if (transit === 'sky' && !get().skyBoonTaken) {
+      const { maxHearts, bonusHearts } = get()
+      const next = maxHearts + SKY_BOON_HEARTS
+      playReward()
+      set({ skyBoonTaken: true, maxHearts: next, hearts: next + bonusHearts })
+    }
+
     set({ location: transit })
   },
 

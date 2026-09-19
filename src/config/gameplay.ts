@@ -111,20 +111,24 @@ export const CAMERA = {
    * cinquième** de la hauteur de l'image. Un boss qui tient dans un cinquième de
    * l'écran est un jouet, quelle que soit la qualité de son modèle.
    *
-   * À 13 de recul et 7 de haut il en occupe un tiers, et la plongée passe de 17°
-   * à 28° — au-delà du demi-champ, donc l'horizon sort du cadre par le bas et on
-   * ne voit plus de ciel. C'est assumé ici et seulement ici : dans une arène
-   * fermée, ce qu'il faut lire est le sol et les épaules de la bête, pas le
-   * ciel. Reculer davantage rendrait le boss petit ; s'approcher encore
-   * sortirait ses cornes du cadre dès qu'on vient à portée d'épée.
+   * **Le premier réglage était raté, et il faut dire pourquoi.** Posé à 7 de haut
+   * pour 13 de recul avec une visée à 5,5, l'axe ne plongeait plus que de 6,6°
+   * contre 17° d'ordinaire : on voyait l'arène par la tranche, le Lynel cachait
+   * le sol derrière lui, et juger une distance d'esquive devenait impossible.
+   * Grossir le boss ne sert à rien si on ne voit plus où l'on met les pieds.
    *
-   * La visée est relevée plus haut que d'ordinaire — 5,5 contre 4,5 — parce que
-   * ce qu'il faut suivre n'est plus le sol devant le joueur mais l'épaule du
-   * Lynel, à 3 unités du sol, d'où partent tous ses coups.
+   * Réglage retenu : **plus haut que la caméra du jeu, et plus près**. 12 pour 14
+   * de recul et une visée à 5, soit une plongée de 26,6° — plus plongeante que
+   * les 17° ordinaires, ce qui est exactement ce qu'on veut dans une arène :
+   * c'est la position au sol qui se lit, pas l'horizon. Le boss occupe environ un
+   * quart de la hauteur de l'image contre un cinquième en caméra libre.
+   *
+   * Contrepartie assumée : à cette plongée l'horizon sort du cadre et il n'y a
+   * plus de ciel. Dans une rotonde fermée, il n'y en avait déjà presque pas.
    */
   arena: {
-    offset: [0, 7, 13] as [number, number, number],
-    lookAtHeight: 5.5,
-    lookAtHeightMobile: 3.2,
+    offset: [0, 12, 14] as [number, number, number],
+    lookAtHeight: 5,
+    lookAtHeightMobile: 2.8,
   },
 } as const
