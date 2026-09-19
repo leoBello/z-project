@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react'
+import { PARRY } from '../config/parry'
 import { ENEMIES } from '../config/enemies'
 import { sampleHeight } from '../config/world'
 import { cameraView, makeScreenPoint, projectToScreen } from '../state/cameraView'
 import { enemyRegistry } from '../state/enemyRegistry'
 import { now as gameNow } from '../state/gameClock'
+import { parry, parryOffered } from '../state/parry'
 import { playerTransform } from '../state/playerTransform'
 import { projectiles } from '../state/projectiles'
 import { useGameStore } from '../store/useGameStore'
@@ -33,6 +35,11 @@ const THREAT_MAX_DISTANCE = 34
 const THREAT_RING_RADIUS = 4.2
 /** Décalage entre le centre de la capsule du joueur et le sol sous ses pieds. */
 const PLAYER_FEET_DROP = 0.8
+
+/** Rayon de l'anneau de parade, en unités monde. Il cerne le joueur sans le cacher. */
+const PARRY_RING_RADIUS = 1.35
+/** Nombre de segments de l'anneau projeté. En dessous de 24, on voit le polygone. */
+const PARRY_RING_SEGMENTS = 32
 
 const point = makeScreenPoint()
 const anchor = makeScreenPoint()
@@ -160,6 +167,7 @@ export function CombatOverlay() {
       }
 
       drawThreatArrows(context, width, height, focal)
+      drawParryRing(context, width, height)
     }
 
     frame = requestAnimationFrame(draw)
@@ -279,6 +287,103 @@ function drawThreatArrows(
     context.fill()
     context.restore()
   }
+}
+
+/**
+ * L'anneau de parade, au sol, sous le joueur.
+ *
+ * Il dit **trois** choses successives avec une seule forme, et c'est voulu :
+ * un joueur en train de lire un télégraphe ne peut pas en plus lire une
+ * interface.
+ *
+ *  - violet **pulsé** : un coup parable arrive, la fenêtre est réactive ;
+ *  - or **plein** : la garde est ouverte — c'est là qu'on apprend la longueur
+ *    de sa propre fenêtre, ce qu'aucun texte n'enseignerait ;
+ *  - rouge **bref** : l'appui est parti dans la récupération, il n'a rien gardé.
+ *
+ * Posé dans le monde et projeté, comme le chevron de menace : la perspective du
+ * sol s'applique toute seule et l'anneau reste d'accord avec le décor. Dessiné
+ * en ellipse 2D, il se décrocherait du sol dès que la caméra d'arène change
+ * d'angle.
+ *
+ * Il est aussi la réponse à une objection simple : le signal diégétique du
+ * Lynel — crinière et yeux qui s'allument — demande de regarder la bête. Un
+ * joueur qui surveille ses cœurs, ou que le boss a passé dans le dos, ne le
+ * verra pas. L'anneau est sous lui, toujours.
+ */
+function drawParryRing(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+) {
+  const now = gameNow()
+  const offered = parryOffered(now)
+  const guarding = now < parry.guardUntil
+  const whiffed = now - parry.whiffedAt < 260
+
+  if (!offered && !guarding && !whiffed) return
+
+  const playerX = playerTransform.position.x
+  const playerY = playerTransform.position.y - PLAYER_FEET_DROP
+  const playerZ = playerTransform.position.z
+
+  let color: string
+  let lineWidth: number
+  let alpha: number
+
+  if (guarding) {
+    // Or plein, sans pulsation : la garde est un état, pas une alerte.
+    color = '#f3d789'
+    lineWidth = 5
+    alpha = 0.95
+  } else if (offered) {
+    // Le violet du cristal, celui du portail et des yeux du Lynel. La
+    // pulsation accélère à mesure que l'impact approche : c'est une horloge,
+    // pas un clignotant.
+    const left = Math.max(0, parry.offerUntil - now)
+    const urgency = 1 - Math.min(1, left / PARRY.cueLeadMs)
+    color = '#b083ff'
+    lineWidth = 3 + urgency * 2
+    alpha = 0.55 + 0.45 * Math.sin(now * (0.012 + urgency * 0.03))
+  } else {
+    color = '#d0563f'
+    lineWidth = 3
+    alpha = 0.7 * (1 - (now - parry.whiffedAt) / 260)
+  }
+
+  context.save()
+  context.globalAlpha = Math.max(0, Math.min(1, alpha))
+  context.strokeStyle = color
+  context.lineWidth = lineWidth
+  context.beginPath()
+
+  let started = false
+  for (let i = 0; i <= PARRY_RING_SEGMENTS; i++) {
+    const angle = (i / PARRY_RING_SEGMENTS) * Math.PI * 2
+    projectToScreen(
+      playerX + Math.cos(angle) * PARRY_RING_RADIUS,
+      playerY,
+      playerZ + Math.sin(angle) * PARRY_RING_RADIUS,
+      width,
+      height,
+      point,
+    )
+    // Un point derrière la caméra se projette n'importe où : on coupe le tracé
+    // plutôt que de tirer un trait à travers l'écran.
+    if (point.behind) {
+      started = false
+      continue
+    }
+    if (!started) {
+      context.moveTo(point.x, point.y)
+      started = true
+    } else {
+      context.lineTo(point.x, point.y)
+    }
+  }
+
+  context.stroke()
+  context.restore()
 }
 
 /**

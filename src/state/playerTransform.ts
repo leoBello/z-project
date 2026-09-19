@@ -1,4 +1,5 @@
 import { Vector3 } from 'three'
+import { resetParry } from './parry'
 
 /**
  * Transform du joueur partagé **hors de React**.
@@ -47,6 +48,12 @@ export const playerTransform = {
 export function resetCombat() {
   playerTransform.attackStartedAt = -Infinity
   playerTransform.lastLandedSwing = -Infinity
+  // Les horodatages de la parade vivent sur la même horloge, qui repart de zéro
+  // à chaque partie : sans cette remise à plat, une garde ouverte dans la partie
+  // précédente reste dans le « futur » de la nouvelle horloge et la parade est
+  // verrouillée jusqu'à ce que le temps la rattrape. Piège déjà payé sur
+  // `attackStartedAt` — voir l'en-tête de cette fonction.
+  resetParry()
 }
 
 // Exposé en développement pour inspecter l'état du joueur depuis la console

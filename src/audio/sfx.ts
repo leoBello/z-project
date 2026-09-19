@@ -242,6 +242,29 @@ export function playHit() {
   tone('triangle', 190, 90, 0.16, 0.14)
 }
 
+/** La garde qui s'ouvre : bref, sec, métallique. Distinct du coup d'épée. */
+export function playParry() {
+  tone('square', 880, 1320, 0.07, 0.06)
+}
+
+/**
+ * La parade qui porte : l'acier contre l'acier, puis une quinte montante.
+ *
+ * Le seul son du jeu qui *récompense* un geste défensif. Il doit s'entendre
+ * au-dessus de tout le reste, gel compris — c'est pour ça qu'il est aigu.
+ */
+export function playParrySuccess() {
+  noiseBurst('highpass', 3200, 5200, 1.6, 0.09, 0.2)
+  tone('triangle', 740, 740, 0.12, 0.16)
+  tone('triangle', 1110, 1110, 0.18, 0.16, 0.07)
+}
+
+/** La charge qui finit contre l'enceinte : sourd, grave, long. */
+export function playImpact() {
+  noiseBurst('lowpass', 900, 120, 0.7, 0.35, 0.3)
+  tone('sine', 90, 40, 0.4, 0.3)
+}
+
 /** Saut : un souffle très court, juste de quoi accuser l'impulsion. */
 export function playJump() {
   noiseBurst('highpass', 500, 1400, 0.8, 0.06, 0.12)

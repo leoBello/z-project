@@ -44,6 +44,15 @@ export interface EnemyStats {
   ranged: boolean
   /** Dispersion du tir, en radians. Ignorée pour un ennemi de corps-à-corps. */
   spread?: number
+  /**
+   * L'attaque de corps-à-corps se pare-t-elle ?
+   *
+   * Un drapeau par espèce et non une règle générale, parce que la parade n'a de
+   * sens que sur un coup *annoncé*. Le projectile de l'Octorok se renvoie déjà
+   * au coup d'épée — c'est un autre geste, qui existe depuis le début et n'a
+   * pas à changer.
+   */
+  parryable: boolean
 }
 
 export const ENEMIES: Record<EnemyKind, EnemyStats> = {
@@ -70,6 +79,7 @@ export const ENEMIES: Record<EnemyKind, EnemyStats> = {
     // de collision de 0,62 — le tir devient évitable au loin sans cesser de
     // faire mouche à bout portant.
     spread: 0.088,
+    parryable: false,
   },
   moblin: {
     kind: 'moblin',
@@ -89,6 +99,12 @@ export const ENEMIES: Record<EnemyKind, EnemyStats> = {
     halfHeight: 0.55,
     minimapColor: '#c8892f',
     ranged: false,
+    // Son télégraphe dure 420 ms, exactement `PARRY.cueLeadMs` : l'offre
+    // couvre donc toute la préparation, et le signal s'allume à la frame même
+    // où le Moblin se ramasse. Ce n'est pas une coïncidence qu'on subit, c'est
+    // la raison pour laquelle `cueLeadMs` vaut 420 — la parade s'apprend sur
+    // lui avant d'arriver sur l'île.
+    parryable: true,
   },
 }
 

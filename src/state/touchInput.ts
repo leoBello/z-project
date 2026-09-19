@@ -19,6 +19,7 @@ export const touchInput = {
    */
   jumpRequested: false,
   attackRequested: false,
+  parryRequested: false,
 }
 
 /** Remet le joystick au neutre (relâchement, annulation, démontage de l'overlay). */

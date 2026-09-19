@@ -10,6 +10,7 @@ export type Control =
   | 'jump'
   | 'attack'
   | 'interact'
+  | 'parry'
 
 /**
  * Mapping clavier.
@@ -32,6 +33,24 @@ export const controlMap: KeyboardControlsEntry<Control>[] = [
   // `KeyF` et non `KeyE`, déjà pris par l'attaque. `Enter` en second parce que
   // c'est la touche que tout le monde essaie devant un panneau.
   { name: 'interact', keys: ['KeyF', 'Enter'] },
+  /*
+    `KeyR`, et le choix mérite ses deux refus.
+
+    Pas `KeyE` : l'attaque y est déjà, et fusionner les deux supprimerait le
+    seul vrai choix du combat — risquer un coup d'épée au lieu de parer. Une
+    touche qui fait deux choses selon le contexte ne laisse plus arbitrer.
+
+    Pas `ShiftLeft`, qui était le candidat évident : Windows ouvre la boîte de
+    dialogue des touches rémanentes au bout de **cinq appuis rapprochés** sur
+    Maj. Un combat de boss à la parade en produit cinq en dix secondes, et la
+    boîte vole le focus — donc la partie. Aucun code ne peut l'empêcher depuis
+    une page web.
+
+    `KeyR` est un code physique : même emplacement en AZERTY et en QWERTY, sous
+    l'index gauche qui tient déjà ZQSD, libre, et voisin immédiat de la touche
+    d'attaque.
+  */
+  { name: 'parry', keys: ['KeyR'] },
 ]
 
 /**
@@ -46,6 +65,7 @@ export function getControlHints(dict: Dictionary): { keys: string; label: string
     { keys: 'ZQSD / WASD', label: dict.ui.hud.move },
     { keys: 'Espace', label: dict.ui.hud.jump },
     { keys: 'E', label: dict.ui.hud.attack },
+    { keys: 'R', label: dict.ui.hud.parry },
     { keys: 'F', label: dict.ui.hud.interact },
   ]
 }

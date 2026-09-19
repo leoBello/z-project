@@ -4,12 +4,14 @@
       "move": "se déplacer",
       "jump": "sauter",
       "attack": "attaquer",
+      "parry": "parer",
       "interact": "interagir",
       "heartsLabel": "{current} cœurs sur {total}"
     },
     "touch": {
       "move": "se déplacer",
       "attack": "attaquer",
+      "parry": "parer",
       "jump": "sauter",
       "interact": "interagir",
       "hint": "Touchez l'écran pour faire apparaître le joystick"
