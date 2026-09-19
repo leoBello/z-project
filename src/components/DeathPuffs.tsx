@@ -201,7 +201,7 @@ const FLAT = new Quaternion().setFromEuler(new Euler(-Math.PI / 2, 0, 0))
  * instance, aucune raison d'en écrire un second.
  *
  * L'anneau est **la première chose à couper** si l'effet ne se lit pas.
- * `SwordArc` documente que la caméra, à 11 unités de haut pour 21 de recul, ne
+ * `StrikeArc` documente que la caméra, à 11 unités de haut pour 21 de recul, ne
  * voit un objet couché que sous 28° : elle n'en présente qu'un peu plus du
  * tiers de la surface. Le pari est qu'une forme concentrique en expansion
  * survit à cet écrasement là où un ruban ne survivait pas — mais c'est un

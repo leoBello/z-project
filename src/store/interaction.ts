@@ -23,7 +23,7 @@ export type Interaction =
  * La règle de priorité, écrite une seule fois.
  *
  * **Le coffre l'emporte sur le monument.** Les deux zones sont trop éloignées
- * pour se recouvrir (voir la note de cotes sur `PYRAMID_CHEST`), donc ce
+ * pour se recouvrir (voir la note de cotes sur `TEMPLE_CHEST`), donc ce
  * départage ne devrait jamais servir — mais un coffre est une action qui ne se
  * produit qu'une fois, alors qu'un panneau de portfolio se rouvre à volonté :
  * en cas d'égalité, c'est l'irréversible qui doit gagner.

@@ -10,16 +10,27 @@ import type { ItemId } from '../../types/game'
  */
 
 const GLYPHS: Record<ItemId, React.JSX.Element> = {
-  'ninja-garb': (
+  'zoro-garb': (
     <>
-      {/* Manteau : épaules larges, deux pans qui s'écartent. */}
+      {/* Manteau ouvert : épaules larges, deux pans qui s'écartent sur une
+          échancrure centrale. C'est l'échancrure qui distingue cette case de
+          n'importe quelle autre silhouette de vêtement. */}
       <path
-        d="M8 6l4-2 4 2 3 3-2 2-1-1v10l-4-4-4 4V10L7 11 5 9z"
+        d="M8 5l4-1.6L16 5l3 3-2 2-1-1v11h-3.4V9.5h-1.2V20H8V9L7 10 5 8z"
         fill="currentColor"
         opacity="0.9"
       />
-      {/* Deux lamelles du plastron, en creux. */}
-      <path d="M9.5 9.5h5M9.5 12h5" stroke="#1b1626" strokeWidth="1.1" strokeLinecap="round" />
+      {/* Le haramaki, qui coupe la figure à la taille. */}
+      <path d="M7.4 13h9.2" stroke="#171226" strokeWidth="2.2" strokeLinecap="round" />
+      {/* Deux fourreaux au côté : la seule asymétrie de la case, et ce qui
+          dit « bretteur » avant même le manteau. */}
+      <path
+        d="M16.4 13.5 19.4 20M18 13 21 19.2"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        opacity="0.6"
+      />
     </>
   ),
   kusanagi: (

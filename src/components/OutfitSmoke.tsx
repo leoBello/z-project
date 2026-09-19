@@ -18,7 +18,7 @@ import { faceted } from './environment/faceted'
  * Trois choix méritent d'être dits :
  *
  *  - **rendu hors de `<Physics>`** : ce n'est qu'un effet visuel, il n'a ni
- *    collider ni corps à simuler. Même place que `SwordArc` ;
+ *    collider ni corps à simuler. Même place que `StrikeArc` ;
  *  - **suivi par `playerTransform`** et non par une position figée au
  *    déclenchement : la tenue peut se changer depuis l'inventaire, donc en
  *    pause, mais le joueur retombe dès la reprise et la fumée doit rester

@@ -22,7 +22,7 @@ import { ChestReveal } from './components/inventory/ChestReveal'
 import { InventoryButton } from './components/inventory/InventoryButton'
 import { InventoryPanel } from './components/inventory/InventoryPanel'
 import { PortfolioDialog } from './components/portfolio/PortfolioDialog'
-import { SwordArc } from './components/SwordArc'
+import { StrikeArc } from './components/StrikeArc'
 import { BootScreen } from './components/BootScreen'
 import { TeleportMenu } from './components/TeleportMenu'
 import { TeleportOverlay } from './components/TeleportOverlay'
@@ -79,7 +79,7 @@ export default function App() {
           {/* Hors de <Physics> : la traînée de lame, la fumée de changement de
               tenue et les fumées de mort ne sont que des effets visuels, elles
               n'ont ni collider ni corps à simuler. */}
-          <SwordArc />
+          <StrikeArc />
           <OutfitSmoke />
           <DeathPuffs />
         </Suspense>

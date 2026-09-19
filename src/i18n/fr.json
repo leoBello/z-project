@@ -128,11 +128,11 @@
       "kinds": { "outfit": "Tenue", "trinket": "Babiole", "weapon": "Arme" }
     },
     "items": {
-      "ninja-garb": {
-        "name": "Tenue du Clan",
-        "meta": "Trouvée dans le coffre de la Pyramide de la Jungle",
-        "description": "Un manteau prune aux longs pans, sanglé de lamelles cramoisies laquées et liées d'or. Le col monte jusqu'à la nuque, les avant-bras et les mollets sont pris dans des bandes de lin blanc. Une tenue de guerre d'un clan dont plus personne ne se souvient du nom.",
-        "effect": "+2 cœurs jaunes tant qu'elle est portée"
+      "zoro-garb": {
+        "name": "Tenue du Chasseur de Pirates",
+        "meta": "Trouvée dans le coffre du Temple du Sommet",
+        "description": "Un manteau vert forêt porté ouvert, sanglé d'un large haramaki, et deux sabres au fourreau pendus à la hanche gauche. Celui qui la portait avait une balafre de l'épaule à la hanche, un œil qu'il n'ouvrait plus, et trois anneaux d'or à une oreille.",
+        "effect": "+2 cœurs jaunes et déplacement plus rapide tant qu'elle est portée"
       },
       "kusanagi": {
         "name": "Katana de Kusanagi",
