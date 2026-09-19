@@ -1,0 +1,2230 @@
+<meta charset="utf-8">
+<title>Lynel argenté</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --ground: #f2ede1;
+    --surface: #ffffff;
+    --ink: #1d2018;
+    --ink-2: #565c4c;
+    --ink-3: #888f78;
+    --line: #d5cfbb;
+    --accent: #4a7a2e;
+    --violet: #6d2fd0;
+
+    --step--1: 0.8125rem;
+    --step-0: 0.9375rem;
+    --step-1: 1.125rem;
+    --step-2: 1.5rem;
+    --step-4: clamp(2.5rem, 6vw, 3.75rem);
+
+    --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+    --display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --ground: #0a1020;
+      --surface: #131c30;
+      --ink: #e8eede;
+      --ink-2: #aab59a;
+      --ink-3: #737f66;
+      --line: #27334a;
+      --accent: #a8cd7a;
+      --violet: #b083ff;
+    }
+  }
+
+  :root[data-theme='dark'] {
+    --ground: #0a1020;
+    --surface: #131c30;
+    --ink: #e8eede;
+    --ink-2: #aab59a;
+    --ink-3: #737f66;
+    --line: #27334a;
+    --accent: #a8cd7a;
+    --violet: #b083ff;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--step-0);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding-inline: 20px;
+    padding-block: 28px 64px;
+  }
+
+  .masthead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px 28px;
+    margin-bottom: 22px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 6px;
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: var(--step-4);
+    font-weight: 600;
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .standfirst {
+    max-width: 50ch;
+    color: var(--ink-2);
+    margin: 10px 0 0;
+  }
+
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 13px;
+    border: 1px solid var(--violet);
+    border-radius: 999px;
+    color: var(--violet);
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    white-space: nowrap;
+  }
+
+  .status::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: currentColor;
+  }
+
+  /* --- Visionneuse -------------------------------------------------------- */
+
+  .viewer {
+    position: relative;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #0b1230;
+    aspect-ratio: 16 / 9;
+    min-height: 340px;
+  }
+
+  .viewer canvas { display: block; width: 100%; height: 100%; }
+
+  .viewer__loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #9fb08c;
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    background: #0b1230;
+  }
+
+  .rail {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    right: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    pointer-events: none;
+  }
+
+  .rail > * { pointer-events: auto; }
+
+  .rail__group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 8px;
+    background: rgba(8, 14, 32, 0.8);
+    border: 1px solid rgba(170, 190, 150, 0.22);
+    backdrop-filter: blur(8px);
+  }
+
+  .rail button {
+    appearance: none;
+    border: 0;
+    border-radius: 5px;
+    padding: 6px 11px;
+    background: transparent;
+    color: #c6d2b6;
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .rail button:hover { background: rgba(170, 190, 150, 0.16); color: #fff; }
+  .rail button[aria-pressed='true'] { background: #4f7a33; color: #fff; }
+  .rail button[aria-pressed='true'][data-pose] { background: #5b34a8; }
+  .rail button:focus-visible { outline: 2px solid #a8cd7a; outline-offset: 1px; }
+
+  .readout {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(8, 14, 32, 0.82);
+    border: 1px solid rgba(170, 190, 150, 0.22);
+    color: #c6d2b6;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.55;
+    max-width: 62%;
+  }
+
+  .readout b { color: #fff; font-weight: 500; }
+  .readout .pose { color: #c7a8ff; display: block; margin-top: 4px; }
+
+  .hint {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin: 10px 0 0;
+    color: var(--ink-3);
+    font-family: var(--mono);
+    font-size: var(--step--1);
+  }
+
+  /* --- Sections ----------------------------------------------------------- */
+
+  section { margin-top: 52px; }
+
+  h2 {
+    font-family: var(--display);
+    font-size: var(--step-2);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 6px;
+  }
+
+  .section-note {
+    max-width: 64ch;
+    color: var(--ink-2);
+    margin: 0 0 22px;
+  }
+
+  .tiers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .tier {
+    background: var(--surface);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .tier__swatch { width: 26px; height: 4px; border-radius: 999px; }
+
+  .tier__name {
+    font-family: var(--display);
+    font-size: var(--step-1);
+    font-weight: 600;
+  }
+
+  .tier__cote {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tier p { margin: 0; color: var(--ink-2); font-size: var(--step--1); }
+
+  table { width: 100%; border-collapse: collapse; font-size: var(--step--1); }
+  .table-scroll { overflow-x: auto; }
+
+  th, td {
+    text-align: left;
+    padding: 9px 14px 9px 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: baseline;
+  }
+
+  th {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  td:first-child { color: var(--ink); white-space: nowrap; }
+  td.num {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--accent);
+  }
+  td.yes { font-family: var(--mono); color: var(--violet); white-space: nowrap; }
+  td.no { font-family: var(--mono); color: var(--ink-3); white-space: nowrap; }
+  td:last-child { color: var(--ink-2); }
+
+  .mono { font-family: var(--mono); }
+
+  /* --- Frise de la parade ------------------------------------------------- */
+
+  .timeline {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    padding: 22px 20px 16px;
+    overflow-x: auto;
+  }
+
+  .track {
+    position: relative;
+    min-width: 560px;
+    height: 34px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--line), var(--line));
+    margin-bottom: 8px;
+  }
+
+  .track + .track { margin-top: 22px; }
+
+  .band {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: 5px;
+    display: grid;
+    place-items: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .band--tell { background: #8a8f7c; }
+  .band--cue { background: #6d2fd0; }
+  .band--parry { background: #4a7a2e; }
+  .band--fail { background: #b4553f; }
+  .band--punish { background: #d9a441; color: #241a14; }
+
+  .mark {
+    position: absolute;
+    top: -20px;
+    bottom: -16px;
+    width: 2px;
+    background: var(--ink);
+  }
+
+  .mark span {
+    position: absolute;
+    top: -4px;
+    left: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  .track__label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 6px;
+  }
+
+  .asks { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
+
+  .asks li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    align-items: baseline;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .asks li:first-child { border-top: 1px solid var(--line); }
+
+  .asks .q {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--violet);
+    letter-spacing: 0.08em;
+  }
+
+  .asks strong { font-weight: 600; display: block; }
+  .asks span { color: var(--ink-2); font-size: var(--step--1); }
+
+  footer {
+    margin-top: 52px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-3);
+    font-family: var(--mono);
+    font-size: var(--step--1);
+  }
+
+  @media (max-width: 620px) {
+    .viewer { aspect-ratio: 4 / 5; }
+    .readout { max-width: calc(100% - 24px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">z-project · maquette d'ennemi</p>
+      <h1>Le Lynel argenté</h1>
+      <p class="standfirst">
+        Le gardien de la rotonde. Un quadrupède de quatre unités et demie, armé
+        d'une épée dentelée et d'un arc, qui ne se tue pas en le frappant mais
+        en lisant ce qu'il annonce. C'est le premier ennemi du jeu contre lequel
+        le joueur a une <em>réponse</em> : la parade.
+      </p>
+    </div>
+    <span class="status">à valider</span>
+  </header>
+
+  <div class="viewer" id="viewer">
+    <div class="viewer__loading" id="loading">construction du modèle…</div>
+    <div class="readout" id="readout"></div>
+    <div class="rail">
+      <div class="rail__group" role="group" aria-label="Point de vue">
+        <button type="button" data-view="duel" aria-pressed="true">face à face</button>
+        <button type="button" data-view="profil" aria-pressed="false">profil</button>
+        <button type="button" data-view="tete" aria-pressed="false">la tête</button>
+        <button type="button" data-view="arme" aria-pressed="false">l'arme</button>
+        <button type="button" data-view="tour" aria-pressed="false">tour</button>
+        <button type="button" data-view="arene" aria-pressed="false">l'arène</button>
+      </div>
+      <div class="rail__group" role="group" aria-label="Pose">
+        <button type="button" data-pose="repos" aria-pressed="true">repos</button>
+        <button type="button" data-pose="garde" aria-pressed="false">garde</button>
+        <button type="button" data-pose="balayage" aria-pressed="false">balayage</button>
+        <button type="button" data-pose="charge" aria-pressed="false">charge</button>
+        <button type="button" data-pose="cabre" aria-pressed="false">cabré</button>
+        <button type="button" data-pose="brise" aria-pressed="false">paré</button>
+      </div>
+      <div class="rail__group" role="group" aria-label="Calques">
+        <button type="button" data-layer="armor" aria-pressed="true">armure</button>
+        <button type="button" data-layer="weapons" aria-pressed="true">arsenal</button>
+        <button type="button" data-layer="mane" aria-pressed="true">crinière</button>
+        <button type="button" data-layer="scale" aria-pressed="true">échelle</button>
+        <button type="button" data-layer="arena" aria-pressed="false">arène</button>
+        <button type="button" data-layer="rage" aria-pressed="false">phase III</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">
+    <span>glisser — orbiter</span>
+    <span>molette — zoomer</span>
+    <span>clic droit — déplacer</span>
+    <span id="tris">—</span>
+  </p>
+
+  <section>
+    <h2>L'anatomie</h2>
+    <p class="section-note">
+      Quatre masses, et c'est le rapport entre elles qui fait le Lynel plutôt
+      que le détail de chacune. Un centaure léonin se lit de loin à une seule
+      chose : un buste d'homme <em>trop petit</em> posé sur un corps de bête
+      <em>trop gros</em>. Dès que le buste rattrape le quadrupède, on obtient un
+      minotaure à quatre pattes.
+    </p>
+    <div class="tiers">
+      <article class="tier">
+        <span class="tier__swatch" style="background: #dfe4ee"></span>
+        <span class="tier__name">Le quadrupède</span>
+        <span class="tier__cote">garrot <span data-measure="withers">2,0</span> · long. <span data-measure="length">4,3</span></span>
+        <p>
+          Un tronc en capsule, un poitrail et une croupe en sphères, quatre
+          jambes à sabots. Les postérieurs portent le jarret coudé du cheval,
+          les antérieurs sont des colonnes droites : c'est ce qui donne la
+          poussée vers l'avant, donc la charge.
+        </p>
+      </article>
+      <article class="tier">
+        <span class="tier__swatch" style="background: #b3bccd"></span>
+        <span class="tier__name">Le buste</span>
+        <span class="tier__cote">épaules <span data-measure="shoulder">3,0</span> · largeur 1,3</span>
+        <p>
+          Il naît au-dessus des antérieurs, pas au milieu du dos — sinon la bête
+          a deux avants. Il vaut <strong>deux têtes et demie</strong> : c'est ce
+          rapport-là, et rien d'autre, qui sépare un centaure d'une figurine.
+          Penché de 6° en arrière, parce qu'un buste vertical se lit comme une
+          statue et un buste penché comme quelqu'un qui vous laisse venir.
+        </p>
+      </article>
+      <article class="tier">
+        <span class="tier__swatch" style="background: #f4f6fb"></span>
+        <span class="tier__name">La tête</span>
+        <span class="tier__cote">cornes <span data-measure="height">4,3</span></span>
+        <p>
+          Crâne léonin, museau court, masque sombre sur les yeux, et deux cornes
+          qui se recourbent vers l'arrière sur 1,4 unité. La crinière part du
+          front, court le long de la nuque et ne s'arrête qu'à la croupe : c'est
+          elle, et pas les cornes, qui donne la silhouette.
+        </p>
+      </article>
+      <article class="tier">
+        <span class="tier__swatch" style="background: #d9a441"></span>
+        <span class="tier__name">L'arsenal</span>
+        <span class="tier__cote">lame 2,4 · bouclier 1,3</span>
+        <p>
+          Épée dentelée à une main — une main pour lui, deux pour le joueur —,
+          bouclier à pointes et arc en travers du dos. Les trois sont visibles en
+          permanence : le joueur doit savoir avant le premier coup que cette
+          chose sait aussi tirer.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>Cotes</h2>
+    <p class="section-note">
+      En unités monde, les mêmes que partout ailleurs. Le personnage mesure
+      <span class="mono">1,6</span>, le Moblin <span class="mono">1,45</span> ;
+      les deux sont posés à côté du Lynel dans la visionneuse, calque
+      « échelle ». Les valeurs marquées d'un astérisque sont
+      <strong>mesurées sur le modèle affiché</strong>, pas recopiées à la main.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">Cote</th><th scope="col">Valeur</th><th scope="col">D'où elle vient</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Hauteur aux cornes</td>
+            <td class="num"><span data-measure="height">4,3</span> *</td>
+            <td>Deux fois et trois quarts le joueur. En dessous de 2×, un boss ne fait pas peur, il fait « gros ennemi » ; au-delà de 3×, il sort du cadre dès qu'on s'approche à portée d'épée.</td>
+          </tr>
+          <tr>
+            <td>Hauteur aux épaules</td>
+            <td class="num"><span data-measure="shoulder">3,0</span> *</td>
+            <td>C'est de là que part l'épée, et c'est donc la cote qui décide de la lisibilité du télégraphe : à 3, l'arme se déplace dans le tiers haut de l'image, au-dessus de la mêlée et des herbes.</td>
+          </tr>
+          <tr>
+            <td>Hauteur au garrot</td>
+            <td class="num"><span data-measure="withers">2,0</span> *</td>
+            <td>Le dos arrive juste au-dessus de la tête du joueur. C'est ce qui rend la charge terrifiante de face et le flanc évident à contourner.</td>
+          </tr>
+          <tr>
+            <td>Longueur, museau à croupe</td>
+            <td class="num"><span data-measure="length">4,3</span> *</td>
+            <td>Queue comprise, museau compris. Un corps long tourne mal : le Lynel a un rayon de braquage, et c'est précisément ce que le joueur exploite en restant sur son flanc.</td>
+          </tr>
+          <tr>
+            <td>Collider</td>
+            <td class="num">r 1,15 · h 1,0</td>
+            <td>Capsule Rapier, centre à 1,6. Deux fois et demie celui du Moblin (0,45 / 0,55). Volontairement plus étroit que le modèle : on doit pouvoir frôler la croupe sans être bloqué.</td>
+          </tr>
+          <tr>
+            <td>Épaisseur du contour</td>
+            <td class="num">0,045</td>
+            <td>Les ennemis du jeu sont à 0,03. Un trait plus épais, c'est du poids — le seul réglage de rendu qui distingue le boss des autres, et il ne coûte rien.</td>
+          </tr>
+          <tr>
+            <td>Triangles</td>
+            <td class="num"><span data-measure="tris">—</span> *</td>
+            <td>Contours compris — ils doublent la charge de sommets de chaque pièce qui en porte un. C'est beaucoup pour une seule créature, et c'est assumé : elle est unique, jamais instanciée, et n'existe que dans une arène où rien d'autre n'est dessiné. Divisible par deux si besoin, en retirant les contours des petites pièces.</td>
+          </tr>
+          <tr>
+            <td>Point d'apparition</td>
+            <td class="num">0, +7,2, 0</td>
+            <td>Le centre de la rotonde, sur la mosaïque. Il y est déjà quand le joueur franchit l'arcade : un boss qui « apparaît » est une cinématique, un boss qui attend est un lieu.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>La palette</h2>
+    <p class="section-note">
+      Deux contraintes se rencontrent ici. L'argent doit se détacher d'une arène
+      en pierre grise — or c'est exactement la même famille de gris. Et la bête
+      doit appartenir à l'île, sans quoi elle a l'air posée dessus.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">Matière</th><th scope="col">Teinte</th><th scope="col">Rôle</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Pelage</td>
+            <td class="num">#dfe4ee</td>
+            <td>Un argent <em>bleuté</em>, pas neutre. La pierre de l'île est un gris vert-beige (#c2c1b2) ; décaler le pelage vers le bleu suffit à séparer les deux à valeur égale, ce qu'aucune différence de luminosité ne ferait sans faire ressembler la bête à un fantôme.</td>
+          </tr>
+          <tr>
+            <td>Marques</td>
+            <td class="num">#5a6378</td>
+            <td>Masque sur les yeux, rayures de la croupe, ventre. Le masque sombre est ce qui rend le regard lisible à vingt unités — sans lui, deux points clairs sur un visage clair.</td>
+          </tr>
+          <tr>
+            <td>Crinière</td>
+            <td class="num">#f4f6fb</td>
+            <td>Presque blanche, donc plus claire que le pelage : c'est la seule surface qui sature en haut de l'image, et elle marque la tête, c'est-à-dire ce qu'il faut regarder.</td>
+          </tr>
+          <tr>
+            <td>Or</td>
+            <td class="num">#d9a441</td>
+            <td>Le même que celui des ruines, émissif compris. L'armure du Lynel est faite du métal de la forteresse : il n'est pas venu d'ailleurs, il est ce qui reste de ceux qui l'ont bâtie.</td>
+          </tr>
+          <tr>
+            <td>Lueur</td>
+            <td class="num">#8b3ff0</td>
+            <td>Le violet du cristal de l'île, et donc celui du portail. Yeux, veines de la lame, signal de parade. C'est le fil qui relie la bête au lieu — et accessoirement la seule couleur de la scène qu'aucune pierre ne porte, donc la seule qu'on ne peut pas confondre.</td>
+          </tr>
+          <tr>
+            <td>Sabots, acier</td>
+            <td class="num">#2f3446 / #cfd8e8</td>
+            <td>Les sabots plus sombres que tout le reste : ce sont eux qui touchent le sol, et un contact clair sur un dallage clair fait flotter la bête.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Les mécaniques de combat</h2>
+    <p class="section-note">
+      Six attaques, et une règle de lecture unique : <strong>ce qui est paré est
+      annoncé par la crinière, ce qui ne l'est pas est annoncé par les
+      pattes.</strong> Le joueur n'a donc jamais à mémoriser six animations — il
+      regarde d'abord où naît le mouvement. Les portées sont données en unités,
+      et les anneaux d'or du dallage de la rotonde (3,4 / 6,6 / 9,6) servent de
+      règle graduée : ils sont déjà posés dans le jeu, précisément pour ça.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Attaque</th>
+            <th scope="col">Télégraphe</th>
+            <th scope="col">Portée</th>
+            <th scope="col">Dégâts</th>
+            <th scope="col">Parade</th>
+            <th scope="col">La réponse</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Balayage</td>
+            <td class="num">620 ms</td>
+            <td class="num">3,6 · arc 170°</td>
+            <td class="num">2 ♥</td>
+            <td class="yes">oui</td>
+            <td>Le coup de base, et le cours de parade. L'arc de 170° interdit le contournement : on pare ou on sort de portée, pas les deux.</td>
+          </tr>
+          <tr>
+            <td>Estoc</td>
+            <td class="num">400 ms</td>
+            <td class="num">4,4 · cône 30°</td>
+            <td class="yes">2 ♥</td>
+            <td class="yes">oui</td>
+            <td>Le plus rapide, et le plus long. Il punit le joueur qui recule pour souffler : le pas en arrière n'est plus une échappatoire gratuite.</td>
+          </tr>
+          <tr>
+            <td>Piétinement</td>
+            <td class="num">760 ms</td>
+            <td class="num">onde → 6,6</td>
+            <td class="num">2 ♥</td>
+            <td class="no">non</td>
+            <td>Il se cabre et retombe. La seule attaque qui se <em>franchit</em> : l'onde rase le sol, le saut la passe. Le jeu a un saut qui ne servait jusqu'ici qu'à grimper.</td>
+          </tr>
+          <tr>
+            <td>Charge</td>
+            <td class="num">900 ms</td>
+            <td class="num">traverse l'arène · 11 u/s</td>
+            <td class="num">3 ♥</td>
+            <td class="no">non</td>
+            <td>Un pas de côté, et il finit dans un pilier : 1,4 s d'étourdissement, la plus grosse ouverture du combat. Se lit au grattement du sabot antérieur.</td>
+          </tr>
+          <tr>
+            <td>Triple tir</td>
+            <td class="num">700 ms</td>
+            <td class="num">18 · dispersion ±7°</td>
+            <td class="num">1 ♥ / flèche</td>
+            <td class="yes">épée</td>
+            <td>Le système de projectiles existant, sans une ligne de neuf : la parade d'épée du jeu les renvoie déjà, et une flèche renvoyée coûte 2 au tireur.</td>
+          </tr>
+          <tr>
+            <td>Souffle</td>
+            <td class="num">850 ms</td>
+            <td class="num">cône → 6,6 · flaques 3 s</td>
+            <td class="num">2 ♥ puis 1 ♥/s</td>
+            <td class="no">non</td>
+            <td>Phase III. Casser la ligne, et se souvenir que le sol reste dangereux après — c'est ce qui rétrécit l'arène sans y poser un seul obstacle.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="section-note" style="margin-top: 22px">
+      <strong>Les anneaux ne marchent que s'il reste au centre.</strong> Un repère
+      au sol est une règle graduée depuis le centre de l'arène, pas depuis la
+      bête ; il ne dit donc la portée du souffle et de l'onde que si le Lynel
+      part de l'origine. D'où une règle de comportement qui a l'air arbitraire et
+      ne l'est pas : <em>entre deux séquences, il revient au centre</em>. Ça lui
+      donne une démarche de gardien plutôt que de poursuivant, ça laisse au
+      joueur les trois secondes qu'il faut pour soigner ou repositionner, et ça
+      fait des anneaux une information vraie au lieu d'une décoration.
+    </p>
+  </section>
+
+  <section>
+    <h2>La parade</h2>
+    <p class="section-note">
+      C'est la vraie nouveauté, et la seule qui touche au code du joueur plutôt
+      qu'à celui de l'ennemi. Trois problèmes à résoudre d'un coup : la fenêtre
+      doit être courte pour que réussir compte, assez longue pour être humaine,
+      et <strong>marteler la touche ne doit jamais marcher</strong> — sinon elle
+      n'est pas une mécanique, elle est un impôt sur les doigts.
+    </p>
+
+    <div class="timeline">
+      <p class="track__label">Balayage — 620 ms de télégraphe, impact à T</p>
+      <div class="track">
+        <div class="band band--tell" style="left: 0; width: 32%">anticipation</div>
+        <div class="band band--cue" style="left: 32%; width: 6%">signal</div>
+        <div class="band band--tell" style="left: 38%; width: 30%; opacity: 0.55">le coup part</div>
+        <div class="mark" style="left: 32%"><span>T − 420 : la crinière s'allume</span></div>
+        <div class="mark" style="left: 68%"><span>T : impact</span></div>
+      </div>
+
+      <p class="track__label" style="margin-top: 26px">Appui après le signal — la fenêtre s'ouvre</p>
+      <div class="track">
+        <div class="band band--parry" style="left: 42%; width: 26%">fenêtre active — 260 ms</div>
+        <div class="band band--punish" style="left: 68%; width: 30%">ouverture — 1,3 s, dégâts ×3</div>
+        <div class="mark" style="left: 68%"><span>T</span></div>
+      </div>
+
+      <p class="track__label" style="margin-top: 26px">Appui avant le signal — la parade part à vide</p>
+      <div class="track">
+        <div class="band band--fail" style="left: 12%; width: 56%">récupération — 700 ms, aucune garde</div>
+        <div class="mark" style="left: 68%"><span>T : le coup porte</span></div>
+      </div>
+    </div>
+
+    <div class="table-scroll" style="margin-top: 26px">
+      <table>
+        <thead>
+          <tr><th scope="col">Cote</th><th scope="col">Valeur</th><th scope="col">D'où elle vient</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Touche</td>
+            <td class="num">Maj. gauche</td>
+            <td><span class="mono">ShiftLeft</span> : un code physique au même endroit en AZERTY et en QWERTY, libre, et sous l'auriculaire qui ne sert à rien pendant que la main gauche tient ZQSD. Voir la question 01.</td>
+          </tr>
+          <tr>
+            <td>Fenêtre active</td>
+            <td class="num">260 ms</td>
+            <td>Il faut donc réagir entre 160 et 420 ms après le signal. Le temps de réaction simple médian est d'environ 250 ms : la fenêtre est <em>centrée</em> dessus, elle ne le frôle pas. C'est difficile, jamais injuste.</td>
+          </tr>
+          <tr>
+            <td>Signal</td>
+            <td class="num">T − 420 ms</td>
+            <td>La crinière et les yeux virent au violet du cristal, plus un son sec. Deux canaux, parce qu'un joueur qui regarde ses cœurs ne regarde pas la crinière.</td>
+          </tr>
+          <tr>
+            <td>Récupération sur appui à vide</td>
+            <td class="num">700 ms</td>
+            <td><strong>La pièce maîtresse.</strong> Un appui avant le signal ne rate pas la parade : il la consomme. 700 ms couvre tout le reste du télégraphe le plus long — donc marteler ne peut pas tomber juste par accident, et la seule stratégie viable est d'attendre.</td>
+          </tr>
+          <tr>
+            <td>Récompense</td>
+            <td class="num">1,3 s · ×3</td>
+            <td>Le Lynel recule d'un pas, l'épée part de côté, la garde tombe. Deux coups d'épée rentrent confortablement (450 ms chacun), trois si on est propre. À ×3, une parade réussie vaut six à neuf coups normaux.</td>
+          </tr>
+          <tr>
+            <td>Gel à l'impact</td>
+            <td class="num">110 ms</td>
+            <td>Le jeu gèle déjà 80 ms sur la mort d'un ennemi. Une parade doit taper plus fort que la mort d'un Octorok, sans quoi le geste le plus dur du jeu est celui qui se sent le moins.</td>
+          </tr>
+          <tr>
+            <td>Sur le joueur</td>
+            <td class="num">0 ♥ · 0 recul</td>
+            <td>Une parade réussie annule tout, y compris le recul. Une parade qui laisse le joueur glisser hors de portée lui retire sa propre récompense.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="section-note" style="margin-top: 22px">
+      <strong>Et la feinte, en phase III.</strong> Une fois la parade apprise, elle
+      devient gratuite : le joueur ne regarde plus le Lynel, il attend le flash.
+      La réponse n'est pas de raccourcir la fenêtre — ça ne fait que punir les
+      écrans lents — mais de mentir une fois sur quatre : la crinière s'allume,
+      le balayage part <span class="mono">320 ms</span> plus tard. Qui a paré au
+      signal est en récupération quand le coup arrive. Il faut alors regarder
+      l'épaule, pas la crinière. C'est la seule mécanique du combat qui demande
+      de <em>désapprendre</em>, et c'est pour ça qu'elle arrive en dernier.
+    </p>
+  </section>
+
+  <section>
+    <h2>Les trois phases</h2>
+    <p class="section-note">
+      36 points de vie — douze fois le Moblin, et le chiffre n'est pas un
+      hasard : c'est le nombre qu'il faut pour qu'un combat mené proprement dure
+      entre deux et trois minutes, soit une poignée de parades réussies et rien
+      de plus. Les phases ne changent pas ses statistiques, elles changent la
+      <em>liste</em> de ce qu'il peut faire. Un boss qui devient plus rapide est
+      le même boss en moins lisible ; un boss qui apprend une attaque de plus est
+      un autre combat.
+    </p>
+    <div class="tiers">
+      <article class="tier">
+        <span class="tier__swatch" style="background: #8a8f7c"></span>
+        <span class="tier__name">I — L'épée</span>
+        <span class="tier__cote">36 → 24 ♥ · balayage, estoc</span>
+        <p>
+          Il ne quitte pas le centre et n'a que deux coups, tous deux parables.
+          C'est le tutoriel de la parade, et il doit être survivable sans elle —
+          quelqu'un qui n'a rien compris doit pouvoir arriver en phase II à
+          l'esquive, et y mourir en comprenant pourquoi.
+        </p>
+      </article>
+      <article class="tier">
+        <span class="tier__swatch" style="background: #cfd8e8"></span>
+        <span class="tier__name">II — L'arène</span>
+        <span class="tier__cote">24 → 12 ♥ · + charge, arc</span>
+        <p>
+          Il prend du champ. La charge et le triple tir font enfin servir les
+          onze unités de rayon de la rotonde, et les piliers cessent d'être du
+          décor : c'est dedans qu'on le fait s'assommer.
+        </p>
+      </article>
+      <article class="tier">
+        <span class="tier__swatch" style="background: #8b3ff0"></span>
+        <span class="tier__name">III — La crinière</span>
+        <span class="tier__cote">12 → 0 ♥ · + souffle, onde, feintes</span>
+        <p>
+          La crinière s'allume pour de bon et ne s'éteint plus — le signal de
+          parade devient un détail dans un incendie, ce qui est exactement le
+          problème que la feinte exploite. Les flaques de feu rétrécissent
+          l'arène à mesure. Calque « phase III » dans la visionneuse.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ce que ça coûte à implémenter</h2>
+    <p class="section-note">
+      Découpage honnête, pour que la validation porte aussi sur le prix. Le
+      modèle est la partie facile ; c'est la parade qui touche à du code partagé.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">Chantier</th><th scope="col">Où</th><th scope="col">Ce qu'il faut</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Le modèle</td>
+            <td class="num">nouveau</td>
+            <td><span class="mono">components/enemies/LynelModel.tsx</span>. La géométrie de cette page, transposée en JSX — mêmes primitives, mêmes cotes, matériaux toon du jeu. Aucune dépendance nouvelle.</td>
+          </tr>
+          <tr>
+            <td>Les statistiques</td>
+            <td class="num">extension</td>
+            <td><span class="mono">config/enemies.ts</span> décrit aujourd'hui une famille par <em>une</em> attaque (<span class="mono">telegraphMs</span>, <span class="mono">damage</span>, <span class="mono">ranged</span>). Un boss en a six : il faut une table d'attaques, pas un jeu de champs. C'est le seul endroit où la structure existante ne tient plus.</td>
+          </tr>
+          <tr>
+            <td>La machine à états</td>
+            <td class="num">nouveau</td>
+            <td>Celle d'<span class="mono">Enemy.tsx</span> (idle/patrol/chase/attack) ne sait pas enchaîner des séquences ni changer de phase. Un composant <span class="mono">Lynel.tsx</span> à part, qui réutilise le registre et les projectiles sans toucher au tronc commun.</td>
+          </tr>
+          <tr>
+            <td>La parade</td>
+            <td class="num">tronc commun</td>
+            <td>Une touche de plus dans <span class="mono">config/controls.ts</span>, un état dans le store, un bouton tactile, un rappel dans le HUD, et l'animation du bouclier levé sur le modèle du héros. C'est la partie qui se voit partout, y compris quand le Lynel n'est pas là.</td>
+          </tr>
+          <tr>
+            <td>Le verrou de l'arène</td>
+            <td class="num">nouveau</td>
+            <td>Franchir l'arcade déclenche, une barrière ferme les deux travées écroulées, la musique change. Sans ça, on sort du combat en marchant. Voir la question 05.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ce que j'attends de toi</h2>
+    <p class="section-note">
+      Six décisions qui changent le travail. Le reste — la géométrie, les
+      valeurs de dégâts, la couleur exacte de la crinière — je le tranche et tu
+      corriges après l'avoir vu bouger.
+    </p>
+    <ul class="asks">
+      <li>
+        <span class="q">01</span>
+        <div>
+          <strong>La parade sur une touche à elle, ou sur la touche d'attaque ?</strong>
+          <span>
+            J'ai pris Maj. gauche. L'alternative est de faire de la parade un
+            usage de <span class="mono">E</span> — appui pendant un télégraphe =
+            parade, sinon = coup d'épée. Ça évite une touche de plus et un bouton
+            tactile de plus, mais ça rend impossible d'attaquer <em>pendant</em>
+            un télégraphe, donc ça supprime le choix « je risque un coup au lieu
+            de parer ». Je tiens à ce choix, mais c'est le tien.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">02</span>
+        <div>
+          <strong>La parade est-elle réservée au Lynel ?</strong>
+          <span>
+            Techniquement non : dès qu'elle existe, elle marche sur le Moblin,
+            qui a déjà 420 ms de télégraphe. Soit on l'ouvre à tout le jeu — et
+            alors il faut la réapprendre au joueur bien avant l'île, et
+            rééquilibrer les Moblins — soit on la donne à l'entrée de l'arène,
+            comme un objet. La seconde est moins cohérente et bien plus simple.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">03</span>
+        <div>
+          <strong>Trois phases, ou deux ?</strong>
+          <span>
+            La phase III (souffle de feu, flaques persistantes, feintes) est à
+            elle seule presque la moitié du travail de comportement. Le combat
+            tient debout sans elle : phase I l'épée, phase II l'arène, et la
+            victoire. Dis-moi si je vise le combat complet ou si je livre les
+            deux premières phases et qu'on juge sur pièces.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">04</span>
+        <div>
+          <strong>Que donne la victoire ?</strong>
+          <span>
+            Il y a trois tenues dans le jeu et cinq réceptacles de cœur. Une
+            quatrième tenue prise sur le Lynel serait la récompense la plus
+            lisible — et le seul objet du jeu qu'on ne trouve pas dans un coffre.
+            L'autre option est un réceptacle, cohérente avec les points d'intérêt
+            mais tiède pour un boss final.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">05</span>
+        <div>
+          <strong>La caméra du jeu tient-elle pour un boss ?</strong>
+          <span>
+            Clique sur « face à face » : c'est le cadre exact du jeu, et le Lynel
+            n'y occupe qu'un cinquième de la hauteur de l'image. À 21 unités de
+            recul, une créature de 4,3 est un jouet. Trois sorties possibles — le
+            grandir encore (mais il sortira du cadre dès qu'on l'approche),
+            rapprocher la caméra dans l'arène seulement (un réglage de plus dans
+            <span class="mono">CAMERA</span>, et une transition à écrire), ou
+            accepter et compter sur la lisibilité des télégraphes plutôt que sur
+            la masse. Je pencherais pour la caméra d'arène : c'est la seule qui
+            ne coûte rien au reste du jeu.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">06</span>
+        <div>
+          <strong>L'arène se ferme-t-elle ?</strong>
+          <span>
+            La rotonde a deux travées écroulées : ce sont ses entrées, et ses
+            sorties. Les fermer pendant le combat, c'est un boss de jeu vidéo ;
+            les laisser ouvertes, c'est pouvoir fuir se soigner et revenir, donc
+            un combat qu'on ne peut pas perdre mais qu'on peut rater longtemps.
+            Je fermerais, avec la même barrière violette que le portail.
+          </span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <footer>
+    Maquette — géométrie procédurale, palette et cel-shading repris du jeu.
+    Rien de ce qui est ici n'est encore dans le dépôt. Les cotes marquées d'un
+    astérisque sont mesurées sur le modèle affiché à chaque chargement : si la
+    géométrie change, le tableau change avec elle.
+  </footer>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ------------------------------------------------------------------ cotes */
+
+/*
+  Toutes les cotes du Lynel, en unités monde — les mêmes que le jeu, où le
+  personnage mesure 1,6. Elles vivent ici et nulle part ailleurs : c'est de ces
+  huit nombres que descendent le squelette, les poses et les portées d'attaque,
+  et le tableau de la page les relit à l'exécution plutôt que de les recopier.
+*/
+const BODY_Y = 1.52;      // axe du tronc quadrupède
+const BODY_R = 0.62;      // rayon du tronc
+const HIP_X = 0.46;       // demi-écartement des jambes
+const FORE_Z = 0.86;      // antérieurs
+const HIND_Z = -0.90;     // postérieurs
+const BUST = [0, 1.90, 0.78];   // naissance du buste, sur le garrot avant
+const BUST_LEAN = -0.10;  // 6° vers l'arrière
+const SHOULDER_Y = 1.15;  // épaules, dans le repère du buste
+const HEAD_Y = 1.58;      // tête, dans le repère du buste
+
+const C = {
+  fur: 0xdfe4ee,
+  furMid: 0xb3bccd,
+  furDark: 0x5a6378,
+  mane: 0xf4f6fb,
+  maneCool: 0xc6ccee,
+  hoof: 0x2f3446,
+  horn: 0xe8e2d2,
+  hornDark: 0x9a927c,
+  metal: 0x717a96,
+  gold: 0xd9a441,
+  goldDim: 0x8a6c33,
+  goldBright: 0xf3d789,
+  leather: 0x8a6a4e,
+  glow: 0x8b3ff0,
+  glowPale: 0xe6ccff,
+  steel: 0xcfd8e8,
+  steelDark: 0x76809a,
+  // L'arène : la pierre et l'or de l'île, repris tels quels.
+  stone: 0xc2c1b2,
+  stoneMid: 0x9d9d8e,
+  stoneDark: 0x6c6d62,
+  // Les deux figurines d'échelle.
+  tunic: 0x1f6b3c,
+  skin: 0xe8b98f,
+  boot: 0x5b3b25,
+  moblin: 0x9a6b3f,
+  moblinDark: 0x5d3f27,
+  // Le ciel, celui de l'île.
+  zenith: 0x2f3f8f,
+  horizon: 0x7f9ad6,
+  glowSky: 0xbfd6f2,
+};
+
+/* --------------------------------------------------------------- matériaux */
+
+/*
+  La rampe de cel-shading du jeu : trois marches, échantillonnées au plus
+  proche. Sans NearestFilter le GPU interpole entre les bandes et il ne reste
+  qu'un dégradé lisse — c'est-à-dire plus aucun cel-shading.
+*/
+const gradient = new THREE.DataTexture(
+  new Uint8Array([88, 88, 88, 255, 176, 176, 176, 255, 255, 255, 255, 255]),
+  3, 1, THREE.RGBAFormat
+);
+gradient.minFilter = THREE.NearestFilter;
+gradient.magFilter = THREE.NearestFilter;
+gradient.needsUpdate = true;
+
+const toon = (options) => new THREE.MeshToonMaterial({ gradientMap: gradient, ...options });
+
+const MAT = {
+  fur: toon({ color: C.fur }),
+  furMid: toon({ color: C.furMid }),
+  furDark: toon({ color: C.furDark }),
+  mane: toon({ color: C.mane }),
+  maneCool: toon({ color: C.maneCool }),
+  hoof: toon({ color: C.hoof }),
+  horn: toon({ color: C.horn }),
+  hornDark: toon({ color: C.hornDark }),
+  metal: toon({ color: C.metal }),
+  leather: toon({ color: C.leather }),
+  steel: toon({ color: C.steel }),
+  steelDark: toon({ color: C.steelDark }),
+  // L'or porte un émissif, la pierre non : dans un rendu à trois marches, c'est
+  // le seul moyen de faire *briller* quelque chose plutôt que de le peindre en
+  // jaune. Même réglage que les ruines de l'île.
+  gold: toon({ color: C.gold, emissive: C.gold, emissiveIntensity: 0.32 }),
+  goldDim: toon({ color: C.goldDim }),
+  goldBright: toon({ color: C.goldBright, emissive: C.gold, emissiveIntensity: 0.55 }),
+  stone: toon({ color: C.stone }),
+  stoneMid: toon({ color: C.stoneMid }),
+  stoneDark: toon({ color: C.stoneDark }),
+  tunic: toon({ color: C.tunic }),
+  skin: toon({ color: C.skin }),
+  boot: toon({ color: C.boot }),
+  moblin: toon({ color: C.moblin }),
+  moblinDark: toon({ color: C.moblinDark }),
+};
+
+/** Les yeux et les veines : non éclairés, donc toujours au-dessus du seuil de bloom. */
+const GLOW = new THREE.MeshBasicMaterial({ color: C.glowPale });
+const GLOW_HALO = new THREE.MeshBasicMaterial({
+  color: C.glow, transparent: true, opacity: 0.45, depthWrite: false,
+});
+
+/*
+  Le contour, exactement comme `<Outlines>` de drei : la même géométrie rendue
+  en face arrière, sommets poussés le long de leur normale. C'est l'épaisseur —
+  0,045 contre 0,03 sur les ennemis ordinaires — qui distingue visuellement le
+  boss, et elle ne coûte rien d'autre qu'un second passage de sommets.
+
+  Réservé aux surfaces lisses : sur une géométrie facettée, les normales
+  divergent aux arêtes et le contour se fend.
+*/
+function outlineMaterial(thickness) {
+  return new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    uniforms: { uThickness: { value: thickness }, uColor: { value: new THREE.Color(0x20160f) } },
+    vertexShader: `
+      uniform float uThickness;
+      void main() {
+        vec3 p = position + normal * uThickness;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+      }`,
+    fragmentShader: `
+      uniform vec3 uColor;
+      void main() { gl_FragColor = vec4(uColor, 1.0); }`,
+  });
+}
+
+const OUTLINE = outlineMaterial(0.045);
+const OUTLINE_THIN = outlineMaterial(0.022);
+
+function faceted(geometry) {
+  const flat = geometry.index ? geometry.toNonIndexed() : geometry;
+  flat.computeVertexNormals();
+  return flat;
+}
+
+/** Une pièce : géométrie, matériau, pose. Rend le maillage pour l'enchaîner. */
+function part(parent, geometry, material, position, rotation, scale) {
+  const mesh = new THREE.Mesh(geometry, material);
+  if (position) mesh.position.set(position[0], position[1], position[2]);
+  if (rotation) mesh.rotation.set(rotation[0], rotation[1], rotation[2]);
+  if (scale !== undefined) {
+    if (Array.isArray(scale)) mesh.scale.set(scale[0], scale[1], scale[2]);
+    else mesh.scale.setScalar(scale);
+  }
+  parent.add(mesh);
+  return mesh;
+}
+
+/** Ajoute le contour à une pièce, en enfant : il suit toutes ses transformations. */
+function outline(mesh, material) {
+  mesh.add(new THREE.Mesh(mesh.geometry, material || OUTLINE));
+  return mesh;
+}
+
+/* ----------------------------------------------------------------- scène */
+
+const viewer = document.getElementById('viewer');
+const readout = document.getElementById('readout');
+const loading = document.getElementById('loading');
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+viewer.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+
+/*
+  Le FOV du jeu, et pas un autre. 48° est le réglage qui fabrique le rendu
+  « diorama » : une focale plus large redresserait les fuyantes et donnerait à
+  la bête une perspective qu'elle n'aura jamais à l'écran.
+*/
+const camera = new THREE.PerspectiveCamera(48, 16 / 9, 0.1, 400);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 2;
+controls.maxDistance = 90;
+controls.autoRotateSpeed = 0.6;
+
+/* --- Ciel ----------------------------------------------------------------- */
+
+const sky = new THREE.Mesh(
+  new THREE.SphereGeometry(200, 32, 24),
+  new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    depthWrite: false,
+    uniforms: {
+      uZenith: { value: new THREE.Color(C.zenith) },
+      uHorizon: { value: new THREE.Color(C.horizon) },
+      uGlow: { value: new THREE.Color(C.glowSky) },
+    },
+    vertexShader: `
+      varying vec3 vPos;
+      void main() {
+        vPos = position;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: `
+      uniform vec3 uZenith; uniform vec3 uHorizon; uniform vec3 uGlow;
+      varying vec3 vPos;
+      void main() {
+        float h = normalize(vPos).y;
+        vec3 sky = mix(uHorizon, uZenith, smoothstep(-0.05, 0.62, h));
+        sky = mix(sky, uGlow, smoothstep(0.16, -0.30, h));
+        gl_FragColor = vec4(sky, 1.0);
+      }`,
+  })
+);
+scene.add(sky);
+
+/* --- Lumières : les trois sources du jeu ---------------------------------- */
+
+scene.add(new THREE.HemisphereLight(0xd2dcf4, 0x6a7a42, 0.7));
+scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+const sun = new THREE.DirectionalLight(0xffe3ad, 2.0);
+sun.position.set(60, 90, 70);
+scene.add(sun);
+const backLight = new THREE.DirectionalLight(0x9fb0e8, 0.6);
+backLight.position.set(-50, 25, -60);
+scene.add(backLight);
+
+/* ----------------------------------------------------------------- le rig */
+
+/*
+  Les articulations posables. Chacune retient sa rotation de construction ; une
+  pose n'exprime donc que des *écarts*, et la pose « repos » est littéralement
+  l'ensemble vide. Sans ça, chaque pose devrait redonner les quinze rotations, y
+  compris celles qu'elle ne change pas — et la première correction de la
+  géométrie les rendrait toutes fausses.
+*/
+const RIG = {};
+
+function rig(name, object) {
+  RIG[name] = { object, base: object.rotation.clone() };
+  return object;
+}
+
+/* ------------------------------------------------------------- le Lynel */
+
+const lynel = new THREE.Group();
+scene.add(lynel);
+rig('root', lynel);
+
+/*
+  Les calques sont des *listes*, pas des groupes.
+
+  La tentation est de mettre l'arsenal dans un `Group` qu'on éteint d'un coup —
+  mais l'épée doit rester fille de l'avant-bras, la crinière de la nuque, le
+  brassard du coude. Les regrouper par thème les détacherait du squelette, et
+  l'épée resterait en l'air pendant que le bras balaie. On éteint donc des
+  objets un par un, là où ils sont.
+*/
+const LAYER = { armor: [], weapons: [], mane: [] };
+
+function layer(name, object) {
+  LAYER[name].push(object);
+  return object;
+}
+
+/** Les surfaces qui s'allument en phase III. Remplies pendant la construction. */
+const VEINS = [];
+
+const quad = new THREE.Group();
+lynel.add(quad);
+
+/* --- Le tronc quadrupède -------------------------------------------------- */
+
+outline(part(
+  quad,
+  new THREE.CapsuleGeometry(BODY_R, 1.02, 5, 14),
+  MAT.fur,
+  [0, BODY_Y, -0.05],
+  [Math.PI / 2, 0, 0]
+));
+
+// Le ventre, plus clair et débordant par le bas : un tronc d'une seule teinte
+// est un tube, et la ligne de ventre est ce qui fait un animal.
+part(quad, new THREE.CapsuleGeometry(0.50, 0.84, 4, 10), MAT.furMid,
+  [0, BODY_Y - 0.24, -0.05], [Math.PI / 2, 0, 0]);
+
+// Poitrail et croupe.
+outline(part(quad, new THREE.SphereGeometry(0.66, 14, 10), MAT.fur,
+  [0, BODY_Y + 0.04, 0.86], null, [1.04, 1.0, 0.82]));
+outline(part(quad, new THREE.SphereGeometry(0.64, 14, 10), MAT.fur,
+  [0, BODY_Y + 0.02, -0.94], null, [1.08, 1.0, 0.86]));
+
+/*
+  Les rayures de la croupe, trois par flanc.
+
+  Minces le long du corps et hautes en travers : une rayure de zèbre, pas une
+  tache. L'erreur inverse — mince en largeur, étalée en longueur — donne des
+  taches de vache, ce qui change entièrement l'animal qu'on regarde.
+*/
+for (const side of [-1, 1]) {
+  for (const z of [-0.36, -0.68, -1.00]) {
+    part(quad, new THREE.SphereGeometry(0.34, 10, 8), MAT.furDark,
+      [side * 0.50, BODY_Y + 0.16, z], [0.15 * side, 0, 0], [0.62, 1.0, 0.11]);
+  }
+}
+
+/* --- Les jambes ----------------------------------------------------------- */
+
+/*
+  Antérieurs et postérieurs ne sont pas la même jambe.
+
+  Les antérieurs sont des colonnes droites, les postérieurs portent le jarret
+  coudé du cheval — c'est cette articulation-là, et elle seule, qui fait lire la
+  poussée vers l'avant, donc la charge. Une bête à quatre colonnes identiques ne
+  charge pas, elle avance.
+
+  Chaque jambe est ensuite *reposée sur le sol* par la mesure de sa propre boîte
+  englobante, plutôt que par une constante calculée à la main. Les angles du
+  jarret changeront ; le sabot restera à zéro.
+*/
+function buildLeg(sign, z, hind) {
+  const hip = new THREE.Group();
+  hip.position.set(HIP_X * sign, BODY_Y, z);
+  quad.add(hip);
+
+  const upper = new THREE.Group();
+  upper.rotation.x = hind ? 0.46 : 0.02;
+  hip.add(upper);
+
+  const lower = new THREE.Group();
+  lower.position.y = -0.66;
+  lower.rotation.x = hind ? -0.48 : -0.02;
+  upper.add(lower);
+
+  outline(part(upper, new THREE.SphereGeometry(0.34, 11, 9), MAT.fur,
+    [0, 0, 0], null, hind ? [0.95, 1.05, 1.15] : [0.92, 1.0, 1.0]));
+  outline(part(upper, new THREE.CapsuleGeometry(0.25, 0.40, 4, 10), MAT.fur,
+    [0, -0.34, 0], null, hind ? [1.1, 1, 1.2] : [1, 1, 1]));
+  part(upper, new THREE.SphereGeometry(0.21, 9, 7), MAT.furMid, [0, -0.66, 0]);
+
+  part(lower, new THREE.CapsuleGeometry(0.155, 0.42, 4, 9), MAT.fur, [0, -0.34, 0]);
+  part(lower, new THREE.CylinderGeometry(0.13, 0.145, 0.16, 8), MAT.furDark, [0, -0.64, 0]);
+  // Le fanon, la touffe de crinière au-dessus du sabot.
+  for (const a of [-0.6, 0, 0.6]) {
+    part(lower, faceted(new THREE.ConeGeometry(0.075, 0.26, 4)), MAT.mane,
+      [Math.sin(a) * 0.12, -0.56, Math.cos(a) * 0.12 - 0.02], [2.5, a, 0]);
+  }
+  outline(part(lower, new THREE.CylinderGeometry(0.175, 0.205, 0.22, 8), MAT.hoof,
+    [0, -0.75, 0]), OUTLINE_THIN);
+
+  // Le sabot au sol, mesuré et non supposé.
+  const box = new THREE.Box3().setFromObject(hip);
+  hip.position.y -= box.min.y;
+
+  return { upper, lower };
+}
+
+const legFR = buildLeg(-1, FORE_Z, false);
+const legFL = buildLeg(1, FORE_Z, false);
+const legHR = buildLeg(-1, HIND_Z, true);
+const legHL = buildLeg(1, HIND_Z, true);
+
+rig('legFRu', legFR.upper); rig('legFRl', legFR.lower);
+rig('legFLu', legFL.upper); rig('legFLl', legFL.lower);
+rig('legHRu', legHR.upper); rig('legHRl', legHR.lower);
+rig('legHLu', legHL.upper); rig('legHLl', legHL.lower);
+
+/* --- La queue ------------------------------------------------------------- */
+
+const tail = new THREE.Group();
+tail.position.set(0, BODY_Y + 0.38, -1.22);
+quad.add(tail);
+rig('tail', tail);
+
+{
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0.05, 0.14, -0.44),
+    new THREE.Vector3(0.02, 0.02, -0.86),
+    new THREE.Vector3(-0.05, -0.34, -1.14),
+    new THREE.Vector3(-0.02, -0.72, -1.26),
+  ]);
+  part(tail, new THREE.TubeGeometry(curve, 16, 0.10, 6, false), MAT.fur);
+  // La touffe, de la couleur de la crinière : c'est ce qui la relie à la tête.
+  for (let i = 0; i < 9; i++) {
+    const a = (i / 9) * Math.PI * 2;
+    part(tail, faceted(new THREE.ConeGeometry(0.11, 0.38, 5)), i % 2 ? MAT.mane : MAT.maneCool,
+      [-0.02 + Math.cos(a) * 0.09, -0.80 + Math.sin(a) * 0.07, -1.30],
+      [2.3, 0, a - Math.PI / 2]);
+  }
+}
+
+/* --- Le buste ------------------------------------------------------------- */
+
+const bust = new THREE.Group();
+bust.position.set(BUST[0], BUST[1], BUST[2]);
+bust.rotation.x = BUST_LEAN;
+lynel.add(bust);
+rig('bust', bust);
+
+outline(part(bust, new THREE.CapsuleGeometry(0.34, 0.24, 4, 12), MAT.fur, [0, 0.30, 0]));
+/*
+  Le torse, et le rapport qui décide de tout : combien de têtes il mesure.
+
+  Trois essais y sont passés, tous à régler la crinière, le masque ou le cou,
+  alors que le défaut était ailleurs et se mesurait en deux nombres : un crâne
+  de 0,88 de haut pour un torse de 0,86. Une tête aussi grande que le buste qui
+  la porte donne une figurine, et aucun détail ne rattrape ça — on regarde une
+  peluche quelle que soit la qualité de ses mèches.
+
+  Le buste fait ici <b>deux têtes et demie</b>, de la ceinture aux épaules. La
+  hauteur totale n'a pas bougé d'un centimètre : ce qu'on retire au crâne, on le
+  rend au torse. C'est le seul réglage de tout ce modèle qu'on ne peut pas faire
+  à l'œil sur une seule vue, parce qu'il ne se voit qu'en comparant deux masses
+  qu'on ne regarde jamais ensemble.
+*/
+outline(part(bust, new THREE.CapsuleGeometry(0.42, 0.42, 5, 14), MAT.fur,
+  [0, 0.82, 0], null, [1.25, 1, 0.78]));
+part(bust, new THREE.SphereGeometry(0.28, 11, 8), MAT.furMid,
+  [0, 0.98, 0.26], null, [1.6, 0.74, 0.6]);
+
+// La jonction homme / bête : une ceinture large. Sans elle, le buste a l'air
+// planté dans le dos ; avec elle, il a l'air sanglé dessus.
+{
+  const belt = layer('armor', new THREE.Group());
+  bust.add(belt);
+  part(belt, new THREE.CylinderGeometry(0.44, 0.47, 0.22, 14), MAT.leather, [0, 0.06, 0]);
+  part(belt, faceted(new THREE.BoxGeometry(0.24, 0.21, 0.1)), MAT.gold, [0, 0.06, 0.44]);
+  part(belt, new THREE.TorusGeometry(0.30, 0.045, 3, 12), MAT.goldDim, [0, 0.06, 0.02], [Math.PI / 2, 0, 0]);
+  /*
+    Une seule sangle en diagonale, et non deux en croix.
+
+    Deux sangles croisées font un X sombre au milieu du torse : à l'écran, le
+    torse devient la sangle. Une seule, en travers, donne la même idée — il est
+    harnaché — et laisse les trois quarts de la masse visibles. Les clous d'or
+    la suivent, ce qui accessoirement trace une ligne oblique qui aide à lire
+    l'inclinaison du buste pendant le balayage.
+  */
+  part(belt, faceted(new THREE.BoxGeometry(0.11, 1.05, 0.07)), MAT.leather,
+    [0, 0.70, 0.36], [0, 0, 0.55]);
+  for (let i = 0; i < 4; i++) {
+    part(belt, faceted(new THREE.SphereGeometry(0.042, 6, 5)), MAT.gold,
+      [0.30 - i * 0.20, 1.00 - i * 0.28, 0.40]);
+  }
+}
+
+/* --- Les épaulières ------------------------------------------------------- */
+
+function buildPauldron(sign) {
+  const g = new THREE.Group();
+  g.position.set(0.56 * sign, SHOULDER_Y + 0.08, -0.02);
+  /*
+    Une calotte, pas une boule.
+
+    Sphère pleine, l'épaulière descendait sous l'épaule et venait couvrir le
+    flanc du torse — c'est-à-dire précisément la masse qu'il faut voir pour
+    lire un centaure. Une demi-sphère ouverte vers le bas coiffe l'épaule et
+    laisse le torse sortir dessous.
+  */
+  outline(part(g, new THREE.SphereGeometry(0.30, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), MAT.metal,
+    [0, 0, 0], null, [1, 0.95, 1.05]), OUTLINE_THIN);
+  part(g, new THREE.TorusGeometry(0.295, 0.048, 4, 14), MAT.gold, [0, -0.01, 0], [Math.PI / 2, 0, 0]);
+  for (let i = 0; i < 3; i++) {
+    const a = -0.45 + i * 0.45;
+    part(g, faceted(new THREE.ConeGeometry(0.06, 0.26, 5)), MAT.goldBright,
+      [sign * 0.19, 0.16, Math.sin(a) * 0.21], [a * 0.5, 0, sign * -0.85]);
+  }
+  return g;
+}
+
+/* --- Les bras ------------------------------------------------------------- */
+
+function buildArm(sign) {
+  const root = new THREE.Group();
+  root.position.set(0.54 * sign, SHOULDER_Y - 0.09, 0.02);
+  root.rotation.set(0.12, 0, 0.30 * -sign);
+  bust.add(root);
+
+  const fore = new THREE.Group();
+  fore.position.y = -0.56;
+  fore.rotation.x = -0.72;
+  root.add(fore);
+
+  outline(part(root, new THREE.CapsuleGeometry(0.17, 0.32, 4, 10), MAT.fur, [0, -0.30, 0]));
+  part(root, new THREE.SphereGeometry(0.155, 9, 7), MAT.furMid, [0, -0.56, 0]);
+
+  part(fore, new THREE.CapsuleGeometry(0.15, 0.34, 4, 10), MAT.fur, [0, -0.27, 0]);
+  const bracer = layer('armor', new THREE.Group());
+  fore.add(bracer);
+  part(bracer, new THREE.CylinderGeometry(0.175, 0.19, 0.24, 12), MAT.metal, [0, -0.23, 0]);
+  part(bracer, new THREE.TorusGeometry(0.185, 0.033, 3, 12), MAT.gold, [0, -0.34, 0], [Math.PI / 2, 0, 0]);
+  outline(part(fore, new THREE.SphereGeometry(0.185, 9, 7), MAT.furDark, [0, -0.56, 0]), OUTLINE_THIN);
+
+  return { root, fore };
+}
+
+const armR = buildArm(-1);   // l'avant étant +Z, la main droite est côté -X
+const armL = buildArm(1);
+rig('armRu', armR.root); rig('armRf', armR.fore);
+rig('armLu', armL.root); rig('armLf', armL.fore);
+
+for (const sign of [-1, 1]) bust.add(layer('armor', buildPauldron(sign)));
+
+/* --- L'épée --------------------------------------------------------------- */
+
+/*
+  Le profil de la lame est un `Shape` extrudé, et non un empilement de boîtes.
+
+  Ce qui fait l'épée du Lynel, ce n'est pas qu'elle soit grande : c'est le dos
+  en dents de scie. Quatre dents taillées dans un contour 2D coûtent douze
+  points ; les mêmes dents en géométrie pleine coûteraient quatre boîtes
+  orientées à la main qu'aucune correction de la silhouette ne suivrait.
+*/
+function buildSword() {
+  const g = new THREE.Group();
+
+  const shape = new THREE.Shape();
+  shape.moveTo(-0.17, 0);
+  shape.lineTo(-0.19, 0.55);
+  shape.lineTo(-0.165, 1.35);
+  shape.lineTo(-0.10, 2.00);
+  shape.lineTo(0.0, 2.32);       // la pointe
+  shape.lineTo(0.17, 1.92);      // le dos, dentelé
+  shape.lineTo(0.10, 1.78);
+  shape.lineTo(0.23, 1.52);
+  shape.lineTo(0.12, 1.39);
+  shape.lineTo(0.25, 1.10);
+  shape.lineTo(0.13, 0.98);
+  shape.lineTo(0.26, 0.68);
+  shape.lineTo(0.14, 0.55);
+  shape.lineTo(0.22, 0.26);
+  shape.lineTo(0.19, 0);
+  shape.closePath();
+
+  /*
+    Pas de contour sur la lame, et c'est volontaire.
+
+    Le contour du jeu pousse les sommets le long de leur normale ; sur une
+    géométrie extrudée, dont les normales sont plates et divergent brutalement
+    aux arêtes, le trait se fend à chaque coin. La gouttière sombre fait le
+    travail à sa place : c'est elle qui donne son épaisseur à la lame.
+  */
+  part(g, new THREE.ExtrudeGeometry(shape, {
+    depth: 0.075, bevelEnabled: true, bevelSize: 0.018, bevelThickness: 0.014, bevelSegments: 1, curveSegments: 1,
+  }), MAT.steel, [0, 0.16, -0.037]);
+
+  // La gouttière, et la veine violette qui la parcourt : c'est elle qui
+  // s'allume en phase III, et c'est le seul endroit où la lueur touche l'acier.
+  part(g, faceted(new THREE.BoxGeometry(0.075, 1.75, 0.09)), MAT.steelDark, [-0.02, 1.05, 0]);
+  VEINS.push(part(g, faceted(new THREE.BoxGeometry(0.035, 1.55, 0.10)), GLOW_HALO, [-0.02, 1.0, 0]));
+
+  // Garde, poignée, pommeau.
+  part(g, faceted(new THREE.BoxGeometry(0.52, 0.11, 0.17)), MAT.gold, [0, 0.14, 0]);
+  for (const s of [-1, 1]) {
+    part(g, faceted(new THREE.ConeGeometry(0.055, 0.22, 5)), MAT.goldBright,
+      [s * 0.24, 0.24, 0], [0, 0, s * -0.5]);
+  }
+  part(g, new THREE.CylinderGeometry(0.058, 0.064, 0.42, 10), MAT.leather, [0, -0.10, 0]);
+  part(g, faceted(new THREE.OctahedronGeometry(0.10, 0)), MAT.gold, [0, -0.34, 0]);
+
+  return g;
+}
+
+const sword = layer('weapons', buildSword());
+sword.position.set(0, -0.58, 0.05);
+sword.rotation.set(-0.25, 0, 0.1);
+armR.fore.add(sword);
+
+/* --- Bouclier et arc, sur le dos ------------------------------------------ */
+
+{
+  const shield = layer('weapons', new THREE.Group());
+  shield.position.set(0.20, 0.74, -0.36);
+  shield.rotation.set(0.28, -0.35, 0.2);
+  bust.add(shield);
+
+  part(shield, faceted(new THREE.CylinderGeometry(0.50, 0.50, 0.10, 7)), MAT.metal,
+    [0, 0, 0], [Math.PI / 2, 0, 0]);
+  part(shield, faceted(new THREE.CylinderGeometry(0.32, 0.32, 0.12, 7)), MAT.steelDark,
+    [0, 0, 0.01], [Math.PI / 2, 0, 0]);
+  part(shield, faceted(new THREE.OctahedronGeometry(0.14, 0)), MAT.gold, [0, 0, 0.07]);
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2 + 0.4;
+    part(shield, faceted(new THREE.ConeGeometry(0.06, 0.24, 5)), MAT.goldBright,
+      [Math.cos(a) * 0.48, Math.sin(a) * 0.48, 0], [Math.PI / 2, 0, -a + Math.PI / 2]);
+  }
+
+  const bow = layer('weapons', new THREE.Group());
+  bow.position.set(-0.26, 0.70, -0.40);
+  bow.rotation.set(0.2, 0.3, -0.7);
+  bust.add(bow);
+
+  const arc = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, -0.95, 0.06),
+    new THREE.Vector3(0, -0.52, -0.16),
+    new THREE.Vector3(0, 0, -0.24),
+    new THREE.Vector3(0, 0.52, -0.16),
+    new THREE.Vector3(0, 0.95, 0.06),
+  ]);
+  part(bow, new THREE.TubeGeometry(arc, 18, 0.045, 5, false), MAT.hornDark);
+  part(bow, faceted(new THREE.BoxGeometry(0.09, 0.30, 0.09)), MAT.gold, [0, 0, -0.23]);
+  part(bow, new THREE.CylinderGeometry(0.012, 0.012, 1.92, 5), MAT.horn, [0, 0, 0.06]);
+}
+
+/* --- La tête -------------------------------------------------------------- */
+
+const head = new THREE.Group();
+head.position.set(0, HEAD_Y, 0.06);
+bust.add(head);
+rig('head', head);
+
+outline(part(head, new THREE.CapsuleGeometry(0.19, 0.34, 4, 10), MAT.fur, [0, -0.36, -0.07], [0.22, 0, 0]), OUTLINE_THIN);
+outline(part(head, new THREE.SphereGeometry(0.32, 14, 11), MAT.fur, [0, 0, 0], null, [1, 0.95, 1.14]));
+
+// Le masque sombre. Deux points clairs sur un visage clair ne se lisent pas à
+// vingt unités : c'est le masque, et pas les yeux, qui fait le regard.
+/*
+  Le masque est une *bande*, et il a fallu le rater pour le comprendre.
+
+  Posé comme une sphère de la taille du crâne aplatie de moitié, il couvrait le
+  front, les yeux, les joues et la naissance du museau : de profil, la tête
+  devenait un casque blanc à visière noire, et le Lynel un chevalier. Écrasé à
+  0,38 de hauteur et reculé derrière le museau, il ne fait plus que ce pour quoi
+  il est là — asseoir les yeux sur du sombre.
+*/
+part(head, new THREE.SphereGeometry(0.29, 12, 10), MAT.furDark,
+  [0, 0.085, 0.10], null, [1.05, 0.40, 0.95]);
+
+// Museau, mâchoire, truffe, crocs.
+/*
+  Un mufle, pas un chanfrein.
+
+  Le museau faisait 0,34 de long pour un crâne de 0,32 de rayon : un museau
+  aussi long que la tête est un chanfrein, et un chanfrein est une chèvre. Ce
+  qui fait un félin, c'est un museau court et *large* — d'où 0,22 de long pour
+  0,24 de rayon, et une truffe qui affleure à peine.
+*/
+/*
+  Le museau, et la cote qui le rend visible : de combien il dépasse du crâne.
+
+  Le crâne est un ellipsoïde dont le demi-axe avant vaut 0,365. Un museau dont
+  la pointe s'arrête à 0,42 ne sort donc que de cinq centimètres et demi : la
+  face est plate, et à l'écran le Lynel n'a pas de visage, il a un front. Poussé
+  à 0,55, il dépasse de 0,185 — la moitié d'un rayon de crâne — et la tête a un
+  avant et un arrière.
+*/
+outline(part(head, new THREE.CylinderGeometry(0.175, 0.235, 0.28, 10), MAT.fur,
+  [0, -0.075, 0.41], [Math.PI / 2 + 0.10, 0, 0]), OUTLINE_THIN);
+part(head, new THREE.SphereGeometry(0.21, 10, 8), MAT.furMid, [0, -0.20, 0.36], null, [0.94, 0.56, 1.05]);
+part(head, new THREE.SphereGeometry(0.10, 8, 6), MAT.furDark, [0, -0.035, 0.545], null, [1.25, 0.8, 0.7]);
+for (const s of [-1, 1]) {
+  part(head, faceted(new THREE.ConeGeometry(0.038, 0.16, 5)), MAT.horn,
+    [s * 0.085, -0.215, 0.50], [0.18, 0, Math.PI]);
+}
+
+/*
+  Les yeux, et l'erreur qu'on ne voit qu'en cadrant serré.
+
+  Le masque est un ellipsoïde de demi-axes (0,299 ; 0,122 ; 0,276) centré en
+  (0 ; 0,075 ; 0,09). À x = ±0,15 et à la hauteur des yeux, sa surface affleure
+  à z = 0,329. Les yeux étaient posés à 0,235 : *dans* le masque, donc invisibles
+  sous tous les angles. Rien dans la scène ne le signale — une géométrie qui en
+  traverse une autre se rend simplement, sans se plaindre.
+
+  Ils sont maintenant à 0,345, c'est-à-dire à demi sortis, ce qui est aussi ce
+  qui leur donne leur relief.
+*/
+for (const s of [-1, 1]) {
+  const eye = new THREE.Group();
+  eye.position.set(s * 0.152, 0.082, 0.345);
+  head.add(eye);
+  part(eye, new THREE.SphereGeometry(0.072, 10, 8), GLOW, [0, 0, 0], null, [1, 1.2, 0.9]);
+  VEINS.push(part(eye, new THREE.SphereGeometry(0.105, 10, 8), GLOW_HALO, [0, 0, -0.04], null, [1, 1.15, 0.6]));
+}
+
+// Oreilles.
+for (const s of [-1, 1]) {
+  part(head, faceted(new THREE.ConeGeometry(0.085, 0.22, 6)), MAT.fur,
+    [s * 0.265, 0.13, -0.12], [-0.5, 0, s * 1.15]);
+  part(head, faceted(new THREE.ConeGeometry(0.052, 0.14, 5)), MAT.furDark,
+    [s * 0.275, 0.14, -0.10], [-0.5, 0, s * 1.15]);
+}
+
+/* --- Les cornes ----------------------------------------------------------- */
+
+/*
+  Chaîne de tronçons plutôt qu'un tube : un `TubeGeometry` a un rayon constant,
+  or une corne qui ne s'affine pas est un tuyau. La courbure s'accumule d'un
+  tronçon au suivant — 0,30 radian par segment sur les six premiers, puis
+  presque rien — ce qui donne l'enroulement du bélier : un grand arc vers
+  l'arrière, et une pointe qui repart droit.
+*/
+function buildHorn(sign) {
+  const g = new THREE.Group();
+  const pos = new THREE.Vector3(sign * 0.19, 0.24, -0.05);
+  const dir = new THREE.Vector3(sign * 0.46, 0.89, -0.06).normalize();
+  const up = new THREE.Vector3(0, 1, 0);
+  const axisX = new THREE.Vector3(1, 0, 0);
+  const axisZ = new THREE.Vector3(0, 0, 1);
+  const SEG = 9;
+  const LEN = 0.155;
+
+  for (let i = 0; i < SEG; i++) {
+    const t = i / SEG;
+    const t2 = (i + 1) / SEG;
+    const r0 = 0.118 * (1 - 0.86 * t);
+    const r1 = 0.118 * (1 - 0.86 * t2);
+
+    const segment = part(g, faceted(new THREE.CylinderGeometry(r1, r0, LEN, 7)),
+      t > 0.6 ? MAT.horn : MAT.hornDark);
+    segment.position.copy(pos).addScaledVector(dir, LEN / 2);
+    segment.quaternion.setFromUnitVectors(up, dir);
+
+    if (i % 2 === 0 && i < SEG - 2) {
+      const ring = part(g, faceted(new THREE.TorusGeometry(r0 * 0.98, 0.030, 3, 9)), MAT.hornDark);
+      ring.position.copy(pos).addScaledVector(dir, LEN * 0.3);
+      ring.quaternion.setFromUnitVectors(axisZ, dir);
+    }
+
+    pos.addScaledVector(dir, LEN);
+    dir.applyAxisAngle(axisX, i < 6 ? -0.30 : -0.02);
+    dir.applyAxisAngle(axisZ, -0.05 * sign);
+    dir.normalize();
+  }
+
+  return g;
+}
+
+head.add(buildHorn(-1), buildHorn(1));
+
+/* --- La crinière ---------------------------------------------------------- */
+
+/*
+  Trois tronçons, un par pièce du corps, et c'est ce qui la fait *couler* :
+  attachée à la seule tête, elle bouge comme une perruque ; distribuée du front
+  à la croupe, elle relie les trois masses et donne à la bête sa ligne de dos.
+*/
+function shard(parent, position, rotation, length, radius, material) {
+  return part(parent, faceted(new THREE.ConeGeometry(radius, length, 5)), material,
+    position, rotation);
+}
+
+{
+  /*
+    Une collerette, et non des mèches semées autour du crâne.
+
+    Premier essai : onze mèches réparties sur une demi-sphère, chacune avec sa
+    propre inclinaison. Résultat, un buisson — elles se croisaient, certaines
+    passaient devant la face, et la tête disparaissait dedans. Ce qui fait la
+    crinière du lion n'est pas la dispersion mais un *disque* : toutes les mèches
+    partent d'un même anneau derrière le crâne et s'écartent en corolle. Un seul
+    angle varie, la position sur l'anneau, et la forme apparaît.
+
+    L'inclinaison d'ensemble (0,62 rad) est appliquée après la rotation radiale,
+    si bien que la corolle s'ouvre vers l'arrière au lieu de rester à plat :
+    c'est elle qui dégage la face.
+
+    Et le rayon de l'anneau — 0,345 pour un crâne de 0,32 — est la seule cote de
+    la collerette qui ne se négocie pas : il doit dépasser le rayon du crâne.
+    Réglé en dessous, les mèches naissent *sous* la surface et n'en sortent
+    jamais. Une crinière invisible, pour le prix de quatorze cônes — c'est arrivé.
+
+    Large et courte plutôt que fine et longue, aussi. Des mèches de 0,09 de
+    rayon donnent une couronne d'épines ; à 0,175 elles se touchent et
+    deviennent une masse, ce qui est le seul état dans lequel une crinière se
+    lit à la distance où se joue le combat.
+  */
+  const ruff = layer('mane', new THREE.Group());
+  head.add(ruff);
+  for (let i = 0; i < 14; i++) {
+    const a = (i / 14) * Math.PI * 2;
+    // Longue en haut et sur les côtés, courte sous la mâchoire.
+    const len = 0.54 + 0.30 * Math.max(0, Math.sin(a + 0.4));
+    shard(
+      ruff,
+      [Math.cos(a) * 0.345, Math.sin(a) * 0.345 + 0.02, -0.10],
+      [0.78, 0, a - Math.PI / 2],
+      len, 0.175,
+      i % 2 ? MAT.mane : MAT.maneCool
+    );
+  }
+
+  // Le long de la nuque et du dos du buste.
+  const neck = layer('mane', new THREE.Group());
+  bust.add(neck);
+  for (let i = 0; i < 7; i++) {
+    const t = i / 6;
+    shard(neck, [0, 1.30 - t * 1.04, -0.26 - t * 0.14], [-2.5 + t * 0.30, 0, 0],
+      0.62 - t * 0.18, 0.105, i % 2 ? MAT.mane : MAT.maneCool);
+  }
+
+  // Et enfin sur l'échine du quadrupède, jusqu'à la croupe.
+  const spine = layer('mane', new THREE.Group());
+  quad.add(spine);
+  for (let i = 0; i < 5; i++) {
+    const t = i / 4;
+    shard(spine, [0, BODY_Y + 0.58 - t * 0.06, 0.32 - t * 1.16], [-2.7, 0, 0],
+      0.54 - t * 0.18, 0.115, i % 2 ? MAT.mane : MAT.maneCool);
+  }
+}
+
+/* ------------------------------------------------- mesures et compteurs */
+
+/*
+  Les cotes du tableau sont *lues sur le modèle*, jamais recopiées.
+
+  Une maquette dont le texte affirme 4,0 pendant que la géométrie en fait 4,3
+  est pire qu'une maquette sans cote : elle fait valider un chiffre qui n'existe
+  pas. La mesure est prise au repos, avant toute pose.
+*/
+lynel.updateMatrixWorld(true);
+const bounds = new THREE.Box3().setFromObject(lynel);
+
+function countTriangles(object) {
+  let total = 0;
+  object.traverse((node) => {
+    if (!node.isMesh) return;
+    const geometry = node.geometry;
+    const count = geometry.index ? geometry.index.count : geometry.attributes.position.count;
+    total += count / 3;
+  });
+  return Math.round(total);
+}
+
+const TRIS = countTriangles(lynel);
+
+const MEASURES = {
+  height: bounds.max.y,
+  length: bounds.max.z - bounds.min.z,
+  width: bounds.max.x - bounds.min.x,
+  withers: BODY_Y + BODY_R - 0.14,
+  shoulder: BUST[1] + SHOULDER_Y * Math.cos(BUST_LEAN),
+};
+
+const fr = (value) => value.toFixed(1).replace('.', ',');
+
+for (const node of document.querySelectorAll('[data-measure]')) {
+  const key = node.dataset.measure;
+  node.textContent = key === 'tris' ? TRIS.toLocaleString('fr-FR') : fr(MEASURES[key]);
+}
+document.getElementById('tris').textContent =
+  `${TRIS.toLocaleString('fr-FR')} triangles · ${fr(MEASURES.height)} de haut`;
+
+/* ------------------------------------------------------- figures d'échelle */
+
+const scaleGroup = new THREE.Group();
+scene.add(scaleGroup);
+
+/** Le héros, 1,6 — la silhouette du jeu réduite à ses masses. */
+function buildHero() {
+  const g = new THREE.Group();
+  for (const s of [-1, 1]) {
+    part(g, new THREE.CapsuleGeometry(0.10, 0.30, 4, 8), MAT.boot, [s * 0.11, 0.35, 0]);
+  }
+  outline(part(g, new THREE.CapsuleGeometry(0.20, 0.30, 5, 12), MAT.tunic,
+    [0, 0.86, 0], null, [1.05, 1, 0.85]), OUTLINE_THIN);
+  for (const s of [-1, 1]) {
+    part(g, new THREE.CapsuleGeometry(0.075, 0.26, 4, 8), MAT.skin, [s * 0.26, 0.88, 0], [0, 0, s * -0.18]);
+  }
+  outline(part(g, new THREE.SphereGeometry(0.195, 14, 12), MAT.skin, [0, 1.35, 0]), OUTLINE_THIN);
+  part(g, new THREE.SphereGeometry(0.20, 12, 10), MAT.boot, [0, 1.40, -0.04], null, [1, 0.85, 1]);
+  // L'épée du joueur : 0,9 de lame. C'est l'étalon de la portée.
+  part(g, faceted(new THREE.BoxGeometry(0.075, 0.90, 0.025)), MAT.steel, [-0.30, 1.30, -0.08], [0.2, 0, 0.25]);
+  part(g, faceted(new THREE.BoxGeometry(0.22, 0.06, 0.06)), MAT.gold, [-0.30, 0.86, -0.02], [0.2, 0, 0.25]);
+  return g;
+}
+
+/** Le Moblin, 1,45 — repris trait pour trait de `components/enemies/models.tsx`. */
+function buildMoblin() {
+  const g = new THREE.Group();
+  for (const s of [-1, 1]) {
+    part(g, new THREE.CapsuleGeometry(0.11, 0.20, 4, 8), MAT.moblinDark, [s * 0.16, 0.24, 0]);
+  }
+  outline(part(g, new THREE.CapsuleGeometry(0.30, 0.36, 5, 12), MAT.moblin,
+    [0, 0.72, 0], null, [1.1, 1, 0.9]), OUTLINE_THIN);
+  part(g, new THREE.CylinderGeometry(0.33, 0.34, 0.09, 12), MAT.moblinDark, [0, 0.50, 0]);
+  outline(part(g, new THREE.SphereGeometry(0.27, 14, 12), MAT.moblin,
+    [0, 1.15, 0], null, [1, 0.92, 1]), OUTLINE_THIN);
+  part(g, new THREE.CylinderGeometry(0.11, 0.12, 0.14, 8), MAT.moblinDark, [0, 1.11, 0.26], [Math.PI / 2, 0, 0]);
+  for (const s of [-1, 1]) {
+    part(g, faceted(new THREE.ConeGeometry(0.08, 0.20, 6)), MAT.moblin, [s * 0.26, 1.21, 0], [0, 0, s * -0.9]);
+    part(g, new THREE.CapsuleGeometry(0.10, 0.28, 4, 8), MAT.moblin, [s * 0.36, 0.78, 0], [0, 0, s * -0.25]);
+  }
+  return g;
+}
+
+/**
+ * Où poser le joueur : à 3,4 unités, soit juste hors de portée du balayage (3,6
+ * mesurés à la pointe de l'épée, bras tendu).
+ *
+ * Le coller à portée donnerait une image plus impressionnante et un mensonge :
+ * la question que tranche cette vue est « à quelle distance dois-je me tenir »,
+ * et la réponse doit se voir sans avoir à jouer.
+ */
+const HERO_AT = new THREE.Vector3(0.8, 0, 3.4);
+
+{
+  const hero = buildHero();
+  hero.position.copy(HERO_AT);
+  hero.rotation.y = Math.PI + 0.2;   // il regarde la bête
+  scaleGroup.add(hero);
+
+  const moblin = buildMoblin();
+  moblin.position.set(2.7, 0, 5.4);
+  moblin.rotation.y = Math.PI + 0.5;
+  scaleGroup.add(moblin);
+}
+
+/* ------------------------------------------------------------------ arène */
+
+/*
+  La rotonde, telle qu'elle est *déjà* dans le dépôt : rayon 11,5, dix piliers,
+  deux travées écroulées, et trois anneaux d'or incrustés à 3,4 / 6,6 / 9,6.
+
+  Ces anneaux ne sont pas de l'ornement et ne l'ont jamais été — ils ont été
+  posés comme repères de distance pour ce combat-ci. C'est la raison pour
+  laquelle les portées du tableau tombent dessus plutôt qu'à côté.
+*/
+const arena = new THREE.Group();
+arena.visible = false;
+scene.add(arena);
+
+{
+  const floor = part(arena, new THREE.CircleGeometry(11.5, 48), MAT.stone, [0, -0.02, 0], [-Math.PI / 2, 0, 0]);
+  floor.receiveShadow = true;
+  for (const radius of [3.4, 6.6, 9.6]) {
+    part(arena, new THREE.RingGeometry(radius - 0.22, radius + 0.22, 56), MAT.gold,
+      [0, 0.02, 0], [-Math.PI / 2, 0, 0]);
+  }
+  const RUINED = [3, 7];
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2;
+    const ruined = RUINED.includes(i);
+    const height = ruined ? 1.4 : 5.4;
+    part(arena, faceted(new THREE.CylinderGeometry(0.46, 0.54, height, 8)), MAT.stoneMid,
+      [Math.sin(a) * 11.0, height / 2, Math.cos(a) * 11.0]);
+    if (!ruined) {
+      part(arena, faceted(new THREE.BoxGeometry(1.3, 0.34, 1.3)), MAT.stone,
+        [Math.sin(a) * 11.0, 5.5, Math.cos(a) * 11.0], [0, -a, 0]);
+      part(arena, new THREE.TorusGeometry(0.52, 0.07, 3, 10), MAT.goldDim,
+        [Math.sin(a) * 11.0, 5.0, Math.cos(a) * 11.0], [Math.PI / 2, 0, 0]);
+    }
+  }
+}
+
+/* --------------------------------------------------------------- les poses */
+
+/*
+  Une pose est une table d'écarts, en radians, sur les articulations nommées.
+  Ce qui n'y figure pas ne bouge pas. Elles sont interpolées et non appliquées
+  d'un coup : ce qu'on valide, ce n'est pas l'image d'arrivée, c'est le
+  mouvement qui y mène — un balayage qui se lit à l'arrêt mais pas en transition
+  n'est pas un télégraphe.
+*/
+const POSES = {
+  repos: {
+    label: 'Repos — il attend au centre, il ne patrouille pas.',
+    rig: {},
+  },
+  garde: {
+    label: 'Garde — <b>620 ms</b> de télégraphe. L\'épée passe derrière l\'épaule,<br>la tête descend : le coup vient de la droite, et il vient de haut.',
+    rig: {
+      bust: [-0.16, -0.42, 0],
+      head: [0.26, 0.34, 0],
+      armRu: [-0.95, 0, -0.55],
+      armRf: [-0.85, 0, 0],
+      armLu: [-0.35, 0, 0.3],
+      armLf: [-0.7, 0, 0],
+      legFRu: [-0.18, 0, 0],
+      legFLu: [0.1, 0, 0],
+      tail: [-0.25, 0, 0],
+    },
+  },
+  balayage: {
+    label: 'Balayage — arc de <b>170°</b>, portée <b>3,6</b>.<br>Le buste entier tourne : on ne le contourne pas, on le pare.',
+    rig: {
+      bust: [0.1, 0.72, 0],
+      head: [-0.1, -0.5, 0],
+      armRu: [-0.5, 0, -1.25],
+      armRf: [-0.15, 0, 0],
+      armLu: [0.3, 0, 0.5],
+      armLf: [-0.4, 0, 0],
+      legFRu: [0.2, 0, 0],
+      legFLu: [-0.22, 0, 0],
+      tail: [0.2, 0, 0],
+    },
+  },
+  charge: {
+    label: 'Charge — <b>11 u/s</b>, elle traverse l\'arène.<br>Elle s\'annonce aux pattes, pas à la crinière : elle ne se pare pas.',
+    lift: -0.16,
+    rig: {
+      root: [-0.10, 0, 0],
+      bust: [0.34, 0, 0],
+      head: [-0.12, 0, 0],
+      armRu: [0.55, 0, -0.35],
+      armRf: [-0.5, 0, 0],
+      armLu: [0.5, 0, 0.35],
+      armLf: [-0.5, 0, 0],
+      legFRu: [-0.95, 0, 0], legFRl: [0.35, 0, 0],
+      legFLu: [0.55, 0, 0], legFLl: [-0.5, 0, 0],
+      legHRu: [0.85, 0, 0], legHRl: [-0.75, 0, 0],
+      legHLu: [-0.45, 0, 0], legHLl: [0.3, 0, 0],
+      tail: [0.55, 0, 0],
+    },
+  },
+  cabre: {
+    label: 'Cabré — <b>760 ms</b>, puis une onde au sol jusqu\'à l\'anneau <b>6,6</b>.<br>La seule attaque du combat qui se franchit au saut.',
+    lift: 0.52,
+    rig: {
+      root: [-0.62, 0, 0],
+      bust: [0.34, 0, 0],
+      head: [0.2, 0, 0],
+      armRu: [-1.5, 0, -0.5],
+      armRf: [-0.5, 0, 0],
+      armLu: [-1.5, 0, 0.5],
+      armLf: [-0.5, 0, 0],
+      legFRu: [-1.25, 0, 0], legFRl: [-0.7, 0, 0],
+      legFLu: [-1.05, 0, 0], legFLl: [-0.85, 0, 0],
+      legHRu: [0.25, 0, 0], legHRl: [-0.15, 0, 0],
+      legHLu: [0.25, 0, 0], legHLl: [-0.15, 0, 0],
+      tail: [-0.5, 0, 0],
+    },
+  },
+  brise: {
+    label: 'Paré — <b>1,3 s</b> d\'ouverture, dégâts <b>×3</b>.<br>Garde ouverte, tête rejetée, épée hors d\'axe : deux coups rentrent, trois si on est propre.',
+    lift: -0.06,
+    rig: {
+      root: [0.12, 0, 0],
+      bust: [0.3, 0.26, -0.18],
+      head: [-0.55, 0.2, 0.2],
+      armRu: [0.2, 0, -1.55],
+      armRf: [-0.25, 0, 0],
+      armLu: [-0.15, 0, 0.9],
+      armLf: [-0.3, 0, 0],
+      legFRu: [0.45, 0, 0], legFRl: [-0.3, 0, 0],
+      legFLu: [0.3, 0, 0], legFLl: [-0.2, 0, 0],
+      legHRu: [0.6, 0, 0], legHRl: [-0.35, 0, 0],
+      legHLu: [0.55, 0, 0], legHLl: [-0.3, 0, 0],
+      tail: [-0.6, 0, 0],
+    },
+  },
+};
+
+let pose = POSES.repos;
+
+/* --------------------------------------------------------------- les vues */
+
+const VIEWS = {
+  duel: {
+    // La caméra de `config/gameplay.ts`, à ses cotes : offset [0, 11, 21] sur le
+    // joueur, visée relevée de 4,5. Rien d'arrangé pour la photo — c'est
+    // littéralement le cadre du jeu, et c'est la vue qui décide si le boss est
+    // à la bonne taille.
+    label: 'Face à face — la caméra du jeu, à ses cotes exactes : FOV <b>48</b>, <b>11</b> de haut,<br><b>21</b> de recul, visée relevée à <b>4,5</b>. Il occupe un <b>cinquième</b> de la hauteur de l\'image.',
+    position: new THREE.Vector3(HERO_AT.x, HERO_AT.y + 11, HERO_AT.z + 21),
+    target: new THREE.Vector3(HERO_AT.x, HERO_AT.y + 4.5, HERO_AT.z),
+    fov: 48, spin: false,
+  },
+  profil: {
+    label: 'Profil — c\'est ici que se juge le rapport des masses :<br>un buste trop petit sur un corps trop gros.',
+    position: new THREE.Vector3(10.6, 2.5, 0.3),
+    target: new THREE.Vector3(0, 2.15, 0),
+    fov: 34, spin: false,
+  },
+  tete: {
+    label: 'La tête — masque sombre, crinière du front à la croupe,<br>cornes recourbées sur <b>1,4</b>. Les yeux portent le violet du cristal.',
+    position: new THREE.Vector3(2.8, 4.25, 4.9),
+    target: new THREE.Vector3(0, 3.30, 0.70),
+    fov: 38, spin: false,
+  },
+  arme: {
+    label: 'L\'arme — lame de <b>2,4</b>, dos dentelé, gouttière violette.<br>Une main pour lui, deux pour le joueur.',
+    position: new THREE.Vector3(-4.4, 2.9, 4.2),
+    target: new THREE.Vector3(-0.9, 1.7, 1.2),
+    fov: 36, spin: false,
+  },
+  tour: {
+    label: 'Tour — trois quarts, rotation lente.',
+    position: new THREE.Vector3(6.8, 3.6, 7.0),
+    target: new THREE.Vector3(0, 2.05, 0),
+    fov: 40, spin: true,
+  },
+  arene: {
+    label: 'L\'arène — la rotonde, <b>11,5</b> de rayon, deux travées écroulées.<br>Les anneaux d\'or du dallage sont la règle graduée : <b>3,4 · 6,6 · 9,6</b>.',
+    position: new THREE.Vector3(12, 12.5, 15),
+    target: new THREE.Vector3(0, 1.4, 0),
+    fov: 46, spin: true,
+    arena: true,
+  },
+};
+
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let currentView = VIEWS.duel;
+
+function paint() {
+  readout.innerHTML = `${currentView.label}<span class="pose">${pose.label}</span>`;
+}
+
+function applyView(name) {
+  currentView = VIEWS[name];
+  camera.fov = currentView.fov;
+  camera.position.copy(currentView.position);
+  camera.updateProjectionMatrix();
+  controls.target.copy(currentView.target);
+  controls.autoRotate = !!currentView.spin && !reduceMotion;
+  controls.update();
+
+  // La vue d'arène allume l'arène ; les autres la laissent dans l'état choisi
+  // au calque. Un décor qui s'impose masquerait ce qu'on est venu regarder.
+  if (currentView.arena) setLayer('arena', true);
+
+  for (const button of document.querySelectorAll('[data-view]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.view === name));
+  }
+  paint();
+}
+
+function applyPose(name) {
+  pose = POSES[name];
+  for (const button of document.querySelectorAll('[data-pose]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.pose === name));
+  }
+  paint();
+}
+
+for (const button of document.querySelectorAll('[data-view]')) {
+  button.addEventListener('click', () => applyView(button.dataset.view));
+}
+for (const button of document.querySelectorAll('[data-pose]')) {
+  button.addEventListener('click', () => applyPose(button.dataset.pose));
+}
+
+controls.addEventListener('start', () => { controls.autoRotate = false; });
+
+/* ------------------------------------------------------------- les calques */
+
+/**
+ * La phase III : la crinière et la gouttière s'allument.
+ *
+ * Un émissif sur un matériau toon, et non une seconde palette : c'est ce qui
+ * fait franchir à la crinière le seuil de bloom du jeu (0,82) sur les seules
+ * faces éclairées. Une crinière repeinte en violet serait violette ; celle-ci
+ * *brûle*.
+ */
+function setRage(on) {
+  MAT.mane.emissive.set(on ? C.glow : 0x000000);
+  MAT.mane.emissiveIntensity = on ? 0.75 : 0;
+  MAT.maneCool.emissive.set(on ? C.glow : 0x000000);
+  MAT.maneCool.emissiveIntensity = on ? 0.55 : 0;
+  for (const vein of VEINS) vein.material.opacity = on ? 0.9 : 0.45;
+}
+
+const LAYER_STATE = { armor: true, weapons: true, mane: true, scale: true, arena: false, rage: false };
+
+function setLayer(name, value) {
+  LAYER_STATE[name] = value;
+  if (name === 'scale') scaleGroup.visible = value;
+  else if (name === 'arena') arena.visible = value;
+  else if (name === 'rage') setRage(value);
+  else for (const object of LAYER[name]) object.visible = value;
+
+  const button = document.querySelector(`[data-layer="${name}"]`);
+  if (button) button.setAttribute('aria-pressed', String(value));
+}
+
+for (const button of document.querySelectorAll('[data-layer]')) {
+  button.addEventListener('click', () => {
+    const name = button.dataset.layer;
+    setLayer(name, !LAYER_STATE[name]);
+  });
+}
+
+/* ------------------------------------------------------------------ boucle */
+
+function resize() {
+  const width = viewer.clientWidth;
+  const height = viewer.clientHeight;
+  if (!width || !height) return;
+  renderer.setSize(width, height, false);
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+}
+
+new ResizeObserver(resize).observe(viewer);
+resize();
+applyView('duel');
+applyPose('repos');
+loading.remove();
+
+let previous = performance.now();
+const ZERO = [0, 0, 0];
+
+function frame(now) {
+  const delta = Math.min((now - previous) / 1000, 0.05);
+  previous = now;
+
+  // Amortissement exponentiel : indépendant du framerate, contrairement à un
+  // facteur constant par frame — qui serait deux fois plus rapide à 120 Hz.
+  const k = reduceMotion ? 1 : 1 - Math.exp(-delta * 9);
+
+  for (const name in RIG) {
+    const entry = RIG[name];
+    const delta3 = pose.rig[name] || ZERO;
+    const rotation = entry.object.rotation;
+    rotation.x += (entry.base.x + delta3[0] - rotation.x) * k;
+    rotation.y += (entry.base.y + delta3[1] - rotation.y) * k;
+    rotation.z += (entry.base.z + delta3[2] - rotation.z) * k;
+  }
+  lynel.position.y += ((pose.lift || 0) - lynel.position.y) * k;
+
+  controls.update();
+  sky.position.copy(camera.position);
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
