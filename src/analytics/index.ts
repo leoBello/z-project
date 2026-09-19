@@ -65,6 +65,16 @@ interface Events {
    * sur la durée, le second si l'œuf de Pâques se découvre.
    */
   portal_opened: { via: 'combat' | 'cheat' }
+  /**
+   * Le joueur franchit le portail et arrive sur l'Île Céleste.
+   *
+   * Le pendant de `portal_opened`, et c'est le **rapport entre les deux** qui
+   * intéresse : ouvrir le portail est une conséquence du jeu, le franchir est
+   * une décision. Un portail qu'on ouvre sans jamais y entrer dirait que la
+   * promesse n'a pas pris — et c'est la seule chose mesurable tant qu'il n'y a
+   * rien à faire sur l'île.
+   */
+  sky_island_entered: { via: 'portal' }
 }
 
 declare global {

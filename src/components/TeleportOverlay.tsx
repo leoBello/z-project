@@ -1,22 +1,13 @@
 import { useEffect } from 'react'
 import type { CSSProperties } from 'react'
+import { EMBER_OFFSETS } from '../config/embers'
 import { PLAYER } from '../config/gameplay'
 import { landmarkById } from '../config/landmarks'
 import { playerBody } from '../state/playerBody'
 import { playerTransform } from '../state/playerTransform'
 import { useGameStore } from '../store/useGameStore'
 
-/** Décalages des huit braises, en pixels, autour du centre de l'écran. */
-const EMBER_OFFSETS: ReadonlyArray<[number, number]> = [
-  [-120, -40],
-  [100, -60],
-  [-60, -110],
-  [130, 30],
-  [-140, 20],
-  [40, -130],
-  [-30, 110],
-  [110, 90],
-]
+
 
 /** Durée entre le déclenchement et le "warp", en millisecondes — écran couvert. */
 const WARP_AT_MS = 700

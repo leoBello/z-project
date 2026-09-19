@@ -102,6 +102,39 @@ et découpage du bundle.
   aplats francs, transposition en 2D du `toonGradient` du rendu 3D. Motif déduit
   des tags du projet, palette prélevée sur le jeu, cadrage calculé. Zéro asset
 
+### Île Céleste — la seconde carte
+- **Une île flottante inspirée de Laputa**, où mène le portail violet ouvert
+  quand le continent est vidé de ses ennemis. Trois terrasses concentriques
+  reliées par six rampes, un socle de roche inversé de 46 unités, des vestiges
+  dorés rendus à la végétation, quatre cascades et un cristal dans la pointe
+- **Elle n'emprunte rien à `config/world.ts`, et ne le pouvait pas** : le
+  continent est un champ de hauteurs sur grille carrée, qui n'associe qu'une
+  altitude à chaque `(x, z)`. L'île a un **dessous** — un surplomb sur toute sa
+  surface. Elle apporte donc son terrain, son collider et son fond de minimap ;
+  le seul concept partagé est `location`, un champ du store qui commande trois
+  branchements
+- **Falaise partout, rampe en trois points par marche.** La même fonction
+  produit les deux, seule la largeur du raccord change : deux unités pour un
+  mur de pente 2,7, douze pour une montée de 0,45. Les rampes du haut sont
+  décalées de 60° de celles du bas, on ne monte donc jamais en ligne droite
+- **Chargée seulement au franchissement** : tout le module part dans un
+  fragment de 14,7 ko (5,4 ko compressés) que l'accueil ne télécharge jamais.
+  Le voile de transition l'attend — son palier opaque est un plancher, pas une
+  durée, donc un réseau lent allonge le voile au lieu de découvrir un monde vide
+- **Mais visible dès l'écran de départ** : une silhouette de ~1 400 triangles,
+  fondue en une géométrie à couleurs par sommet, donc **un seul appel de
+  dessin**. Posée à 500 unités au nord de Nakano et 38 de haut, soit 2,7°
+  d'élévation — la caméra plonge de 17° pour un demi-champ de 24°, le bord haut
+  de l'image est à 7°, et tout ce qui dépasse est hors cadre pour toujours. Sa
+  brume est cuite dans ses couleurs, le brouillard du jeu saturant à 200
+- Spec et plan : `docs/superpowers/specs/2026-09-19-ile-celeste-design.md`,
+  maquette 3D conservée dans `docs/maquettes/`
+- En développement, `window.__skyIsland` expose le relief : en rendu logiciel le
+  jeu tourne à une image par seconde, un test ne peut donc pas *jouer* une
+  montée pour juger une pente — il faut pouvoir l'interroger. C'est ce crochet
+  qui a rattrapé une rampe annoncée à 0,45 de moyenne mais qui passait 0,68 à
+  mi-course, la dérivée d'un `smoothstep` culminant à 1,5 fois sa moyenne
+
 ### Objets et inventaire
 - Table déclarative dans `src/config/items.ts` : un objet y déclare ce qu'il
   **fait** (cœurs bonus, multiplicateur d'attaque, silhouette, lame) ; ses

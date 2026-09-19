@@ -8,10 +8,12 @@ import { Enemies } from './components/Enemies'
 import { Environment } from './components/Environment'
 import { GameClock } from './components/GameClock'
 import { HUD } from './components/HUD'
+import { InteractionKey } from './components/InteractionKey'
 import { KeyboardGuard } from './components/KeyboardGuard'
 import { KonamiCode } from './components/KonamiCode'
 import { LanguageToggle } from './components/LanguageToggle'
 import { Minimap } from './components/Minimap'
+import { WorldTransition } from './components/WorldTransition'
 import { NukeBlast } from './components/NukeBlast'
 import { PhysicsGate } from './components/PhysicsGate'
 import { Pickups } from './components/Pickups'
@@ -45,6 +47,12 @@ export default function App() {
    * machines à états à zéro sans logique de réinitialisation à écrire.
    */
   const runId = useGameStore((state) => state.runId)
+  /**
+   * Carte courante. Lue ici pour une seule raison : les ennemis n'existent que
+   * sur le continent, et `<Enemies>` monte vingt-six corps physiques — le
+   * laisser monté sur l'île y ferait tomber vingt-six Moblins dans le vide.
+   */
+  const location = useGameStore((state) => state.location)
 
   return (
     <KeyboardControls map={controlMap}>
@@ -58,6 +66,10 @@ export default function App() {
           Canvas et sans rien demander à `KeyboardControls` : une suite d'appuis
           n'est pas un état de commande. Voir l'en-tête du composant. */}
       <KonamiCode />
+      {/* La touche d'interaction, hors du Canvas et hors du décor : elle vaut
+          pour toutes les cartes. Rangée dans `<Landmarks>`, elle disparaissait
+          avec le continent et le portail du retour ne répondait plus. */}
+      <InteractionKey />
       <Canvas
         // "percentage" = PCFShadowMap ; PCFSoft est déprécié depuis three 0.185.
         shadows="percentage"
@@ -84,7 +96,7 @@ export default function App() {
           <PhysicsGate debug={DEBUG_PHYSICS}>
             <Environment />
             <Player key={`player-${runId}`} />
-            <Enemies key={`enemies-${runId}`} />
+            {location === 'continent' && <Enemies key={`enemies-${runId}`} />}
             <Projectiles />
             <Pickups />
           </PhysicsGate>
@@ -141,6 +153,10 @@ export default function App() {
       <ChestReveal />
       <TeleportMenu />
       <TeleportOverlay />
+      {/* Après l'overlay de téléportation et avant l'écran de chargement : le
+          voyage entre cartes doit recouvrir un vol de braises resté à l'écran,
+          mais jamais l'écran de démarrage. */}
+      <WorldTransition />
       <BootScreen />
     </KeyboardControls>
   )

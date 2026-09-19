@@ -17,23 +17,28 @@ import { useGameStore } from './useGameStore'
 export type Interaction =
   | { kind: 'landmark'; id: LandmarkId }
   | { kind: 'chest'; id: ChestId }
+  | { kind: 'portal' }
   | null
 
 /**
  * La règle de priorité, écrite une seule fois.
  *
- * **Le coffre l'emporte sur le monument.** Les deux zones sont trop éloignées
- * pour se recouvrir (voir la note de cotes sur `TEMPLE_CHEST`), donc ce
- * départage ne devrait jamais servir — mais un coffre est une action qui ne se
- * produit qu'une fois, alors qu'un panneau de portfolio se rouvre à volonté :
- * en cas d'égalité, c'est l'irréversible qui doit gagner.
+ * **Le portail l'emporte sur tout, puis le coffre sur le monument.** Les trois
+ * zones sont trop éloignées les unes des autres pour se recouvrir (voir la note
+ * de cotes sur `TEMPLE_CHEST`, et le rayon dégagé de six unités autour du
+ * portail dans `config/portal.ts`), donc ces départages ne devraient jamais
+ * servir. Mais ils ont un ordre, et cet ordre a une raison : en cas d'égalité,
+ * c'est ce qui emmène ailleurs qui gagne sur ce qui ne se produit qu'une fois,
+ * qui gagne lui-même sur un panneau qui se rouvre à volonté.
  */
 function pick(
   phase: GamePhase,
   nearbyChest: ChestId | null,
   nearbyLandmark: LandmarkId | null,
+  nearbyPortal: boolean,
 ): Interaction {
   if (phase !== 'playing') return null
+  if (nearbyPortal) return { kind: 'portal' }
   if (nearbyChest) return { kind: 'chest', id: nearbyChest }
   if (nearbyLandmark) return { kind: 'landmark', id: nearbyLandmark }
   return null
@@ -46,8 +51,8 @@ function pick(
  * du clic et n'ont rien à re-rendre.
  */
 export function currentInteraction(): Interaction {
-  const { phase, nearbyChest, nearbyLandmark } = useGameStore.getState()
-  return pick(phase, nearbyChest, nearbyLandmark)
+  const { phase, nearbyChest, nearbyLandmark, nearbyPortal } = useGameStore.getState()
+  return pick(phase, nearbyChest, nearbyLandmark, nearbyPortal)
 }
 
 /**
@@ -61,7 +66,8 @@ export function useInteraction(): Interaction {
   const phase = useGameStore((state) => state.phase)
   const nearbyChest = useGameStore((state) => state.nearbyChest)
   const nearbyLandmark = useGameStore((state) => state.nearbyLandmark)
-  return pick(phase, nearbyChest, nearbyLandmark)
+  const nearbyPortal = useGameStore((state) => state.nearbyPortal)
+  return pick(phase, nearbyChest, nearbyLandmark, nearbyPortal)
 }
 
 /**
@@ -75,6 +81,14 @@ export function useInteraction(): Interaction {
  */
 export function interactionLabel(target: Interaction, dict: Dictionary): string {
   if (!target) return ''
+  if (target.kind === 'portal') {
+    // Le libellé dit la **destination**, pas le geste : « franchir le portail »
+    // des deux côtés serait exact et inutile, puisque le joueur sait déjà qu'il
+    // est devant un portail. Ce qu'il ignore, c'est où celui-ci mène.
+    return useGameStore.getState().location === 'continent'
+      ? dict.ui.portal.action
+      : dict.ui.portal.back
+  }
   if (target.kind === 'chest') return dict.ui.chest.action
   const section = landmarkById(target.id)?.section
   return section ? dict.ui.sectionActions[section] : ''
@@ -91,6 +105,11 @@ export function triggerInteraction() {
   const target = currentInteraction()
   if (!target) return
   const store = useGameStore.getState()
-  if (target.kind === 'chest') store.openChest(target.id)
-  else store.openLandmark(target.id)
+  if (target.kind === 'portal') {
+    store.enterMap(store.location === 'continent' ? 'sky' : 'continent')
+  } else if (target.kind === 'chest') {
+    store.openChest(target.id)
+  } else {
+    store.openLandmark(target.id)
+  }
 }

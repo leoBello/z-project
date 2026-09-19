@@ -1,0 +1,2503 @@
+<title>Île Céleste</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --ground: #f2ede1;
+    --surface: #ffffff;
+    --ink: #1d2018;
+    --ink-2: #565c4c;
+    --ink-3: #888f78;
+    --line: #d5cfbb;
+    --accent: #4a7a2e;
+    --violet: #6d2fd0;
+
+    --step--1: 0.8125rem;
+    --step-0: 0.9375rem;
+    --step-1: 1.125rem;
+    --step-2: 1.5rem;
+    --step-4: clamp(2.5rem, 6vw, 3.75rem);
+
+    --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+    --display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --ground: #0a1020;
+      --surface: #131c30;
+      --ink: #e8eede;
+      --ink-2: #aab59a;
+      --ink-3: #737f66;
+      --line: #27334a;
+      --accent: #a8cd7a;
+      --violet: #b083ff;
+    }
+  }
+
+  :root[data-theme='dark'] {
+    --ground: #0a1020;
+    --surface: #131c30;
+    --ink: #e8eede;
+    --ink-2: #aab59a;
+    --ink-3: #737f66;
+    --line: #27334a;
+    --accent: #a8cd7a;
+    --violet: #b083ff;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--step-0);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding-inline: 20px;
+    padding-block: 28px 64px;
+  }
+
+  .masthead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px 28px;
+    margin-bottom: 22px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 6px;
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: var(--step-4);
+    font-weight: 600;
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .standfirst {
+    max-width: 50ch;
+    color: var(--ink-2);
+    margin: 10px 0 0;
+  }
+
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 13px;
+    border: 1px solid var(--violet);
+    border-radius: 999px;
+    color: var(--violet);
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    white-space: nowrap;
+  }
+
+  .status::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: currentColor;
+  }
+
+  /* --- Visionneuse -------------------------------------------------------- */
+
+  .viewer {
+    position: relative;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #0b1230;
+    aspect-ratio: 16 / 9;
+    min-height: 340px;
+  }
+
+  .viewer canvas { display: block; width: 100%; height: 100%; }
+
+  .viewer__loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #9fb08c;
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    background: #0b1230;
+  }
+
+  .rail {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    right: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    pointer-events: none;
+  }
+
+  .rail > * { pointer-events: auto; }
+
+  .rail__group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 8px;
+    background: rgba(8, 14, 32, 0.8);
+    border: 1px solid rgba(170, 190, 150, 0.22);
+    backdrop-filter: blur(8px);
+  }
+
+  .rail button {
+    appearance: none;
+    border: 0;
+    border-radius: 5px;
+    padding: 6px 11px;
+    background: transparent;
+    color: #c6d2b6;
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .rail button:hover { background: rgba(170, 190, 150, 0.16); color: #fff; }
+  .rail button[aria-pressed='true'] { background: #4f7a33; color: #fff; }
+  .rail button:focus-visible { outline: 2px solid #a8cd7a; outline-offset: 1px; }
+
+  .readout {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(8, 14, 32, 0.82);
+    border: 1px solid rgba(170, 190, 150, 0.22);
+    color: #c6d2b6;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.55;
+    max-width: 62%;
+  }
+
+  .readout b { color: #fff; font-weight: 500; }
+
+  .hint {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin: 10px 0 0;
+    color: var(--ink-3);
+    font-family: var(--mono);
+    font-size: var(--step--1);
+  }
+
+  /* --- Sections ----------------------------------------------------------- */
+
+  section { margin-top: 52px; }
+
+  h2 {
+    font-family: var(--display);
+    font-size: var(--step-2);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 6px;
+  }
+
+  .section-note {
+    max-width: 64ch;
+    color: var(--ink-2);
+    margin: 0 0 22px;
+  }
+
+  .tiers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .tier {
+    background: var(--surface);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .tier__swatch { width: 26px; height: 4px; border-radius: 999px; }
+
+  .tier__name {
+    font-family: var(--display);
+    font-size: var(--step-1);
+    font-weight: 600;
+  }
+
+  .tier__cote {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tier p { margin: 0; color: var(--ink-2); font-size: var(--step--1); }
+
+  table { width: 100%; border-collapse: collapse; font-size: var(--step--1); }
+  .table-scroll { overflow-x: auto; }
+
+  th, td {
+    text-align: left;
+    padding: 9px 14px 9px 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: baseline;
+  }
+
+  th {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  td:first-child { color: var(--ink); white-space: nowrap; }
+  td.num {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--accent);
+  }
+  td:last-child { color: var(--ink-2); }
+
+  .asks { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
+
+  .asks li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    align-items: baseline;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .asks li:first-child { border-top: 1px solid var(--line); }
+
+  .asks .q {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--violet);
+    letter-spacing: 0.08em;
+  }
+
+  .asks strong { font-weight: 600; display: block; }
+  .asks span { color: var(--ink-2); font-size: var(--step--1); }
+
+  footer {
+    margin-top: 52px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-3);
+    font-family: var(--mono);
+    font-size: var(--step--1);
+  }
+
+  @media (max-width: 620px) {
+    .viewer { aspect-ratio: 4 / 5; }
+    .readout { max-width: calc(100% - 24px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">z-project · maquette de terrain</p>
+      <h1>Île Céleste</h1>
+      <p class="standfirst">
+        Les vestiges dorés d'une civilisation prospère, rendus à la végétation
+        et portés par un socle de roche. Une enceinte qu'on franchit, un
+        aqueduc qui porte encore son eau, une rotonde à la coupole crevée d'où
+        sort
+        l'arbre. L'énigme et le boss viendront s'y loger.
+      </p>
+    </div>
+    <span class="status">à valider</span>
+  </header>
+
+  <div class="viewer" id="viewer">
+    <div class="viewer__loading" id="loading">chargement de la scène…</div>
+    <div class="readout" id="readout"></div>
+    <div class="rail">
+      <div class="rail__group" role="group" aria-label="Point de vue">
+        <button type="button" data-view="player" aria-pressed="true">vue joueur</button>
+        <button type="button" data-view="gate" aria-pressed="false">la porte</button>
+        <button type="button" data-view="court" aria-pressed="false">la rotonde</button>
+        <button type="button" data-view="overview" aria-pressed="false">d'ensemble</button>
+        <button type="button" data-view="under" aria-pressed="false">dessous</button>
+        <button type="button" data-view="continent" aria-pressed="false">vue du continent</button>
+      </div>
+      <div class="rail__group" role="group" aria-label="Calques">
+        <button type="button" data-layer="ruins" aria-pressed="true">vestiges</button>
+        <button type="button" data-layer="flora" aria-pressed="true">végétation</button>
+        <button type="button" data-layer="tree" aria-pressed="true">arbre</button>
+        <button type="button" data-layer="scale" aria-pressed="true">échelle</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">
+    <span>glisser — orbiter</span>
+    <span>molette — zoomer</span>
+    <span>clic droit — déplacer</span>
+  </p>
+
+  <section>
+    <h2>Le parcours</h2>
+    <p class="section-note">
+      Trois terrasses, six rampes, et des vestiges à franchir plutôt qu'à
+      contourner. Entre deux terrasses le talus est une falaise : on ne monte
+      que par les rampes, et celles du haut sont décalées de 60° par rapport à
+      celles du bas — il faut donc faire un tiers de tour sur chaque palier. Les
+      ruines se posent sur ce parcours, elles ne le décorent pas.
+    </p>
+    <div class="tiers">
+      <article class="tier">
+        <span class="tier__swatch" style="background: #8fbf63"></span>
+        <span class="tier__name">La prairie</span>
+        <span class="tier__cote">r 34 → 55 · alt. 0</span>
+        <p>
+          Le portail dépose plein sud. Une pelouse haute, des blocs tombés de
+          l'enceinte, et la lèvre d'où pendent lianes et racines. C'est ici
+          qu'on mesure le vide avant de monter.
+        </p>
+      </article>
+      <article class="tier">
+        <span class="tier__swatch" style="background: #cfc6ad"></span>
+        <span class="tier__name">L'enceinte</span>
+        <span class="tier__cote">r 16 → 32 · alt. +3,6</span>
+        <p>
+          Un mur de cinq unités percé d'une porte au sud et crevé de brèches
+          ailleurs. Dedans : la salle à colonnes, à moitié debout. Trois
+          quartiers séparés par les rampes — la place de l'énigme.
+        </p>
+      </article>
+      <article class="tier">
+        <span class="tier__swatch" style="background: #4f9a4a"></span>
+        <span class="tier__name">La rotonde</span>
+        <span class="tier__cote">r 0 → 14 · alt. +7,2</span>
+        <p>
+          Une arcade circulaire dont la coupole a cédé, et l'arbre qui sort par
+          la brèche, racines agrippées à la maçonnerie. L'arène du boss : ronde,
+          dallée, sans un obstacle au sol.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>La direction artistique</h2>
+    <p class="section-note">
+      Quatre partis pris repris du film, et ce qu'ils imposent à la géométrie.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">Parti pris</th><th scope="col">Cote</th><th scope="col">Ce qu'il impose</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>La pierre perd</td>
+            <td class="num">≈ 40 %</td>
+            <td>Deux pans d'enceinte sur cinq sont écroulés, aucune tour n'est entière, la coupole est ouverte. Une ruine où tout tient encore debout n'est pas une ruine, c'est un décor. Les brèches sont aussi des passages : elles font partie du parcours.</td>
+          </tr>
+          <tr>
+            <td>La mousse gagne</td>
+            <td class="num">alt. &lt; 2</td>
+            <td>La végétation monte sur la maçonnerie par le bas et s'arrête à hauteur d'épaule. Le vert n'est pas jeté au hasard : il marque ce que le temps a repris, donc il est dense au pied des murs et absent sur les arêtes que la pluie lave.</td>
+          </tr>
+          <tr>
+            <td>L'eau a une source</td>
+            <td class="num">4 chutes</td>
+            <td>Elle naît d'un bassin doré au pied de l'arbre — le point haut —, descend par trois canaux qui bordent les rampes, franchit le jardin sur l'aqueduc, et tombe en quatre cascades. Une chute posée au bord sortirait de nulle part : l'œil demande toujours d'où vient l'eau, et sans réponse il classe l'effet comme décoratif. Chaque chute a sa lame, son écume à la rupture et sa brume en bas — sans fond pour la recevoir, c'est la brume qui doit terminer la chute.</td>
+          </tr>
+          <tr>
+            <td>L'or ne survit qu'en haut</td>
+            <td class="num">6 pièces</td>
+            <td>Frise d'enceinte, tympan de la porte, flèche de la grande tour, chapiteaux, coupole plaquée, mosaïque de l'arène. L'or n'est posé que sur les pans restés debout : réparti partout il se lirait comme de la peinture jaune, réservé à ce qui a tenu il raconte que le reste est tombé avec son ornement. Et comme le cel-shading écrase les demi-teintes, il porte un émissif faible — c'est le seul moyen de le faire <em>briller</em> plutôt que d'être du jaune mat.</td>
+          </tr>
+          <tr>
+            <td>L'ingénierie prouve la richesse</td>
+            <td class="num">1 aqueduc</td>
+            <td>Sept travées en travers du jardin, deux piles écroulées. Un mur doré est de la richesse ; un aqueduc est de l'ingénierie, donc du temps, donc un État. Il travaille aussi pour le niveau : il porte l'eau des cascades, il trace une horizontale forte dans un terrain qui monte, et ses brèches sont des passages.</td>
+          </tr>
+          <tr>
+            <td>L'arbre écrase tout</td>
+            <td class="num">26</td>
+            <td>C'est la seule cote qui rompt une règle du projet, en connaissance de cause : la caméra plafonne à 19,5 depuis la prairie, donc la cime sort du cadre. Un arbre qui tient dans l'image n'est plus l'arbre de Laputa, c'est un chêne. Voir la question 01.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>La charger tard, la voir tôt</h2>
+    <p class="section-note">
+      Tu as raison sur les deux points, et ils ne s'opposent pas — à condition
+      que l'île existe en <strong>deux exemplaires</strong>. Clique sur
+      « vue du continent » : c'est la silhouette, telle qu'on la verrait depuis
+      la prairie de départ.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">Exemplaire</th><th scope="col">Coût</th><th scope="col">Quand</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>La silhouette</td>
+            <td class="num">1 appel</td>
+            <td>Chargée dès le départ, avec le reste du monde. Le relief échantillonné cinq fois plus grossièrement, la forteresse réduite à sept boîtes, l'arbre à deux boules — le tout fondu en une seule géométrie à couleurs par sommet. Environ 1 400 triangles, aucune animation, aucune physique. Pour comparaison, la végétation du continent en dessine plusieurs dizaines de milliers.</td>
+          </tr>
+          <tr>
+            <td>L'île réelle</td>
+            <td class="num">au portail</td>
+            <td>Chargée par <span style="font-family: var(--mono)">import()</span> dynamique au franchissement, donc dans un fragment de bundle à part que l'écran d'accueil ne télécharge jamais. Le voile de la téléportation couvre déjà l'écran 1,8 s : c'est exactement la fenêtre où faire le travail, comme il sert déjà à déplacer le joueur sans qu'on le voie.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="section-note" style="margin-top: 22px">
+      <strong>Où la poser dans le ciel, et pourquoi si bas.</strong> La caméra du
+      jeu plonge de 17° pour un demi-champ de 24° : le bord haut de l'image n'est
+      qu'à <strong>7° au-dessus de l'horizontale</strong>, et la ligne d'horizon
+      tombe déjà aux 85 % de la hauteur de l'écran. Tout ce qui dépasse 7° est
+      hors cadre, pour toujours. L'île doit donc apparaître dans le bandeau des
+      15 % supérieurs — à 500 unités et 38 de haut, elle se pose à 2,7°, en plein
+      milieu de cette bande. La monter « plus haut dans le ciel » comme le
+      voudrait l'instinct la ferait purement et simplement disparaître.
+    </p>
+    <p class="section-note">
+      <strong>Deux conséquences heureuses.</strong> Sa position est fixe dans le
+      monde, pas accrochée à la caméra : elle grossit donc à mesure qu'on marche
+      vers le nord, ce qui récompense l'exploration sans une ligne de code de
+      plus. Et si on la place dans l'axe du portail de Nakano, le joueur voit
+      dans le ciel, droit devant, la chose vers laquelle le portail va l'envoyer
+      — l'île cesse d'être une surprise pour devenir une promesse.
+    </p>
+    <p class="section-note">
+      <strong>Le vrai chantier n'est pas là.</strong> Il est dans
+      <span style="font-family: var(--mono)">config/world.ts</span> : aujourd'hui
+      <span style="font-family: var(--mono)">sampleHeight()</span> est le
+      continent, en dur, et quatre systèmes l'interrogent sans se connaître — le
+      maillage, les colliders, le semis de végétation et la minimap. L'île a son
+      propre relief, donc il faut une notion de « carte courante » dont ces
+      quatre-là tirent leur échantillonneur. C'est cette refonte qui prend le
+      temps, pas le chargement différé.
+    </p>
+  </section>
+
+  <section>
+    <h2>Cotes</h2>
+    <p class="section-note">
+      En unités monde, les mêmes que le continent — le personnage mesure 1,6, et
+      la pagode de Nakano posée sur la prairie sert d'étalon.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">Cote</th><th scope="col">Valeur</th><th scope="col">D'où elle vient</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Diamètre de l'île</td>
+            <td class="num">110</td>
+            <td>Un quart de l'aire du continent. Assez pour trois terrasses et une forteresse, assez peu pour se lire d'un regard depuis le bord.</td>
+          </tr>
+          <tr>
+            <td>Profondeur du socle</td>
+            <td class="num">46</td>
+            <td>Profil en <span style="font-family: var(--mono)">1 − t^0,55</span> : la masse reste large sous la lèvre puis file en pointe. Un cône droit donnerait une toupie.</td>
+          </tr>
+          <tr>
+            <td>Hauteur de l'enceinte</td>
+            <td class="num">5</td>
+            <td>Trois fois le personnage : assez haut pour qu'on ne voie pas par-dessus, donc pour que la porte et les brèches comptent.</td>
+          </tr>
+          <tr>
+            <td>Passage sous arche</td>
+            <td class="num">3,4</td>
+            <td>Le double du personnage. Sous 2,5 une arche se lit comme un trou de souris ; au-delà de 4, le mur perd sa masse.</td>
+          </tr>
+          <tr>
+            <td>Pente des rampes</td>
+            <td class="num">0,45</td>
+            <td>3,6 de dénivelé sur 8 de long. Sous le seuil de 0,5 qui rend un terrain praticable sur le continent.</td>
+          </tr>
+          <tr>
+            <td>Pente des falaises</td>
+            <td class="num">1,8</td>
+            <td>Le même dénivelé sur 2. Infranchissable, et c'est le but : sans elle les rampes ne servent à rien.</td>
+          </tr>
+          <tr>
+            <td>Point d'arrivée</td>
+            <td class="num">0, 0, 48</td>
+            <td>Plein sud, et c'est forcé : la caméra du jeu est fixe et regarde le nord. Arriver par le sud met l'île dans le cadre, la porte dans l'axe, et l'arbre au-dessus.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ce que j'attends de toi</h2>
+    <p class="section-note">
+      Quatre décisions qui changent le travail d'implémentation. Le reste, je le
+      tranche tout seul.
+    </p>
+    <ul class="asks">
+      <li>
+        <span class="q">01</span>
+        <div>
+          <strong>La cime peut-elle sortir du cadre ?</strong>
+          <span>
+            Je l'ai montée à 26, alors que la caméra plafonne à 19,5 depuis la
+            prairie et à 20 depuis l'enceinte. On ne verra donc jamais l'arbre
+            entier en jouant — seulement un tronc qui monte hors de l'image, ce
+            qui est exactement la sensation du film. C'est un choix, pas un
+            oubli : dis-moi si tu le prends ou si je rabats la cime à 19.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">02</span>
+        <div>
+          <strong>Peut-on entrer dans les vestiges, ou seulement entre eux ?</strong>
+          <span>
+            Aujourd'hui tout est à ciel ouvert : on circule entre des murs, sous
+            des arches, jamais sous un toit. Un intérieur — une salle couverte,
+            une crypte sous la rotonde — c'est un deuxième jeu de colliders et
+            un problème d'occlusion pour la caméra. Ça peut valoir le coup pour
+            y cacher l'énigme.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">03</span>
+        <div>
+          <strong>Que se passe-t-il si on tombe ?</strong>
+          <span>
+            Retour au bord, retour au continent, ou mort sèche. Ça décide s'il
+            faut un parapet sur la lèvre, donc la silhouette du bord — qui pour
+            l'instant retombe sans rien pour l'arrêter.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">04</span>
+        <div>
+          <strong>Le portail du retour est-il sur l'île ?</strong>
+          <span>
+            Sinon on ne repart jamais du ciel. Je le poserais au point d'arrivée,
+            jumeau de celui de Nakano — mais ça peut aussi être la récompense du
+            boss, auquel cas l'île est un aller sans retour.
+          </span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <footer>
+    Maquette — géométrie procédurale, palette et cel-shading repris du jeu.
+    Rien de ce qui est ici n'est encore dans le dépôt.
+  </footer>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+/* ------------------------------------------------------------------ cotes */
+
+const R = 55;             // rayon nominal de l'île
+const DEPTH = 46;         // profondeur du socle inversé
+const RIM_DROP = -1.2;
+const ARRIVAL_Z = 48;
+
+const WALL_R = 29.5;      // rayon de l'enceinte
+const WALL_H = 5;         // hauteur du mur
+const ARCH_CLEAR = 3.4;   // passage libre sous une arche
+const TREE_TOP = 26;
+
+const RAMPS_OUTER = [0, (2 * Math.PI) / 3, (4 * Math.PI) / 3];
+const RAMPS_INNER = [Math.PI / 3, Math.PI, (5 * Math.PI) / 3];
+const RAMP_HALF = 0.21;
+
+/**
+ * Palette.
+ *
+ * Les verts et la roche viennent de `config/biomes.ts`, la pierre est nouvelle :
+ * un calcaire gris-ocre délavé, plus froid que le calcaire blond des ruines de
+ * l'île du continent. C'est ce qui sépare une ruine *ancienne* d'une ruine
+ * *d'ailleurs* — et l'île céleste doit être d'ailleurs.
+ */
+const C = {
+  lawn: 0x8fbf63,
+  lawnDark: 0x5f9147,
+  // Un calcaire **gris** et non blond : c'est ce qui sépare la forteresse
+  // céleste des ruines du continent, taillées dans une pierre chaude. Laputa est
+  // froide, et sa pierre tire vers le vert-de-gris à mesure qu'elle vieillit.
+  stone: 0xc2c1b2,
+  stoneMid: 0x9d9d8e,
+  stoneDark: 0x6c6d62,
+  moss: 0x6f9a4e,
+  mossDark: 0x4a7338,
+  rock: 0x7d7365,
+  rockDeep: 0x3d3548,
+  bark: 0x6b5540,
+  leaf: 0x4f9a4a,
+  leafDark: 0x36753f,
+  crystal: 0x8b3ff0,
+  crystalPale: 0xe6ccff,
+  /*
+    L'or, en trois valeurs.
+
+    `gold` est l'or lavé par la pluie, celui des arêtes et des saillies ;
+    `goldDim` l'or terni des creux, qui a viré au brun-vert ; `goldBright` ne
+    sert qu'aux quelques pièces que la lumière frappe de plein fouet. Trois
+    valeurs et pas une, parce qu'un or uniforme se lit comme de la peinture
+    jaune — ce qui fait l'or, c'est l'écart entre ce qui brille et ce qui ne
+    brille plus.
+  */
+  gold: 0xd9a441,
+  goldDim: 0x8a6c33,
+  goldBright: 0xf3d789,
+  water: 0xcfe6f5,
+  waterDeep: 0x8ec4e8,
+  foam: 0xf2fbff,
+  cloud: 0xd8dcf2,
+  zenith: 0x050a2e,
+  horizon: 0x4a5fa8,
+  glow: 0x6a7cbd,
+};
+
+/* ----------------------------------------------------------------- outils */
+
+function noise(a, b) {
+  return (
+    Math.sin(a * 1.7 + b * 2.3) * 0.5 +
+    Math.sin(a * 3.1 - b * 1.3) * 0.3 +
+    Math.sin(a * 5.7 + b * 0.7 + 1.4) * 0.2
+  );
+}
+
+function smoothstep(edge0, edge1, x) {
+  const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
+
+/** Générateur pseudo-aléatoire à graine : la ruine doit être la même à chaque chargement. */
+function seeded(seed) {
+  let s = seed >>> 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+/**
+ * Facettage — l'équivalent du `faceted()` du jeu.
+ *
+ * `MeshToonMaterial` n'accepte pas `flatShading` : la facette se cuit donc dans
+ * la géométrie, en dépliant l'index pour que chaque triangle porte sa normale.
+ */
+function faceted(geometry) {
+  // Certaines primitives de three sont déjà non indexées : les déplier une
+  // seconde fois marche, mais fait crier la console à chaque appel.
+  const flat = geometry.index ? geometry.toNonIndexed() : geometry;
+  flat.computeVertexNormals();
+  return flat;
+}
+
+function mix(a, b, t) {
+  return new THREE.Color(a).lerp(new THREE.Color(b), Math.min(1, Math.max(0, t)));
+}
+
+function rampFactor(theta, centers) {
+  let best = 0;
+  for (const center of centers) {
+    const d = Math.abs(((theta - center + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+    best = Math.max(best, 1 - smoothstep(RAMP_HALF * 0.5, RAMP_HALF, d));
+  }
+  return best;
+}
+
+/**
+ * Une marche : plateau intérieur, puis descente au plateau extérieur.
+ *
+ * Toute la conception du terrain tient dans la ligne `width` : la descente se
+ * fait sur 2 unités partout — une falaise de pente 1,8 — et sur 8 dans les
+ * couloirs de rampe, soit 0,45, praticable. La même fonction produit les deux,
+ * elles ne peuvent donc pas diverger.
+ */
+function step(r, theta, edge, rise, centers) {
+  const width = 2 + 6 * rampFactor(theta, centers);
+  return rise * (1 - smoothstep(edge, edge + width, r));
+}
+
+function topHeight(r, theta) {
+  return (
+    step(r, theta, 32, 3.6, RAMPS_OUTER) +
+    step(r, theta, 14, 3.6, RAMPS_INNER) +
+    RIM_DROP * smoothstep(52, 55, r)
+  );
+}
+
+function rimRadius(theta) {
+  return R * (1 + 0.055 * noise(Math.cos(theta) * 2.2, Math.sin(theta) * 2.2));
+}
+
+/** Position au sol, en un point polaire. */
+function ground(r, theta) {
+  return new THREE.Vector3(Math.sin(theta) * r, topHeight(r, theta), Math.cos(theta) * r);
+}
+
+const SECTORS = 128;
+
+/* ----------------------------------------------------------------- scène */
+
+const viewer = document.getElementById('viewer');
+const readout = document.getElementById('readout');
+const loading = document.getElementById('loading');
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+viewer.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x3d4a8c, 220, 640);
+
+const camera = new THREE.PerspectiveCamera(48, 16 / 9, 0.4, 2000);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 14;
+controls.maxDistance = 480;
+controls.autoRotateSpeed = 0.5;
+
+/* --- Ciel ----------------------------------------------------------------- */
+
+/**
+ * Le dôme de ciel, **recentré sur la caméra à chaque frame**.
+ *
+ * Sans ça, la vue du continent — posée à deux mille unités de l'origine — se
+ * retrouverait hors de la sphère, dont seule la face intérieure est dessinée :
+ * le ciel disparaîtrait d'un coup, et le fond serait noir. C'est exactement la
+ * raison pour laquelle un ciel est toujours attaché à l'observateur.
+ */
+const sky = new THREE.Mesh(
+  new THREE.SphereGeometry(900, 32, 24),
+  new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    depthWrite: false,
+    fog: false,
+    uniforms: {
+      uZenith: { value: new THREE.Color(C.zenith) },
+      uHorizon: { value: new THREE.Color(C.horizon) },
+      uGlow: { value: new THREE.Color(C.glow) },
+    },
+    vertexShader: `
+      varying vec3 vPos;
+      void main() {
+        vPos = position;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: `
+      uniform vec3 uZenith; uniform vec3 uHorizon; uniform vec3 uGlow;
+      varying vec3 vPos;
+      void main() {
+        float h = normalize(vPos).y;
+        vec3 sky = mix(uHorizon, uZenith, smoothstep(-0.05, 0.62, h));
+        sky = mix(sky, uGlow, smoothstep(0.16, -0.30, h));
+        gl_FragColor = vec4(sky, 1.0);
+      }`,
+  })
+);
+scene.add(sky);
+
+const stars = new THREE.Group();
+scene.add(stars);
+
+{
+  const count = 1100;
+  const positions = new Float32Array(count * 3);
+  const random = seeded(0x51ae);
+  for (let i = 0; i < count; i++) {
+    const theta = random() * Math.PI * 2;
+    const phi = Math.acos(random() * 2 - 1);
+    positions[i * 3] = 780 * Math.sin(phi) * Math.cos(theta);
+    positions[i * 3 + 1] = 780 * Math.cos(phi);
+    positions[i * 3 + 2] = 780 * Math.sin(phi) * Math.sin(theta);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  stars.add(new THREE.Points(geometry, new THREE.PointsMaterial({
+    color: 0xeef2ff, size: 2.2, sizeAttenuation: false, transparent: true, opacity: 0.8, fog: false,
+  })));
+}
+
+/* --- Lumières : les trois sources du jeu ---------------------------------- */
+
+scene.add(new THREE.HemisphereLight(0xd2dcf4, 0x6a7a42, 0.7));
+scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+const sun = new THREE.DirectionalLight(0xffe3ad, 2.1);
+sun.position.set(90, 120, 80);
+scene.add(sun);
+const backLight = new THREE.DirectionalLight(0x9fb0e8, 0.55);
+backLight.position.set(-70, 30, -80);
+scene.add(backLight);
+
+/* --- Matériaux ------------------------------------------------------------ */
+
+const gradient = new THREE.DataTexture(
+  new Uint8Array([88, 88, 88, 255, 176, 176, 176, 255, 255, 255, 255, 255]),
+  3, 1, THREE.RGBAFormat
+);
+gradient.minFilter = THREE.NearestFilter;
+gradient.magFilter = THREE.NearestFilter;
+gradient.needsUpdate = true;
+
+const toon = (options) => new THREE.MeshToonMaterial({ gradientMap: gradient, ...options });
+
+const MAT = {
+  stone: toon({ color: C.stone }),
+  stoneMid: toon({ color: C.stoneMid }),
+  stoneDark: toon({ color: C.stoneDark }),
+  moss: toon({ color: C.moss }),
+  bark: toon({ color: C.bark }),
+  leaf: toon({ color: C.leaf }),
+  leafDark: toon({ color: C.leafDark }),
+  /*
+    L'or porte un émissif, la pierre non.
+
+    C'est le seul moyen, dans un rendu cel-shadé à trois marches, de faire
+    *briller* quelque chose : le toon écrase les demi-teintes, donc un métal
+    traité comme de la pierre jaune reste mat quelle que soit sa couleur. Un
+    émissif faible le fait franchir le seuil du bloom du jeu (0,82) sur les
+    faces éclairées, et seulement sur elles. C'est là que naît l'éclat.
+  */
+  gold: toon({ color: C.gold, emissive: C.gold, emissiveIntensity: 0.32 }),
+  goldDim: toon({ color: C.goldDim }),
+  goldBright: toon({ color: C.goldBright, emissive: C.gold, emissiveIntensity: 0.55 }),
+};
+
+/** L'eau : translucide, non éclairée, et sans écriture de profondeur. */
+const WATER = new THREE.MeshBasicMaterial({
+  color: C.water, transparent: true, opacity: 0.55,
+  side: THREE.DoubleSide, depthWrite: false,
+});
+const FOAM = new THREE.MeshBasicMaterial({
+  color: C.foam, transparent: true, opacity: 0.4, depthWrite: false,
+});
+/**
+ * L'eau qui **tombe**, nettement plus transparente que celle qui coule.
+ *
+ * Une lame de vingt-six unités traitée comme la surface d'un bassin devient une
+ * colonne opaque : elle se lit comme un tuyau de plastique posé contre l'île.
+ * Ce qui fait une chute d'eau, c'est qu'on voit le ciel au travers.
+ */
+const FALL = new THREE.MeshBasicMaterial({
+  color: C.water, transparent: true, opacity: 0.26,
+  side: THREE.DoubleSide, depthWrite: false,
+});
+
+const island = new THREE.Group();
+scene.add(island);
+
+/* ------------------------------------------------------------- le terrain */
+
+function buildTop() {
+  const rings = 64;
+  const positions = [];
+  const colors = [];
+  const indices = [];
+
+  for (let ring = 0; ring <= rings; ring++) {
+    const t = ring / rings;
+    for (let s = 0; s <= SECTORS; s++) {
+      const theta = (s / SECTORS) * Math.PI * 2;
+      const r = t * rimRadius(theta);
+      const grain = noise(r * 0.09, theta * 3.1);
+      positions.push(
+        Math.sin(theta) * r,
+        topHeight(r, theta) + surfaceRelief(r, theta),
+        Math.cos(theta) * r
+      );
+
+      // La couleur dit la pente, donc où l'on peut marcher : pelouse sur les
+      // plateaux et les rampes, pierre nue sur les falaises.
+      const slope = Math.abs(topHeight(r + 0.8, theta) - topHeight(r - 0.8, theta)) / 1.6;
+      let color = mix(C.lawn, C.lawnDark, 0.34 + grain * 0.26);
+      color = color.lerp(new THREE.Color(C.stoneDark), smoothstep(0.55, 1.3, slope));
+      color = color.lerp(new THREE.Color(C.stoneMid), smoothstep(50, 55.5, r));
+      // Dallage de la rotonde et parvis de la porte.
+      color = color.lerp(new THREE.Color(C.stone), smoothstep(13, 9, r) * 0.75);
+      colors.push(color.r, color.g, color.b);
+    }
+  }
+
+  const stride = SECTORS + 1;
+  for (let ring = 0; ring < rings; ring++) {
+    for (let s = 0; s < SECTORS; s++) {
+      const a = ring * stride + s;
+      const b = a + stride;
+      indices.push(a, b, a + 1, b, b + 1, a + 1);
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.setIndex(indices);
+  return faceted(geometry);
+}
+
+/**
+ * Altitude du **bord** de l'île, en un cap donné.
+ *
+ * C'est la cote de couture entre le dessus et le socle, et elle doit être
+ * calculée, jamais écrite. `RIM_DROP` décrit la profondeur *à laquelle la lèvre
+ * finit de retomber*, c'est-à-dire à partir de r = 55 — mais le contour réel
+ * ondule entre 52,6 et 57,6. Aux caps où il n'atteint que 52,6, le raccord de
+ * lèvre n'est parcouru qu'au douzième et le bord s'arrête à −0,09.
+ *
+ * Coudre le socle sur `RIM_DROP` en dur ouvrait une fente de 1,70 unité sur une
+ * bonne partie de la circonférence — et comme les deux surfaces sont à simple
+ * épaisseur, on voyait le ciel au travers.
+ */
+function rimHeight(theta) {
+  const r = rimRadius(theta);
+  return topHeight(r, theta) + surfaceRelief(r, theta);
+}
+
+/** Relief de surface : les bosses qui s'ajoutent au profil des terrasses. */
+function surfaceRelief(r, theta) {
+  return noise(r * 0.09, theta * 3.1) * (0.1 + 0.42 * smoothstep(16, 46, r));
+}
+
+function underRadius(t, theta) {
+  const crag = noise(theta * 4.3, t * 7.7) * (1 - t) * 0.16;
+  return t * rimRadius(theta) * (1 + crag);
+}
+
+function underHeight(t, theta) {
+  const crag = noise(theta * 4.3, t * 7.7) * (1 - t) * 0.16;
+  return rimHeight(theta) - DEPTH * (1 - Math.pow(t, 0.55)) + crag * 12;
+}
+
+function buildUnder() {
+  const rings = 52;
+  const positions = [];
+  const colors = [];
+  const indices = [];
+
+  for (let ring = 0; ring <= rings; ring++) {
+    const t = 1 - ring / rings;
+    for (let s = 0; s <= SECTORS; s++) {
+      const theta = (s / SECTORS) * Math.PI * 2;
+      const r = underRadius(t, theta);
+      positions.push(Math.sin(theta) * r, underHeight(t, theta), Math.cos(theta) * r);
+      let color = mix(C.rock, C.rockDeep, 1 - t);
+      color = color.lerp(new THREE.Color(C.crystal), smoothstep(0.34, 0.02, t) * 0.62);
+      colors.push(color.r, color.g, color.b);
+    }
+  }
+
+  const stride = SECTORS + 1;
+  for (let ring = 0; ring < rings; ring++) {
+    for (let s = 0; s < SECTORS; s++) {
+      const a = ring * stride + s;
+      const b = a + stride;
+      indices.push(a, a + 1, b, a + 1, b + 1, b);
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.setIndex(indices);
+  return faceted(geometry);
+}
+
+island.add(new THREE.Mesh(buildTop(), toon({ vertexColors: true, side: THREE.DoubleSide })));
+island.add(new THREE.Mesh(buildUnder(), toon({ vertexColors: true, side: THREE.DoubleSide })));
+
+/* ------------------------------------------------------------ les vestiges */
+
+const ruins = new THREE.Group();
+island.add(ruins);
+
+/** Bloc de pierre posé et orienté dans le repère polaire de l'île. */
+function block(w, h, d, r, theta, y, material = MAT.stone, tilt = 0) {
+  const mesh = new THREE.Mesh(faceted(new THREE.BoxGeometry(w, h, d)), material);
+  mesh.position.set(Math.sin(theta) * r, y, Math.cos(theta) * r);
+  mesh.rotation.y = theta;
+  mesh.rotation.z = tilt;
+  return mesh;
+}
+
+/**
+ * Une arche : deux piédroits et un arc en plein cintre.
+ *
+ * L'arc est un demi-tore et non un linteau droit, et c'est le détail qui fait
+ * toute la période : le linteau appartient au temple grec, le plein cintre à la
+ * forteresse. Laputa est bâtie en plein cintre, du sol à la coupole.
+ */
+function archway(span, clear, thickness, material) {
+  const group = new THREE.Group();
+  const half = span / 2;
+  const pierH = clear - half;
+
+  for (const side of [-1, 1]) {
+    const pier = new THREE.Mesh(
+      faceted(new THREE.BoxGeometry(0.9, pierH, thickness)),
+      material
+    );
+    pier.position.set(side * (half + 0.45), pierH / 2, 0);
+    group.add(pier);
+  }
+
+  const arc = new THREE.Mesh(
+    faceted(new THREE.TorusGeometry(half + 0.45, 0.45, 4, 14, Math.PI)),
+    material
+  );
+  arc.position.y = pierH;
+  arc.scale.z = thickness / 0.9;
+  group.add(arc);
+  return group;
+}
+
+/* --- L'enceinte, avec ses brèches ----------------------------------------- */
+
+{
+  const SEGMENTS = 72;
+  const random = seeded(0x1a7e);
+
+  for (let i = 0; i < SEGMENTS; i++) {
+    const theta = (i / SEGMENTS) * Math.PI * 2;
+    // La porte occupe le sud : on ne bâtit pas de mur par-dessus.
+    const atGate = Math.abs(((theta + Math.PI) % (Math.PI * 2)) - Math.PI) < 0.1;
+    if (atGate) continue;
+    // Les rampes intérieures traversent l'enceinte : leur couloir reste ouvert.
+    if (rampFactor(theta, RAMPS_INNER) > 0.4) continue;
+
+    // La ruine par pans entiers, pas pierre à pierre : c'est ainsi qu'un mur
+    // tombe, et c'est ce qui crée des brèches franches, donc des passages.
+    const wear = noise(Math.cos(theta) * 2.6, Math.sin(theta) * 2.6);
+    if (wear > 0.5) continue;
+
+    const height = WALL_H * (0.42 + 0.58 * smoothstep(0.5, -1.0, wear)) + random() * 0.4;
+    const width = (Math.PI * 2 * WALL_R) / SEGMENTS + 0.25;
+    const base = topHeight(WALL_R, theta);
+
+    ruins.add(block(width, height, 1.5, WALL_R, theta, base + height / 2, MAT.stone));
+    // Couronnement : une assise plus sombre et débordante, qui donne l'épaisseur.
+    ruins.add(block(width, 0.35, 1.9, WALL_R, theta, base + height + 0.1, MAT.stoneMid));
+
+    // Frise dorée, à mi-hauteur, et seulement sur les pans les mieux conservés.
+    // C'est la règle de toutes les dorures de cette île : **l'or ne survit que
+    // là où la pierre a tenu**. Réparti uniformément il se lirait comme une
+    // peinture ; réservé aux pans debout, il raconte que le reste est tombé
+    // avec son ornement.
+    if (wear < -0.25) {
+      ruins.add(block(width, 0.22, 1.62, WALL_R, theta, base + height * 0.72, MAT.gold));
+    }
+  }
+}
+
+/* --- La porte, plein sud, dans l'axe de la rampe -------------------------- */
+
+{
+  const base = topHeight(WALL_R, 0);
+  const gate = archway(3.6, ARCH_CLEAR + 1.4, 2.4, MAT.stone);
+  gate.position.set(0, base, WALL_R);
+  ruins.add(gate);
+
+  // La masse au-dessus de l'arche, et son bandeau de couronnement. Sans elle,
+  // le plein cintre flotte entre deux tours et se lit comme une arche
+  // décorative : une porte de forteresse, c'est d'abord du poids porté.
+  const lintel = new THREE.Mesh(faceted(new THREE.BoxGeometry(7.4, 2.4, 2.6)), MAT.stone);
+  lintel.position.set(0, base + ARCH_CLEAR + 3.6, WALL_R);
+  ruins.add(lintel);
+
+  const capping = new THREE.Mesh(faceted(new THREE.BoxGeometry(8.2, 0.55, 3.1)), MAT.stoneMid);
+  capping.position.set(0, base + ARCH_CLEAR + 5.05, WALL_R);
+  ruins.add(capping);
+
+  // Le tympan doré au-dessus de l'arche : le disque emblème de la civilisation,
+  // dans l'axe de la rampe d'arrivée. C'est la première dorure que le joueur
+  // voit, et elle est placée là où il ne peut pas la manquer — droit devant,
+  // à hauteur de regard, encadrée par les deux tours.
+  const emblem = new THREE.Mesh(
+    faceted(new THREE.CylinderGeometry(1.5, 1.5, 0.3, 12)),
+    MAT.goldBright
+  );
+  emblem.position.set(0, base + ARCH_CLEAR + 3.7, WALL_R + 1.25);
+  emblem.rotation.x = Math.PI / 2;
+  ruins.add(emblem);
+
+  const emblemRing = new THREE.Mesh(
+    faceted(new THREE.TorusGeometry(2.05, 0.2, 4, 14)),
+    MAT.gold
+  );
+  emblemRing.position.set(0, base + ARCH_CLEAR + 3.7, WALL_R + 1.3);
+  ruins.add(emblemRing);
+
+  // Le parvis : le dallage qui prolonge la rampe jusque sous l'arche, et qui
+  // dit au joueur que c'est là qu'on entre.
+  const apron = new THREE.Mesh(
+    new THREE.CircleGeometry(5.4, 20, Math.PI * 0.72, Math.PI * 0.56),
+    toon({ color: C.stoneMid })
+  );
+  apron.rotation.x = -Math.PI / 2;
+  apron.position.set(0, base + 0.05, WALL_R);
+  ruins.add(apron);
+
+  // Deux tours de flanquement, l'une arasée : une porte symétrique se lit
+  // comme neuve, et cette forteresse est tombée il y a longtemps.
+  for (const [side, height] of [[-1, 9.5], [1, 5.5]]) {
+    const tower = new THREE.Group();
+    tower.position.set(side * 4.6, base, WALL_R - 0.2);
+    const drum = new THREE.Mesh(
+      faceted(new THREE.CylinderGeometry(2.1, 2.4, height, 8)),
+      MAT.stone
+    );
+    drum.position.y = height / 2;
+    tower.add(drum);
+    const crown = new THREE.Mesh(
+      faceted(new THREE.CylinderGeometry(2.5, 2.2, 0.6, 8)),
+      MAT.stoneMid
+    );
+    crown.position.y = height;
+    tower.add(crown);
+    // Meurtrière : un simple évidement sombre suffit à donner l'échelle.
+    const slit = new THREE.Mesh(
+      faceted(new THREE.BoxGeometry(0.4, 1.5, 0.3)),
+      MAT.stoneDark
+    );
+    slit.position.set(0, height * 0.6, 2.25);
+    tower.add(slit);
+    ruins.add(tower);
+  }
+}
+
+/* --- Tours d'enceinte ----------------------------------------------------- */
+
+for (const [theta, height, lean] of [
+  [1.15, 11.5, 0.03],
+  [2.5, 6.2, -0.06],
+  [3.65, 8.4, 0.02],
+  [5.0, 4.0, 0.09],
+]) {
+  const base = topHeight(WALL_R, theta);
+  const tower = new THREE.Group();
+  tower.position.set(Math.sin(theta) * WALL_R, base, Math.cos(theta) * WALL_R);
+  tower.rotation.z = lean;
+
+  const drum = new THREE.Mesh(
+    faceted(new THREE.CylinderGeometry(2.2, 2.7, height, 8)),
+    MAT.stone
+  );
+  drum.position.y = height / 2;
+  tower.add(drum);
+
+  // Le couronnement est brisé en biais : une tour arasée à l'horizontale se lit
+  // comme un travail inachevé, pas comme une ruine.
+  const crown = new THREE.Mesh(
+    faceted(new THREE.CylinderGeometry(2.45, 2.3, 1.1, 8)),
+    MAT.stoneMid
+  );
+  crown.position.y = height;
+  crown.rotation.z = 0.16;
+  tower.add(crown);
+
+  // Seule la plus haute tour a gardé sa flèche dorée. Une par une, elles sont
+  // tombées ; celle qui reste dit ce qu'étaient les quatre autres.
+  if (height > 10) {
+    const finial = new THREE.Mesh(
+      faceted(new THREE.ConeGeometry(1.5, 3.4, 6)),
+      MAT.gold
+    );
+    finial.position.y = height + 2.2;
+    tower.add(finial);
+    const ball = new THREE.Mesh(faceted(new THREE.OctahedronGeometry(0.6, 0)), MAT.goldBright);
+    ball.position.y = height + 4.3;
+    tower.add(ball);
+  }
+
+  ruins.add(tower);
+}
+
+/* --- La salle à colonnes -------------------------------------------------- */
+
+{
+  // Posée dans le quartier nord-ouest de l'enceinte, entre deux rampes.
+  const center = 2.1;
+  const random = seeded(0x5a11);
+
+  for (let row = 0; row < 2; row++) {
+    for (let i = 0; i < 7; i++) {
+      const theta = center + (i - 3) * 0.13;
+      const r = 20 + row * 6.5;
+      const base = topHeight(r, theta);
+      const fallen = random() < 0.28;
+
+      if (fallen) {
+        // Fût couché : la colonne tombée est ce qui dit qu'il y en avait plus.
+        const drum = new THREE.Mesh(
+          faceted(new THREE.CylinderGeometry(0.55, 0.55, 4.4, 8)),
+          MAT.stoneMid
+        );
+        drum.position.set(Math.sin(theta) * r, base + 0.55, Math.cos(theta) * r);
+        drum.rotation.z = Math.PI / 2;
+        drum.rotation.y = theta + random();
+        ruins.add(drum);
+        continue;
+      }
+
+      const height = 4.2 + random() * 1.4;
+      const shaft = new THREE.Mesh(
+        faceted(new THREE.CylinderGeometry(0.5, 0.62, height, 8)),
+        MAT.stone
+      );
+      shaft.position.set(Math.sin(theta) * r, base + height / 2, Math.cos(theta) * r);
+      ruins.add(shaft);
+
+      // Chapiteau doré une fois sur trois : la salle était entièrement plaquée,
+      // il n'en reste que ce que les pillards n'ont pas pu atteindre.
+      const capital = new THREE.Mesh(
+        faceted(new THREE.BoxGeometry(1.5, 0.5, 1.5)),
+        random() < 0.34 ? MAT.gold : MAT.stoneMid
+      );
+      capital.position.set(Math.sin(theta) * r, base + height + 0.25, Math.cos(theta) * r);
+      capital.rotation.y = theta;
+      ruins.add(capital);
+
+      // Un tronçon d'architrave subsiste sur deux travées : c'est ce qui prouve
+      // qu'il y avait un toit.
+      if (i < 3 && !fallen) {
+        const beam = new THREE.Mesh(
+          faceted(new THREE.BoxGeometry(0.8, 0.55, 2.9)),
+          MAT.stoneMid
+        );
+        const mid = theta + 0.065;
+        beam.position.set(Math.sin(mid) * r, base + height + 0.7, Math.cos(mid) * r);
+        beam.rotation.y = mid + Math.PI / 2;
+        ruins.add(beam);
+      }
+    }
+  }
+}
+
+/* --- La rotonde centrale, éventrée ---------------------------------------- */
+
+{
+  const base = 7.2;
+  const RADIUS = 11.5;
+  const PIERS = 10;
+  const random = seeded(0x30d3);
+
+  for (let i = 0; i < PIERS; i++) {
+    const theta = (i / PIERS) * Math.PI * 2 + 0.31;
+    // Deux travées effondrées : ce sont elles qui ouvrent la rotonde et en font
+    // une arène qu'on traverse plutôt qu'une salle où l'on entre.
+    const ruined = i === 3 || i === 7;
+    const height = ruined ? 1.2 + random() * 1.4 : ARCH_CLEAR + 1.8;
+
+    // Le pilier, articulé en trois : socle, fût, imposte. Un parallélépipède nu
+    // se lit comme une dalle dressée ; ce sont les deux débords qui en font un
+    // élément d'architecture, et ils coûtent deux boîtes.
+    const shaft = new THREE.Mesh(faceted(new THREE.BoxGeometry(1.5, height, 1.9)), MAT.stone);
+    shaft.position.set(Math.sin(theta) * RADIUS, base + height / 2, Math.cos(theta) * RADIUS);
+    shaft.rotation.y = theta;
+    ruins.add(shaft);
+
+    const plinth = new THREE.Mesh(faceted(new THREE.BoxGeometry(2.1, 0.55, 2.5)), MAT.stoneMid);
+    plinth.position.set(Math.sin(theta) * RADIUS, base + 0.28, Math.cos(theta) * RADIUS);
+    plinth.rotation.y = theta;
+    ruins.add(plinth);
+
+    if (ruined) continue;
+
+    const impost = new THREE.Mesh(faceted(new THREE.BoxGeometry(2, 0.45, 2.4)), MAT.stoneMid);
+    impost.position.set(Math.sin(theta) * RADIUS, base + height - 0.22, Math.cos(theta) * RADIUS);
+    impost.rotation.y = theta;
+    ruins.add(impost);
+
+    const next = ((i + 1) % PIERS) === 3 || ((i + 1) % PIERS) === 7;
+    if (next) continue;
+
+    /*
+      L'arc jeté vers le pilier suivant, posé sur le **milieu de la corde** et
+      non sur le cercle des piliers.
+
+      C'est une erreur qu'on ne voit qu'une fois construite : le sommet d'un arc
+      tendu entre deux points d'un cercle est en retrait de ces points, de
+      `1 − cos(π/n)`. Placé sur le cercle, l'arc déborde vers l'extérieur et ses
+      naissances flottent à côté des piliers au lieu d'y reposer.
+    */
+    const mid = theta + Math.PI / PIERS;
+    const chordR = RADIUS * Math.cos(Math.PI / PIERS);
+    const span = 2 * RADIUS * Math.sin(Math.PI / PIERS);
+
+    const arc = new THREE.Mesh(
+      faceted(new THREE.TorusGeometry(span / 2, 0.42, 4, 12, Math.PI)),
+      MAT.stone
+    );
+    arc.position.set(Math.sin(mid) * chordR, base + height, Math.cos(mid) * chordR);
+    arc.rotation.y = mid + Math.PI / 2;
+    ruins.add(arc);
+
+    // Corniche au-dessus de l'arc : la ligne horizontale qui tient l'ensemble.
+    const cornice = new THREE.Mesh(
+      faceted(new THREE.BoxGeometry(span + 1.4, 0.5, 2.3)),
+      MAT.stoneMid
+    );
+    cornice.position.set(
+      Math.sin(mid) * chordR,
+      base + height + span / 2 + 0.3,
+      Math.cos(mid) * chordR
+    );
+    cornice.rotation.y = mid;
+    ruins.add(cornice);
+  }
+
+  /*
+    Ce qui reste de la coupole, et c'est la pièce maîtresse : **elle était
+    couverte d'or**. Trois quartiers subsistent, le reste est ouvert au ciel —
+    c'est par là que l'arbre est sorti.
+
+    Deux coques par quartier plutôt qu'une : la couverture dorée, et dessous la
+    maçonnerie grise qu'elle protégeait. La tranche des quartiers laisse donc
+    voir les deux matières, ce qui est exactement ce qu'on voit sur un dôme
+    crevé — un placage, et la pierre qu'il cachait.
+
+    **Un encorbellement et non une calotte**, et c'est une correction.
+
+    Une portion de sphère aplatie, vue depuis le sol de l'arène, se présente par
+    la tranche : elle se lit comme un auvent posé de travers, pas comme un dôme.
+    Un dôme en encorbellement — des anneaux de pierre empilés, chacun un peu
+    plus étroit et un peu plus haut que le précédent — donne au contraire une
+    silhouette en escalier que la facette rend parfaitement, et qui est celle
+    des coupoles bâties sans cintre. Il a un second mérite : il se ruine par le
+    haut, anneau par anneau, ce qui rend la brèche évidente.
+
+    Les deux derniers anneaux manquent et le troisième n'est qu'un fragment :
+    c'est le trou par lequel l'arbre est passé.
+  */
+  const SPRING = base + ARCH_CLEAR + 1.8 + (2 * RADIUS * Math.sin(Math.PI / PIERS)) / 2 + 0.55;
+  const DOME_RISE = 7.5;
+
+  // Anneau : rayon, altitude relative, et les arcs qui en subsistent.
+  const COURSES = [
+    [11.9, 0.0, [[0.3, 1.55], [2.5, 1.15], [4.3, 1.35]]],
+    [10.8, 1.5, [[0.45, 1.3], [2.65, 0.95], [4.45, 1.1]]],
+    [9.1, 2.9, [[0.6, 0.95], [2.85, 0.6]]],
+    [6.7, 4.1, [[0.75, 0.55]]],
+  ];
+
+  for (const [radius, rise, arcs] of COURSES) {
+    for (const [start, length] of arcs) {
+      const y = SPRING + (rise / 4.1) * DOME_RISE;
+
+      // La couverture dorée, à l'extérieur.
+      const skin = new THREE.Mesh(
+        faceted(new THREE.CylinderGeometry(
+          radius - 0.5, radius + 0.15, 1.5, 22, 1, true, start, length
+        )),
+        toon({ color: C.gold, emissive: C.gold, emissiveIntensity: 0.2, side: THREE.DoubleSide })
+      );
+      skin.position.y = y;
+      ruins.add(skin);
+
+      // La maçonnerie qu'elle protégeait, juste dessous : la tranche des
+      // anneaux cassés laisse voir les deux matières, ce qui est exactement ce
+      // qu'on voit sur un dôme crevé — un placage, et la pierre dessous.
+      const core = new THREE.Mesh(
+        faceted(new THREE.CylinderGeometry(
+          radius - 0.95, radius - 0.3, 1.5, 20, 1, true, start + 0.03, length - 0.06
+        )),
+        toon({ color: C.stoneMid, side: THREE.DoubleSide })
+      );
+      core.position.y = y;
+      ruins.add(core);
+    }
+  }
+
+  // Dallage de l'arène, posé au ras du sol.
+  const floor = new THREE.Mesh(
+    new THREE.RingGeometry(0.4, RADIUS - 0.8, 40, 1),
+    toon({ color: C.stone })
+  );
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = base + 0.06;
+  ruins.add(floor);
+
+  /*
+    La mosaïque d'or incrustée dans le dallage : trois anneaux concentriques et
+    douze rais.
+
+    Elle a une raison d'être au-delà de l'ornement — c'est le sol de l'arène du
+    boss, et un sol uni ne donne au joueur aucun repère pour juger une distance
+    d'esquive. Des anneaux à rayon connu lui en donnent, sans qu'aucun texte
+    n'ait à le lui dire. L'or rend la lecture immédiate, et la civilisation
+    prospère paie l'addition.
+  */
+  for (const radius of [3.4, 6.6, 9.6]) {
+    const inlay = new THREE.Mesh(
+      new THREE.RingGeometry(radius - 0.22, radius + 0.22, 48),
+      MAT.gold
+    );
+    inlay.rotation.x = -Math.PI / 2;
+    inlay.position.y = base + 0.1;
+    ruins.add(inlay);
+  }
+
+  for (let i = 0; i < 12; i++) {
+    const theta = (i / 12) * Math.PI * 2;
+    const ray = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 9.4), MAT.goldDim);
+    ray.rotation.x = -Math.PI / 2;
+    ray.rotation.z = -theta;
+    ray.position.set(Math.sin(theta) * 5.1, base + 0.09, Math.cos(theta) * 5.1);
+    ruins.add(ray);
+  }
+}
+
+/* --- L'aqueduc ------------------------------------------------------------ */
+
+/*
+  Une arcade qui porte un canal, en travers de la terrasse du jardin.
+
+  C'est la pièce qui dit « civilisation prospère » mieux que n'importe quelle
+  dorure : personne ne bâtit un aqueduc pour la beauté du geste. Un mur doré est
+  de la richesse ; un aqueduc est de l'ingénierie, donc du temps, donc un État.
+  Et il travaille pour le niveau : il porte l'eau qui alimente les cascades, et
+  il fait une ligne horizontale forte au milieu d'un terrain qui monte.
+*/
+{
+  const from = 1.15;      // départ : contre l'enceinte
+  const to = 0.28;        // arrivée : vers le cœur
+  const SPANS = 7;
+  const DECK = 6.6;       // altitude du canal, au-dessus de la terrasse
+
+  for (let i = 0; i <= SPANS; i++) {
+    const t = i / SPANS;
+    const theta = from + (to - from) * t;
+    const r = 26 - t * 8;
+    const base = topHeight(r, theta);
+    const height = DECK - (base - 3.6);
+    // Deux piles écroulées : l'aqueduc est une ruine comme le reste, et les
+    // brèches laissent passer le joueur dessous plutôt que de barrer la
+    // terrasse d'un mur continu.
+    const fallen = i === 2 || i === 5;
+
+    if (!fallen) {
+      const pier = new THREE.Mesh(
+        faceted(new THREE.BoxGeometry(1.5, height, 1.9)),
+        MAT.stone
+      );
+      pier.position.set(Math.sin(theta) * r, base + height / 2, Math.cos(theta) * r);
+      pier.rotation.y = theta;
+      ruins.add(pier);
+    }
+
+    if (i === SPANS || fallen || i + 1 === 2 || i + 1 === 5) continue;
+
+    const nextTheta = from + (to - from) * ((i + 1) / SPANS);
+    const nextR = 26 - ((i + 1) / SPANS) * 8;
+    const ax = Math.sin(theta) * r;
+    const az = Math.cos(theta) * r;
+    const bx = Math.sin(nextTheta) * nextR;
+    const bz = Math.cos(nextTheta) * nextR;
+    const span = Math.hypot(bx - ax, bz - az);
+    const midAngle = Math.atan2((ax + bx) / 2, (az + bz) / 2);
+
+    const arc = new THREE.Mesh(
+      faceted(new THREE.TorusGeometry(span / 2, 0.38, 4, 12, Math.PI)),
+      MAT.stone
+    );
+    arc.position.set((ax + bx) / 2, base + height, (az + bz) / 2);
+    arc.rotation.y = Math.atan2(bx - ax, bz - az) + Math.PI / 2;
+    ruins.add(arc);
+
+    // Le canal lui-même, et son mince filet d'eau.
+    const deck = new THREE.Mesh(
+      faceted(new THREE.BoxGeometry(span + 0.6, 0.9, 2.2)),
+      MAT.stoneMid
+    );
+    deck.position.set((ax + bx) / 2, base + height + span / 2 + 0.45, (az + bz) / 2);
+    deck.rotation.y = Math.atan2(bx - ax, bz - az) + Math.PI / 2;
+    ruins.add(deck);
+
+    const stream = new THREE.Mesh(new THREE.PlaneGeometry(span + 0.6, 1.1), WATER);
+    stream.rotation.x = -Math.PI / 2;
+    stream.rotation.z = -midAngle;
+    stream.position.set(
+      (ax + bx) / 2,
+      base + height + span / 2 + 0.92,
+      (az + bz) / 2
+    );
+    ruins.add(stream);
+  }
+}
+
+/* --- Statues sur l'allée d'honneur ---------------------------------------- */
+
+/*
+  Six socles le long de la montée sud, dont la moitié n'a plus sa statue.
+  L'allée bordée de figures est le marqueur de prospérité le moins cher à
+  modéliser et le plus lisible : elle dit qu'on arrivait ici en cortège.
+*/
+{
+  const random = seeded(0x2b7f);
+  for (let i = 0; i < 6; i++) {
+    const side = i % 2 === 0 ? 1 : -1;
+    const r = 34 + Math.floor(i / 2) * 4.6;
+    const theta = (side * 2.9) / r;
+    const base = topHeight(r, theta);
+
+    const plinth = new THREE.Mesh(faceted(new THREE.BoxGeometry(1.6, 1.5, 1.6)), MAT.stone);
+    plinth.position.set(Math.sin(theta) * r, base + 0.75, Math.cos(theta) * r);
+    plinth.rotation.y = theta;
+    ruins.add(plinth);
+
+    if (random() < 0.45) continue;
+
+    // La figure, très schématique : une silhouette drapée, sans tête pour la
+    // moitié d'entre elles. À la distance où la caméra du jeu les montre, une
+    // masse juste proportionnée en dit autant qu'un modèle détaillé.
+    const body = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.42, 0.72, 2.6, 7)), MAT.stoneMid);
+    body.position.set(Math.sin(theta) * r, base + 2.8, Math.cos(theta) * r);
+    ruins.add(body);
+
+    if (random() < 0.5) {
+      const head = new THREE.Mesh(faceted(new THREE.IcosahedronGeometry(0.42, 0)), MAT.stoneMid);
+      head.position.set(Math.sin(theta) * r, base + 4.4, Math.cos(theta) * r);
+      ruins.add(head);
+      // Une couronne dorée sur celles qui ont gardé leur tête.
+      const crown = new THREE.Mesh(faceted(new THREE.TorusGeometry(0.4, 0.09, 3, 10)), MAT.gold);
+      crown.position.set(Math.sin(theta) * r, base + 4.62, Math.cos(theta) * r);
+      crown.rotation.x = Math.PI / 2;
+      ruins.add(crown);
+    }
+  }
+}
+
+/* --- Blocs tombés sur la prairie ------------------------------------------ */
+
+{
+  const random = seeded(0x9b12);
+  for (let i = 0; i < 26; i++) {
+    const theta = random() * Math.PI * 2;
+    const r = 36 + random() * 15;
+    const base = topHeight(r, theta);
+    const size = 0.8 + random() * 1.6;
+    const stone = new THREE.Mesh(
+      faceted(new THREE.BoxGeometry(size * 1.5, size, size * 1.2)),
+      random() < 0.5 ? MAT.stoneMid : MAT.stoneDark
+    );
+    stone.position.set(Math.sin(theta) * r, base + size * 0.35, Math.cos(theta) * r);
+    stone.rotation.set(random() * 0.3, random() * Math.PI, random() * 0.3);
+    ruins.add(stone);
+  }
+}
+
+/* ----------------------------------------------------------- la végétation */
+
+const flora = new THREE.Group();
+island.add(flora);
+
+/** Arbre du jeu : tronc conique, deux à trois masses de feuillage aplaties. */
+function smallTree(r, theta, scale, random) {
+  const group = new THREE.Group();
+  const base = topHeight(r, theta);
+  group.position.set(Math.sin(theta) * r, base, Math.cos(theta) * r);
+
+  const trunkH = 2.2 * scale;
+  const trunk = new THREE.Mesh(
+    faceted(new THREE.CylinderGeometry(0.16 * scale, 0.34 * scale, trunkH, 6)),
+    MAT.bark
+  );
+  trunk.position.y = trunkH / 2;
+  group.add(trunk);
+
+  const leaves = random() < 0.5 ? MAT.leaf : MAT.leafDark;
+  for (let i = 0; i < 3; i++) {
+    const blob = new THREE.Mesh(
+      faceted(new THREE.IcosahedronGeometry((1.1 - i * 0.18) * scale, 0)),
+      leaves
+    );
+    blob.position.set(
+      (random() - 0.5) * 0.8 * scale,
+      trunkH + (0.4 + i * 0.55) * scale,
+      (random() - 0.5) * 0.8 * scale
+    );
+    blob.scale.y = 0.7;
+    group.add(blob);
+  }
+  return group;
+}
+
+{
+  const random = seeded(0x7ee3);
+  for (let i = 0; i < 46; i++) {
+    const theta = random() * Math.PI * 2;
+    // Sur la prairie et dans les quartiers de l'enceinte, jamais sur l'arène.
+    const r = random() < 0.62 ? 36 + random() * 14 : 17 + random() * 10;
+    // Rien ne pousse dans l'axe d'une rampe : ce sont les chemins.
+    if (rampFactor(theta, RAMPS_OUTER) > 0.5 || rampFactor(theta, RAMPS_INNER) > 0.5) continue;
+    flora.add(smallTree(r, theta, 0.8 + random() * 0.9, random));
+  }
+}
+
+/* --- Touffes d'herbe ------------------------------------------------------ */
+
+{
+  const random = seeded(0x2c8a);
+  const tuft = faceted(new THREE.ConeGeometry(0.28, 0.9, 4));
+  const mesh = new THREE.InstancedMesh(tuft, MAT.moss, 420);
+  const dummy = new THREE.Object3D();
+  let placed = 0;
+
+  while (placed < 420) {
+    const theta = random() * Math.PI * 2;
+    const r = 8 + random() * 46;
+    const base = topHeight(r, theta);
+    dummy.position.set(Math.sin(theta) * r, base + 0.3, Math.cos(theta) * r);
+    dummy.rotation.y = random() * Math.PI;
+    dummy.scale.setScalar(0.7 + random() * 0.8);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(placed, dummy.matrix);
+    placed++;
+  }
+  flora.add(mesh);
+}
+
+/* --- La mousse qui monte sur la maçonnerie -------------------------------- */
+
+{
+  const random = seeded(0x4f0c);
+  for (let i = 0; i < 90; i++) {
+    const theta = random() * Math.PI * 2;
+    // Au pied des murs : la mousse gagne par le bas, jamais par les arêtes que
+    // la pluie lave.
+    const r = WALL_R + (random() - 0.5) * 2.6;
+    const base = topHeight(r, theta);
+    const blob = new THREE.Mesh(
+      faceted(new THREE.IcosahedronGeometry(0.28 + random() * 0.4, 0)),
+      random() < 0.5 ? MAT.moss : MAT.leafDark
+    );
+    // Elle grimpe, elle ne s'étale pas : aplatie au sol, la tache verte se lit
+    // comme un nénuphar posé sur l'herbe plutôt que comme de la mousse au pied
+    // d'un mur. D'où une forme haute, et une altitude tirée vers le bas.
+    blob.position.set(Math.sin(theta) * r, base + random() * random() * 2.2, Math.cos(theta) * r);
+    blob.scale.set(1.15, 0.85, 1.15);
+    flora.add(blob);
+  }
+}
+
+/* --- Les cascades de végétation, par-dessus la lèvre ---------------------- */
+
+{
+  const random = seeded(0x6d41);
+
+  for (let i = 0; i < 34; i++) {
+    const theta = (i / 34) * Math.PI * 2 + random() * 0.14;
+    const depth = 0.1 + random() * 0.2;   // jusqu'où elle descend, en `t` du socle
+
+    // La liane suit la **peau du socle** au lieu de pendre à la verticale : une
+    // tige droite accrochée à une paroi qui rentre part dans le vide et se lit
+    // comme une pique plantée dans l'île. C'est le même paramétrage que les
+    // racines, et pour exactement la même raison.
+    const points = [];
+    for (let k = 0; k <= 7; k++) {
+      const t = 1 - (k / 7) * depth;
+      const twist = theta + (1 - t) * 0.5;
+      const radius = underRadius(t, twist) * 1.01 + 0.35;
+      points.push(new THREE.Vector3(
+        Math.sin(twist) * radius,
+        // Au premier point, on remonte au-dessus de la lèvre : la liane doit
+        // naître dans l'herbe, pas sous le rebord.
+        k === 0 ? RIM_DROP + 0.8 : underHeight(t, twist) + 0.3,
+        Math.cos(twist) * radius
+      ));
+    }
+
+    const curve = new THREE.CatmullRomCurve3(points);
+    const vine = new THREE.Mesh(
+      faceted(new THREE.TubeGeometry(curve, 16, 0.22, 4, false)),
+      random() < 0.4 ? MAT.bark : MAT.leafDark
+    );
+    flora.add(vine);
+
+    // Des paquets de feuilles le long de la tige, plus serrés vers le bas : une
+    // liane nue n'est qu'un câble.
+    const clumps = 3 + Math.floor(random() * 3);
+    for (let k = 1; k <= clumps; k++) {
+      const at = curve.getPoint(k / (clumps + 0.4));
+      const leaf = new THREE.Mesh(
+        faceted(new THREE.IcosahedronGeometry(0.55 + random() * 0.75, 0)),
+        random() < 0.5 ? MAT.moss : MAT.leafDark
+      );
+      leaf.position.copy(at);
+      leaf.scale.set(1.25, 0.7, 1.25);
+      flora.add(leaf);
+    }
+
+    // La touffe d'accroche, dans l'herbe : sans elle la liane sort du néant.
+    const anchorRadius = rimRadius(theta) - 1;
+    const anchor = new THREE.Mesh(
+      faceted(new THREE.IcosahedronGeometry(1 + random() * 0.8, 0)),
+      MAT.moss
+    );
+    anchor.position.set(
+      Math.sin(theta) * anchorRadius,
+      topHeight(anchorRadius, theta) + 0.2,
+      Math.cos(theta) * anchorRadius
+    );
+    anchor.scale.set(1.4, 0.5, 1.4);
+    flora.add(anchor);
+  }
+}
+
+/* --- Racines sur le socle ------------------------------------------------- */
+
+for (let i = 0; i < 7; i++) {
+  const start = (i / 7) * Math.PI * 2;
+  const points = [];
+  for (let k = 0; k <= 16; k++) {
+    const t = 1 - k / 16;
+    const theta = start + (1 - t) * 2.3;
+    const radius = underRadius(t, theta) * 1.02 + 0.6;
+    points.push(new THREE.Vector3(
+      Math.sin(theta) * radius,
+      underHeight(t, theta) + 0.4,
+      Math.cos(theta) * radius
+    ));
+  }
+  const tube = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 40, 1.35, 5, false);
+  island.add(new THREE.Mesh(faceted(tube), MAT.bark));
+}
+
+/* ------------------------------------------------------------------- l'eau */
+
+/*
+  L'eau a une **source** et un **trajet**, et c'est ce qui la rend crédible.
+
+  Des cascades posées au bord de l'île sortent de nulle part : l'œil demande
+  toujours d'où vient l'eau, et sans réponse il classe l'effet comme décoratif.
+  Ici elle naît d'un bassin au pied de l'arbre — le point haut —, descend les
+  terrasses par trois canaux taillés dans la pierre, franchit la terrasse du
+  jardin sur l'aqueduc, et se jette par-dessus la lèvre en quatre cascades.
+  Chaque élément est la conséquence du précédent.
+*/
+
+const water = new THREE.Group();
+island.add(water);
+
+/* --- La source : un bassin doré au pied de l'arbre ------------------------ */
+
+{
+  const basin = new THREE.Mesh(
+    faceted(new THREE.CylinderGeometry(4.2, 3.6, 1.1, 14)),
+    MAT.stone
+  );
+  basin.position.y = 7.2 + 0.55;
+  water.add(basin);
+
+  const lip = new THREE.Mesh(faceted(new THREE.TorusGeometry(4.2, 0.26, 4, 18)), MAT.gold);
+  lip.position.y = 7.2 + 1.1;
+  lip.rotation.x = Math.PI / 2;
+  water.add(lip);
+
+  const surface = new THREE.Mesh(new THREE.CircleGeometry(4.05, 20), WATER);
+  surface.rotation.x = -Math.PI / 2;
+  surface.position.y = 7.2 + 0.95;
+  water.add(surface);
+}
+
+/* --- Trois canaux qui descendent les terrasses ---------------------------- */
+
+/*
+  Ils suivent les rampes, et ce n'est pas une facilité de tracé : l'eau et le
+  joueur descendent par le même chemin parce que c'est le seul que la pente
+  autorise — 0,45 contre 1,8 pour la falaise. Le canal borde donc la rampe, et
+  le bruit de l'eau accompagne exactement le parcours.
+*/
+for (let i = 0; i < 3; i++) {
+  const inner = RAMPS_INNER[i];
+  const outer = RAMPS_OUTER[i];
+
+  for (const [theta, from, to] of [[inner, 5, 33], [outer, 33, 52]]) {
+    const points = [];
+    for (let k = 0; k <= 18; k++) {
+      const r = from + (to - from) * (k / 18);
+      // Décalé d'un mètre et demi du centre de la rampe : le canal la borde,
+      // il ne la coupe pas. Un caniveau en travers du chemin, c'est un piège.
+      const offset = 1.6 / r;
+      points.push(new THREE.Vector3(
+        Math.sin(theta + offset) * r,
+        topHeight(r, theta) + 0.16,
+        Math.cos(theta + offset) * r
+      ));
+    }
+    const curve = new THREE.CatmullRomCurve3(points);
+
+    const channel = new THREE.Mesh(
+      faceted(new THREE.TubeGeometry(curve, 26, 0.55, 4, false)),
+      MAT.stoneMid
+    );
+    water.add(channel);
+
+    const flow = new THREE.Mesh(
+      faceted(new THREE.TubeGeometry(curve, 26, 0.38, 4, false)),
+      WATER
+    );
+    flow.position.y = 0.2;
+    water.add(flow);
+  }
+}
+
+/* --- Quatre cascades par-dessus la lèvre ---------------------------------- */
+
+/*
+  Une cascade, ce sont trois choses et pas une : la **lame** d'eau qui tombe,
+  l'**écume** au point de rupture, et la **brume** en bas, là où le jet se
+  désagrège. Sans le haut, l'eau sort du néant ; sans le bas, elle s'arrête net
+  au milieu du vide. Ici il n'y a pas de fond pour la recevoir, donc c'est la
+  brume qui doit terminer la chute — elle s'évapore avant d'avoir touché quoi
+  que ce soit, ce qui est précisément l'image d'une île qui flotte.
+*/
+{
+  const random = seeded(0x8f22);
+
+  for (let i = 0; i < 4; i++) {
+    const theta = RAMPS_OUTER[i % 3] + (i === 3 ? 1.05 : 0.08);
+    const radius = rimRadius(theta) - 0.8;
+    const x = Math.sin(theta) * radius;
+    const z = Math.cos(theta) * radius;
+    const length = 26 + random() * 12;
+
+    // L'échancrure de pierre par où l'eau sort : sans elle, la lame perce
+    // l'herbe.
+    const notch = new THREE.Mesh(faceted(new THREE.BoxGeometry(3.4, 1.2, 2.4)), MAT.stoneMid);
+    notch.position.set(x, RIM_DROP + 0.2, z);
+    notch.rotation.y = theta;
+    water.add(notch);
+
+    // La lame : elle s'élargit et s'amincit en tombant.
+    const blade = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.9, 1.9, length, 7, 1, true),
+      FALL
+    );
+    blade.position.set(x, RIM_DROP - length / 2 + 0.4, z);
+    water.add(blade);
+
+    // L'écume au point de rupture.
+    const crest = new THREE.Mesh(faceted(new THREE.IcosahedronGeometry(1.7, 0)), FOAM);
+    crest.position.set(x, RIM_DROP - 0.2, z);
+    crest.scale.set(1.3, 0.7, 1.3);
+    water.add(crest);
+
+    // La brume, en trois paquets de plus en plus larges et de plus en plus
+    // transparents : c'est le dégradé, pas la forme, qui fait l'évaporation.
+    for (let k = 0; k < 3; k++) {
+      const t = (k + 1) / 3;
+      const mist = new THREE.Mesh(
+        faceted(new THREE.IcosahedronGeometry(2.6 + t * 4.5, 1)),
+        new THREE.MeshBasicMaterial({
+          color: C.foam, transparent: true, opacity: 0.2 * (1 - t * 0.7), depthWrite: false,
+        })
+      );
+      mist.position.set(
+        x + (random() - 0.5) * 2,
+        RIM_DROP - length * (0.55 + t * 0.42),
+        z + (random() - 0.5) * 2
+      );
+      mist.scale.set(1.5, 0.75, 1.5);
+      water.add(mist);
+    }
+  }
+}
+
+/* --- Le cristal, à la pointe --------------------------------------------- */
+
+const crystal = new THREE.Mesh(
+  faceted(new THREE.OctahedronGeometry(6, 0)),
+  new THREE.MeshBasicMaterial({ color: C.crystalPale })
+);
+crystal.position.y = -34;
+crystal.scale.set(1, 1.9, 1);
+island.add(crystal);
+
+const halo = new THREE.Mesh(
+  new THREE.OctahedronGeometry(11, 0),
+  new THREE.MeshBasicMaterial({
+    color: C.crystal, transparent: true, opacity: 0.28, depthWrite: false,
+  })
+);
+halo.position.y = -34;
+halo.scale.set(1, 1.9, 1);
+island.add(halo);
+
+/* -------------------------------------------------------------- l'arbre */
+
+const tree = new THREE.Group();
+tree.position.y = 7.2;
+island.add(tree);
+
+{
+  const random = seeded(0xa71c);
+  const trunkH = TREE_TOP - 7.2 - 5;
+
+  const trunk = new THREE.Mesh(
+    faceted(new THREE.CylinderGeometry(2.2, 5.4, trunkH, 10)),
+    MAT.bark
+  );
+  trunk.position.y = trunkH / 2;
+  tree.add(trunk);
+
+  // Les racines s'agrippent à la maçonnerie de la rotonde : c'est ce geste, et
+  // pas la taille du tronc, qui dit que l'arbre a mangé la forteresse.
+  for (let i = 0; i < 8; i++) {
+    const theta = (i / 8) * Math.PI * 2 + 0.2;
+    const points = [];
+    for (let k = 0; k <= 8; k++) {
+      const t = k / 8;
+      const radius = 2.6 + t * 9.5;
+      points.push(new THREE.Vector3(
+        Math.sin(theta + t * 0.35) * radius,
+        4.2 * (1 - t) * (1 - t) - t * 0.3,
+        Math.cos(theta + t * 0.35) * radius
+      ));
+    }
+    const root = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 18, 0.85, 5, false);
+    tree.add(new THREE.Mesh(faceted(root), MAT.bark));
+  }
+
+  // Couronne large et étagée : à cette hauteur, une boule serait une sucette.
+  const blobs = [
+    [0, trunkH + 2.6, 0, 9.2, MAT.leaf],
+    [-8.4, trunkH + 0.4, 3.8, 6.2, MAT.leafDark],
+    [7.8, trunkH + 0.9, -4.2, 6.6, MAT.leaf],
+    [2.6, trunkH - 0.6, 8.2, 5.8, MAT.leafDark],
+    [-3.2, trunkH + 4.2, -6.8, 5.4, MAT.leaf],
+    [4.4, trunkH + 4.8, 3.0, 5.0, MAT.leafDark],
+  ];
+  for (const [x, y, z, s, material] of blobs) {
+    const blob = new THREE.Mesh(faceted(new THREE.IcosahedronGeometry(s, 1)), material);
+    blob.position.set(x, y, z);
+    blob.scale.y = 0.58;
+    blob.rotation.y = random() * Math.PI;
+    tree.add(blob);
+  }
+}
+
+/* --- Nuages et éclats ----------------------------------------------------- */
+
+const drift = new THREE.Group();
+scene.add(drift);
+
+{
+  const random = seeded(0xc10d);
+  for (let i = 0; i < 18; i++) {
+    const theta = (i / 18) * Math.PI * 2 + random();
+    const radius = 140 + random() * 230;
+    const cloud = new THREE.Mesh(
+      faceted(new THREE.IcosahedronGeometry(12 + random() * 18, 1)),
+      toon({ color: C.cloud, transparent: true, opacity: 0.4 })
+    );
+    cloud.position.set(Math.sin(theta) * radius, -62 - random() * 110, Math.cos(theta) * radius);
+    cloud.scale.set(2.1, 0.32, 1.8);
+    drift.add(cloud);
+  }
+  for (let i = 0; i < 8; i++) {
+    const theta = (i / 8) * Math.PI * 2 + random();
+    const radius = 86 + random() * 78;
+    const shard = new THREE.Mesh(
+      faceted(new THREE.IcosahedronGeometry(2 + random() * 4.5, 0)),
+      toon({ color: C.rock })
+    );
+    shard.position.set(Math.sin(theta) * radius, -20 + random() * 34, Math.cos(theta) * radius);
+    shard.scale.y = 0.6;
+    drift.add(shard);
+  }
+}
+
+/* --- Calque « échelle » --------------------------------------------------- */
+
+const scaleGroup = new THREE.Group();
+island.add(scaleGroup);
+
+{
+  const hero = new THREE.Mesh(
+    faceted(new THREE.CapsuleGeometry(0.34, 0.92, 4, 10)),
+    new THREE.MeshBasicMaterial({ color: 0xfff4d6 })
+  );
+  hero.position.set(0, 0.8, ARRIVAL_Z);
+  scaleGroup.add(hero);
+
+  // La pagode de Nakano, dix unités : l'étalon que le joueur connaît déjà, et
+  // le seul moyen de juger si l'enceinte est à la bonne échelle.
+  const pagoda = new THREE.Group();
+  const spot = ground(45, -0.28);
+  pagoda.position.copy(spot);
+  pagoda.rotation.y = 0.5;
+  const roof = toon({ color: 0x2f4d5e });
+  const lacquer = toon({ color: 0xc4402f });
+
+  const podium = new THREE.Mesh(faceted(new THREE.BoxGeometry(4.2, 0.5, 4.2)), toon({ color: 0xc6b995 }));
+  podium.position.y = 0.25;
+  pagoda.add(podium);
+
+  for (let i = 0; i < 4; i++) {
+    const half = 1.7 - i * 0.26;
+    const shaft = new THREE.Mesh(faceted(new THREE.BoxGeometry(half * 1.7, 1.55, half * 1.7)), lacquer);
+    shaft.position.y = 1.28 + i * 2.15;
+    pagoda.add(shaft);
+    const eave = new THREE.Mesh(faceted(new THREE.ConeGeometry(half * 1.95, 0.95, 4)), roof);
+    eave.position.y = 2.42 + i * 2.15;
+    eave.rotation.y = Math.PI / 4;
+    pagoda.add(eave);
+  }
+  const spire = new THREE.Mesh(faceted(new THREE.ConeGeometry(0.28, 1.5, 6)), toon({ color: 0xd9a441 }));
+  spire.position.y = 10.1;
+  pagoda.add(spire);
+  scaleGroup.add(pagoda);
+}
+
+/* --- Le portail d'arrivée ------------------------------------------------- */
+
+{
+  const gate = new THREE.Group();
+  gate.position.set(0, 0, ARRIVAL_Z + 4.5);
+  const ring = new THREE.Mesh(
+    faceted(new THREE.TorusGeometry(1.8, 0.24, 5, 24)),
+    toon({ color: 0x3a2f4e, emissive: C.crystal, emissiveIntensity: 1.7 })
+  );
+  ring.position.y = 2.5;
+  gate.add(ring);
+  // Le seuil reste franchement translucide : à seize unités de la caméra, il
+  // occupe un bon quart de l'image, et un violet opaque masquerait la porte et
+  // les vestiges — c'est-à-dire tout ce que cette vue existe pour montrer.
+  const veil = new THREE.Mesh(
+    new THREE.CircleGeometry(1.74, 32),
+    new THREE.MeshBasicMaterial({
+      color: C.crystal, transparent: true, opacity: 0.32, side: THREE.DoubleSide, depthWrite: false,
+    })
+  );
+  veil.position.y = 2.5;
+  gate.add(veil);
+  island.add(gate);
+}
+
+/* ------------------------------------------------- l'île vue du continent */
+
+/*
+  Le « double lointain » — la réponse à la question du chargement.
+
+  L'île complète pèse quelques milliers de triangles, des dizaines de matériaux,
+  de la végétation instanciée et un jeu de colliders. On ne la charge qu'au
+  franchissement du portail. Mais on veut quand même la voir depuis le
+  continent, dès l'écran de départ — et pour ça, la vraie île est inutile :
+  à six cents unités, elle n'occupe qu'une poignée de pixels de haut.
+
+  On en fabrique donc une **silhouette** : le même relief, échantillonné cinq
+  fois plus grossièrement, la masse des vestiges réduite à quelques boîtes, la
+  couronne de l'arbre à deux boules. Tout est fondu en une seule géométrie à
+  couleurs par sommet — donc **un seul appel de dessin, une seule fois**, pour
+  un objet qui ne bouge pas, ne s'anime pas et n'a pas de physique.
+
+  La brume est **cuite dans les couleurs** au lieu d'être laissée au brouillard
+  de la scène : celui du jeu sature à 200 unités, il avalerait complètement une
+  île posée à 600. On mélange donc chaque couleur vers le bleu d'horizon, dans
+  la proportion qu'aurait donnée la perspective atmosphérique. C'est la vieille
+  recette des fonds de décor peints, et elle coûte zéro.
+*/
+
+/**
+ * Déplie une géométrie et lui donne une couleur par sommet, brume comprise.
+ *
+ * Les attributs sont **ramenés à position + normal + color**, et ce n'est pas
+ * du ménage : `mergeGeometries` refuse un lot où certaines pièces portent un
+ * `uv` et d'autres non. Les primitives de three en ont un, les surfaces
+ * radiales construites plus haut n'en ont pas, et aucune des deux n'en a besoin
+ * ici — rien de tout ça n'est texturé.
+ */
+function tint(geometry, color, haze) {
+  const flat = geometry.index ? geometry.toNonIndexed() : geometry;
+  flat.computeVertexNormals();
+  for (const name of Object.keys(flat.attributes)) {
+    if (name !== 'position' && name !== 'normal') flat.deleteAttribute(name);
+  }
+  const shaded = mix(color, C.glow, haze);
+  const count = flat.attributes.position.count;
+  const colors = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    colors[i * 3] = shaded.r;
+    colors[i * 3 + 1] = shaded.g;
+    colors[i * 3 + 2] = shaded.b;
+  }
+  flat.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  return flat;
+}
+
+function buildImpostor() {
+  const parts = [];
+  const SECT = 26;   // contre 128 sur la vraie île
+  const RINGS = 10;  // contre 64
+
+  for (const under of [false, true]) {
+    const positions = [];
+    const indices = [];
+    for (let ring = 0; ring <= RINGS; ring++) {
+      const t = under ? 1 - ring / RINGS : ring / RINGS;
+      for (let s = 0; s <= SECT; s++) {
+        const theta = (s / SECT) * Math.PI * 2;
+        const r = under ? underRadius(t, theta) : t * rimRadius(theta);
+        const y = under ? underHeight(t, theta) : topHeight(r, theta) + surfaceRelief(r, theta);
+        positions.push(Math.sin(theta) * r, y, Math.cos(theta) * r);
+      }
+    }
+    const stride = SECT + 1;
+    for (let ring = 0; ring < RINGS; ring++) {
+      for (let s = 0; s < SECT; s++) {
+        const a = ring * stride + s;
+        const b = a + stride;
+        if (under) indices.push(a, a + 1, b, a + 1, b + 1, b);
+        else indices.push(a, b, a + 1, b, b + 1, a + 1);
+      }
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    // La roche du dessous est plus brumée que la pelouse du dessus : elle est
+    // plus loin de la lumière et l'œil l'attend plus sombre et plus bleue.
+    parts.push(tint(geometry, under ? C.rock : C.lawn, under ? 0.62 : 0.46));
+  }
+
+  // La masse bâtie : sept boîtes, pas une de plus. À cette distance, ce qui se
+  // lit d'une forteresse c'est sa découpe contre le ciel, pas ses arcades.
+  const massing = [
+    [0, 9.0, 0, 14, 9, 14],
+    [0, 15.5, 0, 6, 8, 6],
+    [-9, 6.2, 7, 5, 5, 5],
+    [10, 7.4, -6, 4.5, 8, 4.5],
+    [26, 5.4, 10, 5, 4, 5],
+    [-24, 5.0, -14, 4, 3.4, 4],
+    [8, 5.2, 27, 4, 3, 4],
+  ];
+  for (const [x, y, z, w, h, d] of massing) {
+    const box = new THREE.BoxGeometry(w, h, d).translate(x, y, z);
+    parts.push(tint(box, C.stone, 0.5));
+  }
+
+  // La flèche dorée reste dorée : c'est le seul point de l'île qui accroche la
+  // lumière d'assez loin pour valoir son triangle.
+  parts.push(tint(
+    new THREE.ConeGeometry(2, 5, 5).translate(10, 15, -6),
+    C.gold, 0.35
+  ));
+
+  // La couronne de l'arbre : deux boules aplaties.
+  for (const [x, y, z, s] of [[0, 23, 0, 11], [-6, 20, 5, 7.5]]) {
+    const blob = new THREE.IcosahedronGeometry(s, 0);
+    blob.scale(1, 0.6, 1);
+    blob.translate(x, y, z);
+    parts.push(tint(blob, C.leaf, 0.42));
+  }
+
+  const merged = mergeGeometries(parts);
+  merged.computeVertexNormals();
+  return merged;
+}
+
+/**
+ * Le décor de démonstration : un bout de continent, et l'île au loin.
+ *
+ * Posé très à l'écart de la vraie île pour qu'aucune des deux ne se retrouve
+ * dans le cadre de l'autre. Il n'existe que pour cette vue.
+ */
+const farScene = new THREE.Group();
+farScene.visible = false;
+scene.add(farScene);
+
+/** Distance et altitude de l'île, dans ce décor. Voir la section « au loin ». */
+const FAR_DISTANCE = 500;
+const FAR_ALTITUDE = 38;
+const FAR_ORIGIN = new THREE.Vector3(1400, -600, 1400);
+
+/**
+ * Relief du continent de démonstration, en coordonnées locales.
+ *
+ * Deux échelles de bosses, une crête qui monte au loin, et un affaissement sur
+ * les bords pour que le disque ne se termine pas par une falaise. La crête est
+ * la pièce qui compte : sans elle l'horizon est une droite, et une droite ne
+ * donne aucune profondeur — donc aucune échelle à l'île posée au-dessus.
+ */
+function farRelief(lx, lz) {
+  const d = Math.hypot(lx, lz);
+  const hills = noise(lx * 0.012, lz * 0.012) * 4 + noise(lx * 0.045, lz * 0.045) * 1.2;
+  const ridge = smoothstep(180, 380, -lz) * 17 * (0.6 + noise(lx * 0.02, 3.1) * 0.4);
+  return hills + ridge - smoothstep(280, 380, d) * 6;
+}
+
+{
+  const impostor = new THREE.Mesh(
+    buildImpostor(),
+    // `fog: false` : le brouillard du jeu sature à 200 unités, il effacerait
+    // l'île. Sa brume est déjà peinte dans ses couleurs.
+    new THREE.MeshToonMaterial({ gradientMap: gradient, vertexColors: true, fog: false })
+  );
+  // Décalée de 90 unités vers l'est, donc hors de l'axe de marche : une île
+  // posée pile au centre du cadre se lit comme une cible de visée. Un peu de
+  // côté, elle appartient au paysage — et le joueur tourne la tête pour la
+  // garder en vue, ce qui est exactement le mouvement qu'on veut lui donner.
+  impostor.position.set(
+    FAR_ORIGIN.x + 90,
+    FAR_ORIGIN.y + FAR_ALTITUDE,
+    FAR_ORIGIN.z - FAR_DISTANCE
+  );
+  farScene.add(impostor);
+
+  /*
+    Le sol du continent, **avec son relief**.
+
+    Un disque parfaitement plat donnait une ligne d'horizon au cordeau et un
+    aplat vert sur les deux tiers de l'image : rien ne disait à l'œil que l'île
+    est *haut* plutôt que *petite*. Il faut du relief au premier plan et une
+    crête au loin pour que la distance se lise, et c'est aussi ce que le vrai
+    continent offrira — son terrain est un champ de hauteur, pas une table.
+  */
+  const random = seeded(0x77b1);
+  const groundGeometry = new THREE.PlaneGeometry(760, 760, 44, 44).rotateX(-Math.PI / 2);
+  {
+    const position = groundGeometry.attributes.position;
+    for (let i = 0; i < position.count; i++) {
+      position.setY(i, farRelief(position.getX(i), position.getZ(i)));
+    }
+    groundGeometry.computeVertexNormals();
+  }
+  const groundMesh = new THREE.Mesh(groundGeometry, toon({ color: C.lawn }));
+  groundMesh.position.copy(FAR_ORIGIN);
+  farScene.add(groundMesh);
+
+  for (let i = 0; i < 52; i++) {
+    const lx = (random() - 0.5) * 300;
+    const lz = -10 - random() * 280;
+    const scale = 1 + random() * 1.3;
+    // Les arbres se posent sur le relief, comme tout le reste du projet : rien
+    // n'a de droit à flotter parce qu'il est loin.
+    const y = FAR_ORIGIN.y + farRelief(lx, lz);
+    const x = FAR_ORIGIN.x + lx;
+    const z = FAR_ORIGIN.z + lz;
+
+    const trunk = new THREE.Mesh(
+      faceted(new THREE.CylinderGeometry(0.3 * scale, 0.5 * scale, 3 * scale, 6)),
+      MAT.bark
+    );
+    trunk.position.set(x, y + 1.5 * scale, z);
+    farScene.add(trunk);
+    const crown = new THREE.Mesh(
+      faceted(new THREE.IcosahedronGeometry(1.9 * scale, 0)),
+      random() < 0.5 ? MAT.leaf : MAT.leafDark
+    );
+    crown.position.set(x, y + 4.2 * scale, z);
+    crown.scale.y = 0.7;
+    farScene.add(crown);
+  }
+
+  // Quelques nuages entre les deux : c'est la couche de brume qui sépare le sol
+  // du ciel, et qui fait lire l'île comme flottant *au-dessus* de quelque chose.
+  for (let i = 0; i < 12; i++) {
+    const cloud = new THREE.Mesh(
+      faceted(new THREE.IcosahedronGeometry(20 + random() * 26, 1)),
+      new THREE.MeshToonMaterial({
+        gradientMap: gradient, color: C.cloud, transparent: true, opacity: 0.3, fog: false,
+      })
+    );
+    cloud.position.set(
+      FAR_ORIGIN.x + (random() - 0.5) * 700,
+      FAR_ORIGIN.y + 16 + random() * 34,
+      FAR_ORIGIN.z - 300 - random() * 500
+    );
+    cloud.scale.set(2.4, 0.3, 2);
+    farScene.add(cloud);
+  }
+}
+
+/* ---------------------------------------------------------------- vues */
+
+const VIEWS = {
+  player: {
+    label: "Vue joueur — caméra du jeu : FOV 48, 11 de haut pour 21 de recul.<br>Le portail dépose ici, la porte est dans l'axe, l'arbre au-dessus.",
+    position: new THREE.Vector3(0, 11, ARRIVAL_Z + 21),
+    target: new THREE.Vector3(0, 5.5, ARRIVAL_Z - 4),
+    fov: 48, spin: false,
+  },
+  gate: {
+    label: "La porte — arche de <b>3,4</b> de passage, deux tours de flanquement<br>dont une arasée. Mur de <b>5</b>, crevé de brèches qui sont aussi des passages.",
+    position: new THREE.Vector3(6, 12, 54),
+    target: new THREE.Vector3(0, 5.5, 30),
+    fov: 40, spin: false,
+  },
+  court: {
+    label: "La rotonde — dix piliers, deux travées tombées, coupole ouverte.<br>L'arbre est sorti par la brèche, ses racines tiennent la maçonnerie.",
+    position: new THREE.Vector3(21, 16, 23),
+    target: new THREE.Vector3(0, 11, 0),
+    fov: 46, spin: true,
+  },
+  overview: {
+    label: "Vue d'ensemble — <b>110</b> de diamètre, trois terrasses,<br>socle de <b>46</b> sous la lèvre.",
+    position: new THREE.Vector3(104, 38, 116),
+    target: new THREE.Vector3(0, -6, 0),
+    fov: 42, spin: true,
+  },
+  under: {
+    label: "Dessous — le socle, les racines qui l'enlacent, les lianes qui<br>débordent de la lèvre, et le cristal à <b>−34</b> dans la pointe.",
+    position: new THREE.Vector3(86, -50, 104),
+    target: new THREE.Vector3(0, -24, 0),
+    fov: 44, spin: true,
+  },
+  continent: {
+    label: `Vue du continent — la silhouette, à <b>${FAR_DISTANCE}</b> unités et <b>${FAR_ALTITUDE}</b> de haut.<br>Une géométrie, un appel de dessin : ce qu'on charge à l'écran de départ.`,
+    // La caméra du jeu, posée sur le relief du continent : 11 de haut, 21 de
+    // recul, visée relevée à 4,5 — les cotes de `CAMERA` et rien d'autre.
+    position: new THREE.Vector3(
+      FAR_ORIGIN.x,
+      FAR_ORIGIN.y + farRelief(0, 21) + 11,
+      FAR_ORIGIN.z + 21
+    ),
+    target: new THREE.Vector3(FAR_ORIGIN.x, FAR_ORIGIN.y + farRelief(0, 0) + 4.5, FAR_ORIGIN.z),
+    fov: 48, spin: false, far: true,
+  },
+};
+
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function applyView(name) {
+  const view = VIEWS[name];
+  // Les deux décors ne coexistent jamais à l'écran : celui du continent est à
+  // deux mille unités de l'autre, et les montrer ensemble n'apprendrait rien.
+  island.visible = !view.far;
+  drift.visible = !view.far;
+  farScene.visible = !!view.far;
+  camera.fov = view.fov;
+  camera.position.copy(view.position);
+  camera.updateProjectionMatrix();
+  controls.target.copy(view.target);
+  // La rotation lente n'existe que sur les vues libres : sur la vue joueur et
+  // sur la porte, le cadrage *est* l'information.
+  controls.autoRotate = view.spin && !reduceMotion;
+  controls.update();
+  readout.innerHTML = view.label;
+
+  for (const button of document.querySelectorAll('[data-view]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.view === name));
+  }
+}
+
+for (const button of document.querySelectorAll('[data-view]')) {
+  button.addEventListener('click', () => applyView(button.dataset.view));
+}
+
+controls.addEventListener('start', () => { controls.autoRotate = false; });
+
+const LAYERS = { ruins, flora, tree, scale: scaleGroup };
+
+for (const button of document.querySelectorAll('[data-layer]')) {
+  button.addEventListener('click', () => {
+    const target = LAYERS[button.dataset.layer];
+    target.visible = !target.visible;
+    button.setAttribute('aria-pressed', String(target.visible));
+  });
+}
+
+/* ------------------------------------------------------------ boucle */
+
+function resize() {
+  const width = viewer.clientWidth;
+  const height = viewer.clientHeight;
+  if (!width || !height) return;
+  renderer.setSize(width, height, false);
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+}
+
+new ResizeObserver(resize).observe(viewer);
+resize();
+applyView('player');
+loading.remove();
+
+let previous = performance.now();
+
+function frame(now) {
+  const delta = Math.min((now - previous) / 1000, 0.05);
+  previous = now;
+
+  if (!reduceMotion) {
+    drift.rotation.y += delta * 0.01;
+    crystal.rotation.y += delta * 0.3;
+    halo.rotation.y -= delta * 0.18;
+  }
+
+  controls.update();
+  // Ciel et étoiles suivent l'observateur : voir l'en-tête du dôme.
+  sky.position.copy(camera.position);
+  stars.position.copy(camera.position);
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>

@@ -1,11 +1,8 @@
-import { useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { useKeyboardControls } from '@react-three/drei'
 import { CHESTS } from '../../config/chests'
-import type { Control } from '../../config/controls'
 import { LANDMARKS } from '../../config/landmarks'
+import { PORTAL } from '../../config/portal'
 import { playerTransform } from '../../state/playerTransform'
-import { triggerInteraction } from '../../store/interaction'
 import { useGameStore } from '../../store/useGameStore'
 import type { ChestId, LandmarkId } from '../../types/game'
 import { Pagoda } from './Pagoda'
@@ -85,37 +82,17 @@ function LandmarkProximity() {
   return null
 }
 
-/** Ouverture et fermeture du panneau d'un lieu, à la touche d'interaction. */
-function LandmarkInteraction() {
-  const [subscribeKeys] = useKeyboardControls<Control>()
-
-  useEffect(
-    () =>
-      subscribeKeys(
-        (state) => state.interact,
-        (pressed) => {
-          if (!pressed) return
-          // Abonnement et non sondage dans `useFrame` : un appui plus court
-          // qu'une frame serait perdu. C'est le piège déjà payé sur le saut et
-          // sur l'attaque, et il ne coûte rien de ne pas le repayer.
-          const store = useGameStore.getState()
-          if (store.phase === 'playing') {
-            // Une seule source de vérité pour « que fait la touche ici ? »,
-            // partagée avec le bouton tactile et l'invite du HUD.
-            triggerInteraction()
-          } else if (store.phase === 'paused' && store.teleporting === null) {
-            // Pendant une téléportation, `phase === 'paused'` ne signifie pas
-            // qu'un panneau est ouvert — aucun panneau ne l'est encore. Sans
-            // ce garde, F relancerait le jeu (physique, ennemis) derrière le
-            // voile encore opaque de l'overlay de braises.
-            store.closeLandmark()
-          }
-        },
-      ),
-    [subscribeKeys],
-  )
-
-  return null
+/**
+ * Le portail du continent : celui qui s'ouvre quand la carte est vidée.
+ *
+ * Un composant d'une ligne, mais il porte l'abonnement à `portalOpenedAt` — et
+ * c'est tout son intérêt. Le mettre dans `<Landmarks>` ferait re-rendre les six
+ * monuments et les quatre coffres à l'ouverture du portail ; ici, le re-rendu ne
+ * touche que lui.
+ */
+function ContinentPortal() {
+  const openedAt = useGameStore((state) => state.portalOpenedAt)
+  return <Portal at={PORTAL} openedAt={openedAt} />
 }
 
 /** Tous les monuments de la carte, leurs coffres, et la logique de proximité. */
@@ -133,7 +110,7 @@ export function Landmarks() {
           qui se trouve posé devant. Les mélanger ferait dépendre la géométrie
           du temple de l'état du jeu. Même raison que les coffres, juste en
           dessous. */}
-      <Portal />
+      <ContinentPortal />
       {/* Les coffres sont posés en coordonnées monde, dérivées du repère de
           leur monument (voir `config/chests.ts`) : ils sont donc montés ici, à
           plat, et non à l'intérieur du composant du monument qui les porte. */}
@@ -141,7 +118,6 @@ export function Landmarks() {
         <TreasureChest key={chest.id} chest={chest} />
       ))}
       <LandmarkProximity />
-      <LandmarkInteraction />
     </>
   )
 }

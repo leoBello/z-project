@@ -1,9 +1,11 @@
-import { useMemo, useRef } from 'react'
+import { Suspense, lazy, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Object3D, type DirectionalLight } from 'three'
 import { playerTransform } from '../state/playerTransform'
+import { useGameStore } from '../store/useGameStore'
 import { useQualityStore } from '../store/useQualityStore'
 import { Bridge } from './environment/Bridge'
+import { SkyIslandDistant } from './environment/SkyIslandDistant'
 import { Landmarks } from './environment/Landmarks'
 import { Terrain } from './environment/Terrain'
 import { Vegetation } from './environment/Vegetation'
@@ -94,19 +96,67 @@ function Lighting() {
   )
 }
 
-/** Décor complet : ciel, lumières, relief, mer, végétation et monuments. */
+/**
+ * L'Île Céleste, chargée à la demande.
+ *
+ * `lazy` et non un import direct : c'est ce qui fait de tout le sous-arbre de
+ * l'île un fragment de bundle à part, que l'accueil du site ne télécharge
+ * jamais.
+ *
+ * **Elle a sa propre frontière `<Suspense>`, et c'est indispensable.** Celle
+ * d'`App.tsx` entoure toute la scène — joueur et physique compris. Y laisser
+ * l'île suspendre détachait donc le sous-arbre entier : `playerBody.current`
+ * repassait à `null`, la position que la transition venait d'écrire tombait
+ * dans le vide, et le `<RigidBody>` du joueur se recréait à la valeur littérale
+ * de sa prop, `PLAYER.spawn`. Le joueur arrivait au centre du continent alors
+ * qu'il venait d'entrer dans le ciel, tombait, et le filet de sécurité le
+ * ramenait au portail — d'où l'impression que « la position change puis
+ * revient ».
+ *
+ * Le défaut ne se voyait **que dans un sens** : le retour vers le continent ne
+ * charge rien en différé, donc rien n'y suspend. C'est ce qui le rendait
+ * difficile à lire.
+ */
+const SkyIsland = lazy(() => import('./skyisland/SkyIsland'))
+
+/**
+ * Décor complet de la carte courante.
+ *
+ * Le ciel et les lumières sont **hors du branchement** : les deux cartes
+ * partagent le même firmament et le même soleil, et c'est voulu — l'île flotte
+ * dans le ciel du continent, pas dans un autre. Les monter deux fois les
+ * recréerait à chaque voyage pour un résultat identique.
+ *
+ * Tout le reste change en bloc. Il n'y a délibérément aucune pièce commune au
+ * sol : le continent est un champ de hauteurs sur grille carrée, l'île une
+ * surface radiale avec un dessous — et un champ de hauteurs ne peut pas
+ * représenter un surplomb. Voir la spec de l'île pour le détail.
+ */
 export function Environment() {
+  const location = useGameStore((state) => state.location)
+
   return (
     <>
       <StarrySky />
       <Lighting />
-      <Terrain />
-      <Water />
-      <Vegetation />
-      {/* Monté hors de `Landmarks` : le pont n'est le parvis d'aucun monument,
-          c'est une pièce du relief au même titre que la mer. */}
-      <Bridge />
-      <Landmarks />
+      {location === 'continent' ? (
+        <>
+          <Terrain />
+          <Water />
+          <Vegetation />
+          {/* Monté hors de `Landmarks` : le pont n'est le parvis d'aucun
+              monument, c'est une pièce du relief au même titre que la mer. */}
+          <Bridge />
+          <Landmarks />
+          {/* Montée avec le continent et jamais avec l'île : quand on y est,
+              on est dessus. */}
+          <SkyIslandDistant />
+        </>
+      ) : (
+        <Suspense fallback={null}>
+          <SkyIsland />
+        </Suspense>
+      )}
     </>
   )
 }

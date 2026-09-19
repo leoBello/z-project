@@ -31,7 +31,13 @@
     "portal": {
       "kicker": "La carte est vide",
       "name": "Un portail s'ouvre au Temple de Nakano",
-      "hint": "Une lueur violette, tournée vers une île céleste"
+      "hint": "Une lueur violette, tournée vers une île céleste",
+      "action": "Franchir le portail",
+      "back": "Revenir sur le continent"
+    },
+    "maps": {
+      "continent": "Continent",
+      "sky": "Île Céleste"
     },
     "quality": {
       "label": "Qualité graphique",

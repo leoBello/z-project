@@ -1264,6 +1264,91 @@ canvas {
   }
 }
 
+/* --- Voile de braises du voyage entre cartes -------------------------------- */
+
+/*
+  Le même vocabulaire que la téléportation entre monuments, mais en **deux
+  phases** au lieu d'une ligne de temps fermée.
+
+  `TeleportOverlay` sait d'avance combien de temps dure son voyage : ses
+  `@keyframes` couvrent, déplacent et découvrent en 1 800 ms. Le passage d'une
+  carte à l'autre ne le sait pas — il faut attendre que le fragment de l'île
+  arrive, que React démonte le continent, et qu'une image de la carte d'arrivée
+  ait réellement été dessinée. L'animation ne peut donc pas porter la fin de
+  l'attente : elle couvre, elle s'arrête là (`forwards`), et c'est React qui
+  déclenche le retrait en changeant la classe.
+*/
+.ember-veil {
+  position: fixed;
+  inset: 0;
+  /* Bloque les clics pendant le voyage — redondant avec le garde du store, mais
+     évite aussi de cliquer un bouton du HUD caché dessous. */
+  pointer-events: auto;
+}
+
+.ember-veil__veil {
+  position: absolute;
+  inset: 0;
+  /* Même teinte que le fond de `.gameover` et du voile de téléportation : les
+     trois écrans qui interrompent le jeu doivent se reconnaître entre eux. */
+  background: #0a100c;
+  animation: ember-veil-cover var(--ember-phase) ease-in-out forwards;
+}
+
+.ember-veil__ember {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #f5dc95;
+  box-shadow: 0 0 8px 2px rgba(245, 220, 149, 0.75);
+  animation: ember-veil-gather var(--ember-phase) ease-in-out forwards;
+}
+
+/* Les braises se regroupent au centre pendant que le voile monte. */
+@keyframes ember-veil-cover {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ember-veil-gather {
+  from { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.6); }
+  60% { opacity: 1; }
+  to { opacity: 1; transform: translate(0, 0) scale(1.4); }
+}
+
+/* Et repartent se disperser quand il se retire. */
+.ember-veil--revealing .ember-veil__veil {
+  animation-name: ember-veil-reveal;
+}
+
+.ember-veil--revealing .ember-veil__ember {
+  animation-name: ember-veil-scatter;
+}
+
+@keyframes ember-veil-reveal {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes ember-veil-scatter {
+  from { opacity: 1; transform: translate(0, 0) scale(1.4); }
+  to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.6); }
+}
+
+/*
+  Mouvement réduit : le voile se pose et se retire presque instantanément, et
+  les braises ne se déplacent plus. Il n'est pas supprimé — il porte
+  l'information « on change de monde », et sans lui la carte se remplacerait
+  d'un coup, sans rien pour l'expliquer.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .ember-veil__veil { animation-duration: 120ms; }
+  .ember-veil__ember { display: none; }
+}
+
 /* Voile et carte identiques à ceux du portfolio : les deux écrans modaux du jeu
    se reconnaissent à leur cadre avant de se lire. */
 .gameover {
