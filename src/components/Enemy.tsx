@@ -20,6 +20,7 @@ import {
   HIT_STOP_MS,
 } from '../config/enemies'
 import { playDefeat, playHit } from '../audio/sfx'
+import { killRadius } from '../config/annihilation'
 import { ATTACK } from '../config/gameplay'
 import { sampleHeight } from '../config/world'
 import { playerTransform } from '../state/playerTransform'
@@ -137,28 +138,64 @@ function damageEnemy(
 
   if (state.hp > 0) return false
 
-  state.state = 'dead'
-  state.deathAt = now
-  state.popped = false
-  // Le tirage se fait ici, à l'instant de la mort, et avec `Math.random` et non
-  // la graine du monde — une graine fixe rendrait les lâchers identiques à
-  // chaque partie, et le joueur apprendrait quels ennemis « donnent » un cœur.
-  // Seul le lâcher est différé, jusqu'au pic de la détente.
-  state.dropsHeart = Math.random() < HEART_DROP_CHANCE
-  useGameStore.getState().registerKill()
+  killEnemy(
+    state,
+    spawnId,
+    now,
+    // Le tirage se fait ici, à l'instant de la mort, et avec `Math.random` et
+    // non la graine du monde — une graine fixe rendrait les lâchers identiques
+    // à chaque partie, et le joueur apprendrait quels ennemis « donnent » un
+    // cœur. Seul le lâcher est différé, jusqu'au pic de la détente.
+    Math.random() < HEART_DROP_CHANCE,
+  )
 
   // Les trois retours qui font la différence entre « l'ennemi a disparu » et
   // « je l'ai eu ». Tous trois chronométrés en temps réel : ils doivent jouer
   // pendant le gel, qui est le moment où ils portent.
+  //
+  // Ils sont **hors de `killEnemy`**, et c'est le point de la séparation :
+  // l'onde d'annihilation tue vingt-six ennemis en moins de deux secondes, et
+  // trois gels de 80 ms enchaînés par mort fige l'horloge de jeu presque en
+  // continu — donc fige l'onde elle-même, qui se mesure sur cette horloge. Un
+  // coup d'épée est un événement, une frappe nucléaire en est un aussi : elle
+  // a droit à *un* gel et à *une* secousse, pas à vingt-six.
   playDefeat()
   hitStop(HIT_STOP_MS)
   shake(DEATH_SHAKE_AMPLITUDE, DEATH_SHAKE_MS)
+
+  return true
+}
+
+/**
+ * Bascule un ennemi dans l'état mort — la comptabilité, sans les retours.
+ *
+ * Deux appelants : le coup qui porte (`damageEnemy`, juste au-dessus) et l'onde
+ * d'annihilation. Ils ne partagent pas les effets — l'un claque, l'autre
+ * balaie — mais ils doivent partager *exactement* ce qui suit, sous peine
+ * d'avoir un ennemi mort pour le joueur et vivant pour la minimap, ou un
+ * compteur de victimes qui n'atteint jamais le total qui ouvre le portail.
+ *
+ * Ne joue rien et ne fige rien : l'animation de mort est pilotée par
+ * `state.deathAt` dans la boucle du composant, elle n'a besoin de personne.
+ */
+function killEnemy(
+  state: EnemyRuntime,
+  spawnId: string,
+  now: number,
+  dropsHeart: boolean,
+) {
+  state.state = 'dead'
+  state.deathAt = now
+  state.popped = false
+  state.dropsHeart = dropsHeart
+  useGameStore.getState().registerKill()
 
   // Le registre doit dire « mort » dès l'instant du coup fatal, et pas seulement
   // à la frame suivante comme avant : la branche de mort passe désormais avant
   // `updateEnemyMarker`, qu'elle n'atteint donc jamais. Sans ça, le calque de
   // combat continue de dessiner la barre de vie sur un corps qui s'étire et
   // explose, et le renvoi de projectile peut se verrouiller sur un cadavre.
+  const marker = enemyRegistry.get(spawnId)
   if (marker) {
     marker.state = 'dead'
     marker.hp = 0
@@ -168,10 +205,8 @@ function damageEnemy(
     lastDeath.spawnId = spawnId
     lastDeath.deathAt = now
     lastDeath.poppedAt = -Infinity
-    lastDeath.dropsHeart = state.dropsHeart
+    lastDeath.dropsHeart = dropsHeart
   }
-
-  return true
 }
 
 interface EnemyProps {
@@ -294,6 +329,26 @@ export function Enemy({ spawn }: EnemyProps) {
       rb.setLinvel({ x: 0, y: rb.linvel().y, z: 0 }, false)
       if (age >= DEATH_REMOVE_MS) setRemoved(true)
       return
+    }
+
+    // --- Onde d'annihilation ------------------------------------------------
+    // Placée **avant** la garde de gel, et c'est délibéré : le rayon mortel se
+    // mesure sur l'horloge de jeu, qui ne tourne pas pendant un gel. Sous la
+    // garde, chaque mort figerait l'onde pour 80 ms — et l'onde ne progresse
+    // que parce que l'horloge avance. Elle s'arrêterait donc au premier mort.
+    //
+    // Avant le culling aussi, pour la raison symétrique : la promesse du code
+    // de triche est que *tous* les ennemis meurent, y compris ceux qui sont à
+    // l'autre bout de la carte et que le composant, autrement, n'anime plus.
+    const blast = store.annihilation
+    if (blast !== null) {
+      const reach = killRadius(now - blast.at)
+      if (Math.hypot(position.x - blast.x, position.z - blast.z) < reach) {
+        // Aucun cœur lâché : vingt-six cœurs jaillissant en même temps d'une
+        // carte qu'on vient de vider ne récompensent rien, ils encombrent.
+        killEnemy(state, spawn.id, now, false)
+        return
+      }
     }
 
     // --- Gel du coup fatal --------------------------------------------------

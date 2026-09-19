@@ -46,6 +46,8 @@ export function HUD() {
   const phase = useGameStore((state) => state.phase)
   const discovered = useGameStore((state) => state.discovered)
   const heartContainers = useGameStore((state) => state.heartContainers)
+  const annihilation = useGameStore((state) => state.annihilation)
+  const portalOpenedAt = useGameStore((state) => state.portalOpenedAt)
   const reset = useGameStore((state) => state.reset)
   const { dict } = useI18n()
   // Une seule source de vérité pour « que fait la touche ici ? », partagée avec
@@ -80,6 +82,21 @@ export function HUD() {
         ça elle ne se déclencherait qu'une seule fois sur toute la partie.
       */}
       {Number.isFinite(lastHitAt) && <div key={lastHitAt} className="hud__damage" />}
+
+      {/*
+        Embrasement de l'écran, sur le même mécanisme de `key` que le flash de
+        dégâts. Il est monté dès le *largage* et non à l'impact, et c'est le CSS
+        qui tient le calque transparent pendant les 900 ms de chute : un
+        `setTimeout` aurait couru en temps réel pendant que la bombe, elle,
+        tombe en temps de jeu — ouvrir l'inventaire en plein vol aurait suffi à
+        désynchroniser l'éclair de l'explosion.
+
+        Ce n'est pas un stroboscope : une seule montée, un seul effacement, et
+        jamais de blanc pur — l'écran monte à 88 % d'un blanc chaud puis
+        redescend en 1,4 s. Un jeu de navigateur n'a pas le droit de faire
+        clignoter un plein écran.
+      */}
+      {annihilation && <div key={annihilation.at} className="hud__blast" />}
 
       <div className="hud__top">
         {/*
@@ -120,6 +137,25 @@ export function HUD() {
         <div key={`container-${lastContainer}`} className="discovery discovery--reward">
           <span className="discovery__kicker">{dict.ui.heartContainer.kicker}</span>
           <strong className="discovery__name">{dict.ui.heartContainer.name}</strong>
+        </div>
+      )}
+
+      {/*
+        Ouverture du portail. Troisième bandeau et le plus bas des trois, mais
+        c'est le seul qui puisse tomber en même temps qu'un autre : le dernier
+        ennemi de la carte peut très bien mourir sur le parvis d'un monument
+        qu'on vient de découvrir. D'où trois hauteurs et non deux.
+
+        Il porte une ligne de plus que les autres, et elle est nécessaire : les
+        deux premiers annoncent quelque chose qui se trouve *sous les yeux du
+        joueur*, celui-ci annonce un objet apparu à l'autre bout de la carte. Le
+        nom du lieu ne suffit pas — encore faut-il dire ce qu'on y trouvera.
+      */}
+      {portalOpenedAt !== null && (
+        <div key="portal" className="discovery discovery--portal">
+          <span className="discovery__kicker">{dict.ui.portal.kicker}</span>
+          <strong className="discovery__name">{dict.ui.portal.name}</strong>
+          <span className="discovery__hint">{dict.ui.portal.hint}</span>
         </div>
       )}
 

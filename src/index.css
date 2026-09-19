@@ -220,6 +220,37 @@ canvas {
   color: #ff8d84;
 }
 
+/*
+  Variante portail : le violet de l'anneau, et la troisième hauteur.
+
+  Trois bandeaux peuvent en théorie se déclencher à quelques secondes
+  d'intervalle — abattre le dernier ennemi sur le parvis d'un monument qu'on
+  découvre, en ramassant son réceptacle, est improbable mais parfaitement
+  possible. Chacun a donc sa hauteur, et celui-ci la plus basse, parce que c'est
+  le seul dont le texte tient sur trois lignes.
+*/
+.discovery--portal {
+  top: 42%;
+  border-top-color: rgba(199, 155, 255, 0.65);
+  border-bottom-color: rgba(199, 155, 255, 0.65);
+  /* Un peu plus long que les deux autres : il porte une ligne de plus, et il
+     n'arrive qu'une fois par partie. */
+  animation-duration: 6000ms;
+}
+
+.discovery--portal .discovery__name {
+  color: #c79bff;
+  /* Le halo violet, que les deux autres bandeaux n'ont pas : c'est le seul
+     événement du jeu qui annonce un endroit où le joueur n'est pas. */
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), 0 0 18px rgba(139, 63, 240, 0.55);
+}
+
+.discovery__hint {
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  opacity: 0.75;
+}
+
 /* Apparition, palier de lecture, puis effacement — le tout en une passe pour
    n'avoir aucun état à piloter depuis React. */
 @keyframes discovery-card {
@@ -1169,6 +1200,68 @@ canvas {
 
 @media (prefers-reduced-motion: reduce) {
   .hud__damage { animation-duration: 1ms; }
+}
+
+/* --- Embrasement de l'annihilation ----------------------------------------- */
+
+/*
+  Le calque posé par le code de triche, du largage à la fin du souffle.
+
+  Il est monté dès le largage, donc **880 ms avant l'explosion**, et reste
+  transparent pendant toute la chute : c'est le palier 0 %–39 % des `@keyframes`
+  ci-dessous. C'est le CSS qui tient ce délai, et pas un `setTimeout` côté React,
+  pour la même raison que le reste de la séquence est calé sur un unique
+  horodatage — un compte à rebours de plus est un compte à rebours qui peut se
+  décaler.
+
+  Ratio à maintenir si les durées de `config/annihilation.ts` changent : 39 %
+  de 2 250 ms valent les 900 ms de `FALL_MS`.
+*/
+.hud__blast {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /*
+    Blanc **chaud** et non blanc pur : le pur brûle le bloom de la scène qu'il
+    recouvre et donne un blanc d'écran cassé plutôt qu'un blanc de lumière.
+  */
+  background: radial-gradient(
+    120% 90% at 50% 38%,
+    rgba(255, 247, 224, 1) 0%,
+    rgba(255, 205, 130, 0.9) 55%,
+    rgba(255, 150, 70, 0.75) 100%
+  );
+  opacity: 0;
+  animation: annihilation-flash 2250ms ease-out forwards;
+}
+
+/*
+  Une seule montée, un seul effacement.
+
+  Le plafond est à 0,88 et jamais à 1 : garder l'image lisible sous l'éclair
+  évite le noir-blanc-noir qui pose un risque photosensible, et le champignon
+  qui naît derrière reste deviné plutôt qu'effacé. La descente est volontairement
+  longue — c'est la rémanence de l'œil après un éclair, et c'est aussi elle qui
+  laisse le champignon se révéler au lieu d'être déjà là.
+*/
+@keyframes annihilation-flash {
+  0%, 39% { opacity: 0; }
+  42% { opacity: 0.88; }
+  60% { opacity: 0.35; }
+  100% { opacity: 0; }
+}
+
+/*
+  Mouvement réduit : l'éclair devient un voile discret qui se pose et s'efface
+  sans pic. Il n'est pas supprimé — il porte une information, l'explosion a eu
+  lieu — mais il ne dépasse plus le quart de l'opacité.
+*/
+@media (prefers-reduced-motion: reduce) {
+  @keyframes annihilation-flash {
+    0%, 39% { opacity: 0; }
+    45%, 62% { opacity: 0.22; }
+    100% { opacity: 0; }
+  }
 }
 
 /* Voile et carte identiques à ceux du portfolio : les deux écrans modaux du jeu
