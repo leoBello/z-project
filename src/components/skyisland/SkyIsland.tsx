@@ -1,6 +1,6 @@
 import { SKY_PORTAL } from '../../config/portal'
 import { Portal } from '../environment/Portal'
-import { LynelPreview } from '../enemies/LynelPreview'
+import { Lynel } from '../Lynel'
 import { Flora } from './Flora'
 import { Ruins } from './Ruins'
 import { SkyTerrain } from './Terrain'
@@ -36,8 +36,9 @@ export default function SkyIsland() {
           seraient un défaut qu'on ne verrait qu'en faisant l'aller-retour. */}
       <Portal at={SKY_PORTAL} openedAt={ALREADY_OPEN} />
 
-      {/* Provisoire — remplacé par <Lynel> à la tâche suivante. */}
-      <LynelPreview />
+      {/* Le gardien de la rotonde. Il s'inscrit lui-même au registre des
+          ennemis, donc à la minimap et au calque de combat : rien à lui passer. */}
+      <Lynel />
     </>
   )
 }

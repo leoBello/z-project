@@ -1,11 +1,13 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react'
 import type { ReactNode, RefObject } from 'react'
 import { Outlines } from '@react-three/drei'
+import { useFrame } from '@react-three/fiber'
 import { MeshBasicMaterial } from 'three'
 import type { BufferGeometry, Group, Material, Quaternion } from 'three'
 import type { EnemyMaterials } from './models'
 import { useLynelMaterials } from './lynelMaterials'
 import type { LynelMaterials } from './lynelMaterials'
+import { isHitStopped } from '../../state/gameClock'
 import {
   BODY_Y,
   BODY_R,
@@ -53,6 +55,182 @@ import {
 import type { Vec3, MatKey, Piece } from './lynelGeometry'
 
 export type LynelPose = 'repos' | 'garde' | 'balayage' | 'charge' | 'cabre' | 'brise'
+
+/** Les articulations posables, nommées comme dans la table des poses. */
+type LynelJoint =
+  | 'root'
+  | 'bust'
+  | 'head'
+  | 'tail'
+  | 'legFRu'
+  | 'legFRl'
+  | 'legFLu'
+  | 'legFLl'
+  | 'legHRu'
+  | 'legHRl'
+  | 'legHLu'
+  | 'legHLl'
+  | 'armRu'
+  | 'armRf'
+  | 'armLu'
+  | 'armLf'
+
+interface PoseSpec {
+  /** Écarts en radians, articulation par articulation. Absent = ne bouge pas. */
+  rig: Partial<Record<LynelJoint, Vec3>>
+  /** Décollement du corps entier, en unités monde. Le cabré s'en sert. */
+  lift?: number
+}
+
+/*
+  Les six poses, portées de la maquette (lignes 1957-2056) sans retouche.
+
+  Une pose est une table d'**écarts** sur les rotations de construction, et non
+  un jeu de rotations absolues : ce qui n'y figure pas ne bouge pas, et `repos`
+  est littéralement la table vide. Sans ça, chaque pose devrait redonner les
+  seize rotations — y compris celles qu'elle ne change pas — et la première
+  correction de la géométrie les rendrait toutes fausses d'un coup.
+
+  Elles sont interpolées et jamais appliquées sèches : ce qui fait le télégraphe,
+  c'est le mouvement qui mène à l'image, pas l'image.
+*/
+const POSES: Record<LynelPose, PoseSpec> = {
+  /** Repos — il attend au centre, il ne patrouille pas. */
+  repos: { rig: {} },
+  /*
+    Garde — 620 ms de télégraphe. L'épée passe derrière l'épaule, la tête
+    descend : le coup vient de la droite, et il vient de haut.
+  */
+  garde: {
+    rig: {
+      bust: [-0.16, -0.42, 0],
+      head: [0.26, 0.34, 0],
+      armRu: [-0.95, 0, -0.55],
+      armRf: [-0.85, 0, 0],
+      armLu: [-0.35, 0, 0.3],
+      armLf: [-0.7, 0, 0],
+      legFRu: [-0.18, 0, 0],
+      legFLu: [0.1, 0, 0],
+      tail: [-0.25, 0, 0],
+    },
+  },
+  /*
+    Balayage — arc de 170°, portée 3,6. Le buste entier tourne : on ne le
+    contourne pas, on le pare.
+  */
+  balayage: {
+    rig: {
+      bust: [0.1, 0.72, 0],
+      head: [-0.1, -0.5, 0],
+      armRu: [-0.5, 0, -1.25],
+      armRf: [-0.15, 0, 0],
+      armLu: [0.3, 0, 0.5],
+      armLf: [-0.4, 0, 0],
+      legFRu: [0.2, 0, 0],
+      legFLu: [-0.22, 0, 0],
+      tail: [0.2, 0, 0],
+    },
+  },
+  /*
+    Charge — elle traverse l'arène. Elle s'annonce aux pattes et jamais à la
+    crinière : c'est la règle de lecture, et elle dit qu'on ne la pare pas.
+  */
+  charge: {
+    lift: -0.16,
+    rig: {
+      root: [-0.1, 0, 0],
+      bust: [0.34, 0, 0],
+      head: [-0.12, 0, 0],
+      armRu: [0.55, 0, -0.35],
+      armRf: [-0.5, 0, 0],
+      armLu: [0.5, 0, 0.35],
+      armLf: [-0.5, 0, 0],
+      legFRu: [-0.95, 0, 0],
+      legFRl: [0.35, 0, 0],
+      legFLu: [0.55, 0, 0],
+      legFLl: [-0.5, 0, 0],
+      legHRu: [0.85, 0, 0],
+      legHRl: [-0.75, 0, 0],
+      legHLu: [-0.45, 0, 0],
+      legHLl: [0.3, 0, 0],
+      tail: [0.55, 0, 0],
+    },
+  },
+  /*
+    Cabré — 760 ms, puis une onde au sol jusqu'à l'anneau 6,6. La seule attaque
+    du combat qui se franchit au saut.
+  */
+  cabre: {
+    lift: 0.52,
+    rig: {
+      root: [-0.62, 0, 0],
+      bust: [0.34, 0, 0],
+      head: [0.2, 0, 0],
+      armRu: [-1.5, 0, -0.5],
+      armRf: [-0.5, 0, 0],
+      armLu: [-1.5, 0, 0.5],
+      armLf: [-0.5, 0, 0],
+      legFRu: [-1.25, 0, 0],
+      legFRl: [-0.7, 0, 0],
+      legFLu: [-1.05, 0, 0],
+      legFLl: [-0.85, 0, 0],
+      legHRu: [0.25, 0, 0],
+      legHRl: [-0.15, 0, 0],
+      legHLu: [0.25, 0, 0],
+      legHLl: [-0.15, 0, 0],
+      tail: [-0.5, 0, 0],
+    },
+  },
+  /*
+    Paré — 1,3 s d'ouverture, dégâts ×3. Garde ouverte, tête rejetée, épée hors
+    d'axe : deux coups rentrent, trois si on est propre.
+  */
+  brise: {
+    lift: -0.06,
+    rig: {
+      root: [0.12, 0, 0],
+      bust: [0.3, 0.26, -0.18],
+      head: [-0.55, 0.2, 0.2],
+      armRu: [0.2, 0, -1.55],
+      armRf: [-0.25, 0, 0],
+      armLu: [-0.15, 0, 0.9],
+      armLf: [-0.3, 0, 0],
+      legFRu: [0.45, 0, 0],
+      legFRl: [-0.3, 0, 0],
+      legFLu: [0.3, 0, 0],
+      legFLl: [-0.2, 0, 0],
+      legHRu: [0.6, 0, 0],
+      legHRl: [-0.35, 0, 0],
+      legHLu: [0.55, 0, 0],
+      legHLl: [-0.3, 0, 0],
+      tail: [-0.6, 0, 0],
+    },
+  },
+}
+
+/** Écart nul, pour les articulations qu'une pose ne mentionne pas. */
+const ZERO: Vec3 = [0, 0, 0]
+
+/** L'ordre de parcours du rig. Un tableau, parce qu'un `for…in` sur un objet
+    alloue un tableau de clés à chaque frame. */
+const JOINT_NAMES: LynelJoint[] = [
+  'root',
+  'bust',
+  'head',
+  'tail',
+  'legFRu',
+  'legFRl',
+  'legFLu',
+  'legFLl',
+  'legHRu',
+  'legHRl',
+  'legHLu',
+  'legHLl',
+  'armRu',
+  'armRf',
+  'armLu',
+  'armLf',
+]
 
 /**
  * Ce que `Lynel.tsx` peut demander au modèle.
@@ -292,12 +470,81 @@ export const LynelModel = forwardRef<LynelRig, LynelModelProps>(function LynelMo
   const armLu = useRef<Group>(null)
   const armLf = useRef<Group>(null)
 
-  // Vides à cette tâche : la Task 3 remplit `setPose`, la Task 6 `setRage`.
-  // Elles existent déjà pour que l'interface ne change plus d'ici là.
+  /*
+    Le rig, nommé, et les rotations de construction relevées à la première frame.
+
+    Relevées plutôt qu'écrites en dur : les valeurs vivent dans
+    `lynelGeometry.ts` et dans le JSX au-dessus, et les recopier ici en ferait
+    une seconde source de vérité que la première retouche du modèle rendrait
+    fausse — silencieusement, puisqu'une pose continuerait de s'afficher.
+  */
+  const joints = useRef<Record<LynelJoint, RefObject<Group | null>>>({
+    root,
+    bust,
+    head,
+    tail,
+    legFRu,
+    legFRl,
+    legFLu,
+    legFLl,
+    legHRu,
+    legHRl,
+    legHLu,
+    legHLl,
+    armRu,
+    armRf,
+    armLu,
+    armLf,
+  })
+  const bases = useRef<Partial<Record<LynelJoint, Vec3>>>({})
+
+  /** La pose visée. `Lynel.tsx` l'écrit depuis son `useFrame`. */
+  const target = useRef<LynelPose>('repos')
+
+  // `setRage` reste vide : c'est la Task 6 qui allume la crinière et la veine.
+  // Elle existe déjà pour que l'interface ne change plus d'ici là.
   useImperativeHandle(ref, () => ({
-    setPose: () => {},
+    setPose: (pose: LynelPose) => {
+      target.current = pose
+    },
     setRage: () => {},
   }))
+
+  useFrame((_, rawDelta) => {
+    // Rien ne bouge pendant le gel du coup fatal ou d'une parade. C'est
+    // précisément la frame que le gel existe pour tenir : un boss qui continue
+    // de glisser vers sa pose pendant les 110 ms d'une parade réussie transforme
+    // l'arrêt sur image en ralenti.
+    if (isHitStopped()) return
+
+    const delta = Math.min(rawDelta, 0.05)
+    // Amortissement exponentiel, et non un facteur constant par frame : celui-ci
+    // serait deux fois plus rapide à 120 Hz qu'à 60. Même règle que le lissage
+    // de la caméra et celui du cap des ennemis.
+    const k = 1 - Math.exp(-delta * 9)
+    const spec = POSES[target.current]
+
+    for (const name of JOINT_NAMES) {
+      const group = joints.current[name].current
+      if (!group) continue
+
+      let base = bases.current[name]
+      if (base === undefined) {
+        base = [group.rotation.x, group.rotation.y, group.rotation.z]
+        bases.current[name] = base
+      }
+
+      const offset = spec.rig[name] ?? ZERO
+      group.rotation.x += (base[0] + offset[0] - group.rotation.x) * k
+      group.rotation.y += (base[1] + offset[1] - group.rotation.y) * k
+      group.rotation.z += (base[2] + offset[2] - group.rotation.z) * k
+    }
+
+    // Le décollement s'applique au corps entier et non à une articulation : le
+    // cabré lève les quatre sabots, aucune rotation ne peut le faire.
+    const body = root.current
+    if (body) body.position.y += ((spec.lift ?? 0) - body.position.y) * k
+  })
 
   const pick: MatPicker = (key) =>
     key === 'fur'

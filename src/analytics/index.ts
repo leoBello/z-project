@@ -1,4 +1,4 @@
-import type { LandmarkId } from '../types/game'
+import type { LandmarkId, LynelAttackId } from '../types/game'
 
 /**
  * Mesure d'audience.
@@ -75,6 +75,14 @@ interface Events {
    * rien à faire sur l'île.
    */
   sky_island_entered: { via: 'portal' }
+  /**
+   * Une parade reussie sur le Lynel, et laquelle de ses attaques elle a cassee.
+   *
+   * C'est la seule mesure qui dise si la mecanique la plus difficile du jeu est
+   * comprise : un combat gagne sans une seule parade se voit ici en creux, et
+   * `attack` dit laquelle de ses annonces se lit vraiment.
+   */
+  boss_parry: { attack: LynelAttackId }
 }
 
 declare global {
