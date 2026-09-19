@@ -125,6 +125,30 @@ const VOLLEY_SPREAD = 0.122
 const RETURNED_ARROW_DAMAGE = 2
 
 // Vecteurs de travail partagés : alloués une fois, pas soixante fois par seconde.
+/**
+ * État interne du Lynel, exposé en développement pour la mise au point.
+ *
+ * Objet muté en place et non recréé : il est écrit à chaque frame, et allouer
+ * ici ferait travailler le ramasse-miettes pour un crochet de console.
+ */
+const lynelDebug = {
+  hp: 0,
+  phase: 'sword' as LynelPhase,
+  pose: 'repos' as string,
+  pending: null as string | null,
+  distance: 0,
+  staggerIn: 0,
+  nextAttackIn: 0,
+  poseUntilIn: 0,
+  charging: false,
+  chargeEndsIn: 0,
+  frozen: false,
+  now: 0,
+}
+if (import.meta.env.DEV) {
+  ;(window as unknown as Record<string, unknown>).__lynel = lynelDebug
+}
+
 const toPlayer = new Vector3()
 const muzzle = new Vector3()
 const aim = new Vector3()
@@ -682,6 +706,30 @@ export function Lynel() {
       state.pose = 'repos'
     }
     rig.current?.setPose(state.pose)
+
+    /*
+      Crochet de mise au point.
+
+      Même raison que `__lastSwing` et `__lastDeath` : la machine à états du boss
+      se joue en fractions de seconde et sur une carte où la physique ne se
+      simule pas en rendu logiciel. Elle ne peut donc pas être *observée*, il
+      faut pouvoir la *lire*. Les instants sont rendus relatifs à maintenant :
+      « dans 900 ms » se comprend, « 41 327 » non.
+    */
+    if (import.meta.env.DEV) {
+      lynelDebug.hp = state.hp
+      lynelDebug.phase = state.phase
+      lynelDebug.pose = state.pose
+      lynelDebug.pending = state.pending?.id ?? null
+      lynelDebug.distance = Math.round(distance * 10) / 10
+      lynelDebug.staggerIn = Math.round(state.staggerUntil - now)
+      lynelDebug.nextAttackIn = Math.round(state.nextAttackAt - now)
+      lynelDebug.poseUntilIn = Math.round(state.poseUntil - now)
+      lynelDebug.charging = state.chargeDir !== null
+      lynelDebug.chargeEndsIn = Math.round(state.chargeUntil - now)
+      lynelDebug.frozen = frozen
+      lynelDebug.now = Math.round(now)
+    }
 
     // La phase se relit à chaque frame plutôt qu'au moment du coup : elle est une
     // fonction des PV, pas un événement, et la dériver évite qu'un chemin de
