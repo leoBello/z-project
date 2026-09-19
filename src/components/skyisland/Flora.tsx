@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import {
   CatmullRomCurve3,
   ConeGeometry,
@@ -26,7 +25,7 @@ import {
 } from '../../config/skyIsland'
 import { seededRandom } from '../../config/world'
 import { faceted } from '../environment/faceted'
-import type { SkyMaterials } from './palette'
+import { SKY_MATERIALS, type SkyMaterials } from './palette'
 
 /**
  * La végétation de l'Île Céleste.
@@ -83,7 +82,8 @@ function smallTree(
   return group
 }
 
-function buildFlora(materials: SkyMaterials) {
+function buildFlora() {
+  const materials = SKY_MATERIALS
   const group = new Group()
 
   // --- Bosquets -------------------------------------------------------------
@@ -303,7 +303,9 @@ function buildFlora(materials: SkyMaterials) {
   return group
 }
 
-export function Flora({ materials }: { materials: SkyMaterials }) {
-  const group = useMemo(() => buildFlora(materials), [materials])
-  return <primitive object={group} />
+/** Bâtie à l'import du fragment — voir la note de `Ruins.tsx`. */
+const FLORA = buildFlora()
+
+export function Flora() {
+  return <primitive object={FLORA} />
 }

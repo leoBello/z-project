@@ -4,7 +4,6 @@ import { Flora } from './Flora'
 import { Ruins } from './Ruins'
 import { SkyTerrain } from './Terrain'
 import { SkyWater } from './Water'
-import { useSkyMaterials } from './palette'
 
 /**
  * L'Île Céleste — le point d'entrée du fragment chargé à la demande.
@@ -23,14 +22,13 @@ import { useSkyMaterials } from './palette'
  * partout à la fois.
  */
 export default function SkyIsland() {
-  const materials = useSkyMaterials()
 
   return (
     <>
-      <SkyTerrain materials={materials} />
-      <Ruins materials={materials} />
-      <SkyWater materials={materials} />
-      <Flora materials={materials} />
+      <SkyTerrain />
+      <Ruins />
+      <SkyWater />
+      <Flora />
 
       {/* Le jumeau de celui de Nakano, au point d'arrivée. Le même composant :
           deux portails qui divergeraient au premier réglage de l'anneau

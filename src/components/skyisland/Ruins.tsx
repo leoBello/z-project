@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier'
 import {
   BoxGeometry,
@@ -30,7 +29,7 @@ import {
 import { seededRandom, smoothstep } from '../../config/world'
 import { toonGradient } from '../models/toonGradient'
 import { faceted } from '../environment/faceted'
-import { SKY_COLORS, type SkyMaterials } from './palette'
+import { SKY_COLORS, SKY_MATERIALS } from './palette'
 
 /**
  * Les vestiges de l'Île Céleste.
@@ -120,7 +119,8 @@ interface Blocker {
   yaw: number
 }
 
-function buildRuins(materials: SkyMaterials) {
+function buildRuins() {
+  const materials = SKY_MATERIALS
   const group = new Group()
   const blockers: Blocker[] = []
   const toon = (options: ConstructorParameters<typeof MeshToonMaterial>[0]) =>
@@ -669,8 +669,16 @@ function buildRuins(materials: SkyMaterials) {
   return { group, blockers, towers }
 }
 
-export function Ruins({ materials }: { materials: SkyMaterials }) {
-  const { group, blockers, towers } = useMemo(() => buildRuins(materials), [materials])
+/**
+ * Construits à l'import du fragment, donc pendant que le voile de transition
+ * couvre l'écran. Dans un `useMemo`, ces deux cents maillages se seraient bâtis
+ * à la frame où l'île apparaît — celle où React démonte déjà tout le continent,
+ * ses colliders de végétation compris. C'est cette frame-là qui saccadait.
+ */
+const RUINS = buildRuins()
+
+export function Ruins() {
+  const { group, blockers, towers } = RUINS
 
   return (
     <>

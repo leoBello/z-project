@@ -11,7 +11,7 @@ import {
 } from '../../config/skyIsland'
 import { smoothstep } from '../../config/world'
 import { faceted } from '../environment/faceted'
-import { SKY_COLORS, mixColor, type SkyMaterials } from './palette'
+import { SKY_COLORS, SKY_MATERIALS, mixColor } from './palette'
 
 /**
  * Le terrain de l'Île Céleste : son dessus, son socle, et de quoi marcher
@@ -177,7 +177,8 @@ const HULL = (() => {
   }
 })()
 
-export function SkyTerrain({ materials }: { materials: SkyMaterials }) {
+export function SkyTerrain() {
+  const materials = SKY_MATERIALS
   return (
     <>
       <RigidBody type="fixed" colliders={false} friction={1}>

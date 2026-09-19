@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import {
   CatmullRomCurve3,
@@ -24,7 +23,7 @@ import {
 import { seededRandom } from '../../config/world'
 import { now as gameNow } from '../../state/gameClock'
 import { faceted } from '../environment/faceted'
-import { SKY_COLORS, type SkyMaterials } from './palette'
+import { SKY_COLORS, SKY_MATERIALS } from './palette'
 
 /**
  * L'eau de l'Île Céleste, et le cristal qui la porte.
@@ -55,7 +54,8 @@ interface Fall {
   baseY: number[]
 }
 
-function buildWater(materials: SkyMaterials) {
+function buildWater() {
+  const materials = SKY_MATERIALS
   const group = new Group()
   const falls: Fall[] = []
 
@@ -211,12 +211,10 @@ function buildWater(materials: SkyMaterials) {
   return { group, falls, crystal, halo }
 }
 
-export function SkyWater({ materials }: { materials: SkyMaterials }) {
-  // Mémoïsé sur les matériaux, qui sont eux-mêmes stables pour toute la vie du
-  // fragment : `built` ne change donc jamais, et la fermeture du `useFrame`
-  // peut le capturer directement. Pas de `ref` intermédiaire — il n'y aurait
-  // rien à y rafraîchir.
-  const built = useMemo(() => buildWater(materials), [materials])
+/** Bâtie à l'import du fragment — voir la note de `Ruins.tsx`. */
+const built = buildWater()
+
+export function SkyWater() {
 
   useFrame(() => {
     /*

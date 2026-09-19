@@ -1,34 +1,45 @@
-import { useEffect } from 'react'
-import type { CSSProperties } from 'react'
+import { useEffect, useState } from 'react'
 import { spawnFor } from '../config/portal'
 import { playerBody } from '../state/playerBody'
 import { playerTransform } from '../state/playerTransform'
 import { useGameStore } from '../store/useGameStore'
+import type { MapId } from '../types/game'
+import { EmberVeil } from './EmberVeil'
 import { preloadSkyIsland } from './skyisland/preload'
 
 /**
  * Le passage d'une carte à l'autre.
  *
- * Même principe que `TeleportOverlay` — un voile plein écran séquencé en temps
- * **réel**, pendant que la phase est `paused` et que l'horloge de jeu est donc
- * arrêtée — mais un composant et une palette à part, et ce n'est pas de la
- * duplication : les deux gestes ne disent pas la même chose. Les braises
- * déplacent *dans* une carte, le violet en *change*. Les confondre apprendrait
- * au joueur que les deux sont interchangeables, et il finirait par chercher
- * l'île dans le menu de téléportation.
+ * Même voile de braises que la téléportation entre monuments — voir l'en-tête
+ * d'`EmberVeil` pour la raison — mais un séquencement qui lui est propre, et la
+ * différence est de fond : `TeleportOverlay` joue une ligne de temps fermée,
+ * celle-ci doit **rester couverte aussi longtemps qu'il faut**.
  *
- * **Le palier opaque est un plancher, pas une durée.** À 780 ms le voile couvre
- * l'écran ; la bascule n'a lieu qu'une fois le fragment de l'île réellement
- * arrivé. Sur une connexion normale il est là bien avant et rien ne se voit ;
- * sur une connexion lente, le voile reste opaque au lieu de découvrir un monde
- * vide. C'est la seule garantie qui tienne, et elle ne coûte rien dans le cas
- * courant.
+ * Trois choses doivent se produire sous le voile, et deux d'entre elles n'ont
+ * pas de durée connue d'avance :
+ *
+ *  1. le fragment de l'île doit arriver — selon le réseau, quelques
+ *     millisecondes ou plusieurs secondes ;
+ *  2. React doit démonter le continent entier — terrain, végétation et ses
+ *     colliders — et monter l'île ;
+ *  3. le navigateur doit avoir **effectivement dessiné** une frame de la carte
+ *     d'arrivée.
+ *
+ * Le troisième point est celui qu'on oublie, et c'est lui qui faisait « casser »
+ * le jeu : la frame du basculement est de loin la plus lourde de la partie, et
+ * elle se jouait pendant que le voile se retirait déjà. On attend donc deux
+ * rafraîchissements après la bascule — le premier laisse React livrer son
+ * rendu, le second garantit qu'une image l'a suivi — avant de découvrir quoi que
+ * ce soit.
+ *
+ * Séquencé en **temps réel**, jamais sur l'horloge de jeu : celle-ci est
+ * arrêtée, la phase étant passée à `paused` dès la demande de voyage.
  */
 
 /** Montée du voile jusqu'à l'opacité pleine, en millisecondes de temps réel. */
-const COVER_MS = 780
+const COVER_MS = 700
 /**
- * Retrait du voile, une fois la carte basculée.
+ * Retrait du voile, une fois la carte montée et dessinée.
  *
  * Plus long que la montée, et volontairement : on quitte un lieu qu'on connaît
  * et on découvre un lieu qu'on ne connaît pas. Le temps de la découverte n'est
@@ -36,16 +47,31 @@ const COVER_MS = 780
  */
 const REVEAL_MS = 900
 
-export function WorldTransition() {
-  const transit = useGameStore((state) => state.transit)
+/** Attend qu'une image ait réellement été dessinée. Voir l'en-tête. */
+function afterPaint() {
+  return new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  })
+}
+
+/**
+ * Le voyage lui-même, **remonté à chaque départ** grâce à sa `key`.
+ *
+ * C'est ce qui permet à `phase` de naître à `covering` au lieu d'être remise là
+ * par un effet : un `setState` synchrone dans un effet relance un rendu pour
+ * rien, et dit surtout que l'état aurait dû être dérivé plutôt que corrigé. Ici
+ * le départ d'un voyage *est* une nouvelle instance — le remontage n'est pas un
+ * artifice, c'est la description exacte de ce qui se passe.
+ */
+function Transit({ to }: { to: MapId }) {
   const arriveOnMap = useGameStore((state) => state.arriveOnMap)
   const finishTransit = useGameStore((state) => state.finishTransit)
+  const [phase, setPhase] = useState<'covering' | 'revealing'>('covering')
+  const transit = to
 
   useEffect(() => {
-    if (!transit) return
-
     let cancelled = false
-    let revealTimer: ReturnType<typeof setTimeout> | undefined
+    let endTimer: ReturnType<typeof setTimeout> | undefined
 
     const run = async () => {
       // Les deux attentes en parallèle : le voile doit avoir couvert l'écran, et
@@ -61,10 +87,10 @@ export function WorldTransition() {
           entre-temps et l'ancienne adresse n'existe plus.
 
           **On repose le voile et on reste où on est.** C'est le seul
-          comportement acceptable : sans ce rattrapage, la promesse rejetée
-          n'est reprise nulle part, le voyage ne se termine jamais, et le joueur
-          se retrouve enfermé derrière un écran opaque et une partie en pause
-          qu'aucune touche ne réveille. Il n'a plus qu'à recharger la page et il
+          comportement acceptable : sans ce rattrapage, la promesse rejetée n'est
+          reprise nulle part, le voyage ne se termine jamais, et le joueur se
+          retrouve enfermé derrière un écran opaque et une partie en pause
+          qu'aucune touche ne réveille. Il n'a plus qu'à recharger la page, et il
           perd sa progression.
 
           On ne dit rien à l'écran, et c'est délibéré : le joueur revient
@@ -93,26 +119,28 @@ export function WorldTransition() {
       // doit donc arriver face à ce qu'elle montre.
       playerTransform.yaw = Math.PI
 
-      revealTimer = setTimeout(finishTransit, REVEAL_MS)
+      // La frame lourde — démontage du continent, montage de l'île — se joue
+      // ici, sous le voile encore opaque. On ne découvre qu'après.
+      await afterPaint()
+      if (cancelled) return
+
+      setPhase('revealing')
+      endTimer = setTimeout(finishTransit, REVEAL_MS)
     }
 
     void run()
 
     return () => {
       cancelled = true
-      clearTimeout(revealTimer)
+      clearTimeout(endTimer)
     }
   }, [transit, arriveOnMap, finishTransit])
 
-  if (!transit) return null
+  return <EmberVeil phase={phase} durationMs={phase === 'covering' ? COVER_MS : REVEAL_MS} />
+}
 
-  return (
-    <div
-      className="world-transition"
-      aria-hidden="true"
-      style={{ '--cover': `${COVER_MS}ms` } as CSSProperties}
-    >
-      <div className="world-transition__veil" />
-    </div>
-  )
+export function WorldTransition() {
+  const transit = useGameStore((state) => state.transit)
+  if (!transit) return null
+  return <Transit key={transit} to={transit} />
 }
