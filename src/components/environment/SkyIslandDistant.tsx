@@ -6,10 +6,11 @@ import {
   Color,
   ConeGeometry,
   CylinderGeometry,
+  DoubleSide,
   Float32BufferAttribute,
   IcosahedronGeometry,
   Mesh,
-  MeshToonMaterial,
+  MeshBasicMaterial,
 } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { NAKANO } from '../../config/landmarks'
@@ -29,7 +30,6 @@ import {
   underRadius,
 } from '../../config/skyIsland'
 import { smoothstep } from '../../config/world'
-import { toonGradient } from '../models/toonGradient'
 
 /**
  * L'Île Céleste, vue depuis le continent.
@@ -178,9 +178,17 @@ function coarseSurface(under: boolean) {
         // La pierre des falaises : c'est elle qui dessine les terrasses en
         // anneaux, et sans elle le dessus n'est qu'un disque vert uni.
         color.lerp(hazed(SKY_COLORS.stoneMid, 0.5), smoothstep(0.5, 1.4, topSlope(r, theta)))
-        // La lèvre, plus sombre : elle sépare le vert de la roche au lieu de
-        // laisser les deux se toucher sans transition.
-        color.lerp(hazed(SKY_COLORS.stoneDark, 0.55), smoothstep(50, 55.5, r))
+        /*
+          La lèvre finit **exactement sur la couleur du socle**.
+
+          Les deux surfaces sont soudées sommet à sommet, mais une soudure
+          géométrique ne suffit pas : si les couleurs sautent au point de
+          couture, l'œil y lit une arête, et une arête claire posée entre du
+          vert et de la roche se lit comme une fente. La continuité doit être
+          celle des deux — la position *et* la teinte.
+        */
+        color.lerp(hazed(SKY_COLORS.stoneDark, 0.52), smoothstep(46, 52, r))
+        color.lerp(hazed(SKY_COLORS.rock, 0.5), smoothstep(52, 55.5, r))
       }
       colors.push(color.r, color.g, color.b)
     }
@@ -314,6 +322,54 @@ function buildMassing() {
   return parts
 }
 
+/**
+ * Direction du soleil, normalisée.
+ *
+ * Celle de `SunLight` dans `Environment.tsx` : la lumière est posée en
+ * `(+45, +70, +35)` du joueur, donc c'est ce vecteur, réduit, qui pointe vers
+ * elle. Copiée et non importée — une direction de trois nombres ne justifie pas
+ * de faire dépendre ce module de la mise en lumière de la scène, et si les deux
+ * divergeaient un jour, la silhouette serait simplement éclairée d'un poil à
+ * côté, ce que personne ne verrait à cinq cents unités.
+ */
+const SUN = (() => {
+  const length = Math.hypot(45, 70, 35)
+  return { x: 45 / length, y: 70 / length, z: 35 / length }
+})()
+
+/**
+ * Cuit l'éclairage dans les couleurs par sommet.
+ *
+ * **La silhouette n'est pas éclairée au rendu**, et c'est la correction qui a
+ * fermé la dernière « coupure de ciel ». Sous un matériau toon, la lèvre — une
+ * surface quasi verticale tournée vers l'extérieur — basculait dans la marche
+ * la plus claire du dégradé, tandis que le socle juste en dessous restait dans
+ * la plus sombre. Le saut entre les deux dessinait un liseré blanc tout autour
+ * de l'île, que l'œil lisait comme une fente alors que les sommets étaient
+ * soudés au millième près.
+ *
+ * Un fond de décor peint ne se fait pas éclairer par le soleil du premier plan :
+ * sa lumière est peinte dedans. On module donc chaque couleur par un simple
+ * terme lambertien calculé une fois, à la construction, et on rend le tout avec
+ * un matériau non éclairé. Le dégradé redevient continu, les marches du toon
+ * disparaissent, et le coût au rendu baisse au passage.
+ *
+ * Le plancher à 0,72 n'est pas de la prudence : sans lui, les faces qui
+ * tournent le dos au soleil deviennent presque noires, alors qu'à cette
+ * distance l'atmosphère les aurait éclaircies bien avant.
+ */
+function bakeLight(geometry: BufferGeometry) {
+  const normal = geometry.attributes.normal
+  const color = geometry.attributes.color
+  for (let i = 0; i < normal.count; i++) {
+    const lambert =
+      normal.getX(i) * SUN.x + normal.getY(i) * SUN.y + normal.getZ(i) * SUN.z
+    const shade = 0.72 + 0.28 * Math.max(0, lambert)
+    color.setXYZ(i, color.getX(i) * shade, color.getY(i) * shade, color.getZ(i) * shade)
+  }
+  return geometry
+}
+
 function buildImpostor() {
   const parts: BufferGeometry[] = [
     coarseSurface(false),
@@ -322,26 +378,55 @@ function buildImpostor() {
   ]
   const merged = mergeGeometries(parts)!
   merged.computeVertexNormals()
-  return merged
+  return bakeLight(merged)
 }
 
 export function SkyIslandDistant() {
   const mesh = useMemo(() => {
     const object = new Mesh(
       buildImpostor(),
-      new MeshToonMaterial({
-        gradientMap: toonGradient,
-        vertexColors: true,
-        // Hors brouillard : celui du jeu sature à 200 unités et effacerait
-        // l'île. Sa brume est déjà peinte dans ses couleurs — voir `tint`.
-        fog: false,
-      }),
+      /*
+        Trois réglages, et chacun a coûté une passe de relecture.
+
+        **`DoubleSide`, et c'est lui qui a fermé la « coupure de ciel ».** Les
+        deux surfaces sont soudées sommet à sommet et leurs couleurs se
+        rejoignent, mais leurs faces ne regardent pas du même côté : la lèvre du
+        dessus est tournée vers le haut, le socle vers le bas. En rendu simple
+        face, le culling perce donc un anneau vide **exactement au raccord** —
+        une bande de ciel fine comme un trait, tout autour de l'île, qu'aucune
+        mesure de géométrie ne pouvait détecter puisque la géométrie était juste.
+        Le terrain de la vraie île est en `DoubleSide` depuis le début, pour
+        cette raison exacte ; la silhouette ne l'était pas.
+
+        **Non éclairé** : la lumière est déjà peinte dans les couleurs par
+        sommet (voir `bakeLight`). Un matériau toon faisait en plus basculer la
+        lèvre dans sa marche la plus claire, ce qui ajoutait un liseré blanc
+        par-dessus le trou.
+
+        **Hors brouillard** : celui du jeu sature à 200 unités et effacerait une
+        île posée à 500. Sa brume est peinte dans ses couleurs — voir `tint`.
+      */
+      new MeshBasicMaterial({ vertexColors: true, fog: false, side: DoubleSide }),
     )
     object.position.set(DISTANT.x, DISTANT.y, DISTANT.z)
     // Ni ombre reçue ni ombre projetée : la caméra d'ombres est cadrée sur le
     // joueur, sur quarante-deux unités de demi-largeur. À cinq cents, l'île n'y
     // entre jamais — l'y faire entrer coûterait une passe pour rien.
     object.name = 'sky-island-distant'
+
+    /*
+      Exposée en développement, comme le relief de l'île l'est déjà.
+
+      Une silhouette posée à cinq cents unités ne fait qu'une centaine de pixels
+      de haut : c'est trop peu pour juger d'un défaut de géométrie, et c'est
+      exactement comme ça qu'un liseré au bord a survécu à plusieurs passes.
+      Pouvoir la rapprocher depuis la console — `__distantIsland.position.set(…)`
+      — est le seul moyen de la regarder vraiment.
+    */
+    if (import.meta.env.DEV) {
+      ;(window as unknown as Record<string, unknown>).__distantIsland = object
+    }
+
     return object
   }, [])
 
