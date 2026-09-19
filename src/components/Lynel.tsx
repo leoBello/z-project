@@ -37,7 +37,7 @@ import { enemyRegistry, updateEnemyMarker } from '../state/enemyRegistry'
 import { hitStop, isHitStopped, now as gameNow } from '../state/gameClock'
 import { cancelParry, consumeParry, offerParry } from '../state/parry'
 import { playerTransform } from '../state/playerTransform'
-import { PROJECTILE_HIT_RADIUS, projectiles } from '../state/projectiles'
+import { PROJECTILE_HIT_RADIUS, fireProjectile, projectiles } from '../state/projectiles'
 import { useGameStore } from '../store/useGameStore'
 import type { LynelAttackId, LynelPhase } from '../types/game'
 import { LynelModel } from './enemies/LynelModel'
@@ -103,9 +103,31 @@ const FOLLOW_THROUGH_MS = 420
  * de se voir avant la garde suivante.
  */
 const RECOVERY_MS = 750
+/** Vitesse de la charge, en unités/seconde. Trois fois sa vitesse de poursuite. */
+const CHARGE_SPEED = 11
+/**
+ * Étourdissement quand la charge finit contre l'enceinte.
+ *
+ * Volontairement plus long que l'ouverture d'une parade (1 300 ms) : c'est la
+ * plus grosse récompense du combat, et elle doit se sentir comme telle. C'est
+ * aussi la seule qu'on obtienne sans avoir rien à parer, donc la porte d'entrée
+ * de qui n'a pas encore compris la parade.
+ */
+const CHARGE_STUN_MS = 1400
+/** Écart entre deux flèches du triple tir, en radians. ±7°. */
+const VOLLEY_SPREAD = 0.122
+/**
+ * Dégâts d'une flèche renvoyée au tireur.
+ *
+ * Le double d'un projectile d'Octorok, parce qu'elle revient de bien plus loin
+ * et qu'il faut que le geste vaille le risque de rester planté à l'attendre.
+ */
+const RETURNED_ARROW_DAMAGE = 2
 
 // Vecteurs de travail partagés : alloués une fois, pas soixante fois par seconde.
 const toPlayer = new Vector3()
+const muzzle = new Vector3()
+const aim = new Vector3()
 const knockback = new Vector3()
 const WHITE = new Color(1, 1, 1)
 
@@ -136,6 +158,12 @@ interface LynelRuntime {
   poseUntil: number
   /** Avant cet instant, aucun nouveau télégraphe ne s'ouvre. Voir `RECOVERY_MS`. */
   nextAttackAt: number
+  /** Direction figée de la charge en cours, ou `null` s'il ne charge pas. */
+  chargeDir: { x: number; z: number } | null
+  /** Garde-fou : une charge qui n'a rien heurté s'arrête quand même. */
+  chargeUntil: number
+  /** Le joueur a-t-il déjà été fauché par la charge en cours ? */
+  chargeHit: boolean
 }
 
 /**
@@ -259,6 +287,9 @@ export function Lynel() {
     pose: 'repos',
     poseUntil: -Infinity,
     nextAttackAt: -Infinity,
+    chargeDir: null,
+    chargeUntil: -Infinity,
+    chargeHit: false,
   })
 
   // Inscription au registre : la minimap y prend son point argenté, le calque de
@@ -432,7 +463,7 @@ export function Lynel() {
         now,
         projectile.position.x,
         projectile.position.z,
-        1,
+        RETURNED_ARROW_DAMAGE,
       )
       if (died) return
       break
@@ -451,7 +482,52 @@ export function Lynel() {
     let targetYaw = state.yaw
     const fromCenter = Math.hypot(position.x - ARENA_CENTER[0], position.z - ARENA_CENTER[2])
 
-    if (frozen || now < state.staggerUntil) {
+    if (state.chargeDir !== null && !frozen) {
+      /*
+        La charge, une fois lancée, ne se pilote plus.
+
+        `!frozen` la met en attente pendant une pause plutôt que de l'annuler :
+        l'horloge de jeu s'arrête avec elle, donc `chargeUntil` ne file pas, et
+        la course reprend exactement où elle en était à la reprise. Sans cette
+        garde, le Lynel traverserait l'arène pendant qu'on lit une fiche de
+        projet.
+
+        Sa direction a été figée à la fin du télégraphe et n'est pas corrigée :
+        une charge qui suit le joueur est infaisable à esquiver, et il en conclut
+        que l'attaque n'a ni parade — ce qui est vrai — ni esquive — ce qui
+        serait faux et injuste. Figée, elle se lit : on voit où elle va, on
+        s'écarte.
+      */
+      velocityX = state.chargeDir.x * CHARGE_SPEED
+      velocityZ = state.chargeDir.z * CHARGE_SPEED
+      targetYaw = Math.atan2(state.chargeDir.x, state.chargeDir.z)
+
+      // Fauché une fois par charge : sans ce drapeau, un joueur collé au flanc
+      // reprendrait des dégâts à chaque frame dès la fin de ses i-frames.
+      if (!state.chargeHit && distance < stats.radius + 0.9) {
+        state.chargeHit = true
+        store.damagePlayer(LYNEL_ATTACKS.charge.damage)
+        playImpact()
+      }
+
+      /*
+        Fin de charge : le bord du dallage, ou le temps.
+
+        Le bord, et non une requête physique contre les piliers — un raycast par
+        frame pour une attaque qui sort toutes les cinq secondes serait cher, et
+        le dallage est un disque : en sortir, c'est avoir heurté l'enceinte, quel
+        que soit l'endroit.
+      */
+      if (fromCenter > ARENA_R - 1.2 || now > state.chargeUntil) {
+        state.chargeDir = null
+        state.staggerUntil = now + CHARGE_STUN_MS
+        state.pose = 'brise'
+        state.poseUntil = now + CHARGE_STUN_MS
+        state.nextAttackAt = now + CHARGE_STUN_MS
+        shake(0.16, 220)
+        playImpact()
+      }
+    } else if (frozen || now < state.staggerUntil) {
       // Étourdi : il ne se déplace pas, et il ne se retourne pas non plus —
       // l'ouverture doit rester exploitable par-derrière.
     } else if (distance < stats.detectRadius) {
@@ -488,6 +564,7 @@ export function Lynel() {
     // frame sur deux tomberait à côté sur une machine lente.
     if (
       state.pending === null &&
+      state.chargeDir === null &&
       now > state.staggerUntil &&
       now > state.nextAttackAt &&
       !frozen &&
@@ -550,9 +627,47 @@ export function Lynel() {
         shake(0.12, 150)
         playParrySuccess()
         track('boss_parry', { attack: attack.id })
+      } else if (attack.id === 'charge') {
+        /*
+          La direction est figée **ici**, à la fin du télégraphe, et pas suivie.
+          Le coup lui-même n'est pas résolu : c'est le corps lancé qui fauche,
+          dans le bloc de déplacement.
+        */
+        const length = Math.hypot(toPlayer.x, toPlayer.z) || 1
+        state.chargeDir = { x: toPlayer.x / length, z: toPlayer.z / length }
+        state.chargeUntil = now + ((ARENA_R * 2) / CHARGE_SPEED) * 1000
+        state.chargeHit = false
+        state.pose = 'charge'
+        state.poseUntil = now + CHARGE_STUN_MS
+      } else if (attack.id === 'volley') {
+        /*
+          Trois flèches, et pas une ligne de neuf à écrire : `fireProjectile`
+          existe, et la parade d'épée du jeu les renvoie déjà — le joueur
+          réutilise un geste qu'il connaît depuis le premier Octorok.
+
+          La dispersion est appliquée **par tir** et non une fois pour les trois :
+          trois flèches parallèles ne sont qu'une flèche large, et s'esquivent
+          d'un pas de côté. Étalées, elles obligent à choisir un côté.
+        */
+        muzzle.set(position.x, position.y + 1.4, position.z)
+        for (const spread of [-VOLLEY_SPREAD, 0, VOLLEY_SPREAD]) {
+          const dx = playerTransform.position.x - muzzle.x
+          const dz = playerTransform.position.z - muzzle.z
+          const cos = Math.cos(spread)
+          const sin = Math.sin(spread)
+          aim.set(
+            muzzle.x + dx * cos - dz * sin,
+            playerTransform.position.y,
+            muzzle.z + dx * sin + dz * cos,
+          )
+          fireProjectile(muzzle, aim, 0)
+        }
+        state.pose = 'balayage'
       } else if (attackHits(attack, position, state.yaw)) {
         useGameStore.getState().damagePlayer(attack.damage)
-        state.pose = attack.id === 'charge' ? 'charge' : 'balayage'
+        // La charge et le triple tir sont traités au-dessus : ne restent ici que
+        // les coups d'épée, qui partagent tous le même geste de suite.
+        state.pose = 'balayage'
         playImpact()
       } else {
         state.pose = 'balayage'
