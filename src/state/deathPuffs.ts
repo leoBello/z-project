@@ -31,6 +31,16 @@ export interface DeathRing {
   position: Vector3
   color: Color
   bornAt: number
+  /**
+   * Rayon atteint en fin d'expansion.
+   *
+   * Par entrée et non global, parce que le même pool sert maintenant deux
+   * choses de tailles incomparables : la mort d'un ennemi, qui souffle un
+   * anneau d'une unité et demie, et l'onde de choc du Lynel, qui balaie le
+   * dallage jusqu'à l'anneau d'or de 6,6. Une constante partagée ferait de la
+   * seconde une bague autour des sabots.
+   */
+  to: number
 }
 
 /**
@@ -81,6 +91,7 @@ export const deathRings: DeathRing[] = Array.from({ length: DEATH_RING_POOL_SIZE
   position: new Vector3(),
   color: new Color(),
   bornAt: 0,
+  to: DEATH_RING_TO,
 }))
 
 /** Blanc de référence pour l'éclaircissement de la teinte. */
@@ -128,9 +139,16 @@ export function spawnDeathPuff(x: number, y: number, z: number, source: Color) {
 }
 
 /** Pose l'anneau de choc. `y` est la hauteur du sol, pas celle du corps. */
-export function spawnDeathRing(x: number, y: number, z: number, source: Color) {
+export function spawnDeathRing(
+  x: number,
+  y: number,
+  z: number,
+  source: Color,
+  to = DEATH_RING_TO,
+) {
   const slot = claim(deathRings)
   slot.active = true
+  slot.to = to
   // Deux centimètres au-dessus du sol : posé dessus, l'anneau se bat avec le
   // terrain dans le tampon de profondeur et clignote par bandes.
   slot.position.set(x, y + 0.02, z)

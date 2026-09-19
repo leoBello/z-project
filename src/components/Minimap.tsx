@@ -243,23 +243,28 @@ export function Minimap({ markers = [] }: MinimapProps) {
       context.drawImage(islandMap ?? worldMap, 0, 0, size, size)
 
       /*
-        Ennemis, monuments et portail n'existent que sur le continent, et le
-        test est ici plutôt que dans chacune des trois boucles : sur l'île, le
-        registre est vide et `LANDMARKS` parle d'une autre carte — dessiner ses
-        losanges reviendrait à poser le Temple du Sommet au milieu du ciel.
+        Les ennemis se dessinent sur les **deux** cartes, et le registre suffit.
+
+        Il était compris dans le test « continent seulement », avec pour raison
+        que sur l'île « le registre est vide ». Il ne l'est plus : le Lynel s'y
+        inscrit comme les autres, et son point argenté ne paraissait nulle part —
+        alors même que `ENEMIES.lynel` justifie son entrée dans la table commune
+        par la couleur que la minimap y prend.
+      */
+      for (const enemy of enemyRegistry.values()) {
+        const { px, py } = toPixels(enemy.x, enemy.z)
+        context.fillStyle = ENEMIES[enemy.kind].minimapColor
+        context.beginPath()
+        context.arc(px, py, 2.6, 0, Math.PI * 2)
+        context.fill()
+      }
+
+      /*
+        Monuments et portail, eux, n'existent que sur le continent : `LANDMARKS`
+        parle d'une autre carte, et dessiner ses losanges sur l'île reviendrait à
+        poser le Temple du Sommet au milieu du ciel.
       */
       if (!sky) {
-        // Ennemis : lus directement dans le registre, qui est mis à jour par
-        // chaque ennemi dans son propre useFrame. Aucun state React n'est
-        // impliqué, donc aucun re-render à 60 fps.
-        for (const enemy of enemyRegistry.values()) {
-          const { px, py } = toPixels(enemy.x, enemy.z)
-          context.fillStyle = ENEMIES[enemy.kind].minimapColor
-          context.beginPath()
-          context.arc(px, py, 2.6, 0, Math.PI * 2)
-          context.fill()
-        }
-
         // Monuments : un losange, pas un point. La forme suffit à les distinguer
         // des ennemis sans avoir à mémoriser un code couleur — et ils restent
         // affichés avant d'être découverts, parce que c'est ce qui donne au

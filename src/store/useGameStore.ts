@@ -24,6 +24,7 @@ import type {
   ChestId,
   GamePhase,
   ItemId,
+  HeartSourceId,
   LandmarkId,
   MapId,
 } from '../types/game'
@@ -40,6 +41,16 @@ import type {
 export const MAX_HEARTS = 5
 /** Durée d'invincibilité après un coup reçu, en millisecondes. */
 export const INVULNERABILITY_MS = 1100
+
+/**
+ * Cœurs rendus à l'arrivée sur l'Île Céleste, une fois par partie.
+ *
+ * Trois, et le nombre se déduit du boss : le Lynel retire deux cœurs par coup
+ * d'épée et trois sur sa charge. Trois cœurs de plus, c'est deux parades ratées
+ * qu'on peut encaisser au lieu d'une — assez pour apprendre le geste, trop peu
+ * pour se passer de l'apprendre.
+ */
+export const SKY_BOON_HEARTS = 3
 
 /**
  * Dégâts d'un coup d'épée, arme nue.
@@ -107,7 +118,7 @@ export interface GameState {
    * doit rester pris quand on revient sur place, et un compteur ne saurait pas
    * *lequel* a déjà été ramassé.
    */
-  heartContainers: LandmarkId[]
+  heartContainers: HeartSourceId[]
   /**
    * Lieu dont le panneau est ouvert. Non nul implique `phase === 'paused'`.
    */
@@ -220,6 +231,27 @@ export interface GameState {
    */
   location: MapId
   /**
+   * Où en est le combat contre le Lynel.
+   *
+   * Dans le store et non dans `Lynel.tsx`, parce que trois consommateurs qui ne
+   * se connaissent pas en dépendent : la caméra, qui se rapproche ; les
+   * barrières qui ferment les travées écroulées ; et le portail du retour. Le
+   * tenir dans le composant du boss obligerait chacun d'eux à aller le chercher
+   * là-bas, c'est-à-dire dans le fragment de l'île, que le tronc commun ne doit
+   * pas importer.
+   */
+  bossState: 'idle' | 'fighting' | 'defeated'
+  /** Les trois cœurs de l'arrivée sur l'île ont-ils déjà été donnés ? */
+  skyBoonTaken: boolean
+  /**
+   * Où le Lynel est tombé, en coordonnées monde, ou `null`.
+   *
+   * Dans le store et non dans son composant, parce que le composant se démonte
+   * avec lui : le réceptacle doit paraître à l'endroit du corps, et il n'y a
+   * plus personne pour s'en souvenir. C'est la seule raison de ce champ.
+   */
+  bossFellAt: [number, number, number] | null
+  /**
    * Carte vers laquelle un voyage est en cours, ou `null`.
    *
    * Distinct de `location` exactement comme `teleporting` l'est de
@@ -270,7 +302,7 @@ export interface GameState {
    * refaite au passage. Retourne faux s'il était déjà pris, pour que
    * l'appelant sache s'il doit faire disparaître l'objet.
    */
-  claimHeartContainer: (id: LandmarkId) => boolean
+  claimHeartContainer: (id: HeartSourceId) => boolean
   /** Marque un lieu comme trouvé. Sans effet s'il l'était déjà. */
   discoverLandmark: (id: LandmarkId) => void
   /** Ouvre le panneau d'un lieu et met la partie en pause. */
@@ -377,6 +409,15 @@ export interface GameState {
 
   /** Signale qu'un portail est à portée, ou qu'il ne l'est plus. */
   setNearbyPortal: (near: boolean) => void
+  /** Le joueur entre dans l'arène : le combat commence. Idempotent. */
+  startBossFight: () => void
+  /**
+   * Le combat s'arrête, vaincu ou non.
+   *
+   * `fellAt` n'est lu que sur une victoire : c'est là que se posera le
+   * réceptacle, et l'endroit meurt avec le composant du boss.
+   */
+  endBossFight: (defeated: boolean, fellAt?: [number, number, number]) => void
   /**
    * Part vers l'autre carte : gèle la partie et lève le voile.
    *
@@ -411,7 +452,7 @@ const initialState = {
   lastHitAt: -Infinity,
   kills: 0,
   discovered: [] as LandmarkId[],
-  heartContainers: [] as LandmarkId[],
+  heartContainers: [] as HeartSourceId[],
   items: [] as ItemId[],
   equipped: {} as Equipment,
   openedChests: [] as ChestId[],
@@ -426,6 +467,9 @@ const initialState = {
   annihilation: null as Annihilation | null,
   portalOpenedAt: null as number | null,
   location: 'continent' as MapId,
+  skyBoonTaken: false,
+  bossFellAt: null as [number, number, number] | null,
+  bossState: 'idle' as 'idle' | 'fighting' | 'defeated',
   transit: null as MapId | null,
   transitLandmark: null as LandmarkId | null,
   nearbyPortal: false,
@@ -483,6 +527,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       hearts: next,
       lastHitAt: gameNow(),
       phase: next === 0 ? 'gameover' : 'playing',
+      // Le combat s'arrête avec le joueur. Sans ça, les barrières resteraient
+      // fermées et la caméra serrée pendant tout l'écran de fin.
+      bossState: next === 0 && get().bossState === 'fighting' ? 'idle' : get().bossState,
     })
   },
 
@@ -862,6 +909,33 @@ export const useGameStore = create<GameState>((set, get) => ({
   /** Même discipline que les monuments et les coffres : écriture sur transition. */
   setNearbyPortal: (near) => set({ nearbyPortal: near }),
 
+  startBossFight: () => {
+    // Idempotent, et ce n'est pas de la prudence : le Lynel l'appelle depuis sa
+    // boucle, donc potentiellement soixante fois par seconde tant que le joueur
+    // est dans l'arène. Sans cette garde, chaque frame écrirait dans le store et
+    // re-rendrait tout ce qui s'y abonne.
+    if (get().bossState !== 'idle') return
+    set({ bossState: 'fighting' })
+    track('boss_engaged', { phase: 'sword' })
+  },
+
+  endBossFight: (defeated, fellAt) => {
+    /*
+      Les deux sorties ne sont pas symétriques.
+
+      Vaincu, le combat ne peut plus reprendre : l'état reste `defeated` pour
+      toute la partie, les barrières s'ouvrent et la caméra se rouvre. Mort, le
+      joueur repart du continent et le Lynel remonte avec ses 36 points de vie —
+      d'où le retour à `idle`, qui autorise un second engagement.
+    */
+    if (get().bossState !== 'fighting') return
+    set({
+      bossState: defeated ? 'defeated' : 'idle',
+      bossFellAt: defeated ? (fellAt ?? null) : null,
+    })
+    if (defeated) track('boss_defeated', { hearts: get().hearts })
+  },
+
   /**
    * Part vers l'autre carte.
    *
@@ -905,6 +979,40 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Hors du `set`, comme la mesure d'audience de `resolveTeleport` : un
     // updater d'état n'appelle pas le tableau de bord.
     if (transit === 'sky') track('sky_island_entered', { via: 'portal' })
+    /*
+      Quitter l'île termine le combat, et il faut le dire ici plutôt que dans le
+      Lynel.
+
+      Lui le fait déjà quand le joueur s'éloigne de l'arène — mais sa boucle est
+      gardée par `phase === 'playing'`, et le menu de téléportation met la partie
+      en pause **dans le même `set`** qui lance le voyage. La garde ne repassait
+      donc jamais, l'île se démontait avec le boss, et `bossState` restait à
+      `fighting` pour le reste de la partie : le continent se jouait alors avec
+      la caméra serrée de l'arène. Un clic dans le menu suffisait.
+    */
+    if (transit !== 'sky') get().endBossFight(false)
+
+    /*
+      L'île rend trois cœurs, une seule fois.
+
+      Elle est un aller sans retour tant que le Lynel est debout : on y arrive
+      avec ce qu'il restait de la traversée du continent, et un joueur arrivé à
+      deux cœurs n'a aucune chance contre un boss qui en retire deux par coup.
+      Trois de plus, c'est deux erreurs de parade encaissables au lieu d'une.
+
+      Un acquis définitif comme un réceptacle, et non des cœurs jaunes : ceux-là
+      appartiennent à l'équipement, et changer de tenue sur l'île les effacerait
+      (voir `stripSlot`). Et la vie est refaite au passage, capacité comprise —
+      arriver entamé devant le gardien serait puni sans que rien ne l'ait
+      annoncé.
+    */
+    if (transit === 'sky' && !get().skyBoonTaken) {
+      const { maxHearts, bonusHearts } = get()
+      const next = maxHearts + SKY_BOON_HEARTS
+      playReward()
+      set({ skyBoonTaken: true, maxHearts: next, hearts: next + bonusHearts })
+    }
+
     set({ location: transit })
   },
 

@@ -103,4 +103,32 @@ export const CAMERA = {
   lookAtHeightMobile: 2,
   /** Réactivité du suivi ; plus haut = plus collé au joueur. */
   damping: 5,
+  /**
+   * Le cadrage du combat de boss.
+   *
+   * Il existe pour une raison mesurée : avec les cotes ordinaires — 11 de haut,
+   * 21 de recul, demi-champ de 24° — le Lynel, qui fait 4,3 unités, occupe **un
+   * cinquième** de la hauteur de l'image. Un boss qui tient dans un cinquième de
+   * l'écran est un jouet, quelle que soit la qualité de son modèle.
+   *
+   * **Le premier réglage était raté, et il faut dire pourquoi.** Posé à 7 de haut
+   * pour 13 de recul avec une visée à 5,5, l'axe ne plongeait plus que de 6,6°
+   * contre 17° d'ordinaire : on voyait l'arène par la tranche, le Lynel cachait
+   * le sol derrière lui, et juger une distance d'esquive devenait impossible.
+   * Grossir le boss ne sert à rien si on ne voit plus où l'on met les pieds.
+   *
+   * Réglage retenu : **plus haut que la caméra du jeu, et plus près**. 12 pour 14
+   * de recul et une visée à 5, soit une plongée de 26,6° — plus plongeante que
+   * les 17° ordinaires, ce qui est exactement ce qu'on veut dans une arène :
+   * c'est la position au sol qui se lit, pas l'horizon. Le boss occupe environ un
+   * quart de la hauteur de l'image contre un cinquième en caméra libre.
+   *
+   * Contrepartie assumée : à cette plongée l'horizon sort du cadre et il n'y a
+   * plus de ciel. Dans une rotonde fermée, il n'y en avait déjà presque pas.
+   */
+  arena: {
+    offset: [0, 12, 14] as [number, number, number],
+    lookAtHeight: 5,
+    lookAtHeightMobile: 2.8,
+  },
 } as const

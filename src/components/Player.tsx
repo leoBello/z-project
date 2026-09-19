@@ -9,7 +9,7 @@ import {
   type RapierRigidBody,
 } from '@react-three/rapier'
 import { Group, Vector3 } from 'three'
-import { playFootstep, playJump, playSwing } from '../audio/sfx'
+import { playFootstep, playJump, playParry, playSwing } from '../audio/sfx'
 import type { Control } from '../config/controls'
 import { isTouchDevice } from '../config/device'
 import { ATTACK, PLAYER } from '../config/gameplay'
@@ -18,6 +18,7 @@ import { spawnFor } from '../config/portal'
 import { WORLD } from '../config/world'
 import { enemyRegistry } from '../state/enemyRegistry'
 import { isHitStopped, now as gameNow } from '../state/gameClock'
+import { pressParry } from '../state/parry'
 import { playerBody } from '../state/playerBody'
 import { playerTransform } from '../state/playerTransform'
 import { touchInput, resetTouchMove } from '../state/touchInput'
@@ -124,6 +125,7 @@ export function Player() {
   const strideRef = useRef(0)
   const jumpRequested = useRef(false)
   const attackRequested = useRef(false)
+  const parryRequested = useRef(false)
 
   const [subscribeKeys, getKeys] = useKeyboardControls<Control>()
 
@@ -150,9 +152,16 @@ export function Player() {
         if (pressed) attackRequested.current = true
       },
     )
+    const unsubscribeParry = subscribeKeys(
+      (state) => state.parry,
+      (pressed) => {
+        if (pressed) parryRequested.current = true
+      },
+    )
     return () => {
       unsubscribeJump()
       unsubscribeAttack()
+      unsubscribeParry()
     }
   }, [subscribeKeys])
 
@@ -186,12 +195,14 @@ export function Player() {
       // avant la pause, et le personnage bondirait à la réouverture du jeu.
       jumpRequested.current = false
       attackRequested.current = false
+      parryRequested.current = false
       // Mêmes raisons que pour les refs clavier ci-dessus : une demande tactile
       // faite juste avant la pause ne doit pas se déclencher à la reprise. Le
       // joystick est remis au neutre pour ne pas « marcher sur place » si
       // l'overlay a disparu avant le pointerup.
       touchInput.jumpRequested = false
       touchInput.attackRequested = false
+      touchInput.parryRequested = false
       resetTouchMove()
       // Le clignotement d'i-frames laisse le modèle une frame sur deux à
       // `visible = false` : figer la boucle sur l'une de ces frames laisserait
@@ -320,6 +331,20 @@ export function Player() {
       }
     }
 
+    // --- 4 bis. Parade --------------------------------------------------------
+    // Événementielle comme l'attaque, et pour la même raison : sondée dans la
+    // boucle, une pression plus courte qu'une frame serait perdue — et une
+    // parade *est* plus courte qu'une frame sur une machine chargée.
+    //
+    // Aucune condition de contexte : la touche marche partout, même sans
+    // ennemi. C'est ce qui permet au joueur d'apprendre le geste avant d'en
+    // avoir besoin, et à `pressParry` de le punir s'il en abuse.
+    if (parryRequested.current || touchInput.parryRequested) {
+      parryRequested.current = false
+      touchInput.parryRequested = false
+      if (pressParry(gameNow()) === 'guard') playParry()
+    }
+
     // --- 5. Orientation du modèle -------------------------------------------
     // Les rotations du rigid body sont verrouillées (le personnage ne doit
     // jamais basculer) : on tourne uniquement le groupe visuel enfant.
@@ -380,9 +405,10 @@ export function Player() {
       continent alors qu'il est dans le ciel. `spawnFor` est la seule table qui
       réponde à « où remet-on le joueur sur cette carte ».
 
-      Aucun dégât n'est infligé : l'île n'a pas encore d'enjeu, et punir une
-      chute sur une carte qu'on explore découragerait exactement ce qu'on veut
-      encourager. Le jour où le boss existera, c'est ici qu'on posera le coût.
+      Aucun dégât n'est infligé, boss compris. Tomber pendant le combat a déjà
+      un coût, et le bon : le Lynel est tenu sur son dallage, donc le joueur
+      revient à pied par une rampe pendant que le gardien l'attend au complet.
+      Y ajouter des cœurs punirait deux fois la même erreur.
     */
     // Lecture non réactive : ce composant ne doit pas se re-rendre au voyage,
     // c'est `WorldTransition` qui le repose.

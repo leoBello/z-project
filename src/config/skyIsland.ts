@@ -41,6 +41,84 @@ export const CORE_Y = 7.2
 /** Cime de l'arbre. Voir la note de cadrage dans la spec. */
 export const TREE_TOP = 26
 
+/*
+  Où pousse l'arbre, et pourquoi pas au centre.
+
+  Il était au centre de la rotonde, et la rotonde est l'arène du boss : son
+  tronc de 5,4 de rayon, ses racines et le bassin à son pied ne laissaient
+  qu'un couloir de cinq unités et demie entre le bois et les piliers. On l'a
+  reculé **derrière** l'arène, vu depuis le point d'arrivée — le joueur voit
+  la rotonde devant lui et l'arbre se dresser au-delà, ce qui garde l'image
+  tout en rendant le sol.
+
+  Pas plein nord : une rampe intérieure y passe (`RAMPS_INNER`, π). À 3,9 rad
+  et 21 unités, il se loge sur la terrasse du jardin entre deux rampes, à plus
+  de dix unités de la tour la plus proche et loin de la salle à colonnes, et
+  son tronc s'arrête avant l'enceinte (21 + 5,4 < 29,5) tandis que sa couronne
+  la surplombe.
+*/
+export const TREE_THETA = 3.9
+export const TREE_R = 21
+/** Le pied de l'arbre est sur la terrasse du jardin, plus sur le cœur. */
+export const TREE_BASE_Y = GARDEN_Y
+
+export function treePosition(): [number, number, number] {
+  return [Math.sin(TREE_THETA) * TREE_R, TREE_BASE_Y, Math.cos(TREE_THETA) * TREE_R]
+}
+
+/*
+  La rotonde, dont les cotes étaient privées à `Ruins.tsx`.
+
+  Elles en sortent parce que le combat en a besoin : les barrières de l'arène
+  doivent tomber exactement dans les deux travées écroulées, et une seconde
+  copie de ces nombres — sans le déphasage de 0,31 rad, par exemple — mettrait
+  les barrières entre deux piliers debout.
+*/
+export const ROTUNDA_R = 11.5
+export const ROTUNDA_PIERS = 10
+/** Déphasage des piliers : aucun n'est dans l'axe de la porte. */
+export const ROTUNDA_PIER_PHASE = 0.31
+/** Les deux travées écroulées, qui ouvrent l'arène. */
+export const ROTUNDA_RUINED_BAYS = [3, 7] as const
+
+/** Angle du pilier `i`, dans le repère polaire de l'île. */
+export function rotundaPierAngle(i: number) {
+  return (i / ROTUNDA_PIERS) * Math.PI * 2 + ROTUNDA_PIER_PHASE
+}
+
+/**
+ * Rayon que rien ne doit franchir vers le centre : ni tronc, ni racine, ni
+ * bassin. C'est la promesse de cette tâche, et le contrôle de fin la mesure.
+ */
+export const ARENA_CLEAR_R = 12.8
+/*
+  La rigole qui ceinture la rotonde, et pourquoi ce rayon-là exactement.
+
+  Il est tenu des deux côtés. En dessous, les socles des piliers : ils débordent
+  de 1,25 de part et d'autre du cercle des piliers (11,5), donc jusqu'à 12,75, et
+  une rigole plus près leur passerait au travers. Au-dessus, la falaise du cœur,
+  qui commence à 14 : une rigole plus loin déborderait dans la pente. À 13,35, sa
+  pierre occupe 12,8 à 13,9 — elle dégage les socles et reste sur le plat.
+*/
+export const GUTTER_R = 13.35
+
+/*
+  Où se tient la source : la pointe des racines grimpantes et le bec doré qui s'y
+  pose. Les deux cotes vivent ici parce que `Flora.tsx` pose la racine et
+  `Water.tsx` le bec, et que deux valeurs écrites chacune de son côté finiraient
+  par diverger — le bec verserait dans le vide.
+
+  En arrière de l'axe de la rigole (0,9) et non à son aplomb : c'est le recul
+  qu'il faut au bec, long de deux unités et piqué vers l'intérieur, pour verser
+  **dans** le caniveau et non sur le dallage.
+
+  Deux unités au-dessus du dallage et non une : à une, le filet ne faisait qu'un
+  demi-mètre de haut et la source ne se lisait pas depuis la caméra de jeu, qui
+  regarde l'arène de vingt-quatre unités.
+*/
+export const SOURCE_TIP_R = GUTTER_R + 0.9
+export const SOURCE_TIP_Y = CORE_Y + 2.2
+
 /**
  * Rampes : trois par marche, décalées de 60° d'un étage à l'autre.
  *

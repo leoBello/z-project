@@ -4,12 +4,14 @@
       "move": "move",
       "jump": "jump",
       "attack": "attack",
+      "parry": "parry",
       "interact": "interact",
       "heartsLabel": "{current} of {total} hearts"
     },
     "touch": {
       "move": "move",
       "attack": "attack",
+      "parry": "parry",
       "jump": "jump",
       "interact": "interact",
       "hint": "Touch the screen to bring up the joystick"

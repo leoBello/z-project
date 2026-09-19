@@ -1,5 +1,8 @@
 import { SKY_PORTAL } from '../../config/portal'
 import { Portal } from '../environment/Portal'
+import { Lynel } from '../Lynel'
+import { ArenaGate } from './ArenaGate'
+import { RotundaReward } from './RotundaReward'
 import { Flora } from './Flora'
 import { Ruins } from './Ruins'
 import { SkyTerrain } from './Terrain'
@@ -34,6 +37,13 @@ export default function SkyIsland() {
           deux portails qui divergeraient au premier réglage de l'anneau
           seraient un défaut qu'on ne verrait qu'en faisant l'aller-retour. */}
       <Portal at={SKY_PORTAL} openedAt={ALREADY_OPEN} />
+
+      {/* Le gardien de la rotonde. Il s'inscrit lui-même au registre des
+          ennemis, donc à la minimap et au calque de combat : rien à lui passer. */}
+      <Lynel />
+      {/* Elles ne paraissent que pendant le combat : voir `bossState`. */}
+      <ArenaGate />
+      <RotundaReward />
     </>
   )
 }

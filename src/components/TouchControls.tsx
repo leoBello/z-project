@@ -196,6 +196,27 @@ function TouchControlsOverlay() {
         >
           A
         </button>
+        <button
+          type="button"
+          className="touch-button touch-button--parry"
+          aria-label={dict.ui.touch.parry}
+          onPointerDown={() => {
+            touchInput.parryRequested = true
+          }}
+        >
+          {/* Un bouclier, et non une épée barrée : le geste est défensif et
+              doit se distinguer du bouton d'attaque au coup d'œil, pouce posé
+              dessus. */}
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12 3l7 3v5.5c0 4.2-2.9 7.7-7 8.5-4.1-.8-7-4.3-7-8.5V6l7-3z"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
       </div>
     </div>
   )

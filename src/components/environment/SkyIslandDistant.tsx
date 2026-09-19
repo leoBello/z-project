@@ -18,6 +18,7 @@ import {
   ARCH_CLEAR,
   CORE_Y,
   SKY_COLORS,
+  TREE_BASE_Y,
   TREE_TOP,
   WALL_H,
   WALL_R,
@@ -26,6 +27,7 @@ import {
   surfaceRelief,
   topHeight,
   topSlope,
+  treePosition,
   underHeight,
   underRadius,
 } from '../../config/skyIsland'
@@ -297,11 +299,15 @@ function buildMassing() {
     parts.push(tint(dome, SKY_COLORS.gold, 0.52))
   }
 
-  // L'arbre, à la hauteur réelle : c'est lui qui donne l'échelle de l'île.
+  // L'arbre, à la hauteur réelle : c'est lui qui donne l'échelle de l'île. À
+  // sa place réelle aussi, derrière la rotonde — sans quoi on le verrait, depuis
+  // le continent, au centre de l'île, et on le trouverait ailleurs une fois
+  // arrivé.
   {
-    const trunkH = TREE_TOP - CORE_Y - 5
+    const [treeX, , treeZ] = treePosition()
+    const trunkH = TREE_TOP - TREE_BASE_Y - 5
     const trunk = new CylinderGeometry(2.2, 5.4, trunkH, 6)
-    trunk.translate(0, CORE_Y + trunkH / 2, 0)
+    trunk.translate(treeX, TREE_BASE_Y + trunkH / 2, treeZ)
     parts.push(tint(trunk, SKY_COLORS.bark, 0.45))
 
     // Couronne étagée plutôt qu'une boule : à cette distance, c'est la découpe
@@ -314,7 +320,7 @@ function buildMassing() {
     ] as const) {
       const blob = new IcosahedronGeometry(s, 0)
       blob.scale(1, 0.58, 1)
-      blob.translate(x, y, z)
+      blob.translate(treeX + x, y, treeZ + z)
       parts.push(tint(blob, light ? SKY_COLORS.leaf : SKY_COLORS.leafDark, 0.42))
     }
   }

@@ -23,6 +23,19 @@ export interface EnemyMaterials {
 const PALETTES: Record<EnemyKind, { body: string; dark: string; accent: string }> = {
   octorok: { body: '#d9534a', dark: '#8f3630', accent: '#f6e7c9' },
   moblin: { body: '#9a6b3f', dark: '#5d3f27', accent: '#e4d8bd' },
+  /*
+    Le Lynel passe par le même hook que les deux autres, et ce n'est pas une
+    contrainte de typage qu'on subit : c'est le flash blanc qu'on récupère
+    gratuitement. `Enemy.tsx` fait clignoter un ennemi touché en écrasant
+    `materials.body.color` et `materials.dark.color` ; en tenant son pelage, ses
+    marques et sa crinière dans ces trois matériaux-là, le Lynel encaisse
+    visuellement comme tout le monde sans une ligne de plus.
+
+    Le reste de sa matière — or, métal, corne, acier, sabot, cuir — vit dans
+    `lynelMaterials.ts`, et ne flashe pas. C'est correct : ce qui doit blanchir
+    sous le coup, c'est la chair.
+  */
+  lynel: { body: '#dfe4ee', dark: '#5a6378', accent: '#f4f6fb' },
 }
 
 export function useEnemyMaterials(kind: EnemyKind): EnemyMaterials {

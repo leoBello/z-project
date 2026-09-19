@@ -19,10 +19,12 @@ import {
   HIT_KNOCKBACK,
   HIT_STOP_MS,
 } from '../config/enemies'
-import { playDefeat, playHit } from '../audio/sfx'
+import { playDefeat, playHit, playParrySuccess } from '../audio/sfx'
 import { killRadius } from '../config/annihilation'
 import { ATTACK } from '../config/gameplay'
+import { PARRY } from '../config/parry'
 import { sampleHeight } from '../config/world'
+import { cancelParry, consumeParry, offerParry } from '../state/parry'
 import { playerTransform } from '../state/playerTransform'
 import { shake } from '../state/cameraShake'
 import { spawnDeathPuff, spawnDeathRing } from '../state/deathPuffs'
@@ -72,6 +74,18 @@ interface EnemyRuntime {
   /** Horodatage d'entrée dans l'état courant. */
   stateSince: number
   lastAttackAt: number
+  /**
+   * Fin de l'immobilisation imposée par une parade réussie.
+   *
+   * Un champ à part, et c'est une correction : le blocage passait par
+   * `lastAttackAt = now + punishMs`, ce qui marchait pour la recharge mais
+   * cassait la pose. Celle-ci lit `now - lastAttackAt` pour animer la détente du
+   * coup ; avec une valeur posée dans le futur, l'écart balayait −1 300 → 0 et
+   * le sinus de la détente traversait cinq demi-périodes. Le Moblin vibrait
+   * d'avant en arrière pendant toute l'ouverture — c'est-à-dire exactement
+   * pendant la seconde et demie où le joueur est censé le punir.
+   */
+  attackBlockedUntil: number
   /** Vrai entre le début d'une préparation d'attaque et sa résolution. */
   windupPending: boolean
   windupStartedAt: number
@@ -190,6 +204,10 @@ function killEnemy(
   state.dropsHeart = dropsHeart
   useGameStore.getState().registerKill()
 
+  // Un Moblin tué pendant sa préparation laisserait son offre derrière lui :
+  // l'anneau resterait allumé et une parade partirait dans le vide.
+  cancelParry(spawnId)
+
   // Le registre doit dire « mort » dès l'instant du coup fatal, et pas seulement
   // à la frame suivante comme avant : la branche de mort passe désormais avant
   // `updateEnemyMarker`, qu'elle n'atteint donc jamais. Sans ça, le calque de
@@ -234,6 +252,7 @@ export function Enemy({ spawn }: EnemyProps) {
     state: 'idle',
     stateSince: 0,
     lastAttackAt: -Infinity,
+    attackBlockedUntil: -Infinity,
     windupPending: false,
     windupStartedAt: 0,
     lastHitSwing: -Infinity,
@@ -529,11 +548,15 @@ export function Enemy({ spawn }: EnemyProps) {
     // reviendrait à échantillonner quelques centaines de millisecondes dans une
     // boucle à cadence variable — le piège déjà payé trois fois sur ce projet.
     const ready =
-      state.state === 'attack' && !frozen && now - state.lastAttackAt > stats.attackCooldownMs
+      state.state === 'attack' &&
+      !frozen &&
+      now > state.attackBlockedUntil &&
+      now - state.lastAttackAt > stats.attackCooldownMs
 
     if (ready && !state.windupPending) {
       state.windupPending = true
       state.windupStartedAt = now
+      if (stats.parryable) offerParry(spawn.id, now + stats.telegraphMs)
     }
 
     // Sortir de portée annule le coup en préparation. C'est tout l'intérêt du
@@ -541,6 +564,9 @@ export function Enemy({ spawn }: EnemyProps) {
     // de toute façon inévitable.
     if (state.windupPending && (frozen || state.state !== 'attack')) {
       state.windupPending = false
+      // L'offre part avec le coup, sinon l'anneau reste allumé sous un joueur
+      // qui n'a plus rien à parer.
+      cancelParry(spawn.id)
     }
 
     if (state.windupPending && now - state.windupStartedAt >= stats.telegraphMs) {
@@ -550,6 +576,30 @@ export function Enemy({ spawn }: EnemyProps) {
         muzzle.set(position.x, position.y + 0.45, position.z)
         playerChest.copy(playerTransform.position)
         fireProjectile(muzzle, playerChest, stats.spread)
+      } else if (stats.parryable && consumeParry(now)) {
+        /*
+          Paré.
+
+          Aucun multiplicateur de dégâts ici, contrairement au Lynel : un Moblin
+          a 3 points de vie, et une ouverture à dégâts triplés le tuerait d'un
+          coup. La parade deviendrait une exécution, et le continent se
+          traverserait en appuyant sur R. Sa récompense est l'ouverture elle-même
+          — il est repoussé, et son prochain coup n'arrive pas avant
+          `punishMs` **plus** son temps de recharge, soit 2,8 s : de quoi placer
+          deux coups ordinaires sans être interrompu.
+
+          Gel, secousse et son jouent en temps réel, pendant le gel : même
+          raison que la mort d'un ennemi, plus haut dans ce fichier.
+        */
+        state.attackBlockedUntil = now + PARRY.punishMs
+        knockback.set(position.x - playerTransform.position.x, 0, position.z - playerTransform.position.z)
+        if (knockback.lengthSq() > 1e-6) {
+          knockback.normalize().multiplyScalar(HIT_KNOCKBACK)
+          rb.setLinvel({ x: knockback.x, y: 2, z: knockback.z }, true)
+        }
+        hitStop(PARRY.hitStopMs)
+        shake(0.1, 140)
+        playParrySuccess()
       } else {
         useGameStore.getState().damagePlayer(stats.damage)
       }

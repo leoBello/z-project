@@ -1795,6 +1795,33 @@ body:has(.lightbox) .teleport-menu {
   fill: currentColor;
 }
 
+/*
+  Le bouton de parade, au-dessus de celui d'attaque et plus petit.
+
+  La grille 2×2 du bloc n'a qu'une cellule libre — (colonne 2, ligne 1),
+  au-dessus d'attaque — sans agrandir la grille et donc sans déplacer sauter
+  ni interagir. Plus petit parce que c'est le geste le moins fréquent des
+  trois, et surtout parce qu'il ne doit jamais être touché par erreur à la
+  place de l'attaque : au pouce, un bouton de même taille collé à un autre est
+  un bouton qu'on manque une fois sur dix.
+*/
+.touch-button--parry {
+  grid-column: 2;
+  grid-row: 1;
+  width: 56px;
+  height: 56px;
+  background: rgba(109, 47, 208, 0.28);
+  border-color: rgba(176, 131, 255, 0.55);
+  color: #e6ccff;
+}
+
+/* Sans taille explicite, un `<svg>` sans `width`/`height` se rend à sa taille
+   intrinsèque du navigateur (300×150) et déborderait largement du bouton. */
+.touch-button--parry svg {
+  width: 24px;
+  height: 24px;
+}
+
 /* --- Bulles d'aide tactiles ---------------------------------------------- */
 
 /*

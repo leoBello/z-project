@@ -4,7 +4,9 @@ import { Outlines } from '@react-three/drei'
 import { DoubleSide, Group, MathUtils } from 'three'
 import type { OutfitId, WeaponId } from '../../config/items'
 import { ATTACK, PLAYER } from '../../config/gameplay'
+import { PARRY } from '../../config/parry'
 import { isHitStopped, now as gameNow } from '../../state/gameClock'
+import { parry } from '../../state/parry'
 import { playerTransform } from '../../state/playerTransform'
 import { toonGradient } from './toonGradient'
 
@@ -374,6 +376,14 @@ export function HeroPlaceholder({
     const attackProgress = elapsed / ATTACK.durationMs
     const attacking = attackProgress >= 0 && attackProgress <= 1
 
+    // --- Garde ---------------------------------------------------------------
+    // Le seul retour *diégétique* de la parade : l'anneau au sol dit quand, le
+    // bras dit quoi. Une garde sans geste laisserait croire que la touche n'a
+    // rien fait. Elle décroît sur la fenêtre, pour que la lame redescende au
+    // moment exact où la garde se ferme — c'est ce qui enseigne sa longueur.
+    const guardLeft = parry.guardUntil - gameNow()
+    const guard = guardLeft > 0 ? Math.min(1, guardLeft / PARRY.windowMs) : 0
+
     // --- Jambes -------------------------------------------------------------
     // Au sol : balancier. En l'air : jambe avant repliée, jambe arrière tendue.
     legL.current.rotation.x = ground * stride * 0.85 * run + air * -0.75
@@ -383,7 +393,15 @@ export function HeroPlaceholder({
     // Chaque bras oppose la jambe du même côté (démarche naturelle).
     armL.current.rotation.x = ground * -stride * 0.65 * run + air * 0.7
 
-    if (attacking) {
+    if (guard > 0) {
+      // La garde l'emporte sur le swing et ne s'y additionne jamais : deux
+      // poses additionnées donnent un bras disloqué. On ne pare pas au milieu
+      // d'un coup, et si les deux se chevauchent d'une frame, c'est la garde
+      // qu'il faut voir. Lame en travers du torse, à hauteur d'épaule.
+      armR.current.rotation.x = -1.15 * guard
+      armR.current.rotation.z = 0.95 * guard
+      torso.current.rotation.y = MathUtils.damp(torso.current.rotation.y, -0.35, 18, delta)
+    } else if (attacking) {
       // L'attaque écrase complètement le balancier sur le bras armé.
       armR.current.rotation.x = keyframe(attackProgress, SWING_ARM)
       armR.current.rotation.z = keyframe(attackProgress, SWING_TWIST)

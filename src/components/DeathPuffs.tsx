@@ -20,7 +20,6 @@ import {
   DEATH_RING_FROM,
   DEATH_RING_MS,
   DEATH_RING_POOL_SIZE,
-  DEATH_RING_TO,
   deathPuffs,
   deathRings,
 } from '../state/deathPuffs'
@@ -273,7 +272,7 @@ function DeathRings() {
       // est le mouvement d'un choc. Linéaire, elle se lit comme un halo qui
       // grandit.
       const ease = 1 - (1 - k) ** 3
-      const radius = DEATH_RING_FROM + (DEATH_RING_TO - DEATH_RING_FROM) * ease
+      const radius = DEATH_RING_FROM + (ring.to - DEATH_RING_FROM) * ease
       position.copy(ring.position)
       scale.set(radius, radius, radius)
       matrix.compose(position, FLAT, scale)

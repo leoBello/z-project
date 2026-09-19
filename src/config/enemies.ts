@@ -44,6 +44,15 @@ export interface EnemyStats {
   ranged: boolean
   /** Dispersion du tir, en radians. Ignorée pour un ennemi de corps-à-corps. */
   spread?: number
+  /**
+   * L'attaque de corps-à-corps se pare-t-elle ?
+   *
+   * Un drapeau par espèce et non une règle générale, parce que la parade n'a de
+   * sens que sur un coup *annoncé*. Le projectile de l'Octorok se renvoie déjà
+   * au coup d'épée — c'est un autre geste, qui existe depuis le début et n'a
+   * pas à changer.
+   */
+  parryable: boolean
 }
 
 export const ENEMIES: Record<EnemyKind, EnemyStats> = {
@@ -70,6 +79,7 @@ export const ENEMIES: Record<EnemyKind, EnemyStats> = {
     // de collision de 0,62 — le tir devient évitable au loin sans cesser de
     // faire mouche à bout portant.
     spread: 0.088,
+    parryable: false,
   },
   moblin: {
     kind: 'moblin',
@@ -89,6 +99,62 @@ export const ENEMIES: Record<EnemyKind, EnemyStats> = {
     halfHeight: 0.55,
     minimapColor: '#c8892f',
     ranged: false,
+    // Son télégraphe dure 420 ms, soit moins que les 500 ms d'avance du signal
+    // (`PARRY.cueLeadMs`) : l'offre couvre donc toute la préparation, et
+    // l'anneau s'allume à la frame même où le Moblin se ramasse. C'est ce qu'on
+    // veut de lui — il est le coup sur lequel la parade s'apprend, bien avant
+    // l'île, et un télégraphe à tête muette le rendrait imparable.
+    parryable: true,
+  },
+  /*
+    Le Lynel, dans la table commune.
+
+    Il n'y est pas parce que sa machine à états serait celle d'`Enemy.tsx` —
+    elle ne l'est pas, il a la sienne. Il y est parce que quatre systèmes
+    partagés lisent `ENEMIES[kind]` sans rien savoir de l'ennemi qu'ils
+    affichent : la minimap pour la couleur du point, le calque de combat pour
+    la hauteur de la barre de vie, le registre pour les PV, et la caméra de
+    menace pour le rayon. Lui donner une entrée coûte dix lignes ; ne pas lui
+    en donner obligerait à ouvrir ces quatre-là.
+
+    Les champs d'attaque décrivent le **balayage**, qui est son coup de base et
+    le seul dont ces systèmes aient besoin. Les six attaques complètes vivent
+    dans `config/lynel.ts`.
+  */
+  lynel: {
+    kind: 'lynel',
+    label: 'Lynel argenté',
+    /*
+      36, et le nombre a une unité : ce sont des coups d'épée non bonifiés.
+      Douze fois le Moblin. Il est calibré pour qu'un combat mené proprement —
+      c'est-à-dire une poignée de parades réussies, chacune valant deux coups à
+      dégâts triplés — dure entre deux et trois minutes.
+    */
+    hp: 36,
+    speed: 3.2,
+    patrolSpeed: 1.4,
+    /*
+      L'arène fait 11,5 de rayon : une détection à 14 couvre tout le dallage et
+      s'arrête avant l'arcade. Le joueur ne déclenche donc rien depuis le seuil.
+    */
+    detectRadius: 14,
+    attackRange: 3.6,
+    attackCooldownMs: 2200,
+    telegraphMs: 620,
+    damage: 2,
+    /*
+      Volontairement plus étroit que le modèle, qui fait 1,3 de large aux
+      épaules : on doit pouvoir frôler la croupe sans être bloqué. Un collider
+      qui épouse un boss transforme l'esquive latérale en collision.
+    */
+    radius: 1.15,
+    halfHeight: 1.0,
+    minimapColor: '#d8dce6',
+    ranged: false,
+    // Sans effet réel : `Lynel.tsx` ne passe pas par la branche d'attaque
+    // d'`Enemy.tsx`, et décide attaque par attaque via `LYNEL_ATTACKS`. Mais le
+    // champ est obligatoire, et `true` dit la vérité sur son coup de base.
+    parryable: true,
   },
 }
 

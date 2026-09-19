@@ -23,7 +23,25 @@ export type MapId = 'continent' | 'sky'
 export type EnemyState = 'idle' | 'patrol' | 'chase' | 'attack' | 'dead'
 
 /** Familles d'ennemis. Ajouter une variante ici suffit à l'enregistrer. */
-export type EnemyKind = 'octorok' | 'moblin'
+export type EnemyKind = 'octorok' | 'moblin' | 'lynel'
+
+/**
+ * Les trois phases du Lynel.
+ *
+ * Elles ne changent pas ses statistiques, elles changent la *liste* de ce qu'il
+ * peut faire. Un boss qui devient plus rapide est le même boss en moins
+ * lisible ; un boss qui apprend une attaque de plus est un autre combat.
+ */
+export type LynelPhase = 'sword' | 'arena' | 'rage'
+
+/** Les six attaques. La table vit dans `config/lynel.ts`. */
+export type LynelAttackId =
+  | 'sweep'
+  | 'thrust'
+  | 'stomp'
+  | 'charge'
+  | 'volley'
+  | 'breath'
 
 /** Description statique d'un ennemi, telle que posée dans un biome. */
 export interface EnemySpawn {
@@ -55,6 +73,18 @@ export interface Annihilation {
 
 /** Identifiant de point d'intérêt. La table vit dans `config/landmarks.ts`. */
 export type LandmarkId = 'temple' | 'pyramid' | 'stele' | 'statue' | 'ruins' | 'nakano'
+
+/**
+ * D'où peut venir un réceptacle de cœur.
+ *
+ * Les monuments, et la rotonde — qui n'est **pas** un monument et ne doit pas en
+ * devenir un : une entrée dans `LANDMARKS` creuse une terrasse, interdit la
+ * végétation, paraît sur la minimap dès la première frame et entre dans le menu
+ * de téléportation. Le réceptacle de la rotonde n'existe qu'après la mort du
+ * Lynel ; l'annoncer sur la carte dès le départ le déflorerait. Même
+ * raisonnement que le portail de l'île, qui n'est pas un monument non plus.
+ */
+export type HeartSourceId = LandmarkId | 'rotunda'
 
 /**
  * Identifiant d'objet ramassable. La table vit dans `config/items.ts`, et les

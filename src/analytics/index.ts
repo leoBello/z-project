@@ -1,4 +1,4 @@
-import type { LandmarkId } from '../types/game'
+import type { LandmarkId, LynelAttackId } from '../types/game'
 
 /**
  * Mesure d'audience.
@@ -75,6 +75,30 @@ interface Events {
    * rien à faire sur l'île.
    */
   sky_island_entered: { via: 'portal' }
+  /**
+   * Une parade reussie sur le Lynel, et laquelle de ses attaques elle a cassee.
+   *
+   * C'est la seule mesure qui dise si la mecanique la plus difficile du jeu est
+   * comprise : un combat gagne sans une seule parade se voit ici en creux, et
+   * `attack` dit laquelle de ses annonces se lit vraiment.
+   */
+  boss_parry: { attack: LynelAttackId }
+  /**
+   * Le joueur entre dans l'arène de la rotonde et engage le Lynel.
+   *
+   * Le pendant de `sky_island_entered` : arriver sur l'île est une découverte,
+   * franchir l'arcade est une décision. L'écart entre les deux dit combien
+   * reculent devant la bête.
+   */
+  boss_engaged: { phase: 'sword' }
+  /**
+   * Le Lynel tombe, et avec combien de cœurs il restait au joueur.
+   *
+   * C'est le seul chiffre qui dise si le combat est trop dur ou trop facile :
+   * une majorité de victoires à un cœur et il est au bord de l'injuste, une
+   * majorité à pleine vie et il ne demande rien.
+   */
+  boss_defeated: { hearts: number }
 }
 
 declare global {

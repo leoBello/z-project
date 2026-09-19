@@ -398,7 +398,7 @@ export function Temple() {
         balise du lieu, visible depuis la plaine, le déplacer casserait la
         silhouette du temple.
       */}
-      <HeartContainer landmarkId={TEMPLE.id} position={[0, FLOOR_Y + 1.75, 0]} />
+      <HeartContainer sourceId={TEMPLE.id} position={[0, FLOOR_Y + 1.75, 0]} />
 
       {/*
         Le marqueur d'interaction, sur le parvis, dans l'axe de l'escalier. Sa
