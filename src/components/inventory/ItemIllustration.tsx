@@ -14,40 +14,45 @@ import type { ItemId } from '../../types/game'
  * d'illustrateur.
  */
 
-/** Teintes partagées avec la silhouette 3D. Voir `OUTFITS.ninja`. */
-const NINJA = {
-  coat: '#4b4062',
-  coatShade: '#3a3150',
-  plate: '#a8302f',
-  plateShade: '#7d1f22',
-  lace: '#d8a93f',
-  wrap: '#ece4d4',
-  hair: '#1a1723',
-  skin: '#f0c39c',
+/** Teintes partagées avec la silhouette 3D. Voir `OUTFITS.zoro`. */
+const ZORO = {
+  coat: '#1f6b3c',
+  coatShade: '#17532e',
+  sash: '#57a544',
+  sashShade: '#3f8231',
+  saya: '#1b1822',
+  gold: '#d8a93f',
+  grip: '#f4efe2',
+  hair: '#6fa83c',
+  skin: '#efbb86',
+  scar: '#c98a5e',
+  trouser: '#2b2733',
 } as const
 
 /**
- * Tenue du Clan.
+ * Tenue du Chasseur de Pirates.
  *
- * Cadrée **en pied**, sur un format portrait (320 × 300).
+ * Cadrée **en pied**, sur un format portrait (320 × 300), comme la carte du
+ * katana : la colonne d'illustration prend la hauteur du texte à côté, pas celle
+ * du dessin, et un cadre paysage laissait un bandeau vide sous les pieds.
  *
- * Le premier jet était au format paysage : la figure s'y tassait dans la moitié
- * haute et la case laissait un bandeau vide sous ses pieds, parce que la
- * colonne d'illustration de la carte prend la hauteur du texte à côté, pas
- * celle du dessin. Un cadre portrait règle les deux à la fois — la silhouette a
- * la place de se déployer, et le rapport de forme tombe juste.
+ * Le fond monte du sombre au clair et porte un halo doré derrière les épaules.
+ * Il est resté doré alors que la tenue est passée du prune au vert, et c'est
+ * volontaire : un halo vert derrière un manteau vert aurait effacé l'épaule, qui
+ * est justement l'endroit où la silhouette est la plus large.
  *
- * Le fond monte du sombre au clair et porte un halo doré derrière les épaules :
- * sans lui, le manteau prune et la crinière noire se découpaient sur le fond de
- * la carte comme un autocollant.
+ * Trois choses portent la reconnaissance, et elles sont dessinées dans cet
+ * ordre de priorité : le **manteau ouvert** sur un torse balafré, le **haramaki**
+ * qui coupe la figure à la taille, et les **deux fourreaux** qui pendent au
+ * côté. Le visage vient après — à 320 pixels de large il ne pèse presque rien.
  */
-function NinjaGarb() {
+function ZoroGarb() {
   return (
     <svg viewBox="0 0 320 300" role="img" aria-hidden="true" focusable="false">
       <defs>
         <linearGradient id="garb-sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#2a2440" />
-          <stop offset="100%" stopColor="#5b5178" />
+          <stop offset="0%" stopColor="#241f3a" />
+          <stop offset="100%" stopColor="#56507a" />
         </linearGradient>
         <radialGradient id="garb-halo" cx="0.5" cy="0.38" r="0.55">
           <stop offset="0%" stopColor="#c9a04a" stopOpacity="0.5" />
@@ -63,82 +68,82 @@ function NinjaGarb() {
       <path d="M0 276 L86 258 L160 268 L240 254 L320 272 L320 300 L0 300 Z" fill="#241f38" />
 
       {/*
-        Crinière, dessinée avant le corps : elle passe derrière les épaules.
-        Le contour est volontairement irrégulier — les pointes n'ont ni la même
-        longueur ni le même écartement. Une couronne régulière se lit comme un
-        oursin, pas comme une chevelure ; c'est le même raisonnement que pour la
-        crinière du modèle 3D.
+        Coupe verte, dessinée avant la tête : elle passe derrière le crâne.
+
+        Courte, et c'est tout l'écart avec la crinière qui occupait ce cadre
+        avant elle — les pointes partent vers l'arrière et aucune ne descend
+        sous la mâchoire. Leurs longueurs sont inégales : une couronne régulière
+        se lit comme un oursin, pas comme une chevelure.
       */}
       <path
-        d="M160 24 C104 24 84 60 90 104 C93 138 80 164 60 196
-           C92 182 112 162 120 138 C116 172 106 190 86 212
-           C124 202 146 178 154 152 L166 152 C174 178 196 202 234 212
-           C214 190 204 172 200 138 C208 162 228 182 260 196
-           C240 164 227 138 230 104 C236 60 216 24 160 24 Z"
-        fill={NINJA.hair}
+        d="M160 22 C126 22 112 44 114 66 L108 48 L106 72 L98 60 L102 82
+           C104 92 108 98 114 102 L114 62 L206 62 L206 102
+           C212 98 216 92 218 82 L222 60 L214 72 L212 48 L206 66
+           C208 44 194 22 160 22 Z"
+        fill={ZORO.hair}
       />
 
-      {/* Bras, sous le manteau : ils portent les bandages. Sans eux, les
-          rectangles de lin flottaient dans le vide de part et d'autre du
-          torse — un bandage ne se lit que s'il entoure quelque chose. */}
-      <path d="M96 148 h26 v58 h-26 Z" fill={NINJA.coatShade} />
-      <path d="M198 148 h26 v58 h-26 Z" fill={NINJA.coatShade} />
+      {/* Visage. */}
+      <path d="M137 46 h46 v46 a23 23 0 0 1 -46 0 Z" fill={ZORO.skin} />
+      {/* Frange, ramenée en arrière : le front reste dégagé, sinon le regard
+          disparaît et avec lui la cicatrice. */}
+      <path d="M133 42 h54 v18 l-18 -7 l-18 7 l-18 -7 Z" fill={ZORO.hair} />
+      {/* Œil ouvert d'un côté, simple trait fermé de l'autre. C'est le
+          contraste entre les deux, pas le relief, qui se lit à cette taille. */}
+      <path d="M143 72 h13 v6 h-13 Z" fill="#241d2c" />
+      <path d="M164 72 h14 v3.5 h-14 Z" fill="#241d2c" />
+      {/* La balafre qui traverse l'œil clos. */}
+      <path d="M171 50 h4.5 v40 h-4.5 Z" fill={ZORO.scar} />
+      {/* Trois anneaux à l'oreille. */}
+      {[72, 80, 88].map((cy) => (
+        <circle key={cy} cx={188} cy={cy} r={3.4} fill={ZORO.gold} />
+      ))}
 
-      {/* Manteau : deux longs pans évasés, ouverts sur le devant. */}
+      {/* Bras, sous le manteau : ils sont nus, et sans eux les fourreaux
+          flotteraient dans le vide à côté du torse. */}
+      <path d="M100 138 h24 v72 h-24 Z" fill={ZORO.skin} />
+      <path d="M196 138 h24 v72 h-24 Z" fill={ZORO.skin} />
+      {/* Bandana noué au biceps. */}
+      <path d="M100 160 h24 v14 h-24 Z" fill={ZORO.trouser} />
+
+      {/* Torse nu, et la grande balafre de l'épaule à la hanche. Elle est
+          tracée avant le manteau : ce sont les pans qui la coupent, exactement
+          comme en 3D. */}
+      <path d="M140 120 h40 v104 h-40 Z" fill={ZORO.skin} />
       <path
-        d="M122 132 L198 132 L222 268 L188 268 L176 186 L160 268 L144 186 L132 268 L98 268 Z"
-        fill={NINJA.coat}
+        d="M137 132 L184 214"
+        stroke={ZORO.scar}
+        strokeWidth="9"
+        strokeLinecap="round"
       />
-      <path d="M160 132 L198 132 L222 268 L188 268 L176 186 L160 268 Z" fill={NINJA.coatShade} />
 
-      {/* Visage, juste assez pour qu'on lise une personne sous l'armure. */}
-      <path d="M137 46 h46 v46 a23 23 0 0 1 -46 0 Z" fill={NINJA.skin} />
-      <path d="M143 72 h13 v6 h-13 Z M164 72 h13 v6 h-13 Z" fill={NINJA.hair} />
-      {/* Frange : elle donne le regard bas et le côté fermé. */}
-      <path d="M133 42 h54 v24 l-15 -11 l-12 13 l-12 -13 l-15 11 Z" fill={NINJA.hair} />
+      {/* Jambes, dans l'échancrure du manteau. */}
+      <path d="M142 214 h16 v54 h-16 Z M162 214 h16 v54 h-16 Z" fill={ZORO.trouser} />
 
-      {/* Col montant : la pièce qui, plus que tout le reste, dit « clan ». */}
-      <path d="M124 132 L160 122 L196 132 L189 146 L160 136 L131 146 Z" fill={NINJA.plateShade} />
-
-      {/* Plastron : lamelles laquées, empilées et lacées d'or. */}
-      {[0, 1, 2].map((row) => (
-        <g key={row}>
-          <rect
-            x={126}
-            y={144 + row * 18}
-            width={68}
-            height={15}
-            rx={3}
-            fill={row % 2 === 0 ? NINJA.plate : NINJA.plateShade}
-          />
-          <rect x={145} y={144 + row * 18} width={4} height={15} fill={NINJA.lace} />
-          <rect x={173} y={144 + row * 18} width={4} height={15} fill={NINJA.lace} />
+      {/* Les deux sabres au fourreau, posés avant le haramaki : c'est la
+          ceinture qui doit avoir l'air de les tenir, pas l'inverse. */}
+      {[0, 1].map((i) => (
+        <g key={i} transform={`translate(${i * 15} ${i * 4}) rotate(${6 + i * 3} 224 240)`}>
+          <path d="M218 212 h12 v74 h-12 Z" fill={ZORO.saya} />
+          <circle cx="224" cy="208" r="9" fill={ZORO.gold} />
+          <path d="M219 172 h10 v32 h-10 Z" fill={i === 0 ? ZORO.grip : ZORO.saya} />
         </g>
       ))}
 
-      {/* Épaulières : les mêmes lamelles, débordant sur les bras. */}
-      {[0, 1, 2].map((row) => (
-        <g key={`pauldron-${row}`}>
-          <path
-            d={`M${92 - row * 6} ${136 + row * 19} h38 v16 h-${38 - row * 4} Z`}
-            fill={row % 2 === 0 ? NINJA.plate : NINJA.plateShade}
-          />
-          <path
-            d={`M190 ${136 + row * 19} h${38 - row * 4} l${row * 6} 16 h-38 Z`}
-            fill={row % 2 === 0 ? NINJA.plate : NINJA.plateShade}
-          />
-        </g>
-      ))}
+      {/* Manteau : deux pans évasés, franchement ouverts. L'échancrure fait
+          40 pixels de large sur 320 — en dessous, le torse et sa balafre
+          disparaissaient derrière le tissu. */}
+      <path d="M124 128 L146 128 L142 200 L138 268 L96 268 L118 150 Z" fill={ZORO.coat} />
+      <path d="M174 128 L196 128 L222 150 L226 268 L182 268 L178 200 Z" fill={ZORO.coatShade} />
 
-      {/* Bandages d'avant-bras, puis de mollets. */}
-      <rect x="92" y="200" width="34" height="34" rx="8" fill={NINJA.wrap} />
-      <rect x="194" y="200" width="34" height="34" rx="8" fill={NINJA.wrap} />
-      <rect x="136" y="236" width="22" height="30" rx="5" fill={NINJA.wrap} />
-      <rect x="162" y="236" width="22" height="30" rx="5" fill={NINJA.wrap} />
+      {/* Haramaki : large, et il déborde des deux pans. C'est la pièce qui
+          coupe la figure en deux et lui donne sa taille. */}
+      <path d="M118 198 h84 v34 h-84 Z" fill={ZORO.sash} />
+      <path d="M118 224 h84 v8 h-84 Z" fill={ZORO.sashShade} />
 
-      {/* Sandales sombres : elles ferment la silhouette par le bas, là où les
-          bandages s'arrêtaient dans le vide. */}
-      <path d="M130 264 h30 v9 h-34 Z M160 264 h30 v9 h-34 Z" fill="#2f2a3d" />
+      {/* Bottes sombres : elles ferment la silhouette par le bas, là où le
+          pantalon s'arrêtait dans le vide. */}
+      <path d="M136 258 h26 v16 h-30 Z M162 258 h26 v16 h-30 Z" fill={ZORO.trouser} />
     </svg>
   )
 }
@@ -237,7 +242,7 @@ function KusanagiKatana() {
 }
 
 const ILLUSTRATIONS: Record<ItemId, () => React.JSX.Element> = {
-  'ninja-garb': NinjaGarb,
+  'zoro-garb': ZoroGarb,
   kusanagi: KusanagiKatana,
 }
 

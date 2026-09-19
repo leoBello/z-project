@@ -7,10 +7,10 @@ import { HeroPlaceholder } from './HeroPlaceholder'
 import { SafeModel } from './SafeModel'
 
 /** Déposer le fichier ici pour remplacer le personnage procédural. */
-export const LINK_MODEL_URL = '/models/link.glb'
+export const HERO_MODEL_URL = '/models/hero.glb'
 
-function LinkGltf() {
-  const { scene } = useGLTF(LINK_MODEL_URL)
+function HeroGltf() {
+  const { scene } = useGLTF(HERO_MODEL_URL)
 
   // On clone : la scène renvoyée par useGLTF est mise en cache et partagée,
   // la monter telle quelle empêcherait toute réutilisation du modèle.
@@ -31,18 +31,19 @@ function LinkGltf() {
 /**
  * Modèle du joueur.
  *
- * Tant que `/models/link.glb` est absent, on affiche le personnage procédural
+ * Tant que `/models/hero.glb` est absent, on affiche le personnage procédural
  * de HeroPlaceholder — animé, cel-shadé, et donc parfaitement présentable. Il
  * est le seul des deux à savoir porter les tenues et les armes de l'inventaire :
  * un `.glb` déposé ici ignorera l'équipement, faute d'une convention de nommage
- * de matériaux à laquelle se raccrocher.
+ * de matériaux à laquelle se raccrocher — et il perdra donc aussi le second
+ * skin, qui n'est rien d'autre qu'un habillage du rig procédural.
  *
  * Convention du projet : **l'avant du modèle est +Z**. C'est ce qu'attend le
  * calcul de rotation de Player.tsx (`atan2(dir.x, dir.z)`). Si le .glb que tu
  * déposes regarde dans l'autre sens, ajoute `rotation-y={Math.PI}` sur le
  * `<primitive>` ci-dessus plutôt que de toucher à Player.tsx.
  */
-export function LinkModel() {
+export function HeroModel() {
   // Abonnements au store, et c'est sans danger : l'équipement ne change qu'à un
   // clic dans l'inventaire, jamais par frame. Le composant ne se re-rend donc
   // qu'à ces rares moments, et le rig d'animation, qui vit dans
@@ -51,11 +52,11 @@ export function LinkModel() {
   // renvoie un objet frais à chaque appel re-rendrait à chaque notification du
   // store, quelle que soit la valeur.
   const outfit = useGameStore((state) => outfitOf(state.equipped))
-  const weapon = useGameStore((state) => weaponOf(state.equipped))
+  const weapon = useGameStore((state) => weaponOf(state.equipped, outfitOf(state.equipped)))
 
   return (
     <SafeModel fallback={<HeroPlaceholder outfit={outfit} weapon={weapon} />}>
-      <LinkGltf />
+      <HeroGltf />
     </SafeModel>
   )
 }

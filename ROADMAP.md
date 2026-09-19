@@ -110,7 +110,19 @@ et découpage du bundle.
   d'emplacement) : on porte la tenue *et* l'arme. Un emplacement unique aurait
   été plus court à écrire et faux à jouer — la deuxième trouvaille serait
   devenue un renoncement à la première
-- **Tenue du Clan** (coffre de la pyramide) : +2 cœurs jaunes, silhouette ninja
+- **Deux skins, un seul rig.** Le joueur démarre en Luffy — torse nu, gilet
+  rouge, chapeau de paille, poings nus — et trouve le skin de Zoro dans un
+  coffre. Palette, pièce de tête, vêtement de buste, membres et visage changent ;
+  le squelette, le cycle de marche et le coup porté sont partagés
+- **Aptitude par skin** (`SkinTraits` dans `items.ts`) et non par objet : le skin
+  de départ n'a pas d'objet, une aptitude portée par l'objet aurait donc laissé
+  le début de partie sans aucune. Luffy saute 44 % plus haut (×1,2 sur
+  `jumpSpeed`, et la hauteur varie comme le carré), Zoro court 18 % plus vite —
+  le second skin est un échange, pas un gain sec
+- **L'arme par défaut dépend du skin**, l'arme trouvée non : mains nues pour
+  Luffy, un de ses propres sabres pour Zoro, et le katana s'équipe sur les deux
+- **Tenue du Chasseur de Pirates** (coffre du Temple du Sommet) : +2 cœurs
+  jaunes, silhouette de bretteur, déplacement plus rapide
 - **Katana de Kusanagi** (coffre du temple de Nakano) : dégâts d'épée ×2, lame
   longue en main droite. L'effet est volontairement brutal — les PV des ennemis
   sont des entiers de 2 et 3, donc l'octorok tombe en un coup au lieu de deux et
@@ -523,13 +535,13 @@ Reste ouvert sur ce chantier, et il ne se referme qu'en jouant :
 ### Plus tard
 - [ ] Quêtes, dialogues
 - [ ] **Portée de l'arme.** Le katana est plus long à l'écran seulement : la
-      hitbox et la traînée dérivent de `ATTACK.reach`, et `SwordArc` construit
-      sa géométrie **une fois pour toutes** au chargement. Faire varier la
-      portée avec l'arme demande de reconstruire cet anneau à chaque équipement,
+      hitbox et la traînée dérivent de `ATTACK.reach`, et `StrikeArc` construit
+      sa géométrie **une fois par arme**. Faire varier la portée avec l'arme
+      demande de reconstruire cet anneau à chaque équipement,
       donc de sortir `ATTACK.reach` de la constante — à faire le jour où une
       deuxième arme le justifie, pas pour une seule
 - [ ] **Autel plutôt que coffre pour les armes.** Le katana sort d'un coffre de
-      bois comme la tenue du clan, parce que toute la séquence de révélation
+      bois comme le second skin, parce que toute la séquence de révélation
       (couvercle, colonne de lumière, éclats, objet qui s'élève, carte) vit dans
       `TreasureChest.tsx` et qu'elle est réglée. Une lame plantée dans une
       pierre se lirait mieux ; ça demande de séparer la machine à états du
@@ -552,9 +564,10 @@ géométries extraites d'un `.glb` — semis, couleurs, vent et colliders resten
 inchangés.
 
 **Le personnage joueur reste procédural.** Le chemin `.glb` existe et fonctionne
-(`public/models/link.glb`), mais le personnage codé est animé et cel-shadé, donc
+(`public/models/hero.glb`), mais le personnage codé est animé et cel-shadé, donc
 présentable tel quel. Le passage à un modèle riggé n'apporterait que de vraies
-animations.
+animations — et lui coûterait les deux skins, qui ne sont qu'un habillage du rig
+codé.
 
 ---
 
@@ -588,7 +601,9 @@ animations.
 | Animation du personnage | `src/components/models/HeroPlaceholder.tsx` |
 | Minimap | `src/components/Minimap.tsx` |
 | Vie, phase de partie, score | `src/store/useGameStore.ts` |
-| Effets d'un objet : cœurs bonus, multiplicateur d'attaque, silhouette, lame | `src/config/items.ts` |
+| Effets d'un objet : cœurs bonus, multiplicateur d'attaque, silhouette, arme | `src/config/items.ts` |
+| Vitesse et détente d'un skin | `SKIN_TRAITS` dans `src/config/items.ts` |
+| Apparence d'un skin (palette, pièces, visage) | `OUTFITS` dans `src/components/models/HeroPlaceholder.tsx` |
 | Dégâts d'un coup d'épée arme nue | `SWORD_DAMAGE` dans `src/store/useGameStore.ts` |
 | Emplacements d'équipement (un par famille d'objet) | `ItemKind` dans `src/config/items.ts` |
 | Contenu et position d'un coffre | `src/config/chests.ts` |
@@ -601,7 +616,7 @@ animations.
 | Fréquence des cœurs lâchés | `src/config/enemies.ts` (`HEART_DROP_CHANCE`) |
 | Temps de préparation, dispersion du tir, portées | `src/config/enemies.ts` |
 | Barres de vie, chevrons d'alerte | `src/components/CombatOverlay.tsx` |
-| Traînée de lame (couleurs, ouverture, inclinaison) | `src/components/SwordArc.tsx` |
+| Traînée du coup (couleurs, ouverture, inclinaison, onde de poing) | `src/components/StrikeArc.tsx` |
 | Apparence et durée de vie des cœurs au sol | `src/components/Pickups.tsx` + `src/state/pickups.ts` |
 | Rayon et opacité de l'effacement de la canopée | `RADIUS` et `MIN_ALPHA` dans `src/components/environment/occlusionFade.ts` |
 | Quelles familles de props s'effacent | `withOcclusionFade(...)` dans `materials`, `src/components/environment/Vegetation.tsx` |

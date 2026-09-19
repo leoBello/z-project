@@ -13,6 +13,7 @@ import { playFootstep, playJump, playSwing } from '../audio/sfx'
 import type { Control } from '../config/controls'
 import { isTouchDevice } from '../config/device'
 import { ATTACK, PLAYER } from '../config/gameplay'
+import { outfitOf, skinTraits } from '../config/items'
 import { WORLD } from '../config/world'
 import { enemyRegistry } from '../state/enemyRegistry'
 import { isHitStopped, now as gameNow } from '../state/gameClock'
@@ -20,7 +21,7 @@ import { playerBody } from '../state/playerBody'
 import { playerTransform } from '../state/playerTransform'
 import { touchInput, resetTouchMove } from '../state/touchInput'
 import { useGameStore } from '../store/useGameStore'
-import { LinkModel } from './models/LinkModel'
+import { HeroModel } from './models/HeroModel'
 
 // Vecteurs de travail alloués une seule fois : `useFrame` tourne ~60x/s,
 // créer des Vector3 dedans ferait travailler le GC pour rien.
@@ -124,6 +125,12 @@ export function Player() {
   const attackRequested = useRef(false)
 
   const [subscribeKeys, getKeys] = useKeyboardControls<Control>()
+
+  // Aptitudes du skin porté : vitesse au sol et détente. Le sélecteur renvoie
+  // l'entrée de la table, donc **la même référence** tant que le skin ne change
+  // pas — un objet construit à la volée ici re-rendrait le contrôleur à chaque
+  // notification du store, quelle que soit la valeur.
+  const traits = useGameStore((state) => skinTraits(outfitOf(state.equipped)))
   const { world, rapier } = useRapier()
   const camera = useThree((state) => state.camera)
 
@@ -256,8 +263,8 @@ export function Player() {
     // la capsule : c'est le contact avec l'eau qui compte, pas la silhouette.
     const feetHeight = position.y + FEET_OFFSET
     const wading = feetHeight < WORLD.waterLevel
-    const speed =
-      (wading ? PLAYER.speed * PLAYER.waterSpeedFactor : PLAYER.speed) * speedScale
+    const topSpeed = PLAYER.speed * traits.speed
+    const speed = (wading ? topSpeed * PLAYER.waterSpeedFactor : topSpeed) * speedScale
 
     // --- 3. Application de la vélocité --------------------------------------
     // On pilote directement la vélocité linéaire plutôt que d'appliquer des
@@ -273,7 +280,10 @@ export function Player() {
       jumpRequested.current = false
       touchInput.jumpRequested = false
       if (grounded) {
-        velocityY = PLAYER.jumpSpeed
+        // La hauteur atteinte varie comme le carré de cette vitesse : le
+        // multiplicateur du skin s'y applique donc bien plus fort qu'il n'en a
+        // l'air. Voir `SkinTraits`.
+        velocityY = PLAYER.jumpSpeed * traits.jump
         playJump()
       }
     }
@@ -387,7 +397,7 @@ export function Player() {
         frictionCombineRule={CoefficientCombineRule.Min}
       />
       <group ref={visual} position={[0, FEET_OFFSET, 0]}>
-        <LinkModel />
+        <HeroModel />
       </group>
     </RigidBody>
   )

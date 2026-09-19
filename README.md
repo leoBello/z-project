@@ -50,7 +50,7 @@ src/
     HUD.tsx                   overlay 2D
     Minimap.tsx               carte 2D, position du joueur, ennemis
     CombatOverlay.tsx         barres de vie et chevrons d'alerte, en canvas 2D
-    SwordArc.tsx              traînée de lame, verdict touché / dans le vide
+    StrikeArc.tsx             traînée du coup (arc de lame ou onde de poing), verdict
     Pickups.tsx               cœurs lâchés : chute, flottement, ramassage
     Enemy.tsx                 physique et machine à états d'un ennemi
     Enemies.tsx               peuplement de la carte
@@ -81,7 +81,7 @@ src/
     portfolio/illustration/   projection isométrique et motifs
     portfolio/sections.ts     contenu d'une section → diapositives
     models/SafeModel.tsx      fallback si un .glb est absent
-    models/LinkModel.tsx      modèle du joueur (.glb ou personnage procédural)
+    models/HeroModel.tsx      modèle du joueur (.glb ou personnage procédural)
     models/HeroPlaceholder.tsx  personnage articulé + animation procédurale
     models/toonGradient.ts    rampe de cel-shading partagée
 ```
@@ -101,7 +101,7 @@ sens, ajouter `rotation-y={Math.PI}` sur son `<primitive>`.
 
 | Fichier attendu             | Étape | Où le trouver (CC0) |
 | --------------------------- | ----- | ------------------- |
-| `public/models/link.glb`    | 1     | Quaternius *Ultimate Modular Characters* / Kenney *Blocky Characters* |
+| `public/models/hero.glb`    | 1     | Quaternius *Ultimate Modular Characters* / Kenney *Blocky Characters* |
 
 **La végétation ne passe pas par des `.glb`** : arbres, rochers, touffes
 d'herbe et fleurs sont générés en primitives dans `Vegetation.tsx`, puis rendus

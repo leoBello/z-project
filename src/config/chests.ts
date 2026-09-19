@@ -1,5 +1,5 @@
 import type { ChestId, ItemId } from '../types/game'
-import { NAKANO, PYRAMID, type Landmark } from './landmarks'
+import { NAKANO, TEMPLE, type Landmark } from './landmarks'
 
 /**
  * Coffres au trésor de la carte.
@@ -50,35 +50,39 @@ function define(spec: Omit<Chest, 'world' | 'worldYaw'>): Chest {
 }
 
 /**
- * Coffre de la Pyramide — la tenue du clan.
+ * Coffre du Temple — la tenue du Chasseur de Pirates.
  *
- * Posé en `[6.5, 10.5]` dans le repère de la pyramide, et les trois nombres
- * sont mesurés, pas choisis à l'œil :
+ * Posé en `[6.2, 7.6]` dans le repère du temple, sur le parvis, à côté du pied
+ * de l'escalier. Les trois nombres sont mesurés, pas choisis à l'œil :
  *
- *  - **z = 10,5 contre une base à 8** (demi-largeur du monument) le met deux
- *    unités et demie en avant du premier gradin, donc hors de tous ses
- *    colliders — et surtout visiblement *sur le parvis* plutôt que contre le
- *    mur. Une première version à `z = 9` le collait à l'angle sud-est, où il se
- *    lisait comme une pierre du monument ;
- *  - **6,5 unités séparent le coffre du marqueur bleu** du point d'intérêt, en
- *    local `[0, 11]`. Les deux zones d'interaction font 3 et 2,6 : leur somme
- *    vaut 5,6, elles ne peuvent donc pas se recouvrir. Sans cette marge, `F`
- *    aurait eu à arbitrer entre ouvrir le coffre et ouvrir le portfolio, et
- *    l'invite du HUD aurait clignoté entre les deux dans la zone commune ;
- *  - **12,3 unités du centre** le laissent sur la partie parfaitement plate de
- *    la terrasse (rayon 13), donc à l'altitude 4,3 exactement — un coffre à
+ *  - **il doit se voir depuis la braise bleue**, qui est en local `[0, 9.8]`.
+ *    C'est la contrainte qui commande tout le reste : le coffre est donc sur le
+ *    même parvis que le marqueur, à la même altitude, et du côté de la façade —
+ *    rien du bâtiment ne s'interpose entre les deux. Il est aussi **au sud du
+ *    temple en coordonnées monde**, seul côté que la caméra, fixe et tournée
+ *    vers le nord, montre d'un monument de cette hauteur : depuis le marqueur, il
+ *    tombe dans le bas du cadre plutôt que derrière dix mètres de colonnade ;
+ *  - **6,58 unités séparent le coffre du marqueur.** Les deux zones
+ *    d'interaction font 3 et 2,6 : leur somme vaut 5,6, elles ne peuvent donc
+ *    pas se recouvrir. Sans cette marge, `F` aurait eu à arbitrer entre ouvrir
+ *    le coffre et ouvrir le portfolio, et l'invite du HUD aurait clignoté entre
+ *    les deux dans la zone commune ;
+ *  - **9,81 unités du centre** le laissent sur la partie parfaitement plate de
+ *    la terrasse (rayon 11) : ses angles, à 10,76, y tiennent encore. Un coffre à
  *    cheval sur le fondu du relief flotterait d'un côté et s'enfoncerait de
- *    l'autre.
+ *    l'autre. Il est par ailleurs hors de tous les colliders du monument — le
+ *    stylobate s'arrête à 5,2 en Z et la rampe de l'escalier à 3 en X.
  *
- * Le cap est légèrement de biais : posé d'équerre avec la pyramide, le coffre
- * se lisait comme une pièce du bâtiment plutôt que comme un objet déposé là.
+ * Le cap est tourné de biais vers l'escalier, donc vers le joueur qui monte :
+ * posé d'équerre avec le temple, le coffre se lisait comme une pièce du
+ * bâtiment plutôt que comme un objet déposé là.
  */
-export const PYRAMID_CHEST = define({
-  id: 'pyramid-chest',
-  landmark: PYRAMID,
-  local: [6.5, 10.5],
-  yaw: -0.42,
-  item: 'ninja-garb',
+export const TEMPLE_CHEST = define({
+  id: 'temple-chest',
+  landmark: TEMPLE,
+  local: [6.2, 7.6],
+  yaw: -0.5,
+  item: 'zoro-garb',
   interactRadius: 2.6,
 })
 
@@ -130,9 +134,10 @@ export const CHEST_SEQUENCE = {
  *    est plat à la valeur près jusqu'à 4,7 (terrasse de `NAKANO`), le coffre ne
  *    peut donc ni flotter ni s'enfoncer d'un côté.
  *
- * Aucune règle de priorité à arbitrer ici, contrairement au coffre de la
- * pyramide : le temple de Nakano ne présente aucune section de portfolio, il n'a
- * donc pas de zone d'interaction qui pourrait se recouvrir avec celle du coffre.
+ * Aucune règle de priorité à arbitrer ici, contrairement au coffre du Temple
+ * du Sommet : le temple de Nakano ne présente aucune section de portfolio, il
+ * n'a donc pas de zone d'interaction qui pourrait se recouvrir avec celle du
+ * coffre.
  *
  * Le joueur débarque du pont en `[0, 5.7]` local, c'est-à-dire pile dans l'axe
  * de la façade : le coffre est alors sur sa droite, et au **sud** du monument —
@@ -144,13 +149,13 @@ export const NAKANO_CHEST = define({
   landmark: NAKANO,
   local: [3.75, 1.2],
   // De biais vers l'arrivée : d'équerre avec la pagode, le coffre se serait lu
-  // comme une pièce du bâtiment. Même raison que pour celui de la pyramide.
+  // comme une pièce du bâtiment. Même raison que pour celui du Temple.
   yaw: -0.55,
   item: 'kusanagi',
   interactRadius: 2.6,
 })
 
-export const CHESTS: readonly Chest[] = [PYRAMID_CHEST, NAKANO_CHEST]
+export const CHESTS: readonly Chest[] = [TEMPLE_CHEST, NAKANO_CHEST]
 
 /** Retrouve un coffre par son identifiant. */
 export function chestById(id: ChestId): Chest | undefined {

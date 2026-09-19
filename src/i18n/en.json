@@ -128,11 +128,11 @@
       "kinds": { "outfit": "Outfit", "trinket": "Trinket", "weapon": "Weapon" }
     },
     "items": {
-      "ninja-garb": {
-        "name": "Clan Garb",
-        "meta": "Found in the chest at the Jungle Pyramid",
-        "description": "A long-tailed plum coat strapped with lacquered crimson lamellae bound in gold. The collar rises to the nape; forearms and calves are wrapped in white linen. War dress of a clan whose name no one remembers.",
-        "effect": "+2 golden hearts while worn"
+      "zoro-garb": {
+        "name": "Pirate Hunter's Garb",
+        "meta": "Found in the chest at the Summit Temple",
+        "description": "A forest-green coat worn open, cinched with a broad sash, and two sheathed swords hanging at the left hip. Whoever wore it had a scar running shoulder to hip, an eye he no longer opened, and three gold rings in one ear.",
+        "effect": "+2 golden hearts and faster movement while worn"
       },
       "kusanagi": {
         "name": "Kusanagi Katana",
