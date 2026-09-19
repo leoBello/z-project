@@ -1,7 +1,8 @@
-import { useMemo, useRef } from 'react'
+import { lazy, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Object3D, type DirectionalLight } from 'three'
 import { playerTransform } from '../state/playerTransform'
+import { useGameStore } from '../store/useGameStore'
 import { useQualityStore } from '../store/useQualityStore'
 import { Bridge } from './environment/Bridge'
 import { Landmarks } from './environment/Landmarks'
@@ -94,19 +95,49 @@ function Lighting() {
   )
 }
 
-/** Décor complet : ciel, lumières, relief, mer, végétation et monuments. */
+/**
+ * L'Île Céleste, chargée à la demande.
+ *
+ * `lazy` et non un import direct : c'est ce qui fait de tout le sous-arbre de
+ * l'île un fragment de bundle à part, que l'accueil du site ne télécharge
+ * jamais. La frontière `<Suspense>` dont `lazy` a besoin est déjà posée dans
+ * `App.tsx`, autour de toute la scène — il n'y en a pas de seconde à ajouter.
+ */
+const SkyIsland = lazy(() => import('./skyisland/SkyIsland'))
+
+/**
+ * Décor complet de la carte courante.
+ *
+ * Le ciel et les lumières sont **hors du branchement** : les deux cartes
+ * partagent le même firmament et le même soleil, et c'est voulu — l'île flotte
+ * dans le ciel du continent, pas dans un autre. Les monter deux fois les
+ * recréerait à chaque voyage pour un résultat identique.
+ *
+ * Tout le reste change en bloc. Il n'y a délibérément aucune pièce commune au
+ * sol : le continent est un champ de hauteurs sur grille carrée, l'île une
+ * surface radiale avec un dessous — et un champ de hauteurs ne peut pas
+ * représenter un surplomb. Voir la spec de l'île pour le détail.
+ */
 export function Environment() {
+  const location = useGameStore((state) => state.location)
+
   return (
     <>
       <StarrySky />
       <Lighting />
-      <Terrain />
-      <Water />
-      <Vegetation />
-      {/* Monté hors de `Landmarks` : le pont n'est le parvis d'aucun monument,
-          c'est une pièce du relief au même titre que la mer. */}
-      <Bridge />
-      <Landmarks />
+      {location === 'continent' ? (
+        <>
+          <Terrain />
+          <Water />
+          <Vegetation />
+          {/* Monté hors de `Landmarks` : le pont n'est le parvis d'aucun
+              monument, c'est une pièce du relief au même titre que la mer. */}
+          <Bridge />
+          <Landmarks />
+        </>
+      ) : (
+        <SkyIsland />
+      )}
     </>
   )
 }

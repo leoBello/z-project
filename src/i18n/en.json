@@ -31,7 +31,13 @@
     "portal": {
       "kicker": "The map is clear",
       "name": "A portal opens at Nakano Temple",
-      "hint": "A violet glow, turned towards a sky island"
+      "hint": "A violet glow, turned towards a sky island",
+      "action": "Step through the portal",
+      "back": "Return to the mainland"
+    },
+    "maps": {
+      "continent": "Mainland",
+      "sky": "Sky Island"
     },
     "quality": {
       "label": "Graphics quality",

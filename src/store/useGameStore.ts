@@ -10,6 +10,7 @@ import {
   playReward,
   playTreasure,
 } from '../audio/sfx'
+import { preloadSkyIsland } from '../components/skyisland/preload'
 import { BLAST_FORWARD } from '../config/annihilation'
 import { chestById } from '../config/chests'
 import { enemyTotal } from '../config/enemies'
@@ -24,6 +25,7 @@ import type {
   GamePhase,
   ItemId,
   LandmarkId,
+  MapId,
 } from '../types/game'
 
 /**
@@ -209,6 +211,32 @@ export interface GameState {
    */
   portalOpenedAt: number | null
   /**
+   * Carte courante. Pilote le décor, la minimap et le point d'apparition.
+   *
+   * Trois consommateurs seulement, et c'est tout le découpage : l'île n'essaie
+   * pas de passer par la tuyauterie du continent — elle apporte son terrain, son
+   * collider et son fond de carte. Ce champ ne dit que « lequel des deux mondes
+   * est monté », et c'est la seule chose que les deux aient en commun.
+   */
+  location: MapId
+  /**
+   * Carte vers laquelle un voyage est en cours, ou `null`.
+   *
+   * Distinct de `location` exactement comme `teleporting` l'est de
+   * `activeLandmark` : tant qu'il est non nul, le voile est à l'écran et la
+   * carte d'arrivée n'est pas encore montée. C'est aussi lui qui interdit un
+   * second franchissement pendant le voyage.
+   */
+  transit: MapId | null
+  /**
+   * Un portail est à portée. Même rôle que `nearbyChest`, et même discipline :
+   * écrit uniquement sur transition, jamais à chaque frame.
+   *
+   * Un booléen et non un identifiant : il n'y a jamais qu'un portail par carte,
+   * et celle-ci est déjà connue.
+   */
+  nearbyPortal: boolean
+  /**
    * Identifiant de la partie. Sert de `key` React sur le joueur et les ennemis :
    * l'incrémenter démonte et remonte tout le monde, ce qui remet positions,
    * points de vie et machines à états à zéro sans logique de réinitialisation
@@ -330,6 +358,20 @@ export interface GameState {
   triggerAnnihilation: () => boolean
   /** Range le champignon, en fin de séquence. */
   finishAnnihilation: () => void
+
+  /** Signale qu'un portail est à portée, ou qu'il ne l'est plus. */
+  setNearbyPortal: (near: boolean) => void
+  /**
+   * Part vers l'autre carte : gèle la partie et lève le voile.
+   *
+   * Retourne faux si le voyage est refusé — partie non en cours, voyage déjà en
+   * vol, ou destination déjà courante.
+   */
+  enterMap: (to: MapId) => boolean
+  /** Bascule effectivement de carte, sous le voile opaque. */
+  arriveOnMap: () => void
+  /** Retire le voile et rend la main au jeu, en fin de séquence. */
+  finishTransit: () => void
   /** Relance une partie depuis zéro. */
   reset: () => void
 }
@@ -357,6 +399,9 @@ const initialState = {
   teleporting: null as LandmarkId | null,
   annihilation: null as Annihilation | null,
   portalOpenedAt: null as number | null,
+  location: 'continent' as MapId,
+  transit: null as MapId | null,
+  nearbyPortal: false,
 }
 
 /**
@@ -758,6 +803,55 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   finishAnnihilation: () => set({ annihilation: null }),
+
+  // --- Voyage entre les cartes ----------------------------------------------
+
+  /** Même discipline que les monuments et les coffres : écriture sur transition. */
+  setNearbyPortal: (near) => set({ nearbyPortal: near }),
+
+  /**
+   * Part vers l'autre carte.
+   *
+   * Le téléchargement du fragment commence **ici**, au lever du voile, et non au
+   * palier opaque : sur une connexion lente les 780 ms de montée ne suffiraient
+   * pas, et le joueur attendrait devant un écran violet sans rien qui bouge. En
+   * le lançant tout de suite, le transfert court pendant que le voile monte, et
+   * dans le cas normal il est terminé avant même que l'écran soit couvert.
+   */
+  enterMap: (to) => {
+    const { phase, transit, location } = get()
+    if (phase !== 'playing' || transit !== null || location === to) return false
+
+    if (to === 'sky') void preloadSkyIsland()
+    playPortal()
+    set({
+      phase: 'paused',
+      transit: to,
+      // L'invite disparaît avec le départ, sinon elle resterait affichée sous
+      // le voile le temps que le joueur s'éloigne du portail à l'arrivée.
+      nearbyPortal: false,
+    })
+    return true
+  },
+
+  /**
+   * Bascule de carte, appelée quand le voile est opaque **et** que le fragment
+   * est arrivé — jamais sur un simple délai.
+   *
+   * Ne touche pas à `phase` : la partie reste en pause jusqu'au retrait complet
+   * du voile. Sans ça la physique reprendrait derrière un écran encore opaque,
+   * et le joueur pourrait tomber de l'île avant d'avoir vu où il a atterri.
+   */
+  arriveOnMap: () => {
+    const { transit } = get()
+    if (transit === null) return
+    // Hors du `set`, comme la mesure d'audience de `resolveTeleport` : un
+    // updater d'état n'appelle pas le tableau de bord.
+    if (transit === 'sky') track('sky_island_entered', { via: 'portal' })
+    set({ location: transit })
+  },
+
+  finishTransit: () => set({ transit: null, phase: 'playing' }),
 
   // Les collections sont réécrites explicitement : `initialState` est un objet
   // unique partagé par toutes les parties, et en réutiliser les tableaux (ou

@@ -1264,6 +1264,59 @@ canvas {
   }
 }
 
+/* --- Transition de carte ---------------------------------------------------- */
+
+/*
+  Le voile du passage d'une carte à l'autre.
+
+  Il **ne se retire pas tout seul**, et c'est la différence avec toutes les
+  autres animations du jeu : la sienne monte jusqu'à l'opacité pleine et y
+  reste. Le retrait ne peut pas être une image-clé, parce qu'il ne doit
+  commencer qu'une fois la carte d'arrivée montée — ce que le CSS n'a aucun
+  moyen de savoir. C'est le démontage de l'élément, côté React, qui rend la
+  main. D'où `forwards`, et des `@keyframes` qui ne redescendent jamais.
+*/
+.world-transition {
+  position: fixed;
+  inset: 0;
+  /* Bloque les clics pendant le voyage — redondant avec le garde du store, mais
+     évite aussi de cliquer un bouton du HUD caché dessous. */
+  pointer-events: auto;
+}
+
+.world-transition__veil {
+  position: absolute;
+  inset: 0;
+  /*
+    Violet au centre, presque noir aux bords, et non un aplat : le portail est
+    une lumière qu'on traverse, pas un rideau qu'on tire. Le dégradé radial
+    place cette lumière là où le joueur est — au milieu de l'écran.
+  */
+  background: radial-gradient(
+    120% 90% at 50% 45%,
+    rgba(139, 63, 240, 0.96) 0%,
+    rgba(26, 12, 54, 1) 70%
+  );
+  opacity: 0;
+  /* Durée pilotée depuis `COVER_MS` dans WorldTransition.tsx via `--cover` :
+     plus de durée littérale à tenir synchronisée à la main. */
+  animation: world-transition-cover var(--cover) ease-in forwards;
+}
+
+@keyframes world-transition-cover {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/*
+  Mouvement réduit : le voile se pose presque instantanément. Il n'est pas
+  supprimé — il porte l'information « on change de monde », et sans lui la carte
+  se remplacerait d'un coup, sans rien pour l'expliquer.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .world-transition__veil { animation-duration: 120ms; }
+}
+
 /* Voile et carte identiques à ceux du portfolio : les deux écrans modaux du jeu
    se reconnaissent à leur cadre avant de se lire. */
 .gameover {

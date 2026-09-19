@@ -8,6 +8,17 @@
 /** Phase globale de la partie. Pilote le HUD, les écrans plein écran, et le gel. */
 export type GamePhase = 'playing' | 'paused' | 'gameover'
 
+/**
+ * Carte sur laquelle se joue la partie.
+ *
+ * Deux, et c'est volontairement un type fermé plutôt qu'une table extensible :
+ * chaque carte apporte son propre terrain, son propre collider et son propre
+ * fond de minimap — en ajouter une n'est pas une ligne de configuration mais un
+ * module. Le type fermé oblige à traiter le cas là où il faut, au lieu de
+ * laisser une troisième carte se glisser dans un `default` silencieux.
+ */
+export type MapId = 'continent' | 'sky'
+
 /** Machine à états de l'IA des ennemis (utilisée à l'étape "ennemis"). */
 export type EnemyState = 'idle' | 'patrol' | 'chase' | 'attack' | 'dead'
 

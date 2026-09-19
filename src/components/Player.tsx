@@ -14,6 +14,7 @@ import type { Control } from '../config/controls'
 import { isTouchDevice } from '../config/device'
 import { ATTACK, PLAYER } from '../config/gameplay'
 import { outfitOf, traitsOf } from '../config/items'
+import { spawnFor } from '../config/portal'
 import { WORLD } from '../config/world'
 import { enemyRegistry } from '../state/enemyRegistry'
 import { isHitStopped, now as gameNow } from '../state/gameClock'
@@ -364,12 +365,36 @@ export function Player() {
       strideRef.current = 0
     }
 
-    // Filet de sécurité si le joueur passe sous la map.
-    if (position.y < WORLD.maxDepth - 20) {
-      rb.setTranslation(
-        { x: PLAYER.spawn[0], y: PLAYER.spawn[1], z: PLAYER.spawn[2] },
-        true,
-      )
+    /*
+      Filet de sécurité si le joueur passe sous la carte.
+
+      **Il dépend de la carte, et c'est tout le sujet.** Sur le continent il ne
+      sert presque jamais : le terrain est fermé par des murs invisibles et il
+      faudrait traverser le sol pour l'atteindre. Sur l'Île Céleste il est le
+      traitement normal de la chute dans le vide — on marche jusqu'au bord et on
+      tombe, c'est même l'un des rares gestes que la carte propose aujourd'hui.
+
+      Un seul filet pour les deux, plutôt qu'un second posé dans le module de
+      l'île : deux gestionnaires de chute qui s'ignorent, c'est la garantie
+      qu'un jour l'un des deux dépose le joueur au point d'apparition du
+      continent alors qu'il est dans le ciel. `spawnFor` est la seule table qui
+      réponde à « où remet-on le joueur sur cette carte ».
+
+      Aucun dégât n'est infligé : l'île n'a pas encore d'enjeu, et punir une
+      chute sur une carte qu'on explore découragerait exactement ce qu'on veut
+      encourager. Le jour où le boss existera, c'est ici qu'on posera le coût.
+    */
+    // Lecture non réactive : ce composant ne doit pas se re-rendre au voyage,
+    // c'est `WorldTransition` qui le repose.
+    const location = useGameStore.getState().location
+    const sky = location === 'sky'
+    // Sous la lèvre de l'île (−1,2) et bien au-dessus de son cristal (−34) : on
+    // tombe assez longtemps pour comprendre qu'on est tombé, jamais assez pour
+    // traverser le socle et le voir de l'intérieur.
+    const floor = sky ? -20 : WORLD.maxDepth - 20
+    if (position.y < floor) {
+      const spawn = spawnFor(location)
+      rb.setTranslation(spawn, true)
       rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
     }
   })

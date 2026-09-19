@@ -12,7 +12,7 @@ import {
   type MeshToonMaterial,
 } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import { PORTAL, PORTAL_NEAR_RADIUS } from '../../config/portal'
+import { PORTAL_NEAR_RADIUS } from '../../config/portal'
 import { now as gameNow } from '../../state/gameClock'
 import { playerTransform } from '../../state/playerTransform'
 import { useGameStore } from '../../store/useGameStore'
@@ -38,10 +38,14 @@ import { Z_FIGHT_LIFT } from './solids'
  * ce qui est exactement ce qu'on demande à un événement qui n'arrive qu'une
  * fois par partie.
  *
- * Il ne propose **aucune interaction**, et ce n'est pas un travail laissé en
- * plan : l'île céleste n'existe pas encore. Une invite « entrer » qui ne mène
- * nulle part serait une promesse rompue ; une lueur qui s'intensifie quand on
- * s'approche ne promet rien et dit seulement qu'elle est vivante.
+ * Le composant sert les **deux** portails du jeu — celui de Nakano et son jumeau
+ * posé au point d'arrivée de l'île — d'où la position et l'instant d'ouverture
+ * en props plutôt qu'en constantes. Deux composants jumeaux auraient divergé au
+ * premier réglage de l'anneau.
+ *
+ * Il propose une interaction, et il est le seul à en proposer une qui change de
+ * carte : la règle de priorité d'`interaction.ts` le place devant les coffres et
+ * les monuments pour cette raison.
  *
  * Pas de `pointLight` non plus, et pour la raison exposée en tête
  * d'`InteractionMarker` : une source ponctuelle ajoute une passe d'éclairage
@@ -106,7 +110,21 @@ const geometry = buildGeometry()
 type ToonMesh = Mesh<BufferGeometry, MeshToonMaterial>
 type BasicMesh = Mesh<BufferGeometry, MeshBasicMaterial>
 
-export function Portal() {
+interface PortalProps {
+  /** Position et cap, en coordonnées monde de la carte qui le porte. */
+  at: { x: number; y: number; z: number; yaw: number }
+  /**
+   * Instant de son ouverture, ou `null` s'il n'est pas encore ouvert.
+   *
+   * Une prop et non une lecture directe de `portalOpenedAt`, parce que les deux
+   * portails ne répondent pas à la même question. Celui de Nakano s'ouvre quand
+   * la carte est vidée ; celui de l'île est ouvert depuis toujours — on n'y
+   * arrive que par lui, lui demander de se justifier n'aurait pas de sens.
+   */
+  openedAt: number | null
+}
+
+export function Portal({ at, openedAt }: PortalProps) {
   const root = useRef<Group>(null)
   const veil = useRef<BasicMesh>(null)
   const pool = useRef<BasicMesh>(null)
@@ -117,9 +135,6 @@ export function Portal() {
     const group = root.current
     if (!group) return
 
-    // Lecture non réactive : ce composant ne doit jamais se re-rendre, y compris
-    // à l'ouverture. Ce qui change, c'est une échelle, pas un arbre.
-    const openedAt = useGameStore.getState().portalOpenedAt
     if (openedAt === null) {
       group.visible = false
       return
@@ -137,10 +152,16 @@ export function Portal() {
 
     const near =
       Math.hypot(
-        playerTransform.position.x - PORTAL.x,
-        playerTransform.position.z - PORTAL.z,
+        playerTransform.position.x - at.x,
+        playerTransform.position.z - at.z,
       ) < PORTAL_NEAR_RADIUS
     const intensity = near ? NEAR_INTENSITY : IDLE_INTENSITY
+
+    // Même discipline que les monuments et les coffres : le store n'est écrit
+    // que sur **transition**, jamais à chaque frame. Sans ce test, le HUD se
+    // re-rendrait soixante fois par seconde pour réafficher la même invite.
+    const store = useGameStore.getState()
+    if (near !== store.nearbyPortal) store.setNearbyPortal(near)
 
     if (arch.current) arch.current.material.emissiveIntensity = intensity
 
@@ -160,14 +181,14 @@ export function Portal() {
     // rapide ils se lisent comme une roue dentée. Le léger flottement vertical
     // du portail entier les empêche de décrire un cercle trop mécanique.
     if (shards.current) shards.current.rotation.z = t * 0.42
-    group.position.y = PORTAL.y + Math.sin(t * 0.8) * 0.06
+    group.position.y = at.y + Math.sin(t * 0.8) * 0.06
   })
 
   return (
     <group
       ref={root}
-      position={[PORTAL.x, PORTAL.y, PORTAL.z]}
-      rotation-y={PORTAL.yaw}
+      position={[at.x, at.y, at.z]}
+      rotation-y={at.yaw}
       visible={false}
     >
       {/* L'anneau et ses éclats sont dressés à `HOVER` du sol ; la flaque de

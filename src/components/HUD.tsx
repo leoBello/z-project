@@ -170,7 +170,12 @@ export function HUD() {
           la pyramide produisait deux enfants portant la clé `pyramid` — React
           le signalait, et se réservait le droit d'en omettre un. */}
       {interaction && (
-        <div key={`prompt-${interaction.kind}-${interaction.id}`} className="hud__prompt">
+        <div
+          // Le portail n'a pas d'identifiant : il n'y en a qu'un par carte, et
+          // sa famille suffit donc à le distinguer de toutes les autres cibles.
+          key={`prompt-${interaction.kind}-${'id' in interaction ? interaction.id : ''}`}
+          className="hud__prompt"
+        >
           <kbd>F</kbd>
           {interactionLabel(interaction, dict)}
         </div>

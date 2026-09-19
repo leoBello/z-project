@@ -1,3 +1,5 @@
+import type { MapId } from '../types/game'
+import { PLAYER } from './gameplay'
 import { NAKANO } from './landmarks'
 import { sampleHeight } from './world'
 
@@ -54,10 +56,63 @@ export const PORTAL = (() => {
 /**
  * Distance à laquelle le portail réagit à l'approche du joueur.
  *
- * Il ne propose rien — l'île céleste n'existe pas encore — donc il n'a ni
- * invite ni entrée dans `interaction.ts`. Il s'intensifie simplement quand on
- * s'en approche, comme la braise bleue des monuments. La nuance est importante :
- * une invite promettrait une action qui n'arriverait pas, une lueur qui monte ne
- * promet rien et se contente de dire « je suis vivant ».
+ * Elle sert deux choses : l'anneau s'intensifie en deçà, comme la braise bleue
+ * des monuments, et c'est aussi la zone où la touche d'interaction propose de le
+ * franchir. Les deux partagent volontairement la même valeur — la lueur qui
+ * monte *est* la promesse, il serait absurde qu'elle s'allume à une distance où
+ * l'action n'est pas encore possible.
  */
 export const PORTAL_NEAR_RADIUS = 7
+
+/**
+ * Où le portail dépose sur l'île, en coordonnées monde de la carte céleste.
+ *
+ * Plein sud, et c'est forcé : la caméra du jeu est fixe et regarde le nord (voir
+ * la note de cap des monuments dans `landmarks.ts`). Arriver par le sud met
+ * l'île entière dans le cadre, la porte de l'enceinte dans l'axe et l'arbre
+ * au-dessus ; arriver par le nord mettrait tout cela dans le dos.
+ *
+ * L'altitude est celle de la prairie — le zéro de cette carte — plus la
+ * demi-hauteur de la capsule et son rayon : la même relation qu'utilise
+ * `TeleportOverlay` pour poser le joueur ni enfoncé ni flottant.
+ */
+export const SKY_SPAWN = {
+  x: 0,
+  y: PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius,
+  z: 48,
+}
+
+/**
+ * Le portail du retour, jumeau de celui de Nakano.
+ *
+ * Quatre unités et demie derrière le point d'apparition : le joueur en sort face
+ * au nord, donc face à l'île, et le portail reste dans son dos — ce qu'on attend
+ * d'une porte qu'on vient de franchir.
+ *
+ * Il est actif dès l'arrivée. Ce n'est pas une facilité : tant que le boss
+ * n'existe pas, une île sans sortie est un cul-de-sac dont on ne s'échappe qu'en
+ * rechargeant la page. Le jour où il y aura une victoire à remporter, c'est ici
+ * qu'on posera la condition.
+ */
+export const SKY_PORTAL = {
+  x: SKY_SPAWN.x,
+  y: SKY_SPAWN.y - (PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius),
+  z: SKY_SPAWN.z + 4.5,
+  // Cap opposé à celui du portail de Nakano : sa normale regarde le sud, donc
+  // le joueur qui en sort lui tourne le dos et fait face à l'île.
+  yaw: Math.PI,
+}
+
+/**
+ * Point d'apparition d'une carte donnée.
+ *
+ * **Une seule table pour trois consommateurs** : la transition entre cartes, le
+ * filet de sécurité de chute de `Player.tsx`, et la réapparition sur l'île. Les
+ * trois répondent à la même question — « où remet-on le joueur sur cette
+ * carte ? » — et la laisser se recopier garantirait qu'un jour l'un d'eux
+ * dépose le joueur au spawn du continent alors qu'il est dans le ciel.
+ */
+export function spawnFor(map: MapId) {
+  if (map === 'sky') return SKY_SPAWN
+  return { x: PLAYER.spawn[0], y: PLAYER.spawn[1], z: PLAYER.spawn[2] }
+}

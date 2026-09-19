@@ -4,6 +4,7 @@ import { useKeyboardControls } from '@react-three/drei'
 import { CHESTS } from '../../config/chests'
 import type { Control } from '../../config/controls'
 import { LANDMARKS } from '../../config/landmarks'
+import { PORTAL } from '../../config/portal'
 import { playerTransform } from '../../state/playerTransform'
 import { triggerInteraction } from '../../store/interaction'
 import { useGameStore } from '../../store/useGameStore'
@@ -118,6 +119,19 @@ function LandmarkInteraction() {
   return null
 }
 
+/**
+ * Le portail du continent : celui qui s'ouvre quand la carte est vidée.
+ *
+ * Un composant d'une ligne, mais il porte l'abonnement à `portalOpenedAt` — et
+ * c'est tout son intérêt. Le mettre dans `<Landmarks>` ferait re-rendre les six
+ * monuments et les quatre coffres à l'ouverture du portail ; ici, le re-rendu ne
+ * touche que lui.
+ */
+function ContinentPortal() {
+  const openedAt = useGameStore((state) => state.portalOpenedAt)
+  return <Portal at={PORTAL} openedAt={openedAt} />
+}
+
 /** Tous les monuments de la carte, leurs coffres, et la logique de proximité. */
 export function Landmarks() {
   return (
@@ -133,7 +147,7 @@ export function Landmarks() {
           qui se trouve posé devant. Les mélanger ferait dépendre la géométrie
           du temple de l'état du jeu. Même raison que les coffres, juste en
           dessous. */}
-      <Portal />
+      <ContinentPortal />
       {/* Les coffres sont posés en coordonnées monde, dérivées du repère de
           leur monument (voir `config/chests.ts`) : ils sont donc montés ici, à
           plat, et non à l'intérieur du composant du monument qui les porte. */}
