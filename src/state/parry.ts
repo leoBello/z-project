@@ -40,9 +40,15 @@ export const parry = {
  * Le boss annonce un coup parable qui touchera à `impactAt`.
  *
  * L'offre commence `cueLeadMs` avant l'impact et non à l'appel : le télégraphe
- * du balayage dure 620 ms, dont seules les 420 dernières sont réactives.
- * Allumer le signal dès le début du télégraphe donnerait 200 ms pendant
+ * du balayage dure 620 ms, dont seules les 500 dernières sont réactives.
+ * Allumer le signal dès le début du télégraphe donnerait 120 ms pendant
  * lesquelles appuyer *paraît* juste et ne l'est pas — la pire des leçons.
+ *
+ * Depuis que l'avance est passée à 500 ms, la règle ne mord plus que sur le
+ * balayage : l'estoc (400 ms) et le Moblin (420 ms) ont des télégraphes plus
+ * courts que l'avance, donc leur anneau s'allume au premier frémissement. C'est
+ * assumé — ce sont les deux coups les plus rapides du jeu, et leur donner une
+ * tête d'annonce muette les rendrait simplement imparables.
  */
 export function offerParry(by: string, impactAt: number) {
   parry.offerBy = by

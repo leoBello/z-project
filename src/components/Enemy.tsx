@@ -74,6 +74,18 @@ interface EnemyRuntime {
   /** Horodatage d'entrée dans l'état courant. */
   stateSince: number
   lastAttackAt: number
+  /**
+   * Fin de l'immobilisation imposée par une parade réussie.
+   *
+   * Un champ à part, et c'est une correction : le blocage passait par
+   * `lastAttackAt = now + punishMs`, ce qui marchait pour la recharge mais
+   * cassait la pose. Celle-ci lit `now - lastAttackAt` pour animer la détente du
+   * coup ; avec une valeur posée dans le futur, l'écart balayait −1 300 → 0 et
+   * le sinus de la détente traversait cinq demi-périodes. Le Moblin vibrait
+   * d'avant en arrière pendant toute l'ouverture — c'est-à-dire exactement
+   * pendant la seconde et demie où le joueur est censé le punir.
+   */
+  attackBlockedUntil: number
   /** Vrai entre le début d'une préparation d'attaque et sa résolution. */
   windupPending: boolean
   windupStartedAt: number
@@ -240,6 +252,7 @@ export function Enemy({ spawn }: EnemyProps) {
     state: 'idle',
     stateSince: 0,
     lastAttackAt: -Infinity,
+    attackBlockedUntil: -Infinity,
     windupPending: false,
     windupStartedAt: 0,
     lastHitSwing: -Infinity,
@@ -535,7 +548,10 @@ export function Enemy({ spawn }: EnemyProps) {
     // reviendrait à échantillonner quelques centaines de millisecondes dans une
     // boucle à cadence variable — le piège déjà payé trois fois sur ce projet.
     const ready =
-      state.state === 'attack' && !frozen && now - state.lastAttackAt > stats.attackCooldownMs
+      state.state === 'attack' &&
+      !frozen &&
+      now > state.attackBlockedUntil &&
+      now - state.lastAttackAt > stats.attackCooldownMs
 
     if (ready && !state.windupPending) {
       state.windupPending = true
@@ -568,13 +584,14 @@ export function Enemy({ spawn }: EnemyProps) {
           a 3 points de vie, et une ouverture à dégâts triplés le tuerait d'un
           coup. La parade deviendrait une exécution, et le continent se
           traverserait en appuyant sur R. Sa récompense est l'ouverture elle-même
-          — il est repoussé et ne peut plus frapper pendant `punishMs`, le temps
-          de placer deux coups ordinaires.
+          — il est repoussé, et son prochain coup n'arrive pas avant
+          `punishMs` **plus** son temps de recharge, soit 2,8 s : de quoi placer
+          deux coups ordinaires sans être interrompu.
 
           Gel, secousse et son jouent en temps réel, pendant le gel : même
           raison que la mort d'un ennemi, plus haut dans ce fichier.
         */
-        state.lastAttackAt = now + PARRY.punishMs
+        state.attackBlockedUntil = now + PARRY.punishMs
         knockback.set(position.x - playerTransform.position.x, 0, position.z - playerTransform.position.z)
         if (knockback.lengthSq() > 1e-6) {
           knockback.normalize().multiplyScalar(HIT_KNOCKBACK)

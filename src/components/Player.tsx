@@ -405,9 +405,10 @@ export function Player() {
       continent alors qu'il est dans le ciel. `spawnFor` est la seule table qui
       réponde à « où remet-on le joueur sur cette carte ».
 
-      Aucun dégât n'est infligé : l'île n'a pas encore d'enjeu, et punir une
-      chute sur une carte qu'on explore découragerait exactement ce qu'on veut
-      encourager. Le jour où le boss existera, c'est ici qu'on posera le coût.
+      Aucun dégât n'est infligé, boss compris. Tomber pendant le combat a déjà
+      un coût, et le bon : le Lynel est tenu sur son dallage, donc le joueur
+      revient à pied par une rampe pendant que le gardien l'attend au complet.
+      Y ajouter des cœurs punirait deux fois la même erreur.
     */
     // Lecture non réactive : ce composant ne doit pas se re-rendre au voyage,
     // c'est `WorldTransition` qui le repose.

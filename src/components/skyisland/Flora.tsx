@@ -185,6 +185,9 @@ function buildFlora() {
       }
       // Ni dans le tronc du grand arbre, qui pousse à cette distance-là.
       if (inTreeTrunk(Math.sin(theta) * r, Math.cos(theta) * r)) continue
+      // Ni sur le dallage de l'arène : le semis commence à r = 8, donc bien à
+      // l'intérieur. Sauté après les tirages, pour la raison dite plus haut.
+      if (r < ARENA_CLEAR_R) continue
       group.add(smallTree(materials, r, theta, scale, random))
     }
   }

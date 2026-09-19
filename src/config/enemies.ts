@@ -99,11 +99,11 @@ export const ENEMIES: Record<EnemyKind, EnemyStats> = {
     halfHeight: 0.55,
     minimapColor: '#c8892f',
     ranged: false,
-    // Son télégraphe dure 420 ms, exactement `PARRY.cueLeadMs` : l'offre
-    // couvre donc toute la préparation, et le signal s'allume à la frame même
-    // où le Moblin se ramasse. Ce n'est pas une coïncidence qu'on subit, c'est
-    // la raison pour laquelle `cueLeadMs` vaut 420 — la parade s'apprend sur
-    // lui avant d'arriver sur l'île.
+    // Son télégraphe dure 420 ms, soit moins que les 500 ms d'avance du signal
+    // (`PARRY.cueLeadMs`) : l'offre couvre donc toute la préparation, et
+    // l'anneau s'allume à la frame même où le Moblin se ramasse. C'est ce qu'on
+    // veut de lui — il est le coup sur lequel la parade s'apprend, bien avant
+    // l'île, et un télégraphe à tête muette le rendrait imparable.
     parryable: true,
   },
   /*

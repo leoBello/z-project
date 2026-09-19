@@ -244,6 +244,14 @@ export interface GameState {
   /** Les trois cœurs de l'arrivée sur l'île ont-ils déjà été donnés ? */
   skyBoonTaken: boolean
   /**
+   * Où le Lynel est tombé, en coordonnées monde, ou `null`.
+   *
+   * Dans le store et non dans son composant, parce que le composant se démonte
+   * avec lui : le réceptacle doit paraître à l'endroit du corps, et il n'y a
+   * plus personne pour s'en souvenir. C'est la seule raison de ce champ.
+   */
+  bossFellAt: [number, number, number] | null
+  /**
    * Carte vers laquelle un voyage est en cours, ou `null`.
    *
    * Distinct de `location` exactement comme `teleporting` l'est de
@@ -403,8 +411,13 @@ export interface GameState {
   setNearbyPortal: (near: boolean) => void
   /** Le joueur entre dans l'arène : le combat commence. Idempotent. */
   startBossFight: () => void
-  /** Le combat s'arrête, vaincu ou non. */
-  endBossFight: (defeated: boolean) => void
+  /**
+   * Le combat s'arrête, vaincu ou non.
+   *
+   * `fellAt` n'est lu que sur une victoire : c'est là que se posera le
+   * réceptacle, et l'endroit meurt avec le composant du boss.
+   */
+  endBossFight: (defeated: boolean, fellAt?: [number, number, number]) => void
   /**
    * Part vers l'autre carte : gèle la partie et lève le voile.
    *
@@ -455,6 +468,7 @@ const initialState = {
   portalOpenedAt: null as number | null,
   location: 'continent' as MapId,
   skyBoonTaken: false,
+  bossFellAt: null as [number, number, number] | null,
   bossState: 'idle' as 'idle' | 'fighting' | 'defeated',
   transit: null as MapId | null,
   transitLandmark: null as LandmarkId | null,
@@ -905,7 +919,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     track('boss_engaged', { phase: 'sword' })
   },
 
-  endBossFight: (defeated) => {
+  endBossFight: (defeated, fellAt) => {
     /*
       Les deux sorties ne sont pas symétriques.
 
@@ -915,7 +929,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       d'où le retour à `idle`, qui autorise un second engagement.
     */
     if (get().bossState !== 'fighting') return
-    set({ bossState: defeated ? 'defeated' : 'idle' })
+    set({
+      bossState: defeated ? 'defeated' : 'idle',
+      bossFellAt: defeated ? (fellAt ?? null) : null,
+    })
     if (defeated) track('boss_defeated', { hearts: get().hearts })
   },
 
@@ -962,6 +979,18 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Hors du `set`, comme la mesure d'audience de `resolveTeleport` : un
     // updater d'état n'appelle pas le tableau de bord.
     if (transit === 'sky') track('sky_island_entered', { via: 'portal' })
+    /*
+      Quitter l'île termine le combat, et il faut le dire ici plutôt que dans le
+      Lynel.
+
+      Lui le fait déjà quand le joueur s'éloigne de l'arène — mais sa boucle est
+      gardée par `phase === 'playing'`, et le menu de téléportation met la partie
+      en pause **dans le même `set`** qui lance le voyage. La garde ne repassait
+      donc jamais, l'île se démontait avec le boss, et `bossState` restait à
+      `fighting` pour le reste de la partie : le continent se jouait alors avec
+      la caméra serrée de l'arène. Un clic dans le menu suffisait.
+    */
+    if (transit !== 'sky') get().endBossFight(false)
 
     /*
       L'île rend trois cœurs, une seule fois.

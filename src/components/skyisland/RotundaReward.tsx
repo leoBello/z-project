@@ -1,4 +1,5 @@
 import { CORE_Y } from '../../config/skyIsland'
+import { ARENA_R } from '../../config/lynel'
 import { useGameStore } from '../../store/useGameStore'
 import { HeartContainer } from '../environment/HeartContainer'
 
@@ -20,8 +21,25 @@ import { HeartContainer } from '../environment/HeartContainer'
  */
 export function RotundaReward() {
   const defeated = useGameStore((state) => state.bossState === 'defeated')
+  const fellAt = useGameStore((state) => state.bossFellAt)
   if (!defeated) return null
 
+  /*
+    À l'endroit du corps, et non au centre de l'arène.
+
+    Le store retient le point de chute parce que le composant du boss se démonte
+    avec lui. Le repli au centre couvre les parties reprises d'un état où le
+    Lynel était déjà mort — et, par prudence, un point de chute aberrant : une
+    charge fatale peut le pousser au bord, et un réceptacle posé hors du dallage
+    serait injouable.
+  */
+  const [x, , z] = fellAt ?? [0, 0, 0]
+  const onFloor = Math.hypot(x, z) < ARENA_R - 1.5
   // Un mètre au-dessus du dallage : à hauteur de poitrine, pas dans les pieds.
-  return <HeartContainer sourceId="rotunda" position={[0, CORE_Y + 1, 0]} />
+  return (
+    <HeartContainer
+      sourceId="rotunda"
+      position={onFloor ? [x, CORE_Y + 1, z] : [0, CORE_Y + 1, 0]}
+    />
+  )
 }

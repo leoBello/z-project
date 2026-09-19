@@ -186,7 +186,6 @@ export const LYNEL_ATTACKS: Record<LynelAttackId, LynelAttack> = {
   },
 }
 
-/** Les attaques disponibles dans une phase donnée, dans l'ordre de la table. */
 /**
  * Les attaques disponibles par phase, construites **une fois** au chargement.
  *

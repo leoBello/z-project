@@ -6,7 +6,7 @@ import {
   RigidBody,
   type RapierRigidBody,
 } from '@react-three/rapier'
-import { Color, Group, MathUtils, Vector3, type Mesh, type MeshBasicMaterial } from 'three'
+import { Color, MathUtils, Vector3, type Group, type Mesh, type MeshBasicMaterial } from 'three'
 import { track } from '../analytics'
 import { playDefeat, playHit, playImpact, playParrySuccess } from '../audio/sfx'
 import {
@@ -248,8 +248,21 @@ function pickAttack(
   now: number,
   distance: number,
 ): LynelAttack | null {
-  const candidates = attacksFor(state.phase).filter(
-    (attack) =>
+  /*
+    Tirage par réservoir, sans tableau intermédiaire.
+
+    Un `.filter()` ici allouerait un tableau par image — la fonction est appelée
+    à chaque frame tant qu'aucune attaque n'est en cours, y compris quand aucune
+    n'est à portée et que le résultat est vide. C'est exactement le déchet que
+    `BY_PHASE` a été mémoïsé pour supprimer un cran plus haut.
+
+    Le réservoir donne la même équiprobabilité : le n-ième candidat retenu
+    remplace le choix courant avec une chance sur n.
+  */
+  let chosen: LynelAttack | null = null
+  let seen = 0
+  for (const attack of attacksFor(state.phase)) {
+    const eligible =
       now - state.lastUsedAt[attack.id] > attack.cooldownMs &&
       /*
         Sa portée exacte, et pas une unité de rab.
@@ -267,10 +280,12 @@ function pickAttack(
         jusqu'à 14 tout en s'annulant au-delà de 8,6 : il aurait ouvert puis
         annulé un télégraphe à chaque frame, sans jamais consommer sa recharge.
       */
-      attack.reach >= distance,
-  )
-  if (candidates.length === 0) return null
-  return candidates[Math.floor(Math.random() * candidates.length)]
+      attack.reach >= distance
+    if (!eligible) continue
+    seen++
+    if (Math.random() < 1 / seen) chosen = attack
+  }
+  return chosen
 }
 
 /**
@@ -691,10 +706,11 @@ export function Lynel() {
           L'offre part ici, à l'ouverture du télégraphe, mais la fenêtre ne
           s'ouvrira que `cueLeadMs` avant l'impact : `offerParry` calcule
           `offerFrom` depuis l'instant d'impact, pas depuis l'appel. C'est ce qui
-          permet à un télégraphe de 620 ms de n'offrir que ses 420 dernières
-          millisecondes — les 200 premières ne sont pas réactives, et les
-          signaler donnerait au joueur 200 ms pendant lesquelles appuyer paraît
-          juste sans l'être.
+          permet à un télégraphe de 620 ms de n'offrir que ses 500 dernières
+          millisecondes — les 120 premières ne sont pas réactives, et les
+          signaler donnerait au joueur un moment où appuyer paraît juste sans
+          l'être. Les attaques dont le télégraphe est plus court que l'avance —
+          l'estoc, à 400 ms — allument l'anneau d'emblée.
         */
         if (choice.parryable) {
           offerParry(SPAWN_ID, state.pendingImpactAt)
@@ -1051,7 +1067,7 @@ function damage(
 
   // Les barrières s'ouvrent et la caméra se rouvre. L'état reste `defeated`
   // pour toute la partie : on ne rengage pas un boss mort en repassant par là.
-  useGameStore.getState().endBossFight(true)
+  useGameStore.getState().endBossFight(true, [x, ARENA_CENTER[1], z])
 
   // Les trois retours qui font la différence entre « il a disparu » et « je
   // l'ai eu ». Tous en temps réel : ils doivent jouer pendant le gel.

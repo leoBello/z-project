@@ -55,6 +55,14 @@ const PARRY_RING_SEGMENTS = 32
  * de rester égales si l'une des deux change un jour.
  */
 const PARRY_WHIFF_FLASH_MS = 260
+/**
+ * Tenue de l'anneau d'or après une parade réussie.
+ *
+ * Volontairement plus courte que l'ouverture qu'elle récompense (1,3 s) : ce
+ * qu'elle signale, c'est l'instant du geste, pas la durée de la punition — que
+ * le joueur lit sur le Lynel désarçonné.
+ */
+const PARRY_SUCCESS_MS = 420
 
 const point = makeScreenPoint()
 const anchor = makeScreenPoint()
@@ -333,7 +341,11 @@ function drawParryRing(
 ) {
   const now = gameNow()
   const offered = parryOffered(now)
-  const guarding = now < parry.guardUntil
+  // `consumeParry` referme la garde à l'instant même où elle a servi : sans ce
+  // second terme, l'anneau d'or s'éteindrait sur la frame de la parade réussie,
+  // c'est-à-dire précisément celle qu'on veut voir.
+  const succeeded = now - parry.succeededAt < PARRY_SUCCESS_MS
+  const guarding = now < parry.guardUntil || succeeded
   const whiffed = now - parry.whiffedAt < PARRY_WHIFF_FLASH_MS
 
   if (!offered && !guarding && !whiffed) return
