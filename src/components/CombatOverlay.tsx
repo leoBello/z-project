@@ -18,6 +18,13 @@ const HEALTH_BAR_LINGER_MS = 2600
 const HEALTH_BAR_FADE_MS = 450
 /** Air laissé entre le sommet du collider et la barre, en unités monde. */
 const HEALTH_BAR_CLEARANCE = 0.4
+/**
+ * Nombre de segments au-delà duquel la barre de vie passe en jauge continue.
+ *
+ * Voir `drawHealthBar` : à 26 pixels de large, sept segments est le maximum qui
+ * reste lisible.
+ */
+const MAX_SEGMENTS = 7
 
 /** Nombre de sondages de relief entre la caméra et un ennemi. */
 const OCCLUSION_STEPS = 12
@@ -395,12 +402,22 @@ function drawParryRing(
 }
 
 /**
- * Barre de vie segmentée, un segment par point de vie.
+ * Barre de vie segmentée — sauf quand il y a trop de segments pour se voir.
  *
- * Segmentée et non continue : les ennemis ont 2 ou 3 PV, soit 2 ou 3 coups
- * d'épée. Une jauge continue demanderait au joueur d'estimer une proportion,
- * là où des segments répondent directement à la seule question qui compte —
- * combien de coups reste-t-il à donner.
+ * Segmentée et non continue : un Octorok a 2 PV, un Moblin 3, soit 2 ou 3 coups
+ * d'épée. Une jauge continue demanderait au joueur d'estimer une proportion, là
+ * où des segments répondent directement à la seule question qui compte — combien
+ * de coups reste-t-il à donner.
+ *
+ * Le Lynel en a **36**, et le raisonnement s'y retourne. La largeur disponible
+ * plafonne à 84 pixels : trente-six segments séparés par trente-cinq espaces de
+ * 2,35 laissaient **0,05 pixel** par segment, c'est-à-dire une barre vide. Et
+ * même dessinés, trente-six traits ne répondent plus à la question — personne ne
+ * compte trente-six coups d'épée.
+ *
+ * Au-delà de `MAX_SEGMENTS`, la jauge passe donc en continu. Le seuil se déduit
+ * de la lisibilité au pire cas : de loin la barre tombe à 26 pixels, et un
+ * segment sous 3 pixels n'est plus un segment — ce qui en autorise sept.
  */
 function drawHealthBar(
   context: CanvasRenderingContext2D,
@@ -429,12 +446,31 @@ function drawHealthBar(
   context.fillStyle = 'rgba(14, 20, 16, 0.72)'
   context.fill()
 
-  const segment = (width - gap * (maxHp - 1)) / maxHp
-  for (let i = 0; i < maxHp; i++) {
-    const filled = i < hp
-    roundRect(context, left + i * (segment + gap), top, segment, height, radius)
-    context.fillStyle = filled ? ENEMIES[kind].minimapColor : 'rgba(255, 255, 255, 0.14)'
+  if (maxHp <= MAX_SEGMENTS) {
+    const segment = (width - gap * (maxHp - 1)) / maxHp
+    for (let i = 0; i < maxHp; i++) {
+      const filled = i < hp
+      roundRect(context, left + i * (segment + gap), top, segment, height, radius)
+      context.fillStyle = filled ? ENEMIES[kind].minimapColor : 'rgba(255, 255, 255, 0.14)'
+      context.fill()
+    }
+  } else {
+    // Le creux d'abord, sur toute la largeur, puis la part restante par-dessus :
+    // une jauge qui rétrécit sans laisser sa trace ne dit pas combien on a déjà
+    // entamé, ce qui est justement ce qu'on veut lire sur un boss.
+    roundRect(context, left, top, width, height, radius)
+    context.fillStyle = 'rgba(255, 255, 255, 0.14)'
     context.fill()
+
+    const filled = width * Math.max(0, Math.min(1, hp / maxHp))
+    // Sous un demi-pixel, `roundRect` produit un rayon plus grand que la boîte
+    // et dessine une pastille : au dernier point de vie, mieux vaut ne rien
+    // dessiner que de faire croire qu'il en reste.
+    if (filled > 0.5) {
+      roundRect(context, left, top, filled, height, Math.min(radius, filled / 2))
+      context.fillStyle = ENEMIES[kind].minimapColor
+      context.fill()
+    }
   }
 
   context.restore()
