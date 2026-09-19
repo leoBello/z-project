@@ -25,6 +25,7 @@
 | 02 | La parade marche-t-elle sur les Moblins ? | **Oui.** Intégré à la Task 1 (Step 8) : c'est aussi ce qui rend la parade apprenable sur le continent, bien avant l'île. |
 | 03 | Trois phases ou deux ? | **Trois.** La Task 6 n'est plus optionnelle. |
 | 04 | Que donne la victoire ? | **Un réceptacle de cœur** (Task 7). Une quatrième tenue viendra plus tard, dans un chantier à part. |
+| — | L'arbre occupe le centre de l'arène (découvert à la Task 2) | **On déplace l'arbre derrière l'arène.** Task 2b. |
 
 ---|---|---|---|
 | 02 | La parade marche-t-elle sur les Moblins ? | **Non pour l'instant.** La touche et la mécanique sont générales ; seules les attaques qui appellent `offerParry()` sont parables, et seul le Lynel le fait. Étendre au Moblin sera une ligne dans `Enemy.tsx`. | Task 1 |
@@ -80,6 +81,11 @@
 | `src/components/enemies/lynelMaterials.ts` | Créer | Les matériaux propres au Lynel (or, métal, corne, acier, sabot, cuir). |
 | `src/components/Lynel.tsx` | Créer | Corps physique, machine à états, séquences d'attaques, phases. |
 | `src/components/skyisland/SkyIsland.tsx` | Modifier | Monte le Lynel dans la rotonde. |
+| `src/components/skyisland/Flora.tsx` | Modifier | L'arbre recule derrière l'arène ; racines hors de l'arène ; collider du tronc. |
+| `src/components/skyisland/Water.tsx` | Modifier | La rigole autour de la rotonde remplace le bassin central. |
+| `src/components/skyisland/Ruins.tsx` | Modifier | Cotes de la rotonde déplacées dans `config/skyIsland.ts`. |
+| `src/components/environment/SkyIslandDistant.tsx` | Modifier | La silhouette lointaine suit l'arbre. |
+| `src/components/enemies/lynelGeometry.ts` | Créer | Données de géométrie du Lynel, sorties du modèle (relecture de la Task 2). |
 | `src/store/useGameStore.ts` | Modifier | `bossState`, `startBossFight()`, `endBossFight()`. |
 | `src/config/gameplay.ts` | Modifier | `CAMERA.arena`. |
 | `src/components/CameraRig.tsx` | Modifier | Interpolation entre caméra de jeu et caméra d'arène. |
@@ -1365,6 +1371,174 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ---
 
+## Task 2b : l'arbre recule, l'arène se libère
+
+Décidée après la Task 2, quand le Lynel s'est retrouvé planté dans le tronc. Le grand arbre de l'île est enraciné au centre de la rotonde (tronc de 5,4 de rayon à la base, huit racines jusqu'à r ≈ 12), et le bassin doré qui alimente les canaux y est aussi (4,2 de rayon). Ensemble, ils ne laissaient de l'arène qu'un couloir de 5,5 unités. **Décision de Léo : l'arbre part derrière l'arène, pour libérer toute la place.** À la fin de cette tâche, le dallage de la rotonde est entièrement libre dans un rayon de 12,8, le Lynel est visible au centre, et l'arbre se dresse derrière l'arène vue du point d'arrivée.
+
+**Files:**
+- Modify: `src/config/skyIsland.ts`
+- Modify: `src/components/skyisland/Flora.tsx`
+- Modify: `src/components/skyisland/Water.tsx`
+- Modify: `src/components/skyisland/Ruins.tsx`
+- Modify: `src/components/skyisland/Terrain.tsx` (commentaire seulement)
+- Modify: `src/components/environment/SkyIslandDistant.tsx`
+
+**Interfaces:**
+- Consumes: `topHeight`, `CORE_Y`, `GARDEN_Y`, `TREE_TOP`, `RAMPS_INNER`, `RAMPS_OUTER` de `src/config/skyIsland.ts`.
+- Produces, dans `src/config/skyIsland.ts` :
+  - `TREE_THETA = 3.9`, `TREE_R = 21`, `TREE_BASE_Y = GARDEN_Y` et `treePosition(): [number, number, number]`
+  - `ROTUNDA_R = 11.5`, `ROTUNDA_PIERS = 10`, `ROTUNDA_PIER_PHASE = 0.31`, `ROTUNDA_RUINED_BAYS = [3, 7] as const`, `rotundaPierAngle(i: number): number`
+  - `ARENA_CLEAR_R = 12.8` — rayon autour du centre où rien de l'arbre, des racines ni de la source ne peut se trouver
+  - `GUTTER_R = 12.6` — rayon de la rigole qui ceinture la rotonde
+
+---
+
+- [ ] **Step 1 : les cotes, au seul endroit où elles peuvent vivre**
+
+Modifier `src/config/skyIsland.ts`. L'arbre est dessiné à trois endroits — le fragment de l'île (`Flora.tsx`), la silhouette lointaine du continent (`SkyIslandDistant.tsx`) et, désormais, la source de l'eau (`Water.tsx`). Sa position doit donc vivre dans ce module d'arithmétique pure, que la silhouette peut importer sans tirer le fragment.
+
+Ajouter, après `TREE_TOP` :
+
+```ts
+/*
+  Où pousse l'arbre, et pourquoi pas au centre.
+
+  Il était au centre de la rotonde, et la rotonde est l'arène du boss : son
+  tronc de 5,4 de rayon, ses racines et le bassin à son pied ne laissaient
+  qu'un couloir de cinq unités et demie entre le bois et les piliers. On l'a
+  reculé **derrière** l'arène, vu depuis le point d'arrivée — le joueur voit
+  la rotonde devant lui et l'arbre se dresser au-delà, ce qui garde l'image
+  tout en rendant le sol.
+
+  Pas plein nord : une rampe intérieure y passe (`RAMPS_INNER`, π). À 3,9 rad
+  et 21 unités, il se loge sur la terrasse du jardin entre deux rampes, à plus
+  de dix unités de la tour la plus proche et loin de la salle à colonnes, et
+  son tronc s'arrête avant l'enceinte (21 + 5,4 < 29,5) tandis que sa couronne
+  la surplombe.
+*/
+export const TREE_THETA = 3.9
+export const TREE_R = 21
+/** Le pied de l'arbre est sur la terrasse du jardin, plus sur le cœur. */
+export const TREE_BASE_Y = GARDEN_Y
+
+export function treePosition(): [number, number, number] {
+  return [Math.sin(TREE_THETA) * TREE_R, TREE_BASE_Y, Math.cos(TREE_THETA) * TREE_R]
+}
+
+/*
+  La rotonde, dont les cotes étaient privées à `Ruins.tsx`.
+
+  Elles en sortent parce que le combat en a besoin : les barrières de l'arène
+  doivent tomber exactement dans les deux travées écroulées, et une seconde
+  copie de ces nombres — sans le déphasage de 0,31 rad, par exemple — mettrait
+  les barrières entre deux piliers debout.
+*/
+export const ROTUNDA_R = 11.5
+export const ROTUNDA_PIERS = 10
+/** Déphasage des piliers : aucun n'est dans l'axe de la porte. */
+export const ROTUNDA_PIER_PHASE = 0.31
+/** Les deux travées écroulées, qui ouvrent l'arène. */
+export const ROTUNDA_RUINED_BAYS = [3, 7] as const
+
+/** Angle du pilier `i`, dans le repère polaire de l'île. */
+export function rotundaPierAngle(i: number) {
+  return (i / ROTUNDA_PIERS) * Math.PI * 2 + ROTUNDA_PIER_PHASE
+}
+
+/**
+ * Rayon que rien ne doit franchir vers le centre : ni tronc, ni racine, ni
+ * bassin. C'est la promesse de cette tâche, et le contrôle de fin la mesure.
+ */
+export const ARENA_CLEAR_R = 12.8
+/** La rigole qui ceinture la rotonde, entre les piliers (11,5) et la falaise (14). */
+export const GUTTER_R = 12.6
+```
+
+Modifier `src/components/skyisland/Ruins.tsx` : supprimer ses constantes locales `ROTUNDA_R`, `PIERS`, `RUINED_BAYS` et le littéral `0.31` (ligne 365), et utiliser à la place les exports ci-dessus (`rotundaPierAngle(i)` pour l'angle). Changement pur, aucune géométrie ne doit bouger. Mettre à jour le commentaire de la coupole (vers la ligne 437) : l'arbre ne sort plus par la brèche, la coupole s'est effondrée seule. Garder la phrase sur l'or.
+
+- [ ] **Step 2 : l'arbre**
+
+Modifier `src/components/skyisland/Flora.tsx`, bloc « Le grand arbre » (lignes 246-290 environ).
+
+1. Poser le groupe à `treePosition()` au lieu de `(0, CORE_Y, 0)`.
+2. La cime reste à `TREE_TOP` en absolu : `trunkH = TREE_TOP - TREE_BASE_Y - 5`. Le tronc gagne donc 3,6 de haut ; la couronne, placée relativement à `trunkH`, suit sans autre changement.
+3. **Les racines.** Elles rayonnent aujourd'hui dans les huit directions sur 9,5 unités. Vers l'arène, elles entreraient dans le dallage. Règle à tenir : **aucun point d'aucune racine à moins de `ARENA_CLEAR_R` du centre de l'île**. Les racines tournées vers la rotonde (celles dont la direction pointe vers l'origine à ±70° près) sont raccourcies et **remontent la falaise du cœur** : elles partent du pied de l'arbre (`TREE_BASE_Y`), grimpent de 3,6 unités et s'accrochent au rebord de la rotonde, où elles s'arrêtent à `GUTTER_R + 0.4` du centre. Les autres s'étalent sur le jardin comme avant. Écrire le filtre de distance comme une vraie contrainte (ramener un point trop proche sur le cercle `ARENA_CLEAR_R`), pas comme une valeur choisie à l'œil qui cesserait de tenir au premier réglage.
+4. Garder le commentaire « Les racines s'agrippent à la maçonnerie de la rotonde », qui devient plus vrai qu'avant, et ajouter pourquoi elles s'arrêtent au bord.
+5. **Un collider pour le tronc.** Il n'en avait aucun : le joueur le traversait. Ajouter un corps fixe avec un `CylinderCollider` au pied de l'arbre, rayon 5,0 (le tronc fait 5,4 à la base et s'affine : 5,0 est son rayon à hauteur de personnage), demi-hauteur `trunkH / 2`. Les racines n'en ont pas, pour la même raison que les blocs tombés dans `Ruins.tsx` : un obstacle d'une unité est un mur pour un personnage sans autostep.
+6. Vérifier le semis de végétation (commentaire ligne 94) : les touffes et bosquets ne doivent pas pousser dans le tronc à sa nouvelle place. Ajouter l'exclusion d'un disque de rayon 6,5 autour de `treePosition()`, à côté de l'exclusion d'arène existante.
+
+- [ ] **Step 3 : l'eau change de source**
+
+Modifier `src/components/skyisland/Water.tsx`.
+
+L'eau ne remonte pas. Le bassin ne peut donc pas suivre l'arbre dans le jardin (3,6) et continuer d'alimenter des canaux qui partent du cœur (7,2). On le remplace par une **rigole qui ceinture la rotonde**, alimentée par les racines.
+
+1. Supprimer le bassin central (cylindre, lèvre dorée, surface).
+2. Ajouter la rigole : un anneau de rayon `GUTTER_R` posé à `CORE_Y + 0.16`, construit comme les canaux existants — un tore de pierre `stoneMid` (section 0,55) et un tore d'eau `water` (section 0,38), plus une lèvre dorée fine (`gold`, section 0,12) sur son bord extérieur. Pas de collider : c'est un caniveau, on l'enjambe.
+3. La source : là où les racines de l'arbre s'accrochent au rebord (angle `TREE_THETA`, rayon `GUTTER_R + 0.4`), un petit bec doré (cône ou cylindre `goldBright`) d'où l'eau tombe dans la rigole — un filet `fall` court, de la racine à la rigole.
+4. Les trois canaux intérieurs partent désormais de `GUTTER_R` au lieu de `5` : `[RAMPS_INNER[i], GUTTER_R, 33]`. Tout ce qui est en aval (canaux extérieurs, aqueduc, cascades) ne change pas.
+5. Réécrire l'en-tête du fichier (lignes 30-40) et le commentaire du Step 3 : l'eau naît des racines, au bord de la rotonde ; elle en fait le tour ; elle descend par les trois rampes. Garder l'argument de la spec — **l'œil demande toujours d'où vient l'eau** — et dire qu'il tient toujours : la source se voit, c'est le bec au bout des racines.
+
+```ts
+/*
+  L'eau naît des racines, là où elles agrippent le rebord de la rotonde, et
+  fait le tour de l'arène avant de descendre.
+
+  Elle naissait d'un bassin au centre, au pied de l'arbre. L'arbre a reculé
+  derrière l'arène pour laisser le sol au combat, et l'eau ne pouvait pas le
+  suivre : la terrasse du jardin est 3,6 unités plus bas que le cœur, et une
+  source placée là n'aurait jamais alimenté des canaux qui partent d'en haut.
+  Les racines, elles, remontent la falaise — c'est donc d'elles que l'eau sort.
+*/
+```
+
+Modifier `src/components/skyisland/Terrain.tsx`, ligne 126 : le commentaire « Dallage de l'arène, au pied de l'arbre » devient « Dallage de l'arène ». Rien d'autre.
+
+- [ ] **Step 4 : la silhouette lointaine**
+
+Modifier `src/components/environment/SkyIslandDistant.tsx`, bloc « L'arbre » (lignes 300-320). Le tronc et les quatre blocs de couronne sont translatés de `treePosition()` en x et z, et le tronc part de `TREE_BASE_Y` avec la même règle `trunkH = TREE_TOP - TREE_BASE_Y - 5` que le fragment. Sans ça, depuis le continent, on verrait l'arbre au centre de l'île et, une fois arrivé, ailleurs.
+
+- [ ] **Step 5 : vérifier**
+
+```bash
+npm run build && npm run lint
+```
+
+Contrôles navigateur (recette dans `.superpowers/sdd/browser-check.md`) :
+
+- **La promesse, mesurée** : avec un crochet de développement temporaire (à retirer avant le commit), parcourir les sommets en coordonnées monde de tous les maillages de l'arbre, des racines et de l'eau, et vérifier qu'aucun sommet au-dessus de `CORE_Y - 0.5` n'est à moins de `ARENA_CLEAR_R` du centre (x, z) — **sauf** la rigole elle-même (rayon `GUTTER_R` ± sa section) et le bec. Rapporter la distance minimale trouvée.
+- Captures depuis la caméra du jeu : (1) depuis le point d'arrivée sur la prairie, vue au nord — la rotonde devant, l'arbre derrière ; (2) depuis l'arcade de la rotonde — le dallage libre et le Lynel visible en entier au centre ; (3) la source : les racines qui s'accrochent au rebord et l'eau qui tombe dans la rigole ; (4) depuis le continent, la silhouette lointaine. Les regarder avec l'outil Read.
+- On ne traverse plus le tronc : téléporter le joueur contre le tronc et vérifier qu'il est arrêté.
+- Les trois canaux coulent toujours jusqu'aux cascades, sans rupture visible à la rigole.
+- Aucune nouvelle erreur console.
+
+- [ ] **Step 6 : commit**
+
+```bash
+git add src/config/skyIsland.ts src/components/skyisland/Flora.tsx \
+  src/components/skyisland/Water.tsx src/components/skyisland/Ruins.tsx \
+  src/components/skyisland/Terrain.tsx src/components/environment/SkyIslandDistant.tsx
+git commit -m "feat: l'arbre recule derriere l'arene, et l'eau fait le tour de la rotonde
+
+L'arbre etait enracine au centre de la rotonde, qui est l'arene du boss : son
+tronc, ses racines et le bassin a son pied ne laissaient qu'un couloir de cinq
+unites et demie. Il pousse maintenant dans le jardin, derriere l'arene vue du
+point d'arrivee, entre deux rampes. Ses racines remontent la falaise et
+s'arretent au bord de la rotonde, et son tronc a enfin un collider.
+
+L'eau ne pouvait pas le suivre : le jardin est 3,6 unites plus bas que le coeur,
+et une source placee la n'aurait jamais alimente des canaux qui partent d'en
+haut. Elle sort donc des racines, au bord, fait le tour de l'arene dans une
+rigole, et descend par les trois rampes comme avant.
+
+Les cotes de la rotonde sortent de Ruins.tsx : les barrieres du combat devront
+tomber exactement dans les travees ecroulees, dephasage de 0,31 rad compris.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+```
+
+---
+
 ## Task 3 : phase I — l'épée, et la parade qui sert enfin
 
 Le Lynel devient un adversaire : corps physique, poursuite, deux attaques parables, et les 36 points de vie. À la fin de cette tâche, le combat est jouable de bout en bout avec un seul jeu d'attaques, et c'est déjà un combat.
@@ -1392,7 +1566,7 @@ Le Lynel devient un adversaire : corps physique, poursuite, deux attaques parabl
 Créer `src/config/lynel.ts`.
 
 ```ts
-import { CORE_Y } from './skyIsland'
+import { CORE_Y, ROTUNDA_R } from './skyIsland'
 import type { LynelAttackId, LynelPhase } from '../types/game'
 
 /**
@@ -1406,8 +1580,8 @@ import type { LynelAttackId, LynelPhase } from '../types/game'
  * cas particuliers.
  */
 
-/** Rayon du dallage de la rotonde. Repris de `components/skyisland/Ruins.tsx`. */
-export const ARENA_R = 11.5
+/** Rayon du dallage de la rotonde — le même nombre que ses piliers, pas une copie. */
+export const ARENA_R = ROTUNDA_R
 /** Centre de l'arène, en coordonnées monde de l'île. */
 export const ARENA_CENTER: [number, number, number] = [0, CORE_Y, 0]
 
@@ -2031,7 +2205,13 @@ import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody } from '@react-three/rapier'
 import { DoubleSide, Mesh, MeshBasicMaterial } from 'three'
-import { SKY_COLORS } from '../../config/skyIsland'
+import {
+  CORE_Y,
+  ROTUNDA_PIERS,
+  ROTUNDA_RUINED_BAYS,
+  SKY_COLORS,
+  rotundaPierAngle,
+} from '../../config/skyIsland'
 import { ARENA_R } from '../../config/lynel'
 import { now as gameNow } from '../../state/gameClock'
 import { useGameStore } from '../../store/useGameStore'
@@ -2049,13 +2229,10 @@ import { useGameStore } from '../../store/useGameStore'
   réutilise ce qu'il sait.
 */
 
-/** Les deux travées écroulées. Repris de `RUINED_BAYS` dans `Ruins.tsx`. */
-const RUINED_BAYS = [3, 7]
-const PIERS = 10
 /** Hauteur du voile. Au-dessus de l'arcade, donc infranchissable au saut. */
 const GATE_H = 6
 /** Largeur d'une travée, à ce rayon. */
-const GATE_W = (2 * Math.PI * ARENA_R) / PIERS
+const GATE_W = (2 * Math.PI * ARENA_R) / ROTUNDA_PIERS
 
 export function ArenaGate() {
   const fighting = useGameStore((state) => state.bossState === 'fighting')
@@ -2074,15 +2251,24 @@ export function ArenaGate() {
 
   return (
     <>
-      {RUINED_BAYS.map((bay) => {
-        const angle = (bay / PIERS) * Math.PI * 2
+      {ROTUNDA_RUINED_BAYS.map((bay) => {
+        /*
+          Le milieu de la travée, pas l'angle du pilier : la travée `i` s'ouvre
+          entre le pilier `i` et le pilier `i + 1`. Et le déphasage de 0,31 rad
+          est compris dans `rotundaPierAngle` — l'oublier poserait les barrières
+          entre deux piliers debout.
+        */
+        const angle = (rotundaPierAngle(bay) + rotundaPierAngle(bay + 1)) / 2
         const x = Math.sin(angle) * ARENA_R
         const z = Math.cos(angle) * ARENA_R
         return (
-          <group key={bay} position={[x, 0, z]} rotation={[0, angle, 0]}>
+          <group key={bay} position={[x, CORE_Y, z]} rotation={[0, angle, 0]}>
             <mesh
+              // Indexé par travée et non poussé dans un tableau : un callback de
+              // ref est rappelé à chaque rendu, et un `push` y ferait grossir la
+              // liste sans fin.
               ref={(mesh) => {
-                if (mesh) veils.current.push(mesh)
+                if (mesh) veils.current[ROTUNDA_RUINED_BAYS.indexOf(bay)] = mesh
               }}
               position={[0, GATE_H / 2, 0]}
             >
@@ -2108,7 +2294,7 @@ export function ArenaGate() {
 }
 ```
 
-> Le `y` des barrières est relatif au plateau de la rotonde : les monter dans le même groupe que la rotonde, ou ajouter `CORE_Y` à leur position. Vérifier dans `Ruins.tsx` comment le plateau est positionné et faire pareil.
+> Vérifier dans `Ruins.tsx` quelle travée est « écroulée » au sens de `RUINED_BAYS` : si c'est l'espace qui *suit* le pilier `i` (comme supposé ci-dessus) ou celui qui le *précède*, et ajuster le calcul du milieu en conséquence. Le contrôle de fin le dira sans ambiguïté : un voile doit remplir une brèche, pas couper une arcade intacte.
 
 Modifier `src/components/skyisland/SkyIsland.tsx` : monter `<ArenaGate />` à côté de `<Lynel />`.
 
