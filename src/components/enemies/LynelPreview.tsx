@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Group } from 'three'
+import type { Group } from 'three'
 import { CORE_Y } from '../../config/skyIsland'
 import { LynelModel } from './LynelModel'
 import { useEnemyMaterials } from './models'
