@@ -6,7 +6,7 @@ import {
   RigidBody,
   type RapierRigidBody,
 } from '@react-three/rapier'
-import { Color, Group, MathUtils, Vector3 } from 'three'
+import { Color, Group, MathUtils, Vector3, type Mesh, type MeshBasicMaterial } from 'three'
 import { track } from '../analytics'
 import { playDefeat, playHit, playImpact, playParrySuccess } from '../audio/sfx'
 import {
@@ -41,6 +41,7 @@ import { PROJECTILE_HIT_RADIUS, fireProjectile, projectiles } from '../state/pro
 import { useGameStore } from '../store/useGameStore'
 import type { LynelAttackId, LynelPhase } from '../types/game'
 import { LynelModel } from './enemies/LynelModel'
+import { LYNEL_COLORS } from './enemies/lynelMaterials'
 import type { LynelPose, LynelRig } from './enemies/LynelModel'
 import { useEnemyMaterials } from './enemies/models'
 
@@ -114,6 +115,28 @@ const CHARGE_SPEED = 11
  * de qui n'a pas encore compris la parade.
  */
 const CHARGE_STUN_MS = 1400
+/** Durée de vie d'une flaque de feu, en millisecondes. */
+const PUDDLE_MS = 3000
+/** Rayon d'une flaque. */
+const PUDDLE_R = 1.6
+/** Cœurs retirés par seconde passée dans une flaque. */
+const PUDDLE_DPS = 1
+/** Nombre de flaques que le souffle dépose, et taille du pool. */
+const PUDDLES = 6
+/**
+ * Probabilité qu'un balayage de phase III soit une feinte.
+ *
+ * Une fois sur quatre, et pas plus. La feinte existe parce que la parade, une
+ * fois apprise, devient gratuite : le joueur ne regarde plus la bête, il attend
+ * le flash. La réponse n'est pas de raccourcir la fenêtre — ça ne punirait que
+ * les écrans lents — mais de mentir parfois. Au-delà d'une fois sur quatre, le
+ * signal cesse d'être une information et devient du bruit : le joueur arrête de
+ * le regarder, et on a détruit la mécanique qu'on voulait approfondir.
+ */
+const FEINT_CHANCE = 0.25
+/** Retard du vrai coup sur le signal, quand c'est une feinte. */
+const FEINT_DELAY_MS = 320
+
 /** Écart entre deux flèches du triple tir, en radians. ±7°. */
 const VOLLEY_SPREAD = 0.122
 /**
@@ -149,6 +172,14 @@ if (import.meta.env.DEV) {
   // `__lynel` porte déjà la table des attaques : celui-ci est l'état vivant.
   ;(window as unknown as Record<string, unknown>).__lynelState = lynelDebug
 }
+
+/**
+ * La couleur de l'onde et des flaques : le violet du cristal, pas un orange de
+ * feu. Tout ce que le Lynel produit de dangereux porte déjà cette teinte — les
+ * yeux, la crinière en phase III, le signal de parade — et c'est la seule que
+ * le décor ne porte nulle part.
+ */
+const SHOCK_COLOR = new Color(LYNEL_COLORS.glow)
 
 const toPlayer = new Vector3()
 const muzzle = new Vector3()
@@ -189,6 +220,17 @@ interface LynelRuntime {
   chargeUntil: number
   /** Le joueur a-t-il déjà été fauché par la charge en cours ? */
   chargeHit: boolean
+  /**
+   * Les flaques de feu, en pool fixe.
+   *
+   * Elles rétrécissent l'arène sans y poser un seul obstacle, et c'est toute
+   * leur raison d'être : un obstacle de décor gênerait aussi l'esquive, donc
+   * punirait le joueur en dehors du moment où il s'est trompé. Une flaque ne
+   * gêne que là où le Lynel a soufflé, et seulement trois secondes.
+   */
+  puddles: { x: number; z: number; until: number }[]
+  /** Dernier prélèvement de dégâts de flaque : elles brûlent au temps passé. */
+  lastBurnAt: number
 }
 
 /**
@@ -289,6 +331,9 @@ export function Lynel() {
   const rig = useRef<LynelRig>(null)
   const [removed, setRemoved] = useState(false)
 
+  /** Les six disques de flaque, montrés et déplacés depuis la boucle. */
+  const puddleMeshes = useRef<(Mesh | null)[]>([])
+
   const runtime = useRef<LynelRuntime>({
     hp: stats.hp,
     phase: 'sword',
@@ -315,6 +360,8 @@ export function Lynel() {
     chargeDir: null,
     chargeUntil: -Infinity,
     chargeHit: false,
+    puddles: Array.from({ length: PUDDLES }, () => ({ x: 0, z: 0, until: -Infinity })),
+    lastBurnAt: -Infinity,
   })
 
   // Inscription au registre : la minimap y prend son point argenté, le calque de
@@ -649,7 +696,21 @@ export function Lynel() {
           signaler donnerait au joueur 200 ms pendant lesquelles appuyer paraît
           juste sans l'être.
         */
-        if (choice.parryable) offerParry(SPAWN_ID, state.pendingImpactAt)
+        if (choice.parryable) {
+          offerParry(SPAWN_ID, state.pendingImpactAt)
+          /*
+            La feinte décale l'impact **après** que l'offre a été posée.
+
+            L'offre garde donc son horaire d'origine, et c'est exactement ce qui
+            la rend fausse : qui pare au signal est en récupération quand le coup
+            arrive enfin. Il faut alors regarder l'épaule et non la crinière.
+            C'est la seule mécanique du combat qui demande de *désapprendre*, et
+            c'est pour ça qu'elle n'arrive qu'en dernière phase.
+          */
+          if (state.phase === 'rage' && Math.random() < FEINT_CHANCE) {
+            state.pendingImpactAt += FEINT_DELAY_MS
+          }
+        }
       }
     }
 
@@ -706,6 +767,39 @@ export function Lynel() {
         // 1,9 s si elle part du bord opposé — et la borner à 1,4 s faisait
         // reprendre la pose de repos en pleine course, à onze unités par seconde.
         // C'est la laisse et l'impact qui la terminent, pas un minuteur de pose.
+      } else if (attack.id === 'stomp') {
+        /*
+          L'onde rase le sol : elle touche qui est à terre, pas qui saute.
+
+          `playerTransform.grounded` est exactement le drapeau qu'il faut, et il
+          existe déjà — le raycast sol du joueur l'écrit à chaque frame. Tester
+          une hauteur absolue serait plus fragile : le dallage est à 7,2, et un
+          seuil en dur y deviendrait faux le jour où l'arène bouge.
+
+          C'est la seule attaque du combat qui se *franchit* au lieu de
+          s'esquiver. Le jeu avait un saut qui ne servait qu'à grimper.
+        */
+        if (playerTransform.grounded && attackHits(attack, position, state.yaw)) {
+          store.damagePlayer(attack.damage)
+        }
+        spawnDeathRing(position.x, ARENA_CENTER[1], position.z, SHOCK_COLOR, attack.reach)
+        shake(0.14, 200)
+        playImpact()
+        state.pose = 'cabre'
+      } else if (attack.id === 'breath') {
+        if (attackHits(attack, position, state.yaw)) store.damagePlayer(attack.damage)
+        // Les flaques sont semées le long du cône, du plus près au plus loin :
+        // c'est le souffle qui se pose, pas une couronne autour de la bête.
+        for (let i = 0; i < PUDDLES; i++) {
+          const along = 1.6 + (i / (PUDDLES - 1)) * (attack.reach - 1.6)
+          const spread = (i % 2 === 0 ? 1 : -1) * (i / PUDDLES) * attack.arc
+          const angle = state.yaw + spread
+          const slot = state.puddles[i]
+          slot.x = position.x + Math.sin(angle) * along
+          slot.z = position.z + Math.cos(angle) * along
+          slot.until = now + PUDDLE_MS
+        }
+        state.pose = 'balayage'
       } else if (attack.id === 'volley') {
         /*
           Trois flèches, et pas une ligne de neuf à écrire : `fireProjectile`
@@ -754,6 +848,47 @@ export function Lynel() {
       state.pose = 'repos'
     }
     rig.current?.setPose(state.pose)
+    rig.current?.setRage(state.phase === 'rage')
+
+    /*
+      Les flaques brûlent au temps passé dedans, prélevé une fois par seconde.
+
+      Pas à chaque frame : `damagePlayer` respecte les i-frames, donc un
+      prélèvement par frame ne ferait de toute façon qu'un cœur toutes les 1,1 s
+      — mais il ferait dépendre le rythme du framerate, ce que ce projet refuse
+      partout ailleurs. Une cadence explicite se règle ; un effet de bord non.
+    */
+    for (let i = 0; i < PUDDLES; i++) {
+      const mesh = puddleMeshes.current[i]
+      if (!mesh) continue
+      const puddle = state.puddles[i]
+      const left = puddle.until - now
+      mesh.visible = left > 0
+      if (!mesh.visible) continue
+      // Deux centimètres au-dessus du dallage : posée dessus, la flaque se bat
+      // avec le sol dans le tampon de profondeur et clignote par bandes. Même
+      // réglage que les anneaux de mort.
+      mesh.position.set(puddle.x, ARENA_CENTER[1] + 0.02, puddle.z)
+      // Elle s'éteint en s'effaçant, et non d'un coup : une flaque qui
+      // disparaît à l'instant où elle cesse de brûler ne prévient pas.
+      ;(mesh.material as MeshBasicMaterial).opacity = 0.45 * Math.min(1, left / 700)
+    }
+
+    if (now - state.lastBurnAt >= 1000 / PUDDLE_DPS) {
+      for (const puddle of state.puddles) {
+        if (now > puddle.until) continue
+        const inside =
+          Math.hypot(
+            playerTransform.position.x - puddle.x,
+            playerTransform.position.z - puddle.z,
+          ) < PUDDLE_R
+        if (inside) {
+          state.lastBurnAt = now
+          store.damagePlayer(1)
+          break
+        }
+      }
+    }
 
     /*
       Crochet de mise au point.
@@ -797,6 +932,36 @@ export function Lynel() {
   if (removed) return null
 
   return (
+    <>
+      {/*
+        Les flaques, **hors** du corps physique.
+
+        Elles sont posées dans le monde et n'en bougent plus : les ranger sous le
+        `RigidBody` les ferait voyager avec la bête, c'est-à-dire exactement
+        l'inverse de ce qu'est une flaque. Un pool fixe de six disques, montrés
+        ou cachés — aucune allocation, aucun montage React en cours de combat.
+      */}
+      <group>
+        {Array.from({ length: PUDDLES }, (_, i) => (
+          <mesh
+            key={i}
+            ref={(mesh) => {
+              puddleMeshes.current[i] = mesh
+            }}
+            rotation={[-Math.PI / 2, 0, 0]}
+            visible={false}
+          >
+            <circleGeometry args={[PUDDLE_R, 18]} />
+            <meshBasicMaterial
+              color={LYNEL_COLORS.glow}
+              transparent
+              opacity={0.45}
+              depthWrite={false}
+            />
+          </mesh>
+        ))}
+      </group>
+
     <RigidBody
       ref={body}
       type="dynamic"
@@ -822,6 +987,7 @@ export function Lynel() {
         <LynelModel ref={rig} materials={materials} />
       </group>
     </RigidBody>
+    </>
   )
 }
 
