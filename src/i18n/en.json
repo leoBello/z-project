@@ -28,6 +28,11 @@
       "kicker": "Heart container",
       "name": "Max hearts +1"
     },
+    "portal": {
+      "kicker": "The map is clear",
+      "name": "A portal opens at Nakano Temple",
+      "hint": "A violet glow, turned towards a sky island"
+    },
     "quality": {
       "label": "Graphics quality",
       "high": "High quality",

@@ -332,3 +332,96 @@ export function playDefeat() {
   // Le souffle du nuage : montant, léger, il prolonge sans alourdir.
   noiseBurst('highpass', 900, 2600, 1.0, 0.06, 0.18)
 }
+
+/**
+ * Note dont le volume **monte** au lieu de décroître.
+ *
+ * `tone` décrit une percussion : attaque immédiate, puis extinction. Une ogive
+ * qui tombe fait exactement l'inverse — elle se rapproche. Sans cette variante,
+ * le sifflement s'éteindrait pendant que la bombe grossit à l'écran, et les
+ * deux se contrediraient.
+ *
+ * La coupure en toute fin de course n'est pas un fondu : c'est l'explosion qui
+ * doit prendre le relais, et une queue de sifflement par-dessus le souffle
+ * s'entendrait comme un raté de montage.
+ */
+function approach(
+  type: OscillatorType,
+  from: number,
+  to: number,
+  peak: number,
+  duration: number,
+) {
+  if (!ready()) return
+  const t = ctx!.currentTime
+
+  const osc = ctx!.createOscillator()
+  osc.type = type
+  osc.frequency.setValueAtTime(from, t)
+  osc.frequency.exponentialRampToValueAtTime(to, t + duration)
+
+  const gain = ctx!.createGain()
+  gain.gain.setValueAtTime(0.0001, t)
+  gain.gain.exponentialRampToValueAtTime(peak, t + duration * 0.94)
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + duration)
+
+  osc.connect(gain).connect(master!)
+  osc.start(t)
+  osc.stop(t + duration + 0.05)
+}
+
+/**
+ * Sifflement de l'ogive qui tombe.
+ *
+ * Calé sur les 900 ms de `FALL_MS` — un peu moins, pour que le silence d'une
+ * fraction de seconde précède le souffle. Ce silence est ce qui fait sursauter.
+ *
+ * Deux voix légèrement désaccordées plutôt qu'une : un sinus seul sonne comme
+ * un test de tonalité, le battement entre les deux donne la matière.
+ */
+export function playFallingBomb() {
+  approach('sawtooth', 1500, 210, 0.05, 0.86)
+  approach('sine', 980, 140, 0.07, 0.86)
+}
+
+/**
+ * Le souffle.
+ *
+ * Trois couches, dans l'ordre où l'oreille les reçoit : la déflagration (bruit
+ * large qui s'effondre vers le grave), la sous-basse qui donne la masse, puis
+ * un grondement long qui roule pendant que le champignon monte.
+ *
+ * C'est le son le plus fort du jeu, et il doit le rester : c'est un événement
+ * unique par partie. Les pics restent malgré tout sous ceux de la fanfare du
+ * coffre additionnée de ses six notes — un souffle qui sature n'est plus
+ * qu'une bouillie, et sur un ordinateur portable il ne s'entend même pas plus
+ * fort.
+ */
+export function playNuke() {
+  // La déflagration : tout le spectre d'un coup, qui s'effondre vers le grave.
+  noiseBurst('lowpass', 7000, 90, 0.7, 0.3, 1.9)
+  // La masse. Sans elle, l'explosion n'est qu'un bruit blanc un peu long.
+  tone('sine', 110, 22, 0.28, 1.7)
+  // Le grondement qui roule sous le champignon, bien après le pic.
+  noiseBurst('lowpass', 520, 70, 0.5, 0.1, 2.8)
+}
+
+/**
+ * Ouverture du portail.
+ *
+ * Volontairement **tenu** là où toutes les autres récompenses du jeu sont
+ * percussives : la fanfare du coffre et le motif du réceptacle disent « tu as
+ * trouvé », le portail dit « quelque chose s'est ouvert ailleurs ». Un drone à
+ * la quinte, deux voix désaccordées d'un quart de ton pour le battement, et
+ * trois cloches qui montent par-dessus.
+ */
+export function playPortal() {
+  tone('sine', 146.83, 146.83, 0.1, 2.4)
+  // Désaccordée d'environ un quart de ton au-dessus du la : c'est ce battement
+  // lent, et non la hauteur des notes, qui sonne « surnaturel ».
+  tone('sine', 223.5, 223.5, 0.08, 2.4)
+  const bells = [587.33, 880, 1174.66]
+  bells.forEach((frequency, index) => {
+    tone('triangle', frequency, frequency, 0.09, 1.5, 0.2 + index * 0.17)
+  })
+}

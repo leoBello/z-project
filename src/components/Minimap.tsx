@@ -3,13 +3,25 @@ import { BIOMES, MINIMAP_WATER } from '../config/biomes'
 import { useI18n } from '../i18n/useI18n'
 import { ENEMIES } from '../config/enemies'
 import { LANDMARKS } from '../config/landmarks'
+import { PORTAL } from '../config/portal'
 import { WORLD, classifyBiome, sampleHeight } from '../config/world'
 import { enemyRegistry } from '../state/enemyRegistry'
 import { playerTransform } from '../state/playerTransform'
+import { useGameStore } from '../store/useGameStore'
 import type { BiomeId } from '../types/game'
 
 /** Résolution du fond de carte, en pixels. Indépendante de la taille affichée. */
 const MAP_RESOLUTION = 220
+
+/**
+ * Violet du portail sur la minimap.
+ *
+ * Plus clair que celui de la scène 3D (`#8b3ff0`) : le fond de carte est
+ * sombre par endroits — l'eau profonde, l'ombre de la montagne — et un violet
+ * saturé s'y perdait. Aucun autre repère de la carte n'approche cette teinte,
+ * c'est ce qui compte.
+ */
+const PORTAL_MINIMAP_COLOR = '#c79bff'
 
 /**
  * Marqueur affichable sur la minimap.
@@ -164,6 +176,37 @@ export function Minimap({ markers = [] }: MinimapProps) {
         context.lineWidth = 1.2
         context.fillRect(-2.6, -2.6, 5.2, 5.2)
         context.strokeRect(-2.6, -2.6, 5.2, 5.2)
+        context.restore()
+      }
+
+      // Portail de l'Île Céleste : un **anneau** qui pulse, et rien d'autre sur
+      // cette carte n'a cette forme. Les ennemis sont des points pleins, les
+      // monuments des losanges, le joueur un triangle : le vocabulaire est déjà
+      // pris trois fois, et un quatrième point violet aurait obligé le joueur à
+      // retenir un code couleur. Un anneau se reconnaît sans être appris — et
+      // c'est un anneau parce que c'est ce à quoi ressemble le portail.
+      //
+      // Lu sans abonnement, comme le registre des ennemis : la minimap tourne
+      // dans sa propre boucle et ne se re-rend jamais.
+      if (useGameStore.getState().portalOpenedAt !== null) {
+        const { px, py } = toPixels(PORTAL.x, PORTAL.z)
+        // Sur `performance.now()` et non l'horloge de jeu : cette boucle est
+        // celle du navigateur, et un repère figé sur une carte ouverte pendant
+        // une pause n'aurait aucun sens — c'est une interface, pas le monde.
+        const pulse = 0.5 + Math.sin(performance.now() * 0.0042) * 0.5
+        context.save()
+        context.strokeStyle = PORTAL_MINIMAP_COLOR
+        context.lineWidth = 2
+        context.beginPath()
+        context.arc(px, py, 3.4 + pulse * 1.6, 0, Math.PI * 2)
+        context.stroke()
+        // Le halo ne pulse pas en phase avec l'anneau : il s'efface quand
+        // celui-ci s'ouvre, ce qui donne une onde plutôt qu'un clignotement.
+        context.globalAlpha = 0.35 * (1 - pulse)
+        context.lineWidth = 3
+        context.beginPath()
+        context.arc(px, py, 6.5, 0, Math.PI * 2)
+        context.stroke()
         context.restore()
       }
 

@@ -150,7 +150,7 @@ const MAX_SPAWN_SLOPE = 0.5
  * décide de l'espèce — les Octoroks tiennent le littoral et les zones ouvertes,
  * les Moblins la jungle et les terres arides.
  */
-export function generateEnemySpawns(): EnemySpawn[] {
+function generateEnemySpawns(): EnemySpawn[] {
   const random = seededRandom(0xb0c0)
   const spawns: EnemySpawn[] = []
   const margin = WORLD.half - 12
@@ -185,4 +185,36 @@ export function generateEnemySpawns(): EnemySpawn[] {
   }
 
   return spawns
+}
+
+/**
+ * Le peuplement de la carte, tiré **une seule fois** pour toute la session.
+ *
+ * Il l'était déjà de fait — `<Enemies>` mémoïsait le tirage — mais il n'était
+ * lisible que de là. Or le store a besoin de savoir *combien* d'ennemis existent
+ * pour décider quand la carte est vide, et refaire le tirage de son côté aurait
+ * été une seconde source de vérité : même graine, donc même résultat aujourd'hui,
+ * et deux tables qui divergent silencieusement le jour où le filtrage change.
+ *
+ * Mémoïsé au module et non recalculé à chaque partie : la graine est fixe, le
+ * résultat aussi, et `<Enemies>` remonte à chaque `runId`.
+ */
+let spawns: EnemySpawn[] | null = null
+
+/** Les ennemis posés sur la carte. Tableau partagé, à ne pas modifier. */
+export function enemySpawns(): EnemySpawn[] {
+  if (spawns === null) spawns = generateEnemySpawns()
+  return spawns
+}
+
+/**
+ * Nombre d'ennemis d'une partie complète.
+ *
+ * Dérivé du tirage et non lu dans `ENEMY_COUNT` : le générateur abandonne au
+ * bout de 4 000 essais, donc il peut en poser moins que demandé. C'est ce
+ * nombre-là, le vrai, qui dit quand la carte est vide — et un écart d'une unité
+ * entre les deux laisserait le portail à jamais fermé.
+ */
+export function enemyTotal(): number {
+  return enemySpawns().length
 }

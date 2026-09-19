@@ -9,6 +9,7 @@ import { triggerInteraction } from '../../store/interaction'
 import { useGameStore } from '../../store/useGameStore'
 import type { ChestId, LandmarkId } from '../../types/game'
 import { Pagoda } from './Pagoda'
+import { Portal } from './Portal'
 import { Pyramid } from './Pyramid'
 import { Ruins } from './Ruins'
 import { Statue } from './Statue'
@@ -127,6 +128,12 @@ export function Landmarks() {
       <Statue />
       <Ruins />
       <Pagoda />
+      {/* Monté ici et non dans `Pagoda` bien qu'il appartienne à son parvis :
+          la pagode décrit un bâtiment, le portail est un événement de partie
+          qui se trouve posé devant. Les mélanger ferait dépendre la géométrie
+          du temple de l'état du jeu. Même raison que les coffres, juste en
+          dessous. */}
+      <Portal />
       {/* Les coffres sont posés en coordonnées monde, dérivées du repère de
           leur monument (voir `config/chests.ts`) : ils sont donc montés ici, à
           plat, et non à l'intérieur du composant du monument qui les porte. */}

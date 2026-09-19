@@ -4,15 +4,27 @@ import {
   playChestCreak,
   playDamage,
   playEquip,
+  playFallingBomb,
   playPickup,
+  playPortal,
   playReward,
   playTreasure,
 } from '../audio/sfx'
+import { BLAST_FORWARD } from '../config/annihilation'
 import { chestById } from '../config/chests'
+import { enemyTotal } from '../config/enemies'
 import { itemById, type Equipment, type ItemSlot } from '../config/items'
+import { WORLD, sampleHeight } from '../config/world'
 import { now as gameNow, resetClock } from '../state/gameClock'
-import { resetCombat } from '../state/playerTransform'
-import type { ChestId, GamePhase, ItemId, LandmarkId } from '../types/game'
+import { playerTransform, resetCombat } from '../state/playerTransform'
+import { clearProjectiles } from '../state/projectiles'
+import type {
+  Annihilation,
+  ChestId,
+  GamePhase,
+  ItemId,
+  LandmarkId,
+} from '../types/game'
 
 /**
  * Nombre de cœurs de départ.
@@ -175,6 +187,28 @@ export interface GameState {
    */
   teleporting: LandmarkId | null
   /**
+   * Frappe d'annihilation en cours, ou `null` — le code de triche, une fois
+   * tapé.
+   *
+   * Un seul champ pour toute la séquence : la chute de l'ogive, l'explosion,
+   * l'onde qui tue les ennemis et le champignon de fumée s'en déduisent tous,
+   * chacun de son côté, en comparant l'horloge de jeu à `at`. Personne n'a à
+   * être prévenu d'une étape par quelqu'un d'autre, donc rien ne peut se
+   * désynchroniser. Remis à `null` par `finishAnnihilation`, en fin de séquence.
+   */
+  annihilation: Annihilation | null
+  /**
+   * Instant où le portail de l'Île Céleste s'est ouvert, ou `null`.
+   *
+   * Un horodatage plutôt qu'un booléen, parce que trois choses ont besoin de la
+   * *date* et pas seulement du fait : le portail lui-même, qui se déplie depuis
+   * rien sur un peu plus d'une seconde, la minimap, dont le repère pulse en
+   * phase avec lui, et le bandeau du HUD, qui s'en sert de `key` React pour
+   * jouer son animation d'entrée. Un booléen aurait obligé chacun des trois à
+   * se rappeler tout seul quand il est passé à vrai.
+   */
+  portalOpenedAt: number | null
+  /**
    * Identifiant de la partie. Sert de `key` React sur le joueur et les ennemis :
    * l'incrémenter démonte et remonte tout le monde, ce qui remet positions,
    * points de vie et machines à états à zéro sans logique de réinitialisation
@@ -286,6 +320,16 @@ export interface GameState {
   resolveTeleport: () => void
   /** Efface l'état de téléportation, en fin d'animation. */
   finishTeleport: () => void
+  /**
+   * Largue l'ogive au-dessus du joueur : le code de triche vient d'être tapé.
+   *
+   * Retourne faux si elle est refusée — partie non en cours, ou frappe déjà en
+   * vol. L'appelant s'en sert pour savoir s'il doit consommer la séquence de
+   * touches ou la laisser courir.
+   */
+  triggerAnnihilation: () => boolean
+  /** Range le champignon, en fin de séquence. */
+  finishAnnihilation: () => void
   /** Relance une partie depuis zéro. */
   reset: () => void
 }
@@ -311,6 +355,8 @@ const initialState = {
   activeLandmark: null as LandmarkId | null,
   nearbyLandmark: null as LandmarkId | null,
   teleporting: null as LandmarkId | null,
+  annihilation: null as Annihilation | null,
+  portalOpenedAt: null as number | null,
 }
 
 /**
@@ -408,7 +454,39 @@ export const useGameStore = create<GameState>((set, get) => ({
     return true
   },
 
-  registerKill: () => set((state) => ({ kills: state.kills + 1 })),
+  /**
+   * Compte un ennemi vaincu, et ouvre le portail si c'était le dernier.
+   *
+   * Le portail est décidé **ici** et nulle part ailleurs, et c'est le point
+   * important : il y a deux façons de vider la carte — les abattre un par un,
+   * ou taper le code de triche — et les deux passent par ce compteur. Poser la
+   * condition dans l'onde de choc aurait donné un portail réservé aux
+   * tricheurs ; la poser dans un balayage de proximité aurait donné un
+   * troisième endroit où compter les morts.
+   *
+   * La comparaison est un `===` et non un `>=` : c'est la transition qui
+   * intéresse, pas l'état. Un `>=` rejouerait la fanfare à chaque ennemi tué
+   * au-delà du compte — impossible aujourd'hui, mais c'est le genre de
+   * condition qu'on ne relit jamais.
+   */
+  registerKill: () => {
+    const { kills: previous, annihilation, portalOpenedAt } = get()
+    const kills = previous + 1
+    const cleared = kills === enemyTotal()
+
+    if (!cleared) {
+      set({ kills })
+      return
+    }
+
+    // Hors du `set`, comme la mesure d'audience de `resolveTeleport` : un
+    // updater d'état ne joue pas de son et n'appelle pas le tableau de bord.
+    playPortal()
+    // Une frappe en cours au moment du dernier mort *est* la signature du code
+    // de triche : c'est le seul chemin qui l'arme.
+    track('portal_opened', { via: annihilation !== null ? 'cheat' : 'combat' })
+    set({ kills, portalOpenedAt: portalOpenedAt ?? gameNow() })
+  },
 
   /**
    * Le soin est total et non d'un cœur : le réceptacle est au sommet d'une
@@ -626,6 +704,60 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   finishTeleport: () => set({ teleporting: null }),
+
+  // --- Annihilation ---------------------------------------------------------
+
+  /**
+   * Largue l'ogive au-dessus du joueur.
+   *
+   * Le point d'impact est **figé ici**, à la verticale du joueur au moment où
+   * le code se termine, et non suivi frame par frame : une bombe déjà en l'air
+   * ne rectifie pas sa trajectoire parce que sa cible a fait trois pas. C'est
+   * aussi ce qui permet au joueur de voir la chute arriver sur lui.
+   *
+   * La partie n'est **pas** mise en pause, et c'est une contrainte et non un
+   * oubli : l'horloge de jeu s'arrête hors de la phase `playing` (voir
+   * `state/gameClock.ts`), donc une pause figerait la bombe en vol et l'onde de
+   * choc ne partirait jamais. Le joueur reste donc exposé pendant la séquence —
+   * d'où le balayage des projectiles ci-dessous, qui efface ce qui était déjà
+   * en vol. Les ennemis encore vivants, eux, meurent avant d'avoir le temps de
+   * préparer un tir : les plus proches sont les premiers atteints par l'onde.
+   */
+  triggerAnnihilation: () => {
+    const { phase, annihilation } = get()
+    if (phase !== 'playing' || annihilation !== null) return false
+
+    // Ce qui était déjà en vol disparaît avec le reste. Sans ça, une flèche
+    // partie une demi-seconde avant le code touche le joueur pendant
+    // l'explosion censée tout balayer — le pire moment possible pour perdre un
+    // cœur, puisque rien à l'écran ne l'explique plus.
+    clearProjectiles()
+    playFallingBomb()
+
+    // Devant le joueur et non sur lui : c'est une contrainte de cadrage, pas un
+    // choix de mise en scène — cette caméra ne montre presque pas le ciel, et un
+    // champignon dressé à la verticale du joueur serait hors champ. Le nord est
+    // le haut de l'écran, la caméra étant fixe. Voir la note de `BLAST_FORWARD`.
+    const { position } = playerTransform
+    const x = position.x
+    const z = position.z - BLAST_FORWARD
+
+    set({
+      annihilation: {
+        at: gameNow(),
+        x,
+        // Le **sol**, et pas le centre de la capsule du joueur : c'est là que la
+        // boule de feu naît et que l'anneau de souffle se pose. Le plancher au
+        // niveau de la mer couvre les frappes tombées au large — sous l'eau, la
+        // boule de feu serait un halo sourd sorti de nulle part.
+        y: Math.max(sampleHeight(x, z), WORLD.waterLevel),
+        z,
+      },
+    })
+    return true
+  },
+
+  finishAnnihilation: () => set({ annihilation: null }),
 
   // Les collections sont réécrites explicitement : `initialState` est un objet
   // unique partagé par toutes les parties, et en réutiliser les tableaux (ou

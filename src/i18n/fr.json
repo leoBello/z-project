@@ -28,6 +28,11 @@
       "kicker": "Réceptacle de cœur",
       "name": "Cœur maximal +1"
     },
+    "portal": {
+      "kicker": "La carte est vide",
+      "name": "Un portail s'ouvre au Temple de Nakano",
+      "hint": "Une lueur violette, tournée vers une île céleste"
+    },
     "quality": {
       "label": "Qualité graphique",
       "high": "Qualité élevée",

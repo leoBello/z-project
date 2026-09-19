@@ -56,6 +56,15 @@ interface Events {
   project_photo_opened: { project: string; index: number }
   /** Un lien sortant du portfolio est cliqué (contact, projet, réseau). */
   outbound_link: { target: string }
+  /**
+   * La carte est vidée de ses ennemis et le portail de l'Île Céleste s'ouvre.
+   *
+   * `via` est toute la mesure : il sépare ceux qui sont allés au bout des
+   * vingt-six combats de ceux qui ont trouvé le code de triche. Les deux
+   * comptent, mais pas la même chose — le premier chiffre dit si le jeu tient
+   * sur la durée, le second si l'œuf de Pâques se découvre.
+   */
+  portal_opened: { via: 'combat' | 'cheat' }
 }
 
 declare global {

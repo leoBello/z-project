@@ -9,8 +9,10 @@ import { Environment } from './components/Environment'
 import { GameClock } from './components/GameClock'
 import { HUD } from './components/HUD'
 import { KeyboardGuard } from './components/KeyboardGuard'
+import { KonamiCode } from './components/KonamiCode'
 import { LanguageToggle } from './components/LanguageToggle'
 import { Minimap } from './components/Minimap'
+import { NukeBlast } from './components/NukeBlast'
 import { PhysicsGate } from './components/PhysicsGate'
 import { Pickups } from './components/Pickups'
 import { Player } from './components/Player'
@@ -50,6 +52,12 @@ export default function App() {
           remet les touches à plat quand la fenêtre perd le focus. Sans lui,
           une commande restée enfoncée avale l'appui suivant. */}
       <KeyboardGuard />
+      {/* Juste après lui, et l'ordre compte : le garde renvoie des `keyup` de
+          synthèse à la perte de focus, et le code de triche n'écoute que les
+          `keydown` — il ne peut donc pas les prendre pour une saisie. Hors du
+          Canvas et sans rien demander à `KeyboardControls` : une suite d'appuis
+          n'est pas un état de commande. Voir l'en-tête du composant. */}
+      <KonamiCode />
       <Canvas
         // "percentage" = PCFShadowMap ; PCFSoft est déprécié depuis three 0.185.
         shadows="percentage"
@@ -87,6 +95,10 @@ export default function App() {
           <StrikeArc />
           <OutfitSmoke />
           <DeathPuffs />
+          {/* Même famille, et même raison d'être hors de <Physics> : le
+              champignon est une image, pas un corps. Ce qui tue les ennemis
+              est un rayon calculé, lu par chacun d'eux — voir `Enemy.tsx`. */}
+          <NukeBlast />
         </Suspense>
 
         <CameraRig />

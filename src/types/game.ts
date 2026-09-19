@@ -24,6 +24,24 @@ export interface EnemySpawn {
   radius?: number
 }
 
+/**
+ * Frappe d'annihilation en cours — le code de triche, une fois tapé.
+ *
+ * Un seul objet pour toute la séquence, et rien de plus qu'un instant et un
+ * point : la chute, l'explosion, l'onde qui tue et le champignon s'en déduisent
+ * tous (voir `config/annihilation.ts`). Le point d'impact est figé au
+ * déclenchement plutôt que suivi sur le joueur — une bombe déjà larguée ne
+ * change pas de cible parce que sa cible a marché.
+ */
+export interface Annihilation {
+  /** Horodatage du déclenchement, sur l'horloge de jeu. */
+  at: number
+  /** Point d'impact au sol, en coordonnées monde. */
+  x: number
+  y: number
+  z: number
+}
+
 /** Identifiant de point d'intérêt. La table vit dans `config/landmarks.ts`. */
 export type LandmarkId = 'temple' | 'pyramid' | 'stele' | 'statue' | 'ruins' | 'nakano'
 
