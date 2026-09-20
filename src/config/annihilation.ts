@@ -1,3 +1,4 @@
+import type { MapId } from '../types/game'
 /**
  * L'annihilation — le code de triche et son champignon.
  *
@@ -54,6 +55,24 @@
  * commence : la frappe est lointaine, mais elle n'est pas dans le brouillard.
  */
 export const BLAST_FORWARD = 42
+
+/**
+ * Le même décalage, par carte.
+ *
+ * Quarante-deux unités devant le joueur conviennent à un continent de deux
+ * cents ; sur l'Île Céleste, dont la lèvre est à vingt-neuf, la frappe serait
+ * tombée **à côté de l'île** — un champignon suspendu dans le vide, et une
+ * boule de feu née de rien. Vingt unités la posent sur le sol qu'on regarde,
+ * quelle que soit la direction où l'on se tient.
+ *
+ * Ça ne change rien à ce que la frappe *tue* : passé 2,2 s, `killRadius` vaut
+ * l'infini et la distance ne compte plus. Le décalage n'est qu'un cadrage.
+ */
+export const BLAST_FORWARD_BY_MAP: Record<MapId, number> = {
+  continent: BLAST_FORWARD,
+  sky: 20,
+  rot: 20,
+}
 
 // --- Chronologie ------------------------------------------------------------
 

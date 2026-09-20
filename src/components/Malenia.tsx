@@ -307,6 +307,19 @@ export function Malenia() {
       return
     }
 
+    /*
+      Elle est **immunisée contre le code de triche**, et c'est délibéré.
+
+      Le Lynel, lui, meurt de l'onde d'annihilation : c'est ce qui permet de
+      vider l'Île Céleste d'un coup pour venir la trouver. Lui appliquer la même
+      règle annulerait exactement le service rendu — on traverserait trois
+      cartes pour tuer le dernier boss du jeu en tapant dix touches, et il n'y
+      aurait plus rien à tester.
+
+      L'absence de branche suffit à l'immuniser ; c'est cette note qui empêche de
+      la prendre pour un oubli.
+    */
+
     // Après la branche de mort et pas avant : à la frame du coup fatal, le corps
     // n'a pas encore pris sa pose écrasée — la hisser plus haut figerait le boss
     // debout, soit la seule pose que ce gel existe pour ne pas montrer.

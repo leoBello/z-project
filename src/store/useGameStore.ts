@@ -13,7 +13,8 @@ import {
 } from '../audio/sfx'
 import { preloadMap } from '../components/mapFragments'
 import { purgeRot, resetRot } from '../state/rot'
-import { BLAST_FORWARD } from '../config/annihilation'
+import { BLAST_FORWARD_BY_MAP } from '../config/annihilation'
+import { PLAYER } from '../config/gameplay'
 import { chestById } from '../config/chests'
 import { enemyTotal } from '../config/enemies'
 import { itemById, type Equipment, type ItemSlot } from '../config/items'
@@ -1120,18 +1121,34 @@ export const useGameStore = create<GameState>((set, get) => ({
     // champignon dressé à la verticale du joueur serait hors champ. Le nord est
     // le haut de l'écran, la caméra étant fixe. Voir la note de `BLAST_FORWARD`.
     const { position } = playerTransform
+    const map = get().location
     const x = position.x
-    const z = position.z - BLAST_FORWARD
+    const z = position.z - BLAST_FORWARD_BY_MAP[map]
+
+    /*
+      L'altitude du sol, et elle dépend de la carte.
+
+      `sampleHeight` est l'échantillonneur du **continent** : l'interroger depuis
+      l'Île Céleste ou le Marais rendait l'altitude du relief continental sous
+      des coordonnées qui n'y désignent rien, donc une boule de feu enterrée ou
+      suspendue. Ailleurs, on prend les pieds du joueur — les deux autres cartes
+      sont plates ou quasi, et c'est par construction le sol qu'il regarde.
+    */
+    const ground =
+      map === 'continent'
+        ? // Le plancher au niveau de la mer couvre les frappes tombées au
+          // large : sous l'eau, la boule de feu serait un halo sourd sorti de
+          // nulle part.
+          Math.max(sampleHeight(x, z), WORLD.waterLevel)
+        : position.y - (PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius)
 
     set({
       annihilation: {
         at: gameNow(),
         x,
         // Le **sol**, et pas le centre de la capsule du joueur : c'est là que la
-        // boule de feu naît et que l'anneau de souffle se pose. Le plancher au
-        // niveau de la mer couvre les frappes tombées au large — sous l'eau, la
-        // boule de feu serait un halo sourd sorti de nulle part.
-        y: Math.max(sampleHeight(x, z), WORLD.waterLevel),
+        // boule de feu naît et que l'anneau de souffle se pose.
+        y: ground,
         z,
       },
     })

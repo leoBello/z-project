@@ -19,6 +19,7 @@ import {
   HIT_FLASH_MS,
   HIT_KNOCKBACK,
 } from '../config/enemies'
+import { killRadius } from '../config/annihilation'
 import { ATTACK } from '../config/gameplay'
 import {
   ARENA_CENTER,
@@ -582,6 +583,38 @@ export function Lynel({
       rb.setLinvel({ x: 0, y: rb.linvel().y, z: 0 }, false)
       if (age >= DEATH_REMOVE_MS) setRemoved(true)
       return
+    }
+
+    /*
+      --- Onde d'annihilation ------------------------------------------------
+
+      Le code de triche vide aussi l'Île Céleste, et **par le chemin normal** :
+      la bête encaisse ses propres points de vie, donc `damage` fait tout le
+      reste — l'écrasement, la fumée, l'anneau au sol, et surtout l'aiguillage
+      sur le rôle qui ouvre les barrières, avance l'épreuve ou perce le portail
+      du sommet. Rien de spécial n'a eu à s'écrire pour que la triche débouche
+      sur le même état de partie qu'une victoire.
+
+      L'enchaînement tombe juste tout seul, et c'est ce qui le rend bon : le
+      gardien tombe, les trois bêtes de l'épreuve paraissent alors dans le
+      jardin, et l'onde les cueille à leur première frame — `killRadius` vaut
+      l'infini passé 2,2 s, pour une frappe qui dure 5,2 s.
+
+      Placée **avant** la garde de gel, comme dans `Enemy.tsx` : le rayon se
+      mesure sur l'horloge de jeu, qui ne tourne pas pendant un gel. Sous la
+      garde, chaque mort figerait l'onde — et l'onde ne progresse que parce que
+      l'horloge avance.
+    */
+    const blast = store.annihilation
+    if (blast !== null && state.deathAt === -Infinity) {
+      const reach = killRadius(now - blast.at)
+      if (Math.hypot(position.x - blast.x, position.z - blast.z) < reach) {
+        // Sans direction de recul : on passe la position de la bête comme
+        // source, ce que `damage` reconnaît et traite en ne poussant pas. Une
+        // onde qui vient de partout ne pousse nulle part.
+        damage(state, beast, rb, position.x, position.z, now, position.x, position.z, state.hp)
+        return
+      }
     }
 
     // --- Gel du coup fatal --------------------------------------------------
