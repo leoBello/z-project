@@ -31,7 +31,7 @@ export type ItemSlot = ItemKind
  * Le premier est celui du départ de partie : c'est lui que `outfitOf` renvoie
  * quand l'emplacement est vide, et il n'existe donc aucun objet qui le donne.
  */
-export type OutfitId = 'luffy' | 'zoro' | 'madara'
+export type OutfitId = 'luffy' | 'zoro' | 'madara' | 'pain'
 
 /**
  * Ce que le personnage tient en main droite. Voir `HeroPlaceholder`.
@@ -93,6 +93,16 @@ const SKIN_TRAITS: Record<OutfitId, SkinTraits> = {
   // long, et elle se paie au pas. Ce qu'elle rend est ailleurs — un cœur jaune
   // de plus que la tenue du bretteur. Voir `MADARA_GARB`.
   madara: { speed: 0.92, jump: 0.95, water: 1 },
+  // Le seul skin dont les **deux** aptitudes de déplacement soient au-dessus du
+  // réglage de base, et c'est l'échange : il n'apporte qu'un cœur jaune, contre
+  // deux et trois pour les autres tenues. Les trois premiers skins se
+  // départageaient sur l'axe détente / vitesse, chacun payant l'un par l'autre ;
+  // celui-ci ouvre le seul axe qui restait — il prend les deux et paie en
+  // encaisse. La détente surtout : la hauteur d'un saut varie comme le carré de
+  // la vitesse initiale, donc ×1,3 sur `jumpSpeed`, ce sont 69 % de
+  // franchissement en plus. C'est la récompense d'un boss, elle doit changer la
+  // façon de traverser la carte, pas ajouter une ligne de chiffres.
+  pain: { speed: 1.08, jump: 1.3, water: 1 },
 }
 
 export interface Item {
@@ -226,6 +236,41 @@ export const MADARA_GARB: Item = {
  * chose à prendre » (braise des coffres, ferrures, flèche de la pagode), et une
  * arme légendaire de la même teinte se serait lue comme un trésor de plus.
  */
+/**
+ * Manteau de l'Aube — le quatrième skin, et le seul qui ne s'ouvre pas dans un
+ * coffre posé sur un monument.
+ *
+ * Il occupe le même emplacement que les deux autres tenues : on ne porte qu'une
+ * silhouette à la fois, et trouver celle-ci ne retire pas les précédentes de
+ * l'inventaire.
+ *
+ * **Un seul cœur jaune**, contre deux et trois pour les tenues précédentes, et
+ * c'est délibéré. C'est la récompense du gardien de la rotonde, donc la
+ * tentation était de la faire meilleure partout ; une tenue plus rapide, plus
+ * détendue *et* mieux protégée que les trois autres les aurait retirées du jeu
+ * le jour où elle tombe. L'échange se lit donc d'un coup : c'est la tenue qui se
+ * déplace, pas celle qui encaisse. Voir `SKIN_TRAITS`.
+ *
+ * L'accent est un orange de braise. Il n'a aucun voisin dans l'inventaire — le
+ * cramoisi de la tenue du clan est deux fois plus sombre et tire sur le rouge —
+ * et il a été préféré au violet du regard, qui aurait pourtant été plus
+ * reconnaissable : l'accent porte aussi l'éclat du coffre, et ce coffre-là est
+ * posé à quelques pas du voile parme de l'arène et du portail. Un violet de plus
+ * s'y serait noyé.
+ */
+export const DAWN_CLOAK: Item = {
+  id: 'dawn-cloak',
+  kind: 'outfit',
+  bonusHearts: 1,
+  attackMultiplier: 1,
+  damageMultiplier: 1,
+  // Comme pour les deux autres tenues : ce que celle-ci fait au déplacement
+  // vient du skin qu'elle donne, pas du vêtement. Voir `SKIN_TRAITS`.
+  traits: NEUTRAL_TRAITS,
+  outfit: 'pain',
+  accent: '#e0832e',
+}
+
 export const KUSANAGI: Item = {
   id: 'kusanagi',
   kind: 'weapon',
@@ -308,6 +353,7 @@ export const FISHMAN_SCALES: Item = {
 export const ITEMS: readonly Item[] = [
   ZORO_GARB,
   MADARA_GARB,
+  DAWN_CLOAK,
   KUSANAGI,
   CURSED_BLADE,
   FISHMAN_SCALES,
@@ -373,6 +419,13 @@ const DEFAULT_WEAPON: Record<OutfitId, WeaponId> = {
   luffy: 'fists',
   zoro: 'sword',
   madara: 'sword',
+  // Mains nues, comme le skin de départ, et c'est tout l'intérêt : `StrikeArc`
+  // dessine déjà une onde d'impact au bout du poing quand l'arme vaut `fists`,
+  // au lieu d'une traînée de lame. Le dernier skin du jeu rend donc au joueur le
+  // geste du tout premier, sans une ligne à écrire. Une épée dans la main de
+  // celui-là aurait de toute façon été une incohérence : il repousse, il ne
+  // tranche pas.
+  pain: 'fists',
 }
 
 /**

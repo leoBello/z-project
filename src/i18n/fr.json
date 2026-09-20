@@ -154,6 +154,12 @@
         "description": "Un manteau prune aux longs pans, sanglé de lamelles cramoisies laquées et liées d'or. Le col monte jusqu'à la nuque, les avant-bras et les mollets sont pris dans des bandes de lin blanc. Une tenue de guerre d'un clan dont plus personne ne se souvient du nom.",
         "effect": "+3 cœurs jaunes, mais course et détente réduites tant qu'elle est portée"
       },
+      "dawn-cloak": {
+        "name": "Manteau de l'Aube",
+        "meta": "Trouvé dans le coffre de la rotonde, là où le gardien est tombé",
+        "description": "Un long manteau noir qui tombe à la cheville, fermé d'une ligne cramoisie du col à l'ourlet et semé de nuages rouges cerclés de blanc. Le col se dresse derrière la nuque. Celui qui le portait avait les cheveux d'un orange de braise, sept anneaux de fer au visage, et des yeux cerclés d'anneaux violets qui ne cillaient pas.",
+        "effect": "+1 cœur jaune, course et détente augmentées tant qu'il est porté"
+      },
       "kusanagi": {
         "name": "Katana de Kusanagi",
         "meta": "Trouvé dans le coffre du Temple de Nakano",

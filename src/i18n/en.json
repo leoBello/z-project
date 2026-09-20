@@ -154,6 +154,12 @@
         "description": "A long-tailed plum coat strapped with lacquered crimson lamellae bound in gold. The collar rises to the nape; forearms and calves are wrapped in white linen. War dress of a clan whose name no one remembers.",
         "effect": "+3 golden hearts, but slower running and a shorter jump while worn"
       },
+      "dawn-cloak": {
+        "name": "Cloak of the Dawn",
+        "meta": "Found in the rotunda chest, where the guardian fell",
+        "description": "A long black cloak falling to the ankle, closed by a crimson line from collar to hem and strewn with red clouds ringed in white. The collar stands up behind the neck. Whoever wore it had ember-orange hair, seven iron studs through his face, and eyes ringed with violet that never blinked.",
+        "effect": "+1 golden heart, faster running and a higher jump while worn"
+      },
       "kusanagi": {
         "name": "Kusanagi Katana",
         "meta": "Found in the chest at Nakano Temple",

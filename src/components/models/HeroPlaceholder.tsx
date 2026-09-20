@@ -8,6 +8,7 @@ import { PARRY } from '../../config/parry'
 import { isHitStopped, now as gameNow } from '../../state/gameClock'
 import { parry } from '../../state/parry'
 import { playerTransform } from '../../state/playerTransform'
+import { cloudGeometry } from './cloudGeometry'
 import { toonGradient } from './toonGradient'
 
 /**
@@ -160,6 +161,38 @@ const OUTFITS: Record<OutfitId, Palette> = {
     gear: '#a8302f',
     gearTrim: '#d8a93f',
   },
+  // Le seul noir du jeu, et il n'est pas noir : un `#000` franc devient un trou
+  // sur le fond parme de l'Île Céleste, où ce skin est trouvé. C'est un noir
+  // bleuté, comme les bottes du bretteur. Il ne se confond pas avec le prune du
+  // clan, qui est deux fois plus clair et tire sur le violet.
+  pain: {
+    garment: '#171724',
+    // Les bandes de lin des mollets. Le pantalon, lui, n'est pas ici : il prend
+    // `grip`, faute d'un champ à lui. Voir la note de `Leg`.
+    trouser: '#e9e1d0',
+    belt: '#8d2029',
+    skin: '#f0cdad',
+    // Détourné : ce skin n'a aucune cicatrice de peau. C'est la rayure du
+    // bandeau, donc un gris d'acier entaillé et non un brun de chair.
+    scar: '#5a6070',
+    // La seule teinte orange du jeu entier, et de loin la pièce la plus lisible
+    // du personnage en vue de jeu : à 21 unités, c'est elle qu'on reconnaît.
+    hair: '#ea7a24',
+    boot: '#3b4763',
+    blade: '#dde6ef',
+    guard: '#aeb7c7',
+    // Détourné : le pantalon d'ardoise, qu'on ne voit que par la fente du
+    // manteau. Il sert aussi de doublure d'ombre aux orbites du visage.
+    grip: '#2f3549',
+    // Détourné : les anneaux du regard. Un katana équipé par-dessus ce skin
+    // aura donc une ligature violette — un lien de chakra sur une lame
+    // légendaire, et c'est le prix d'une palette à quinze champs fixes.
+    cord: '#5a4f96',
+    eye: '#bcaeea',
+    outline: '#120e22',
+    gear: '#ab2630',
+    gearTrim: '#f2ece1',
+  },
 }
 
 /**
@@ -220,6 +253,19 @@ const SKINS: Record<OutfitId, Skin> = {
     swing: 0.16,
     air: 0.34,
     roll: 0.09,
+  },
+  // Le ressort le plus sec des quatre : une couronne courte et dure frémit, là
+  // où la crinière du clan flotte jusqu'aux reins et où le chapeau de paille
+  // rebondit sur un crâne. Les valeurs sont donc à peine au-dessus de celles de
+  // la coupe courte du bretteur, et très loin de celles du clan.
+  pain: {
+    torso: DawnTorso,
+    face: DawnFace,
+    headwear: SpikedCrown,
+    rest: -0.05,
+    swing: 0.1,
+    air: 0.22,
+    roll: 0.04,
   },
 }
 
@@ -488,6 +534,58 @@ export function HeroPlaceholder({
  * bandé de lin sur une sandale plate.
  */
 function Leg({ palette, outfit }: { palette: Palette; outfit: OutfitId }) {
+  if (outfit === 'pain') {
+    return (
+      <group>
+        {/*
+          Le pantalon prend `grip`, et c'est le seul détournement de palette qui
+          se voie en jeu.
+
+          La jambe de ce skin a trois valeurs — ardoise, lin, sandale — quand
+          celle du clan n'en a que deux, et l'interface `Palette` n'a pas de
+          seizième champ à offrir. Le lui ajouter aurait obligé les trois autres
+          skins à déclarer une teinte qu'ils n'utilisent pas ; le détournement,
+          lui, ne coûte qu'une poignée de main sombre sur un katana.
+        */}
+        <mesh castShadow position={[0, -0.12, 0]}>
+          <capsuleGeometry args={[0.084, 0.13, 4, 10]} />
+          <meshToonMaterial color={palette.grip} gradientMap={toonGradient} />
+        </mesh>
+
+        {/* Bandes de lin, comme au clan : ce sont les interstices entre les
+            anneaux, et non les anneaux, qui font lire du tissu enroulé plutôt
+            qu'une guêtre d'une seule pièce. */}
+        <mesh castShadow position={[0, -0.25, 0]}>
+          <capsuleGeometry args={[0.079, 0.08, 4, 10]} />
+          <meshToonMaterial color={palette.trouser} gradientMap={toonGradient} />
+        </mesh>
+        {[-0.18, -0.245, -0.305].map((y) => (
+          <mesh key={y} castShadow position={[0, y, 0]}>
+            <cylinderGeometry args={[0.088, 0.088, 0.045, 10]} />
+            <meshToonMaterial color={palette.trouser} gradientMap={toonGradient} />
+          </mesh>
+        ))}
+
+        {/* Sandale : une semelle qui déborde, le dessus, et la bride en travers
+            du pied. Trois pièces là où le clan en a une, parce que c'est le seul
+            endroit du personnage que le manteau ne couvre pas. */}
+        <mesh position={[0, -0.383, 0.025]}>
+          <boxGeometry args={[0.185, 0.034, 0.25]} />
+          <meshToonMaterial color={palette.outline} gradientMap={toonGradient} />
+        </mesh>
+        <mesh castShadow position={[0, -0.345, 0.022]}>
+          <boxGeometry args={[0.17, 0.062, 0.225]} />
+          <meshToonMaterial color={palette.boot} gradientMap={toonGradient} />
+          <Outlines thickness={OUTLINE} color={palette.outline} />
+        </mesh>
+        <mesh position={[0, -0.325, 0.075]}>
+          <boxGeometry args={[0.175, 0.03, 0.05]} />
+          <meshToonMaterial color={palette.grip} gradientMap={toonGradient} />
+        </mesh>
+      </group>
+    )
+  }
+
   if (outfit === 'madara') {
     return (
       <group>
@@ -594,6 +692,11 @@ function Arm({
 }) {
   const clan = outfit === 'madara'
 
+  // Sortie immédiate plutôt qu'une sixième condition semée dans le corps : ce
+  // bras-là ne partage plus rien avec les trois autres — ni le rayon, ni la
+  // position, ni la main au bout. Même discipline que `Leg`.
+  if (outfit === 'pain') return <DawnArm palette={palette} fist={fist} side={side} />
+
   return (
     <group>
       <mesh castShadow position={[0, -0.14, 0]}>
@@ -661,6 +764,124 @@ function Arm({
         <meshToonMaterial color={palette.skin} gradientMap={toonGradient} />
         {fist && <Outlines thickness={OUTLINE} color={palette.outline} />}
       </mesh>
+    </group>
+  )
+}
+
+/**
+ * Doigts de la main ouverte : écart latéral et longueur.
+ *
+ * Quatre longueurs différentes, et c'est tout ce qui distingue une main d'une
+ * palette : l'index et le majeur dépassent, l'auriculaire reste court.
+ */
+const PALM_FINGERS = [
+  { x: -0.042, length: 0.056 },
+  { x: -0.014, length: 0.068 },
+  { x: 0.014, length: 0.064 },
+  { x: 0.042, length: 0.05 },
+] as const
+
+/**
+ * Main ouverte, paume vers l'avant.
+ *
+ * Les trois autres skins ferment le poing quand ils se battent à mains nues, et
+ * le rig le grossit d'un tiers pour dire qu'il est l'arme. Celui-ci ne le ferme
+ * jamais : son geste est la paume tendue, et une main fermée l'aurait fait
+ * cogner comme les autres. La contrepartie est assumée — une paume ouverte
+ * raconte moins bien « ceci est une arme » qu'un poing, et il faut les onze
+ * pièces du visage pour rattraper ce que la main ne dit plus.
+ *
+ * Les ongles laqués sont le seul détail de la tenue qui ne se voie jamais en
+ * jeu, même au plus près : ils sont là pour le coffre.
+ */
+function OpenPalm({ palette, side }: { palette: Palette; side: number }) {
+  return (
+    <group>
+      <mesh castShadow position={[0, -0.3, 0]} rotation={[0.08, 0, 0]}>
+        <boxGeometry args={[0.12, 0.105, 0.058]} />
+        <meshToonMaterial color={palette.skin} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+      {PALM_FINGERS.map((finger) => {
+        const y = -0.352 - finger.length / 2 + 0.01
+        return (
+          <group key={finger.x}>
+            <mesh castShadow position={[finger.x, y, 0.006]}>
+              <boxGeometry args={[0.025, finger.length, 0.042]} />
+              <meshToonMaterial color={palette.skin} gradientMap={toonGradient} />
+            </mesh>
+            <mesh position={[finger.x, y - finger.length / 2 + 0.012, 0.009]}>
+              <boxGeometry args={[0.023, 0.018, 0.04]} />
+              <meshToonMaterial color={palette.belt} gradientMap={toonGradient} />
+            </mesh>
+          </group>
+        )
+      })}
+      {/* Le pouce, écarté du côté extérieur de la main. */}
+      <mesh castShadow position={[side * -0.072, -0.318, 0.014]} rotation={[0, 0, side * 0.75]}>
+        <boxGeometry args={[0.03, 0.062, 0.04]} />
+        <meshToonMaterial color={palette.skin} gradientMap={toonGradient} />
+      </mesh>
+    </group>
+  )
+}
+
+/**
+ * Bras du quatrième skin : manche large, revers cramoisi, blason, main ouverte.
+ *
+ * **La manche est écartée de quatre centimètres vers l'extérieur**, et c'est la
+ * seule liberté que le rig laisse ici : le pivot d'épaule est à 0,24 de l'axe,
+ * il appartient au squelette partagé et ne peut pas bouger pour un skin. Or le
+ * manteau fait déjà 0,26 de rayon à cette hauteur — une manche centrée sur le
+ * pivot y est à moitié enfouie, et les épaules carrées du vêtement disparaissent.
+ * C'est la pièce qui se décale, exactement comme les épaulières du clan.
+ *
+ * L'arme éventuelle, elle, reste montée par le rig sur le pivot : elle n'hérite
+ * donc pas du décalage, et c'est voulu — une lame qui s'écarte du corps avec la
+ * manche traverserait le manteau au premier coup.
+ */
+function DawnArm({ palette, fist, side }: { palette: Palette; fist: boolean; side: number }) {
+  return (
+    <group position={[side * 0.04, 0, 0]}>
+      <mesh castShadow position={[0, -0.14, 0]}>
+        <capsuleGeometry args={[0.095, 0.17, 4, 10]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      {/* Revers : la doublure cramoisie du manteau, qui ne se voit qu'ici et au
+          col. Cylindre ouvert, donc `DoubleSide` — c'est sa face intérieure
+          qu'on regarde. */}
+      <mesh position={[0, -0.255, 0]}>
+        <cylinderGeometry args={[0.108, 0.088, 0.075, 12, 1, true]} />
+        <meshToonMaterial color={palette.belt} gradientMap={toonGradient} side={DoubleSide} />
+      </mesh>
+
+      {/* Le blason de manche, sur la face extérieure du bras : c'est le seul des
+          sept qui bouge avec l'animation, et le seul qu'on voie de dos quand le
+          personnage court. */}
+      <group position={[side * 0.098, -0.12, 0]} rotation={[0, (side * Math.PI) / 2, 0]}>
+        <DawnCloud palette={palette} size={0.15} tilt={side * 0.2} />
+      </group>
+
+      {fist ? (
+        <OpenPalm palette={palette} side={side} />
+      ) : (
+        <mesh castShadow position={[0, -0.28, 0]}>
+          <sphereGeometry args={[0.065, 10, 10]} />
+          <meshToonMaterial color={palette.skin} gradientMap={toonGradient} />
+        </mesh>
+      )}
+
+      {/* Anneau de l'Aube, au pouce droit. Trois millimètres d'acier que
+          personne ne verra courir dans l'herbe — mais le coffre présente l'objet
+          en gros plan, et c'est là qu'il paie. */}
+      {side < 0 && (
+        <mesh position={[fist ? 0.066 : 0.05, -0.305, 0.03]} rotation={[0.5, 0.4, 0]}>
+          <torusGeometry args={[0.026, 0.009, 6, 12]} />
+          <meshToonMaterial color={palette.guard} gradientMap={toonGradient} />
+        </mesh>
+      )}
     </group>
   )
 }
@@ -926,6 +1147,234 @@ function ClanArmor({ palette }: { palette: Palette }) {
 }
 
 /**
+ * Demi-ouverture de la fente du manteau de l'Aube, en radians.
+ *
+ * Elle n'ouvre que la **jupe**, pas tout le vêtement : un manteau fendu du col à
+ * l'ourlet se lit comme une robe de chambre, et c'était le premier jet. Vingt-cinq
+ * degrés au total, assez pour qu'on voie le pantalon d'ardoise battre entre les
+ * pans à la course — c'est tout ce qui reste de lisible de la démarche sous une
+ * étoffe qui descend à mi-mollet, et c'est ce qui a décidé de la cote.
+ */
+const DAWN_SLIT = 0.22
+
+/**
+ * Demi-ouverture du col, en radians. **La cote la plus importante du skin.**
+ *
+ * Un col qui fait le tour du cou entoure le crâne, et le visage disparaît
+ * derrière lui dès que la caméra plonge de ses 17°. Celui-ci s'ouvre en V de 94°
+ * vers l'avant : il ne monte haut que dans le dos et sur les flancs, la gorge
+ * reste dégagée. C'est aussi ce que fait le vêtement d'origine, et ce n'est pas
+ * un hasard — un col pareil n'existe que parce qu'il encadre un visage.
+ */
+const DAWN_COLLAR_OPEN = 0.82
+
+/**
+ * Bascule du col vers l'arrière, en radians.
+ *
+ * Positive : le bord arrière monte à hauteur d'oreille, le bord avant descend
+ * sous le menton. Le signe compte — à l'envers, le col se referme sur la figure.
+ */
+const DAWN_COLLAR_TILT = 0.24
+
+/**
+ * Le nuage, tracé une fois pour toutes et partagé par les sept exemplaires.
+ *
+ * À l'échelle un : chaque instance porte la sienne. Une géométrie par nuage
+ * aurait fait sept tracés de courbes et sept extrusions au montage du skin, pour
+ * un résultat identique au facteur d'échelle près.
+ */
+const dawnCloud = cloudGeometry(1)
+
+/**
+ * Les cinq nuages du manteau : azimut, hauteur dans le repère du buste, rayon du
+ * vêtement à cette hauteur, taille et inclinaison propre.
+ *
+ * Le rayon est **écrit et non calculé**, et c'est un choix : le manteau est fait
+ * de deux troncs de cône, et une fonction qui retrouverait le rayon à une hauteur
+ * donnée devrait connaître les deux — donc se remettre à jour à chaque retouche
+ * de la silhouette. Cinq nombres mesurés une fois coûtent moins cher qu'une
+ * dépendance de plus.
+ *
+ * Chacun est posé **en avant** de la surface qu'il habille (`+ 0,03`), jamais
+ * centré dessus : c'est le piège des lamelles du clan, et il coûte le même prix
+ * ici — un blason centré sur un cylindre de 0,3 de rayon est intégralement
+ * enfoui dedans.
+ *
+ * Les inclinaisons ne sont pas décoratives : sans elles, cinq blasons alignés à
+ * l'équerre font un uniforme, pas un vêtement porté.
+ */
+const DAWN_CLOUDS = [
+  { azimuth: 0.85, y: 0.33, radius: 0.284, size: 0.24, tilt: -0.2 },
+  { azimuth: 0.95, y: -0.05, radius: 0.34, size: 0.3, tilt: -0.12 },
+  { azimuth: -0.95, y: -0.05, radius: 0.34, size: 0.3, tilt: 0.12 },
+  { azimuth: 2.5, y: 0.2, radius: 0.293, size: 0.26, tilt: 0.3 },
+  { azimuth: -2.5, y: 0.2, radius: 0.293, size: 0.26, tilt: -0.3 },
+] as const
+
+/**
+ * Un nuage de l'Aube, posé sur le vêtement.
+ *
+ * Le liseré blanc est le **contour** du mesh, pas une seconde pièce : la même
+ * chose qui cerne tout le personnage dessine le trait du blason, et les deux ne
+ * peuvent donc pas diverger. Son épaisseur est multipliée par l'échelle de
+ * l'instance, comme toute normale poussée en repère objet — un nuage de manche
+ * a donc un trait plus fin qu'un nuage de jupe, ce qui est exactement ce qu'on
+ * veut.
+ */
+function DawnCloud({
+  palette,
+  size,
+  tilt = 0,
+}: {
+  palette: Palette
+  size: number
+  tilt?: number
+}) {
+  return (
+    <mesh castShadow geometry={dawnCloud} scale={size} rotation={[0, 0, tilt]}>
+      <meshToonMaterial color={palette.gear} gradientMap={toonGradient} />
+      <Outlines thickness={0.016} color={palette.gearTrim} />
+    </mesh>
+  )
+}
+
+/**
+ * Bande cramoisie qui épouse l'évasement du manteau.
+ *
+ * Un secteur de cylindre de quelques degrés, et non une boîte : la ligne de
+ * fermeture fait 62 cm de haut pour 8 cm d'écart de rayon entre ses extrémités,
+ * une barre droite décollerait du vêtement en haut ou en bas. Elle sert aussi de
+ * liseré aux deux bords de la fente, où elle tient lieu de doublure.
+ */
+function DawnSeam({
+  palette,
+  radii,
+  height,
+  y,
+  azimuth,
+  width,
+}: {
+  palette: Palette
+  /** Rayons du vêtement, haut puis bas, à l'endroit où la bande se pose. */
+  radii: [number, number]
+  height: number
+  y: number
+  azimuth: number
+  width: number
+}) {
+  return (
+    <mesh position={[0, y, 0]}>
+      <cylinderGeometry
+        args={[radii[0] + 0.006, radii[1] + 0.006, height, 3, 1, true, azimuth - width / 2, width]}
+      />
+      <meshToonMaterial color={palette.belt} gradientMap={toonGradient} side={DoubleSide} />
+    </mesh>
+  )
+}
+
+/**
+ * Buste du quatrième skin : manteau long fermé, col dressé, blasons.
+ *
+ * C'est le seul des quatre vêtements de buste qui descende sous les genoux, et
+ * c'est ce qui le sépare des trois autres à 21 unités de recul, avant toute
+ * couleur : une cloche qui tombe à mi-mollet là où le clan s'arrête à mi-cuisse
+ * et où les deux premiers laissent voir un torse.
+ */
+function DawnTorso({ palette }: { palette: Palette }) {
+  return (
+    <>
+      {/* Corps du manteau : un tronc de cône du col aux hanches, large aux
+          épaules (0,27) et déjà évasé en bas (0,30). */}
+      <mesh castShadow position={[0, 0.31, 0]}>
+        <cylinderGeometry args={[0.27, 0.3, 0.42, 20]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+      <DawnSeam palette={palette} radii={[0.27, 0.3]} height={0.42} y={0.31} azimuth={0} width={0.1} />
+
+      {/*
+        Jupe : le seul endroit où le manteau s'ouvre, et **l'ourlet s'arrête à
+        0,24 en monde**, c'est-à-dire à mi-mollet.
+
+        La cote est mesurée sur les planches de référence : le vêtement y laisse
+        voir un bon tiers de la jambe, soit 16 % de la hauteur du personnage
+        au-dessus du sol. Elle avait d'abord été posée à 0,10 pour faire « long »,
+        et c'était faux dans les deux sens — les bandes de lin s'arrêtent à 0,07,
+        elles étaient donc **intégralement recouvertes**, et la jambe redevenait
+        la colonne unie que trois valeurs distinctes devaient justement casser.
+      */}
+      <mesh castShadow position={[0, -0.05, 0]}>
+        <cylinderGeometry
+          args={[0.3, 0.38, 0.3, 20, 1, true, DAWN_SLIT, Math.PI * 2 - 2 * DAWN_SLIT]}
+        />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} side={DoubleSide} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+      {[DAWN_SLIT, -DAWN_SLIT].map((a) => (
+        <DawnSeam
+          key={a}
+          palette={palette}
+          radii={[0.3, 0.38]}
+          height={0.3}
+          y={-0.05}
+          azimuth={a - Math.sign(a) * 0.045}
+          width={0.085}
+        />
+      ))}
+
+      {DAWN_CLOUDS.map((cloud) => (
+        <group
+          key={`${cloud.azimuth}:${cloud.y}`}
+          position={[
+            Math.sin(cloud.azimuth) * (cloud.radius + 0.03),
+            cloud.y,
+            Math.cos(cloud.azimuth) * (cloud.radius + 0.03),
+          ]}
+          rotation={[0, cloud.azimuth, 0]}
+        >
+          <DawnCloud palette={palette} size={cloud.size} tilt={cloud.tilt} />
+        </group>
+      ))}
+
+      {/* Col : deux secteurs emboîtés, noir dehors et cramoisi dedans. Sans
+          `DoubleSide`, c'est la doublure rouge qu'on perd — elle n'existe que
+          par la face intérieure du cylindre. */}
+      <mesh castShadow position={[0, 0.6, -0.01]} rotation={[DAWN_COLLAR_TILT, 0, 0]}>
+        <cylinderGeometry
+          args={[
+            0.35,
+            0.23,
+            0.3,
+            16,
+            1,
+            true,
+            DAWN_COLLAR_OPEN,
+            Math.PI * 2 - 2 * DAWN_COLLAR_OPEN,
+          ]}
+        />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} side={DoubleSide} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+      <mesh position={[0, 0.6, -0.01]} rotation={[DAWN_COLLAR_TILT, 0, 0]}>
+        <cylinderGeometry
+          args={[
+            0.332,
+            0.219,
+            0.292,
+            16,
+            1,
+            true,
+            DAWN_COLLAR_OPEN + 0.035,
+            Math.PI * 2 - 2 * (DAWN_COLLAR_OPEN + 0.035),
+          ]}
+        />
+        <meshToonMaterial color={palette.belt} gradientMap={toonGradient} side={DoubleSide} />
+      </mesh>
+    </>
+  )
+}
+
+/**
  * Visage du premier skin.
  *
  * Le sourire est un **arc de tore**, pas une texture : trois primitives pour la
@@ -1083,6 +1532,146 @@ function ClanFace({ palette }: { palette: Palette }) {
 }
 
 /**
+ * Les trois piercings de l'arête et les deux de la lèvre, puis trois barres par
+ * oreille : position et facteur de longueur.
+ *
+ * Huit barres pour un détail qu'on ne voit pas courir dans l'herbe, et c'est
+ * assumé : le coffre présente l'objet en gros plan et la carte d'inventaire
+ * aussi, or c'est exactement là que ce visage-là doit être reconnu.
+ */
+const DAWN_STUDS = [
+  { x: 0, y: 0.052, z: 0.252, long: 1 },
+  { x: 0, y: 0.016, z: 0.252, long: 1 },
+  { x: 0, y: -0.02, z: 0.252, long: 1 },
+  { x: 0.027, y: -0.152, z: 0.206, long: 0.7 },
+  { x: -0.027, y: -0.152, z: 0.206, long: 0.7 },
+  { x: 0.272, y: 0.04, z: 0.02, long: 0.62 },
+  { x: 0.272, y: 0, z: 0.02, long: 0.62 },
+  { x: 0.272, y: -0.04, z: 0.02, long: 0.62 },
+  { x: -0.272, y: 0.04, z: 0.02, long: 0.62 },
+  { x: -0.272, y: 0, z: 0.02, long: 0.62 },
+  { x: -0.272, y: -0.04, z: 0.02, long: 0.62 },
+] as const
+
+/**
+ * Visage du quatrième skin — et le seul des quatre qui ait une **expression**.
+ *
+ * Les trois autres posent deux taches sombres et un trait sur une sphère ; à
+ * leur échelle, c'est suffisant. Celui-ci ne pouvait pas s'en contenter : tout
+ * le personnage tient dans son regard, et un regard demande trois pièces que
+ * les autres n'ont pas — l'orbite, la paupière et le sourcil.
+ *
+ * **Le sens de l'inclinaison est le tout.** Paupière et sourcil piquent vers le
+ * *nez* : extrémité intérieure basse, extrémité extérieure haute. Inclinés dans
+ * l'autre sens — ce qui était le premier jet — ils donnent un air accablé, pas
+ * menaçant ; c'est le même trait, au signe près, et le signe fait tout le
+ * personnage. L'œil lui-même suit la même inclinaison, faute de quoi le sourcil
+ * se lit comme posé sur un visage neutre.
+ *
+ * Tout est en `meshBasicMaterial`, comme les autres visages du jeu : le
+ * cel-shading sur un trait de deux centimètres n'y produit qu'une bande d'ombre
+ * qui le fait disparaître d'un côté. Le sourcil fait exception — il est de la
+ * teinte des cheveux, et doit s'ombrer comme eux.
+ */
+function DawnFace({ palette }: { palette: Palette }) {
+  return (
+    <>
+      {[0.095, -0.095].map((x) => {
+        const side = Math.sign(x)
+        return (
+          <group key={x}>
+            {/* Orbite : elle détache l'œil de la peau claire et lui donne sa
+                forme en amande. Sans elle, l'iris flotte. */}
+            <mesh position={[x, 0, 0.234]} rotation={[0, 0, side * 0.17]} scale={[0.66, 0.66, 0.26]}>
+              <sphereGeometry args={[0.074, 12, 12]} />
+              <meshBasicMaterial color={palette.grip} />
+            </mesh>
+            <mesh position={[x, 0, 0.242]} rotation={[0, 0, side * 0.17]} scale={[0.66, 0.68, 0.28]}>
+              <sphereGeometry args={[0.064, 12, 12]} />
+              <meshBasicMaterial color={palette.eye} />
+            </mesh>
+            {/* Les trois anneaux. Illisibles au-delà de cinq unités, et c'est
+                normal : ils sont pour le coffre et la carte, pas pour le jeu. */}
+            {[0.019, 0.031, 0.043].map((radius) => (
+              <mesh key={radius} position={[x, 0, 0.256]} scale={[0.7, 0.92, 0.5]}>
+                <torusGeometry args={[radius, 0.0045, 6, 18]} />
+                <meshBasicMaterial color={palette.cord} />
+              </mesh>
+            ))}
+            <mesh position={[x, 0, 0.259]}>
+              <sphereGeometry args={[0.0105, 6, 6]} />
+              <meshBasicMaterial color={palette.outline} />
+            </mesh>
+            <mesh position={[x, 0.044, 0.25]} rotation={[0, 0, side * 0.24]}>
+              <boxGeometry args={[0.094, 0.018, 0.012]} />
+              <meshBasicMaterial color={palette.outline} />
+            </mesh>
+            <mesh position={[x * 0.92, 0.076, 0.246]} rotation={[0, 0, side * 0.34]}>
+              <boxGeometry args={[0.074, 0.014, 0.012]} />
+              <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
+            </mesh>
+          </group>
+        )
+      })}
+
+      <mesh position={[0, -0.108, 0.236]}>
+        <boxGeometry args={[0.07, 0.013, 0.01]} />
+        <meshBasicMaterial color={palette.outline} />
+      </mesh>
+
+      {DAWN_STUDS.map((stud) => (
+        <mesh
+          key={`${stud.x}:${stud.y}`}
+          position={[stud.x, stud.y, stud.z]}
+          rotation={[0, 0, Math.PI / 2]}
+          scale={[1, stud.long, 1]}
+        >
+          <cylinderGeometry args={[0.012, 0.012, 0.052, 6]} />
+          <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        </mesh>
+      ))}
+
+      {/* Bandeau : le tissu fait le tour, la plaque déborde du crâne de deux
+          centimètres. Sans ce débord elle est avalée par la calotte de cheveux,
+          qui passe devant elle à cette hauteur. */}
+      <mesh position={[0, 0.135, 0]}>
+        <cylinderGeometry args={[0.272, 0.272, 0.09, 16, 1, true]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} side={DoubleSide} />
+      </mesh>
+      <mesh castShadow position={[0, 0.135, 0.245]} rotation={[-0.1, 0, 0]}>
+        <boxGeometry args={[0.245, 0.088, 0.055]} />
+        <meshToonMaterial color={palette.guard} gradientMap={toonGradient} />
+        <Outlines thickness={0.016} color={palette.outline} />
+      </mesh>
+      {[-0.066, -0.022, 0.022, 0.066].map((x) => (
+        <mesh key={x} position={[x, 0.135, 0.272]} rotation={[-0.1, 0, 0]}>
+          <boxGeometry args={[0.011, 0.05, 0.012]} />
+          <meshToonMaterial color={palette.scar} gradientMap={toonGradient} />
+        </mesh>
+      ))}
+      {/* La rayure du déserteur. C'est la seule « cicatrice » de ce skin, et
+          elle est sur le métal — d'où le champ `scar`, qui ne touche ici aucune
+          peau. */}
+      <mesh position={[0, 0.135, 0.274]} rotation={[-0.1, 0, 0.28]}>
+        <boxGeometry args={[0.26, 0.012, 0.012]} />
+        <meshToonMaterial color={palette.scar} gradientMap={toonGradient} />
+      </mesh>
+      {[0.05, -0.05].map((x) => (
+        <mesh
+          key={x}
+          castShadow
+          position={[x, 0.01, -0.255]}
+          rotation={[0.22, 0, x > 0 ? 0.1 : -0.1]}
+        >
+          <boxGeometry args={[0.05, 0.26, 0.014]} />
+          <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        </mesh>
+      ))}
+    </>
+  )
+}
+
+/**
  * Chapeau de paille.
  *
  * La pièce qui porte tout le skin. Son bord fait **0,44 de rayon contre 0,26
@@ -1215,6 +1804,80 @@ function Mane({ palette }: { palette: Palette }) {
           <coneGeometry args={[0.1, spike.len, 5]} />
           <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
         </mesh>
+      ))}
+    </>
+  )
+}
+
+/**
+ * Les onze mèches de la couronne : azimut, élévation, longueur.
+ *
+ * Deux règles, et elles ont chacune coûté un jet :
+ *
+ *  - **aucune élévation négative.** Une mèche qui pointe vers le bas passe
+ *    devant le visage, et le visage est tout ce que ce skin a à vendre. Le
+ *    minimum est 0,33, aux tempes, et elles partent vers l'extérieur ;
+ *  - **onze larges, et non dix-sept fines.** Une mèche est un paquet de
+ *    cheveux : elle a une largeur. Dix-sept aiguilles régulières font un
+ *    oursin, et c'est ce que le premier jet montrait.
+ *
+ * Les longueurs sont inégales et les plus longues partent en arrière : une
+ * couronne parfaitement régulière se lit comme un objet posé sur un crâne, pas
+ * comme une chevelure. Même raisonnement que la crinière du clan.
+ */
+const CROWN_BLADES = [
+  { azimuth: 0, elevation: 1.3, length: 0.4 },
+  { azimuth: 0.55, elevation: 1.05, length: 0.44 },
+  { azimuth: -0.55, elevation: 1.05, length: 0.44 },
+  { azimuth: 1.65, elevation: 0.95, length: 0.46 },
+  { azimuth: -1.65, elevation: 0.95, length: 0.46 },
+  { azimuth: Math.PI, elevation: 0.85, length: 0.44 },
+  { azimuth: 0.55, elevation: 0.5, length: 0.42 },
+  { azimuth: -0.55, elevation: 0.5, length: 0.42 },
+  { azimuth: 1.45, elevation: 0.33, length: 0.4 },
+  { azimuth: -1.45, elevation: 0.33, length: 0.4 },
+  { azimuth: 2.45, elevation: 0.38, length: 0.42 },
+] as const
+
+/**
+ * Chevelure du quatrième skin : une couronne qui part vers le haut.
+ *
+ * Elle vit dans le groupe animé et hérite donc du ressort à un pas de retard.
+ * Le sien est le plus sec des quatre (voir `SKINS`) : une masse courte et dure
+ * frémit, là où la crinière du clan flotte et où le chapeau de paille rebondit.
+ *
+ * Chaque mèche est orientée par **deux groupes emboîtés** plutôt que par des
+ * angles d'Euler calculés : le premier tourne autour de Y de l'azimut, le second
+ * bascule autour de X de ce qui reste à l'élévation, et la mèche n'a plus qu'à
+ * s'éloigner le long de son propre +Y. Trois lignes lisibles, là où un Euler
+ * équivalent dépend de l'ordre des rotations et se relit à la calculette.
+ */
+function SpikedCrown({ palette }: { palette: Palette }) {
+  return (
+    <>
+      {/* Calotte, puis masse de nuque. La seconde comble l'écart entre le
+          bandeau et la couronne, qui laissait voir de la peau nue de
+          trois-quarts arrière. */}
+      <mesh castShadow position={[0, 0.06, -0.01]} scale={[1, 0.62, 1.02]}>
+        <sphereGeometry args={[0.255, 16, 14]} />
+        <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
+      </mesh>
+      <mesh castShadow position={[0, -0.02, -0.045]} scale={[0.98, 0.5, 1]}>
+        <sphereGeometry args={[0.25, 14, 12]} />
+        <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
+      </mesh>
+
+      {CROWN_BLADES.map((blade) => (
+        <group key={`${blade.azimuth}:${blade.elevation}`} rotation={[0, blade.azimuth, 0]}>
+          <group rotation={[Math.PI / 2 - blade.elevation, 0, 0]}>
+            {/* Quatre segments et un aplatissement en profondeur : une pyramide
+                à base carrée fait un piquant, une lame aplatie fait une mèche. */}
+            <mesh castShadow position={[0, 0.09 + blade.length / 2, 0]} scale={[1.12, 1, 0.62]}>
+              <coneGeometry args={[0.15, blade.length, 4]} />
+              <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
+            </mesh>
+          </group>
+        </group>
       ))}
     </>
   )

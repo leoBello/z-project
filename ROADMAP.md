@@ -183,6 +183,12 @@ de l'Île Céleste, et la parade qui va avec.
 - **L'île rend trois cœurs à la première arrivée**, et le gardien laisse un
   réceptacle là où il tombe — pas dans un coffre : un coffre raconterait que la
   récompense était rangée là depuis toujours
+- **Deux récompenses, et elles ne disent pas la même chose.** Le réceptacle tombe
+  *avec* le corps, à l'endroit exact de la chute : on vient de le lui prendre. Le
+  coffre du manteau de l'Aube, lui, est posé dans l'axe d'une travée écroulée, à
+  7,5 du centre — il était là depuis toujours, et seule la mort du gardien le rend
+  approchable. La travée 7 et non la 3 : son axe pointe vers le sud-ouest, donc du
+  côté de la caméra, quand celui de la 3 tombe derrière le cœur de l'île
 - En développement, `window.__lynelState` expose l'état vivant du combat (pose,
   attaque en préparation, étourdissement, charge) avec les instants rendus
   relatifs à maintenant. Même raison que `__lastSwing` : la machine à états se
@@ -229,9 +235,9 @@ de l'Île Céleste, et la parade qui va avec.
   d'emplacement) : on porte la tenue *et* l'arme. Un emplacement unique aurait
   été plus court à écrire et faux à jouer — la deuxième trouvaille serait
   devenue un renoncement à la première
-- **Trois skins, un seul rig.** Le joueur démarre en Luffy — torse nu, gilet
-  rouge, chapeau de paille, poings nus — et trouve les skins de Zoro et du Clan
-  dans des coffres. Palette, pièce de tête, vêtement de buste, membres et visage
+- **Quatre skins, un seul rig.** Le joueur démarre en Luffy — torse nu, gilet
+  rouge, chapeau de paille, poings nus — et trouve les trois autres dans des
+  coffres. Palette, pièce de tête, vêtement de buste, membres et visage
   changent ; le squelette, le cycle de marche et le coup porté sont partagés.
   Les pièces de chaque skin sont réunies dans **une table** (`SKINS` dans
   `HeroPlaceholder.tsx`) et non choisies par un booléen semé dans le composant :
@@ -253,6 +259,27 @@ de l'Île Céleste, et la parade qui va avec.
   une seule se porte, et le joueur choisit sa silhouette au lieu de la subir dans
   l'ordre où tombent les coffres. C'est la tenue qui encaisse, là où les deux
   autres se déplacent
+- **Manteau de l'Aube** (coffre de la rotonde, après la chute du Lynel) : +1 cœur
+  jaune seulement, mais course à 108 % et détente à 130 % — le seul skin dont les
+  *deux* aptitudes de déplacement soient au-dessus du réglage de base. Les trois
+  premiers se départageaient sur l'axe détente / vitesse en payant l'un par
+  l'autre ; celui-ci prend les deux et paie en encaisse. Récompense d'un boss :
+  elle devait changer la façon de traverser la carte, pas ajouter une ligne de
+  chiffres. Il se bat **à mains nues**, comme le skin de départ — `StrikeArc`
+  dessine alors une onde d'impact au lieu d'une traînée de lame, et le dernier
+  skin du jeu rend au joueur le geste du premier sans une ligne à écrire
+- **Le nuage de l'Aube est une géométrie, pas une texture** (`cloudGeometry.ts`,
+  voisin de `heartGeometry.ts`) : dix courbes de Bézier extrudées, une seule
+  géométrie pour les sept exemplaires cousus sur la tenue, et son liseré blanc est
+  le contour `<Outlines>` du mesh — la pièce qui cerne tout le personnage dessine
+  aussi le trait du blason, les deux ne peuvent donc pas diverger
+- **Le col de ce skin s'ouvre en V de 94° vers l'avant**, et c'est la cote qui a
+  demandé le plus de reprises : un col qui fait le tour du cou entoure le crâne, et
+  le visage disparaît derrière lui dès que la caméra plonge de ses 17°. Même
+  logique pour la chevelure — aucune mèche à élévation négative, sans quoi elle
+  revient sur la figure. C'est aussi le seul visage du jeu qui ait une expression
+  (orbite, paupière et sourcil inclinés **vers le nez** : à l'envers, le même trait
+  donne un air accablé)
 - **Katana de Kusanagi** (coffre du temple de Nakano) : dégâts d'épée ×2, lame
   longue en main droite. L'effet est volontairement brutal — les PV des ennemis
   sont des entiers de 2 et 3, donc l'octorok tombe en un coup au lieu de deux et
@@ -280,7 +307,11 @@ de l'Île Céleste, et la parade qui va avec.
   remettre une tenue ne soigne pas gratuitement
 - Coffres décrits **dans le repère de leur monument** (`src/config/chests.ts`),
   jamais en coordonnées monde : un coffre posé en absolu se retrouve dans le
-  vide au premier réglage du monument
+  vide au premier réglage du monument. Le coffre de la rotonde fait exception —
+  la rotonde n'est pas un monument et ne doit pas en devenir un (voir
+  `HeartSourceId`) — d'où le champ `map` sur `Chest` : `Landmarks` ne pose que
+  les coffres du continent, `RotundaChest` monte celui de l'île et porte sa
+  propre détection de proximité, la boucle des monuments n'existant pas là-bas
 - Séquence d'ouverture chronométrée en **temps réel** et non sur l'horloge de
   jeu, qui est gelée dès l'appui — même contrainte que l'overlay de téléportation
 

@@ -15,6 +15,17 @@ import { Temple } from './Temple'
 import { TreasureChest } from './TreasureChest'
 
 /**
+ * Les coffres de cette carte-ci.
+ *
+ * Filtré une fois au chargement du module et non à chaque rendu : la table est
+ * constante. Le coffre de la rotonde vit sur l'Île Céleste, à 7,2 d'altitude ;
+ * posé ici, il flotterait au-dessus du continent et son invite s'allumerait
+ * sous les pieds du joueur qui passerait dessous. C'est `RotundaChest` qui le
+ * monte, avec sa propre détection de proximité.
+ */
+const CONTINENT_CHESTS = CHESTS.filter((chest) => chest.map === 'continent')
+
+/**
  * Découverte et mise à portée des points d'intérêt.
  *
  * Le test tourne à chaque frame mais ne touche au store **que sur transition** :
@@ -63,7 +74,7 @@ function LandmarkProximity() {
     // la règle de priorité de `currentInteraction` aurait pu lire un état
     // vieux d'une frame.
     let chest: ChestId | null = null
-    for (const candidate of CHESTS) {
+    for (const candidate of CONTINENT_CHESTS) {
       // Un coffre ouvert ne propose plus rien : on saute le test, l'invite
       // disparaît d'elle-même.
       if (store.openedChests.includes(candidate.id)) continue
@@ -114,7 +125,7 @@ export function Landmarks() {
       {/* Les coffres sont posés en coordonnées monde, dérivées du repère de
           leur monument (voir `config/chests.ts`) : ils sont donc montés ici, à
           plat, et non à l'intérieur du composant du monument qui les porte. */}
-      {CHESTS.map((chest) => (
+      {CONTINENT_CHESTS.map((chest) => (
         <TreasureChest key={chest.id} chest={chest} />
       ))}
       <LandmarkProximity />

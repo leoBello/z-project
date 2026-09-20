@@ -103,6 +103,32 @@ const GLYPHS: Record<ItemId, React.JSX.Element> = {
       />
     </>
   ),
+  'dawn-cloak': (
+    <>
+      {/* Manteau fermé, comme celui du clan — mais il tombe droit et s'évase
+          jusqu'au bas de la case, là où l'autre s'arrête aux cuisses. À 44
+          pixels, c'est cette hauteur-là qui sépare les deux vêtements sombres
+          avant même la couleur. */}
+      <path
+        d="M8.4 5.2 12 3.6 15.6 5.2 18.8 8.2 16.8 10.2 15.8 9.2 17 20.4 7 20.4 8.2 9.2 7.2 10.2 5.2 8.2z"
+        fill="currentColor"
+        opacity="0.9"
+      />
+      {/* La ligne de fermeture, du col à l'ourlet : la seule verticale de tout
+          le jeu de vignettes, et donc la signature de cette case. */}
+      <path d="M12 6.6V20.4" stroke="#171226" strokeWidth="1.3" strokeLinecap="round" />
+      {/* Col en V, dressé au-dessus des épaules. Deux pans écartés, pas un
+          bandeau : c'est l'échancrure qui dit « Aube » plutôt que « clan ». */}
+      <path d="M9.3 8.4 9.8 4.2 12 6.2 14.2 4.2 14.7 8.4 12 7.1z" fill="#171226" opacity="0.8" />
+      {/* Un nuage, en creux. Un seul : deux en feraient un motif, et à cette
+          taille un motif n'est plus qu'une texture. */}
+      <path
+        d="M9.4 14.6c0.5-0.7 1.2-0.5 1.6-0.1 0.4-0.6 1.3-0.5 1.5 0.2 0.7-0.2 1.2 0.4 0.9 1 0.4 0.4 0.2 1.1-0.5 1.1-2 0.1-3.3 0.1-3.7 0-0.7-0.2-0.8-1.1-0.3-1.4-0.2-0.3-0.1-0.6 0.5-0.8z"
+        fill="#171226"
+        opacity="0.8"
+      />
+    </>
+  ),
   'fishman-scales': (
     <>
       {/* Trois écailles en quinconce, chacune une goutte pointe en bas. La
