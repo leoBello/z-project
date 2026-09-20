@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MARSH_PORTAL } from '../../config/rotMarsh'
+import { MARSH_BEYOND_PORTAL, MARSH_PORTAL } from '../../config/rotMarsh'
 import { useGameStore } from '../../store/useGameStore'
 import { Malenia } from '../Malenia'
 import { MarshRewards } from './MarshRewards'
@@ -52,6 +52,18 @@ export default function RotMarsh() {
     fait naître morte.
   */
   const [standing] = useState(() => useGameStore.getState().maleniaSlainAt === null)
+  /*
+    Sa chute, lue en **abonnement vivant** et non en instantané — l'inverse
+    exact de la ligne au-dessus, et les deux ont raison.
+
+    L'instantané sert à décider si elle est **montée** : la lire en direct
+    l'aurait fait disparaître à la frame suivant sa mort, sans l'écrasement, sans
+    la détente, sans la fumée. L'abonnement sert à ouvrir l'anneau de
+    l'Outremonde : celui-là doit se percer à la seconde où elle tombe, pendant
+    qu'elle tombe, sous les yeux du joueur. C'est la discipline de
+    `MarshRewards`, pour la même raison.
+  */
+  const maleniaSlainAt = useGameStore((state) => state.maleniaSlainAt)
 
   return (
     <>
@@ -106,6 +118,24 @@ export default function RotMarsh() {
         sens. Même valeur et même raison que le portail d'arrivée de l'île.
       */}
       <Portal at={MARSH_PORTAL} openedAt={0} to="sky" />
+
+      {/*
+        L'anneau de l'Outremonde, au fond du bassin.
+
+        Il ne se déplie qu'à la chute de Malenia, et il est le **second** portail
+        du jeu à se mériter — le premier étant celui de Nakano, qui demandait de
+        vider le continent. Les trois autres sont des portes de retour, ouvertes
+        depuis toujours parce qu'on en sort.
+
+        `openedAt` reçoit l'horodatage de sa mort plutôt qu'un zéro : c'est lui
+        qui fait jouer le dépliement élastique de l'anneau, sur un peu plus d'une
+        seconde. Celui de Nakano s'ouvre à l'autre bout de la carte, très
+        probablement hors de vue ; celui-ci s'ouvre à six pas du joueur, juste
+        après le seul combat du jeu qui se termine par un silence. Il est la seule
+        chose qui bouge à l'écran à cet instant, et c'est tout ce qu'on lui
+        demande.
+      */}
+      <Portal at={MARSH_BEYOND_PORTAL} openedAt={maleniaSlainAt} to="beyond" />
     </>
   )
 }

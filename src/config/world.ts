@@ -65,8 +65,16 @@ function valueNoise(x: number, y: number) {
   )
 }
 
-/** Somme d'octaves : donne un relief lisible à grande échelle et détaillé de près. */
-function fbm(x: number, y: number, octaves = 4) {
+/**
+ * Somme d'octaves : donne un relief lisible à grande échelle et détaillé de près.
+ *
+ * Exportée depuis l'arrivée de l'Outremonde, qui est le second champ de hauteurs
+ * du jeu. Il a sa propre géographie — ses crêtes, ses îles, ses secteurs — mais
+ * il n'a aucune raison d'avoir son propre bruit : deux générateurs de bruit dans
+ * le même jeu donneraient deux grains de terrain différents, et le second monde
+ * ne se lirait plus comme le même monde.
+ */
+export function fbm(x: number, y: number, octaves = 4) {
   let sum = 0
   let amplitude = 0.5
   let total = 0

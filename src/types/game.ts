@@ -28,10 +28,19 @@ export type GamePhase = 'playing' | 'paused' | 'gameover'
  * pour cette raison, et c'est la règle à suivre pour la quatrième carte : **une
  * table indexée par `MapId`, jamais un ternaire.**
  *
+ * **La quatrième est arrivée, et la règle a tenu.** L'ajout de `beyond` a sorti
+ * du compilateur exactement les endroits qui comptaient — l'air, les trois
+ * tables de portail, les fragments de bundle, le cadrage de minimap, le plancher
+ * de chute, l'avance de l'ogive — parce qu'ils étaient tous devenus des
+ * `Record<MapId, …>` entre-temps. Aucun n'a été découvert en jouant.
+ *
  * `rot` est le Marais d'Aeonia : on n'y accède que par le portail du sommet,
- * une fois le Lynel doré tombé.
+ * une fois le Lynel doré tombé. `beyond` est l'Outremonde : on n'y accède que
+ * par l'anneau qui se perce au pied de l'Arbre blafard, une fois Malenia
+ * tombée. C'est la carte de l'après-partie, et la seule dont la raison d'être
+ * ne soit pas une progression.
  */
-export type MapId = 'continent' | 'sky' | 'rot'
+export type MapId = 'continent' | 'sky' | 'rot' | 'beyond'
 
 /** Machine à états de l'IA des ennemis (utilisée à l'étape "ennemis"). */
 export type EnemyState = 'idle' | 'patrol' | 'chase' | 'attack' | 'dead'
@@ -143,11 +152,15 @@ export type HeartSourceId = LandmarkId | 'rotunda' | 'trial' | 'golden' | 'malen
  * dans `src/i18n/*.json` sous `ui.quests.entries`.
  *
  * Un type fermé et non une table extensible, pour la même raison que `MapId` :
- * aucune de ces cinq quêtes n'est une ligne de configuration. Chacune se termine
+ * aucune de ces six quêtes n'est une ligne de configuration. Chacune se termine
  * sur un état de partie qui lui est propre — la carte vidée, l'île atteinte,
- * trois bêtes abattues, la montagne gravie, le Marais traversé — et en ajouter
- * une demandera de dire *où* elle s'achève, pas seulement comment elle
- * s'intitule.
+ * trois bêtes abattues, la montagne gravie, le Marais traversé, un chronomètre
+ * mené à son terme — et en ajouter une demande de dire *où* elle s'achève, pas
+ * seulement comment elle s'intitule.
+ *
+ * La sixième l'a prouvé : il a fallu inventer le fait qu'elle lit
+ * (`challengeDone`, dérivé du record du défi), parce qu'aucun des sept que le
+ * journal connaissait déjà ne décrivait « le joueur est allé au bout ».
  */
 export type QuestId =
   | 'clear-continent'
@@ -155,6 +168,17 @@ export type QuestId =
   | 'lynel-trial'
   | 'golden-lynel'
   | 'aeonia'
+  /**
+   * L'Outremonde, et elle est d'une autre nature que les cinq autres.
+   *
+   * Les cinq premières se terminent sur un état de partie qui ne revient pas :
+   * la carte est vide, l'île est atteinte, la bête est tombée. Celle-ci se
+   * termine sur un **défi relevé** — deux minutes chronométrées, un score — et
+   * rien n'interdit de le rejouer pour faire mieux. C'est la seule ligne du
+   * journal qui reste vraie une fois close sans être finie, et c'est exactement
+   * ce qu'on attend d'une carte d'après-partie.
+   */
+  | 'beyond'
 
 /**
  * Identifiant d'objet ramassable. La table vit dans `config/items.ts`, et les

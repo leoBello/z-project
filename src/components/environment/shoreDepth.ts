@@ -5,7 +5,7 @@ import {
   RedFormat,
   UnsignedByteType,
 } from 'three'
-import { WORLD, sampleHeight } from '../../config/world'
+import type { WorldShape } from '../../config/worldShape'
 
 /**
  * Carte de profondeur d'eau, échantillonnée depuis `sampleHeight`.
@@ -36,36 +36,45 @@ const RESOLUTION = 256
  */
 export const FOAM_DEPTH = 1.5
 
-let texture: DataTexture | null = null
+/**
+ * Une texture par monde, et non une seule.
+ *
+ * Deux cartes du jeu ont une mer — le continent et l'Outremonde — et leurs
+ * lignes de rivage n'ont évidemment rien à voir. Une variable unique aurait
+ * servi la carte d'écume du premier monde visité au second, c'est-à-dire de la
+ * mousse au large et pas une goutte contre la côte.
+ */
+const textures = new Map<string, DataTexture>()
 
 /**
- * Construit la texture au premier appel, puis la réutilise.
+ * Construit la texture au premier appel pour ce monde, puis la réutilise.
  *
  * Paresseuse et non calculée à l'import : le module est chargé par le découpage
  * de bundle avant que la scène n'existe, et 65 000 évaluations de bruit n'ont
  * rien à faire dans le chemin critique du parsing.
  */
-export function shoreDepthTexture() {
-  if (texture) return texture
+export function shoreDepthTexture(shape: WorldShape) {
+  const cached = textures.get(shape.id)
+  if (cached) return cached
 
-  if (import.meta.env.DEV) console.time('shoreDepth')
+  if (import.meta.env.DEV) console.time(`shoreDepth:${shape.id}`)
   const data = new Uint8Array(RESOLUTION * RESOLUTION)
 
   for (let row = 0; row < RESOLUTION; row++) {
     // Le texel est indexé par la **position monde**, pas par l'UV du plan : le
     // shader retrouve donc sa coordonnée sans avoir à raisonner sur la rotation
     // de -90° qui couche le plan d'eau.
-    const z = ((row + 0.5) / RESOLUTION - 0.5) * WORLD.size
+    const z = ((row + 0.5) / RESOLUTION - 0.5) * shape.size
     for (let column = 0; column < RESOLUTION; column++) {
-      const x = ((column + 0.5) / RESOLUTION - 0.5) * WORLD.size
-      const depth = WORLD.waterLevel - sampleHeight(x, z)
+      const x = ((column + 0.5) / RESOLUTION - 0.5) * shape.size
+      const depth = shape.waterLevel - shape.height(x, z)
       const normalized = Math.min(Math.max(depth / FOAM_DEPTH, 0), 1)
       data[row * RESOLUTION + column] = Math.round(normalized * 255)
     }
   }
-  if (import.meta.env.DEV) console.timeEnd('shoreDepth')
+  if (import.meta.env.DEV) console.timeEnd(`shoreDepth:${shape.id}`)
 
-  texture = new DataTexture(data, RESOLUTION, RESOLUTION, RedFormat, UnsignedByteType)
+  const texture = new DataTexture(data, RESOLUTION, RESOLUTION, RedFormat, UnsignedByteType)
   // Filtrage linéaire : sans lui, la frange d'écume prendrait l'escalier des
   // texels, très visible sur une ligne de rivage presque parallèle aux axes.
   texture.minFilter = LinearFilter
@@ -73,5 +82,6 @@ export function shoreDepthTexture() {
   texture.wrapS = ClampToEdgeWrapping
   texture.wrapT = ClampToEdgeWrapping
   texture.needsUpdate = true
+  textures.set(shape.id, texture)
   return texture
 }

@@ -42,13 +42,65 @@
       "toward": {
         "continent": "Revenir sur le continent",
         "sky": "Gagner l'Île Céleste",
-        "rot": "Franchir le portail"
+        "rot": "Franchir le portail",
+        "beyond": "Passer dans l'Outremonde"
       }
     },
     "maps": {
       "continent": "Continent",
       "sky": "Île Céleste",
-      "rot": "Marais d'Aeonia"
+      "rot": "Marais d'Aeonia",
+      "beyond": "Outremonde"
+    },
+    "beyond": {
+      "kicker": "Au-delà",
+      "name": "L'Outremonde",
+      "hint": "Le Sanctuaire vous protège. Au-delà du dallage, plus rien ne le fera."
+    },
+    "challenge": {
+      "talk": "Parler au maître",
+      "stop": "Terminer le défi",
+      "senseiName": "Sangoku",
+      "offerTitle": "Le défi du maître",
+      "offerBody": "Salut à toi ! Tu as l'air costaud, ça se voit à ta démarche. Mais est-ce que tu es rapide ? Choisis ta règle, et on compte les points.",
+      "difficultyLabel": "Difficulté",
+      "durationLabel": "Durée",
+      "difficulties": {
+        "easy": "Facile",
+        "normal": "Normal",
+        "hard": "Difficile"
+      },
+      "durations": {
+        "2min": "2 min",
+        "5min": "5 min",
+        "10min": "10 min",
+        "endless": "Illimité"
+      },
+      "offerBest": "Record de cette catégorie : {score} points, {count} adversaires",
+      "offerNoBest": "Aucun record dans cette catégorie",
+      "accept": "Relever le défi",
+      "decline": "Une autre fois",
+      "ready": "Prêt ?",
+      "go": "GO !",
+      "scoreLabel": "Score",
+      "killsLabel": "Au tapis",
+      "timeLabel": "Temps restant",
+      "elapsedLabel": "Temps écoulé",
+      "resultTitle": "Défi terminé",
+      "resultFailed": "Vous êtes tombé",
+      "resultNone": "Aucun adversaire au tapis.",
+      "resultScoreOne": "{count} adversaire au tapis.",
+      "resultScoreMany": "{count} adversaires au tapis.",
+      "resultBest": "Record de la catégorie : {score}",
+      "resultNewBest": "Nouveau record !",
+      "keepFighting": "Continuer à combattre",
+      "close": "Revenir au Sanctuaire",
+      "ranks": {
+        "novice": "Débutant",
+        "warrior": "Combattant",
+        "master": "Maître d'armes",
+        "legend": "Légende de l'Outremonde"
+      }
     },
     "quality": {
       "label": "Qualité graphique",
@@ -168,6 +220,10 @@
         "aeonia": {
           "name": "Le Marais d'Aeonia",
           "goal": "Un portail s'est ouvert au sommet, et il ne ramène pas chez soi. De l'autre côté : une eau rouge, un arbre mort, une chaussée de pierre qui mène à son pied. Quelque chose y attend, et n'en est jamais reparti."
+        },
+        "beyond": {
+          "name": "L'Outremonde",
+          "goal": "Un dernier anneau s'est ouvert au pied de l'Arbre. Derrière, un monde entier, et un maître qui compte les coups."
         }
       }
     },

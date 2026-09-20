@@ -148,6 +148,38 @@ interface Events {
    * pas décourager de ce qu'on n'a pas trouvé.
    */
   golden_slain: { hearts: number }
+  /**
+   * Le joueur franchit l'anneau du Marais et découvre l'Outremonde.
+   *
+   * Rapporté à `malenia_defeated`, il mesure une seule chose : combien de
+   * joueurs, une fois le jeu fini, ont eu envie d'aller voir ce qu'il y avait
+   * après. C'est le chiffre qui dit si l'après-partie valait d'être écrite.
+   */
+  beyond_entered: { hearts: number }
+  /**
+   * Un défi est accepté, avec ses réglages.
+   *
+   * Les deux champs sont le seul moyen de savoir si les douze catégories servent
+   * ou si onze d'entre elles sont du décor. C'est la question qu'on se pose
+   * toujours après avoir ajouté des options : le joueur choisit-il, ou prend-il
+   * ce qui est proposé en premier ?
+   */
+  challenge_started: { difficulty: string; duration: string }
+  /**
+   * Un défi se termine, avec son score et ce qui l'a arrêté.
+   *
+   * Les deux chiffres ne se lisent qu'ensemble : un score moyen bas avec
+   * beaucoup de `failed` dit que la carte tue trop, un score moyen bas sans
+   * `failed` dit qu'elle est trop vide. Le même nombre, deux corrections
+   * opposées.
+   */
+  challenge_ended: {
+    score: number
+    kills: number
+    failed: boolean
+    difficulty: string
+    duration: string
+  }
 }
 
 declare global {

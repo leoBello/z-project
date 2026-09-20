@@ -1,7 +1,8 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { MeshStandardMaterial, PlaneGeometry } from 'three'
-import { WORLD } from '../../config/world'
+import { CONTINENT_SHAPE } from '../../config/continentShape'
+import type { WorldShape } from '../../config/worldShape'
 import { shoreDepthTexture } from './shoreDepth'
 
 /** Subdivisions du plan d'eau : assez pour que la houle soit lisible. */
@@ -22,7 +23,7 @@ const SEGMENTS = 96
  * (voir `shoreDepth.ts`) : la frange suit donc exactement la ligne où le
  * terrain croise le niveau de la mer, sur le continent comme autour de l'île.
  */
-function createWaterMaterial() {
+function createWaterMaterial(shape: WorldShape) {
   const material = new MeshStandardMaterial({
     color: '#46a8c9',
     transparent: true,
@@ -33,8 +34,8 @@ function createWaterMaterial() {
 
   const uniforms = {
     uTime: { value: 0 },
-    uShoreDepth: { value: shoreDepthTexture() },
-    uWorldSize: { value: WORLD.size },
+    uShoreDepth: { value: shoreDepthTexture(shape) },
+    uWorldSize: { value: shape.size },
   }
 
   material.onBeforeCompile = (shader) => {
@@ -131,11 +132,19 @@ function createWaterMaterial() {
   return { material, uniforms }
 }
 
-export function Water() {
-  const { material, uniforms } = useMemo(createWaterMaterial, [])
+/**
+ * La mer d'un monde — celle du continent par défaut, celle de l'Outremonde sur
+ * demande.
+ *
+ * Même prop et même raison que `Terrain` et `Vegetation` : la houle, l'écume et
+ * la transparence sont les mêmes partout, seule la ligne de rivage change — et
+ * elle est cuite depuis la forme, donc elle suit.
+ */
+export function Water({ shape = CONTINENT_SHAPE }: { shape?: WorldShape } = {}) {
+  const { material, uniforms } = useMemo(() => createWaterMaterial(shape), [shape])
   const geometry = useMemo(
-    () => new PlaneGeometry(WORLD.size, WORLD.size, SEGMENTS, SEGMENTS),
-    [],
+    () => new PlaneGeometry(shape.size, shape.size, SEGMENTS, SEGMENTS),
+    [shape],
   )
   const time = useRef(uniforms.uTime)
 
@@ -148,7 +157,7 @@ export function Water() {
       geometry={geometry}
       material={material}
       rotation={[-Math.PI / 2, 0, 0]}
-      position={[0, WORLD.waterLevel, 0]}
+      position={[0, shape.waterLevel, 0]}
       // Pas d'ombre : une surface translucide qui projette une ombre opaque
       // trahit immédiatement le truc.
       renderOrder={1}

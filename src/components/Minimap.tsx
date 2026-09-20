@@ -27,7 +27,17 @@ import {
   TREE,
 } from '../config/rotMarsh'
 import { ROT_COLORS } from '../config/rotPalette'
-import { WORLD, classifyBiome, sampleHeight } from '../config/world'
+import {
+  BEYOND_ARENA,
+  BEYOND_MAP_CENTER_X,
+  BEYOND_MAP_CENTER_Z,
+  BEYOND_MAP_SIZE,
+  BEYOND_PORTAL,
+  BEYOND_SHAPE,
+  SANCTUARY,
+} from '../config/beyond'
+import { CONTINENT_SHAPE } from '../config/continentShape'
+import type { WorldShape } from '../config/worldShape'
 import { enemyRegistry } from '../state/enemyRegistry'
 import { playerTransform } from '../state/playerTransform'
 import { useGameStore } from '../store/useGameStore'
@@ -126,9 +136,12 @@ function renderMarshMap() {
  * décalé de quarante.
  */
 const FRAME: Record<MapId, { extent: number; x: number; z: number }> = {
-  continent: { extent: WORLD.size, x: 0, z: 0 },
+  continent: { extent: CONTINENT_SHAPE.size, x: 0, z: 0 },
   sky: { extent: ISLAND_MAP_SIZE, x: ISLAND_MAP_CENTER_X, z: ISLAND_MAP_CENTER_Z },
   rot: { extent: MARSH_MAP_SIZE, x: MARSH_MAP_CENTER_X, z: MARSH_MAP_CENTER_Z },
+  // Comme le continent : le relief occupe toute la grille, il n'y a pas de
+  // sous-partie à cadrer ni de décalage à appliquer.
+  beyond: { extent: BEYOND_MAP_SIZE, x: BEYOND_MAP_CENTER_X, z: BEYOND_MAP_CENTER_Z },
 }
 
 /**
@@ -146,13 +159,21 @@ export interface MinimapMarker {
 }
 
 /**
- * Fond de carte, rendu **une seule fois** dans un canvas hors écran.
+ * Fond de carte d'un champ de hauteurs, rendu **une seule fois** dans un canvas
+ * hors écran.
  *
  * Échantillonner le monde coûte ~50 ms pour 48 000 pixels : hors de question de
  * le refaire à chaque frame. Le fond est donc figé, et la boucle d'animation ne
  * fait plus que le recopier et dessiner les marqueurs par-dessus.
+ *
+ * Il sert **deux** cartes — le continent et l'Outremonde — là où celui de l'île
+ * et celui du Marais n'en servent qu'une chacun, et la différence n'est pas une
+ * question de courage : ces deux-là sont le même objet mathématique, une grille
+ * de hauteurs classée en biomes. Le paramétrer coûte un argument ; paramétrer
+ * le rendu de l'île pour qu'il couvre aussi le Marais aurait coûté tout ce qui
+ * les distingue.
  */
-function renderWorldMap() {
+function renderWorldMap(shape: WorldShape) {
   const canvas = document.createElement('canvas')
   canvas.width = MAP_RESOLUTION
   canvas.height = MAP_RESOLUTION
@@ -161,7 +182,7 @@ function renderWorldMap() {
   if (!context) return canvas
 
   const image = context.createImageData(MAP_RESOLUTION, MAP_RESOLUTION)
-  const step = WORLD.size / MAP_RESOLUTION
+  const step = shape.size / MAP_RESOLUTION
 
   // Palette pré-résolue en RGB : parser une couleur CSS par pixel serait le
   // poste de coût dominant.
@@ -176,26 +197,26 @@ function renderWorldMap() {
 
   for (let py = 0; py < MAP_RESOLUTION; py++) {
     // Le nord de la carte est le -Z du monde : py croît donc avec z.
-    const z = -WORLD.half + py * step
+    const z = -shape.half + py * step
     for (let px = 0; px < MAP_RESOLUTION; px++) {
-      const x = -WORLD.half + px * step
-      const height = sampleHeight(x, z)
+      const x = -shape.half + px * step
+      const height = shape.height(x, z)
 
       let rgb: [number, number, number]
       let shade = 1
 
-      if (height < WORLD.waterLevel) {
+      if (height < shape.waterLevel) {
         rgb = palette.get('water')!
         // L'eau s'éclaircit fortement en faible profondeur : c'est ce qui rend
         // le haut-fond vers l'île lisible d'un coup d'œil, donc franchissable.
-        const depth = Math.min(1, height / WORLD.maxDepth)
+        const depth = Math.min(1, height / shape.maxDepth)
         shade = 0.62 + 0.85 * (1 - depth) ** 1.4
       } else {
-        rgb = palette.get(classifyBiome(x, z, height))!
+        rgb = palette.get(shape.biome(x, z, height))!
         // Ombrage de relief : lumière venue du nord-ouest, comme sur une carte
         // topographique. C'est ce qui fait apparaître la montagne.
-        const dx = sampleHeight(x + step, z) - height
-        const dz = sampleHeight(x, z + step) - height
+        const dx = shape.height(x + step, z) - height
+        const dz = shape.height(x, z + step) - height
         shade = Math.max(0.55, Math.min(1.35, 1 + (dx + dz) * 0.5))
       }
 
@@ -355,7 +376,7 @@ export function Minimap({ markers = [] }: MinimapProps) {
     de millisecondes pour quarante-huit mille pixels — le refaire à chaque
     aller-retour se verrait.
   */
-  const worldMap = useMemo(renderWorldMap, [])
+  const worldMap = useMemo(() => renderWorldMap(CONTINENT_SHAPE), [])
   const islandMap = useMemo(
     () => (location === 'sky' ? renderIslandMap() : null),
     [location],
@@ -364,6 +385,45 @@ export function Minimap({ markers = [] }: MinimapProps) {
     () => (location === 'rot' ? renderMarshMap() : null),
     [location],
   )
+  /*
+    Le fond de l'Outremonde, cuit au premier voyage seulement.
+
+    Il passe par le même rendu que le continent — c'est le même objet — mais il
+    a sa propre mémoïsation, et surtout **ses deux repères peints par-dessus** :
+    le sanctuaire en or, le cœur en noir. Ce sont les deux seuls points fixes
+    d'une carte qui n'a ni monument ni chemin ; sans eux, la vignette n'est
+    qu'une tache de biomes où l'on ne sait pas où l'on va.
+  */
+  const beyondMap = useMemo(() => {
+    if (location !== 'beyond') return null
+    const canvas = renderWorldMap(BEYOND_SHAPE)
+    const context = canvas.getContext('2d')
+    if (!context) return canvas
+
+    const scale = MAP_RESOLUTION / BEYOND_MAP_SIZE
+    const px = (x: number) => (x + BEYOND_MAP_SIZE / 2) * scale
+    const py = (z: number) => (z + BEYOND_MAP_SIZE / 2) * scale
+
+    // Le cœur : le dallage noir, au centre exact.
+    context.fillStyle = '#20141f'
+    context.beginPath()
+    context.arc(px(BEYOND_ARENA.x), py(BEYOND_ARENA.z), BEYOND_ARENA.radius * scale, 0, Math.PI * 2)
+    context.fill()
+
+    // Le sanctuaire : l'or du bâti, la seule teinte chaude de la vignette.
+    context.fillStyle = '#f5dc95'
+    context.beginPath()
+    context.arc(px(SANCTUARY.x), py(SANCTUARY.z), SANCTUARY.radius * scale, 0, Math.PI * 2)
+    context.fill()
+
+    // Et la porte, du violet qu'elle a partout ailleurs.
+    context.fillStyle = PORTAL_MINIMAP_COLOR
+    context.beginPath()
+    context.arc(px(BEYOND_PORTAL.x), py(BEYOND_PORTAL.z), 3, 0, Math.PI * 2)
+    context.fill()
+
+    return canvas
+  }, [location])
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const markersRef = useRef(markers)
   markersRef.current = markers
@@ -400,6 +460,17 @@ export function Minimap({ markers = [] }: MinimapProps) {
       repères à côté du relief qu'ils désignent.
     */
     const onContinent = location === 'continent'
+    /*
+      Le relief sous les pieds, quand la carte en a un.
+
+      Deux cartes sur quatre sont des champs de hauteurs classés en biomes ; les
+      deux autres n'ont rien à répondre à « sur quoi est-ce que je marche ? ».
+      D'où un relief nullable plutôt qu'un second test `=== 'continent'` : c'est
+      la présence d'une forme qui décide si le libellé nomme un biome, et non le
+      nom de la carte.
+    */
+    const shape =
+      location === 'continent' ? CONTINENT_SHAPE : location === 'beyond' ? BEYOND_SHAPE : null
     const { extent, x: centerX, z: centerZ } = FRAME[location]
     const toPixels = (x: number, z: number) => ({
       px: ((x - centerX + extent / 2) / extent) * size,
@@ -410,7 +481,7 @@ export function Minimap({ markers = [] }: MinimapProps) {
       const { position, yaw } = playerTransform
 
       context.clearRect(0, 0, size, size)
-      context.drawImage(marshMap ?? islandMap ?? worldMap, 0, 0, size, size)
+      context.drawImage(beyondMap ?? marshMap ?? islandMap ?? worldMap, 0, 0, size, size)
 
       /*
         Les ennemis se dessinent sur les **deux** cartes, et le registre suffit.
@@ -511,14 +582,14 @@ export function Minimap({ markers = [] }: MinimapProps) {
       context.stroke()
       context.restore()
 
-      // Le libellé sous la carte nomme le biome sur le continent, et la carte
-      // elle-même ailleurs : ni l'île ni le Marais n'ont de biomes, et
-      // « Prairie » y serait à la fois vrai et hors sujet.
-      if (onContinent) {
-        const current = classifyBiome(
+      // Le libellé sous la carte nomme le biome là où il y en a — le continent
+      // et l'Outremonde — et la carte elle-même ailleurs : ni l'île ni le Marais
+      // n'ont de biomes, et « Prairie » y serait à la fois vrai et hors sujet.
+      if (shape) {
+        const current = shape.biome(
           position.x,
           position.z,
-          sampleHeight(position.x, position.z),
+          shape.height(position.x, position.z),
         )
         if (current !== lastBiome) {
           lastBiome = current
@@ -531,14 +602,16 @@ export function Minimap({ markers = [] }: MinimapProps) {
 
     frame = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(frame)
-  }, [worldMap, islandMap, marshMap, location])
+  }, [worldMap, islandMap, marshMap, beyondMap, location])
 
   return (
     <div className="minimap">
       <canvas ref={canvasRef} className="minimap__canvas" />
       <span className="minimap__north">{dict.ui.minimap.north}</span>
       <span className="minimap__label">
-        {location === 'continent' ? dict.ui.biomes[biome] : dict.ui.maps[location]}
+        {location === 'continent' || location === 'beyond'
+          ? dict.ui.biomes[biome]
+          : dict.ui.maps[location]}
       </span>
     </div>
   )

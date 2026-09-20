@@ -4,9 +4,9 @@ Mini-jeu 3D navigateur inspiré de Zelda, pour portfolio front-end.
 Direction artistique : **diorama low-poly cozy** — cel-shading, FOV étroit,
 tilt-shift. La recette caméra + post-traitement du HD-2D, appliquée à de la 3D.
 
-Dernière mise à jour : 20 septembre 2026 — les deux coffres du sommet : ce que
-gardait le Lynel doré, l'armure qui rend le plus de cœurs et la lame qui frappe
-le plus fort.
+Dernière mise à jour : 20 septembre 2026 — l'Outremonde : une quatrième carte
+de 200 × 200 avec ses sept biomes, ouverte par la chute de Malenia, et le défi
+chronométré de deux minutes que propose le maître du Sanctuaire.
 
 ---
 
@@ -534,6 +534,86 @@ le plus fort.
 - Séquence d'ouverture chronométrée en **temps réel** et non sur l'horloge de
   jeu, qui est gelée dès l'appui — même contrainte que l'overlay de téléportation
 
+### L'Outremonde — la carte d'après-partie
+- **Quatrième carte, et la seule qui ne serve à aucune progression.** On y entre
+  par un anneau qui se perce au pied de l'Arbre blafard à la chute de Malenia,
+  et on n'y entre que par là. Elle ne donne ni cœur, ni objet, ni accès : elle
+  donne un terrain de jeu et un score à battre
+- **200 × 200, comme le continent, avec ses sept biomes.** C'est le second champ
+  de hauteurs du jeu, et c'est ce qui a rendu la carte possible en quelques
+  fichiers : `Terrain`, `Vegetation` et `Water` prennent désormais une
+  `WorldShape` en prop — relief, valeur de région, masque d'île, classification,
+  exclusions du semis — avec le continent en valeur par défaut. Aucun des trois
+  n'a changé de comportement, et la carte hérite gratuitement du semis des sept
+  biomes, des colliders de troncs, de la houle et de l'écume de rivage
+- **Les biomes sont rangés en roue**, par secteur angulaire autour du centre :
+  jungle à l'ouest, prairie au sud et au nord, terres arides à l'est, montagne
+  enneigée au fond. Sur le continent la région est un bruit qu'on rencontre en
+  marchant ; ici on arrive sur un balcon et tout doit se lire d'un coup. Le bruit
+  reste, à ±0,21, pour que les frontières ondulent et qu'aucune ne suive un rayon
+- **Le Sanctuaire**, au sud, sur un promontoire à huit unités au-dessus de la
+  côte : zone franche, portail du retour, et le maître. C'est le seul endroit du
+  jeu où l'on ne se bat pas. La trêve est un drapeau partagé hors de React
+  (`state/sanctuary.ts`), écrit une fois par frame par le composant du lieu et lu
+  par `Enemy` et `Lynel` dans la même variable qui gère déjà la pause — les trois
+  usages de `frozen` (machine à états, armement d'attaque, annulation d'un coup
+  en préparation) devaient tous valoir, et un test ajouté au seul premier aurait
+  laissé partir le coup d'un Moblin qui se ramassait déjà
+- **Le Creuset**, au centre exact : le dallage noir, et une Malenia. Mêmes
+  formes que le Sanctuaire — disque, cercle de verticales, anneau au sol — et
+  palette inversée, basalte et violet contre pierre claire et or. Les obélisques
+  penchent vers l'intérieur là où les monolithes penchent vers l'extérieur
+- **Peuplement : ~73 corps.** Soixante-sept Octoroks et Moblins tirés comme sur
+  le continent (mêmes filtres, plus une exclusion de 38 unités autour du
+  Sanctuaire et une autour de l'arène), cinq Lynels à des postes **choisis et
+  non tirés** — un par grande région, pente mesurée sous 0,35, laisse de 18 —
+  et la Déchue. Trois fois la densité du continent, parce que la carte existe
+  pour un chronomètre de deux minutes
+- **Le défi du maître** : trois difficultés × quatre durées (2, 5, 10 minutes,
+  illimité) = **douze catégories**, chacune avec son record. La difficulté
+  multiplie trois choses et trois seulement — ce que le joueur encaisse, ce que
+  les bêtes encaissent, ce que la victoire vaut — et jamais la vitesse ni les
+  télégraphes : un ennemi moins lisible n'est pas plus difficile. Tout se mesure
+  sur l'**horloge de jeu**, donc ouvrir l'inventaire suspend le chronomètre. Le
+  chronomètre lui-même ne passe pas par React : il s'écrit dans le DOM depuis
+  une boucle `requestAnimationFrame`, comme la jauge de pourriture. Le score et
+  le compte de bêtes, eux, passent par le store — une mort est une transition,
+  pas une valeur continue
+- **Le score est pondéré par l'adversaire**, et le compte de têtes reste affiché
+  à côté. Un Octorok vaut 10, un Moblin 15, un Lynel argenté 100, le doré 250,
+  la Déchue 500. Compter les têtes seules récompensait d'éviter tout ce qui était
+  intéressant à combattre. Le rang, lui, se mesure en **points par minute** :
+  c'est la seule façon qu'une course de dix minutes ne soit pas mécaniquement
+  mieux notée qu'une de deux
+- **Le monde se relève.** Les petites bêtes réapparaissent à leur poste vingt-cinq
+  secondes après être tombées ; les six grosses — cinq Lynels dont un doré, et la
+  Déchue — reviennent au défi suivant, par remontage du peuplement entier
+  (`populationId` en `key` React, l'idiome de `runId` restreint à une carte).
+  Sans ça, le second défi se courait sur un monde amputé de ses meilleures
+  cibles et le troisième sur des restes
+- **Deux sorties au panneau de résultat** : rester où l'on est, ou être reposé au
+  Sanctuaire. La première version n'en avait qu'une, libellée « Revenir au
+  Sanctuaire », qui ne ramenait nulle part — un libellé qui ment se signale comme
+  un bouton mort
+- **On ne meurt pas sur cette carte** : à zéro cœur, on est relevé au Sanctuaire,
+  vie refaite, et c'est le défi en cours qui se paie. Le Game Over renverrait à
+  l'écran de fin pour une charge de Lynel mal jugée dans un terrain de jeu, sur
+  une partie déjà terminée — la punition la plus disproportionnée du jeu
+- **Franchir un anneau pendant un défi l'abandonne**, sans panneau ni score :
+  l'anneau du retour est à cinq pas du maître, et sans cette règle le défi
+  restait « en cours » sur une carte qu'on a quittée, avec un compteur qui se
+  remettait à monter en tuant Malenia dans son bassin
+- Ciel à lui : dégradé violet, aurore ondulée dans le fragment shader, planète
+  annelée basse sur l'horizon nord — le seul objet du ciel qui ait une
+  silhouette, donc le seul qui donne une échelle. Brume repoussée à 300 contre
+  60 sur le continent : rien n'est masqué, le monde entier est visible depuis le
+  promontoire d'arrivée
+- Le Marais est devenu la première carte à **deux points d'arrivée** (la
+  chaussée, et le bassin quand on revient de l'Outremonde), d'où le `from`
+  facultatif d'`arrivalFor` et le champ `transitFrom` du store. Sans lui, revenir
+  déposait à cent trente unités de l'anneau franchi, avec tout le marais à
+  retraverser
+
 ### Son
 - **Entièrement synthétisé** en Web Audio, aucun fichier à télécharger : nappe
   de vent (bruit filtré dont le volume respire), pas, coup d'épée dans l'air,
@@ -1048,3 +1128,16 @@ codé.
 | Robe du Lynel doré | `GOLDEN_LYNEL_PALETTE` dans `src/components/enemies/lynelMaterials.ts` |
 | Ce que la mort d'un Lynel déclenche | `damage()` dans `src/components/Lynel.tsx` |
 | Découpage du bundle | `advancedChunks` dans `vite.config.ts` |
+| Relief, secteurs de biome, îles et crêtes de l'Outremonde | `src/config/beyond.ts` |
+| Ouvrir un troisième champ de hauteurs à `Terrain`/`Vegetation`/`Water` | `src/config/worldShape.ts` + une forme comme `CONTINENT_SHAPE` |
+| Cotes du Sanctuaire, rayon de la trêve, place du maître | `SANCTUARY`, `SANCTUARY_TRUCE_R`, `SENSEI` dans `src/config/beyond.ts` |
+| Ce que la trêve empêche | `frozen` dans `src/components/Enemy.tsx` et `src/components/Lynel.tsx`, `src/state/sanctuary.ts` |
+| Nombre, espèces et postes des ennemis de l'Outremonde | `src/config/beyondEnemies.ts` |
+| Durées, difficultés, barème de points, seuils de rang, délai de réapparition | `src/config/challenge.ts` |
+| Ce qu'une difficulté multiplie | `DIFFICULTIES` dans `src/config/challenge.ts`, appliqué par `src/state/difficulty.ts` |
+| Quel poste porte le Lynel doré | `GOLDEN_POST_ID` dans `src/config/beyondEnemies.ts` |
+| Chronomètre, décompte, panneaux du défi | `src/components/ChallengeHUD.tsx` + `.challenge*` dans `src/index.css` |
+| Apparence et pose du maître | `src/components/beyond/Sensei.tsx` |
+| Dallage, monolithes, colonne de lumière du Sanctuaire | `src/components/beyond/Sanctuary.tsx` |
+| Ciel, aurore et planète de l'Outremonde | `src/components/beyond/BeyondSky.tsx` |
+| Fanfare d'arrivée | `src/components/BeyondArrival.tsx` + `.beyond-*` dans `src/index.css` |

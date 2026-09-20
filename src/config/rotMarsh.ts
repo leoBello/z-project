@@ -179,6 +179,57 @@ export const MARSH_SPAWN = {
 /** Cap à l'arrivée : face au sud, donc face à l'arbre. */
 export const MARSH_ARRIVAL_YAW = Math.PI
 
+/**
+ * L'anneau de l'Outremonde, percé au fond du bassin quand Malenia tombe.
+ *
+ * Il n'existe **pas** tant qu'elle tient, et c'est pour cette raison qu'il est
+ * décrit ici plutôt que dans `config/portal.ts` : ce fichier-là dit où l'on
+ * arrive et d'où l'on part sur chaque carte, celui-ci dit ce qu'il y a dans le
+ * Marais. Un portail qui n'apparaît qu'à une condition est une pièce du décor
+ * avant d'être une porte — exactement comme celui de Nakano, qui se décrit dans
+ * le repère de la pagode et non dans la table des lieux.
+ *
+ * **Au nord du bassin, derrière elle.** Le joueur entre par le sud, la combat au
+ * centre, et l'anneau s'ouvre au-delà du corps, entre lui et le tronc. C'est la
+ * seule place qui raconte quelque chose : on ne repart pas par où l'on est
+ * venu, on continue — et la dernière chose que l'on traverse est l'endroit
+ * qu'elle défendait.
+ *
+ * L'altitude est celle du dallage du bassin, décollée du même filet que les
+ * autres pièces posées dessus. Un anneau à l'altitude de la nappe se serait
+ * enfoncé de quinze centimètres dans la pierre.
+ */
+export const MARSH_BEYOND_PORTAL = {
+  x: 0,
+  y: 0.45,
+  z: -9,
+  yaw: 0,
+} as const
+
+/**
+ * Où l'on ressort **en revenant de l'Outremonde**.
+ *
+ * Quatre unités au sud de l'anneau du bassin, donc dos à lui et face à la
+ * chaussée : la posture de quiconque vient de franchir une porte, et celle qui
+ * met le chemin du retour dans l'axe du regard.
+ *
+ * C'est la première fois qu'une carte du jeu a **deux** points d'arrivée, et il
+ * a fallu le dire à `arrivalFor` — voir la note d'origine là-bas. Sans ce point,
+ * revenir de l'Outremonde déposait au portail de la chaussée, à cent trente
+ * unités de l'anneau qu'on venait de franchir, avec tout le marais à retraverser
+ * dans le mauvais sens. C'est exactement le défaut qu'avait connu le retour de
+ * l'Île Céleste, et il se corrige de la même façon : une porte ramène là d'où
+ * l'on est parti.
+ */
+export const MARSH_BEYOND_SPAWN = {
+  x: MARSH_BEYOND_PORTAL.x,
+  y: MARSH_BEYOND_PORTAL.y + PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius,
+  z: MARSH_BEYOND_PORTAL.z + 4,
+}
+
+/** Cap à l'arrivée depuis l'Outremonde : face à la chaussée, dos à l'anneau. */
+export const MARSH_BEYOND_ARRIVAL_YAW = 0
+
 /* --- Le cadrage de la minimap ----------------------------------------------- */
 
 /**

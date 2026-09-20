@@ -25,6 +25,11 @@ src/
   config/controls.ts          mapping clavier (codes physiques → WASD + ZQSD)
   config/gameplay.ts          constantes réglables (vitesse, saut, caméra, map)
   config/world.ts             relief, mer, classification des biomes, bruit
+  config/worldShape.ts        ce qu'un monde doit savoir répondre au décor
+  config/continentShape.ts    le continent, vu comme une `WorldShape`
+  config/beyond.ts            l'Outremonde : relief, roue des biomes, Sanctuaire
+  config/beyondEnemies.ts     peuplement de l'Outremonde, postes des Lynels
+  config/challenge.ts         le défi : difficultés, durées, barème, rangs
   config/biomes.ts            palettes des sept biomes
   config/enemies.ts           statistiques par espèce, placement
   config/landmarks.ts         points d'intérêt : position, terrasse, découverte
@@ -59,6 +64,7 @@ src/
     Projectiles.tsx           pool de projectiles, un seul draw call
     enemies/models.tsx        Octorok et Moblin, matériaux par instance
     environment/Terrain.tsx   relief, couleurs par sommet, collider heightfield
+                              (prend une `WorldShape` : continent ou Outremonde)
     environment/Water.tsx     mer translucide, houle en vertex shader
     environment/StarrySky.tsx  ciel procédural : Voie lactée, étoiles, nébuleuses
     environment/Vegetation.tsx  semis instancié des sept biomes
@@ -89,6 +95,14 @@ src/
     models/HeroModel.tsx      modèle du joueur (.glb ou personnage procédural)
     models/HeroPlaceholder.tsx  personnage articulé + animation procédurale
     models/toonGradient.ts    rampe de cel-shading partagée
+    beyond/Beyond.tsx         l'Outremonde : le fragment chargé à la demande
+    beyond/BeyondSky.tsx      ciel violet, aurore, planète annelée
+    beyond/Sanctuary.tsx      la zone franche : dallage, monolithes, trêve
+    beyond/Crucible.tsx       le dallage noir du centre, où attend la Déchue
+    beyond/Sensei.tsx         le maître : modèle, salut, proximité
+    beyond/BeyondPopulation.tsx  ennemis, cinq Lynels et une Malenia
+    ChallengeHUD.tsx          réglages du défi, décompte, chronomètre, résultat
+    BeyondArrival.tsx         la fanfare des cinq premières secondes
 ```
 
 ## Assets 3D

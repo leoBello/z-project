@@ -41,6 +41,7 @@ import { PARRY } from '../config/parry'
 import { shake } from '../state/cameraShake'
 import { spawnDeathPuff, spawnDeathRing } from '../state/deathPuffs'
 import { enemyRegistry, updateEnemyMarker } from '../state/enemyRegistry'
+import { sanctuary } from '../state/sanctuary'
 import { hitStop, isHitStopped, now as gameNow } from '../state/gameClock'
 import { cancelParry, consumeParry, offerParry } from '../state/parry'
 import { playerTransform } from '../state/playerTransform'
@@ -410,7 +411,7 @@ export interface LynelProps {
   /** Points de vie. Ceux de la table commune — le gardien — par défaut. */
   hp?: number
   /**
-   * Gardien de la rotonde, bête de l'épreuve, ou Lynel doré.
+   * Gardien de la rotonde, bête de l'épreuve, Lynel doré, ou bête sauvage.
    *
    * C'est d'abord ce qui décide de **ce que sa mort déclenche** : le gardien
    * ouvre les barrières, la caméra et les deux récompenses de la rotonde ; une
@@ -419,13 +420,26 @@ export interface LynelProps {
    * une autre bête qui appellerait `startBossFight` en refermerait les
    * barrières sur un boss déjà mort.
    *
+   * `wild` et `wild-golden` sont les deux derniers, et les seuls qui ne
+   * déclenchent **rien** : ce sont les bêtes de l'Outremonde, qui ne gardent
+   * aucune récompense et n'avancent aucune quête. Leur mort ne vaut que des
+   * points au compteur du défi, par le chemin ordinaire de `registerKill` — le
+   * même que le moindre Octorok. Une carte d'après-partie ne donne rien, c'est
+   * sa définition.
+   *
+   * La différence entre les deux est **entièrement cosmétique et statistique** :
+   * `wild-golden` porte la robe d'or, les seuils de phase du doré et son cœur de
+   * dégâts en plus, exactement comme `golden`. Ce qui les sépare est ce que leur
+   * mort déclenche, et c'est bien la seule chose que ce champ décrit — d'où deux
+   * rôles plutôt qu'une prop « doré » qu'on aurait pu cocher sur un gardien.
+   *
    * Le doré y ajoute trois réglages — sa robe, ses seuils de phase et le cœur
    * qu'il ajoute à chaque coup — et ils sont **déduits du rôle** plutôt que
    * passés en props. Trois props de plus au point de montage auraient permis de
    * monter un doré argenté qui frappe comme un gardien, c'est-à-dire un état
    * que rien ne décrit.
    */
-  role?: 'guardian' | 'trial' | 'golden'
+  role?: 'guardian' | 'trial' | 'golden' | 'wild' | 'wild-golden'
 }
 
 export function Lynel({
@@ -436,7 +450,10 @@ export function Lynel({
   role = 'guardian',
 }: LynelProps = {}) {
   const stats = ENEMIES.lynel
-  const golden = role === 'golden'
+  // La robe, les seuils de phase et le cœur de dégâts en plus : le doré du
+  // sommet et celui de l'Outremonde sont la même bête. Seul ce que leur mort
+  // déclenche les distingue.
+  const golden = role === 'golden' || role === 'wild-golden'
   const materials = useEnemyMaterials('lynel', golden ? GOLDEN_LYNEL_PALETTE : undefined)
   /** Ses seuils de phase, et le cœur qu'il ajoute à chaque coup. Voir `role`. */
   const phases: LynelPhases = golden ? GOLDEN_PHASES : PHASE_THRESHOLDS
@@ -630,7 +647,26 @@ export function Lynel({
       playerTransform.position.z - position.z,
     )
     const distance = toPlayer.length()
-    const frozen = store.phase !== 'playing'
+    /*
+      « Gelé » vaut désormais pour deux raisons, et la seconde est la trêve.
+
+      La première est la pause : panneau ouvert, écran de fin, voyage en cours.
+      La seconde est le Sanctuaire de l'Outremonde — tant que le joueur est sur
+      son dallage, aucune bête ne le poursuit ni ne le frappe.
+
+      Les deux passent par **la même variable**, et ce n'est pas une économie de
+      lignes : `frozen` est lu à trois endroits de cette boucle — la machine à
+      états, l'armement d'une attaque, et l'annulation d'un coup déjà en
+      préparation — et la trêve doit valoir pour les trois. Un test ajouté au
+      seul premier aurait laissé partir le coup d'un Moblin qui se ramassait
+      déjà quand le joueur a passé la lisière : le pire cas possible, puisque
+      c'est exactement la situation où l'on court se mettre à l'abri.
+
+      `sanctuary.safe` vaut `false` partout ailleurs que sur l'Outremonde — il
+      n'y a que là que quelqu'un l'écrit — donc les trois autres cartes ne
+      changent pas d'un iota.
+    */
+    const frozen = store.phase !== 'playing' || sanctuary.safe
 
     updateEnemyMarker(
       id,
@@ -1167,7 +1203,7 @@ interface Beast {
   id: string
   /** Altitude du poste, où se pose l'anneau de mort. */
   groundY: number
-  role: 'guardian' | 'trial' | 'golden'
+  role: 'guardian' | 'trial' | 'golden' | 'wild' | 'wild-golden'
   /** Ses seuils de phase : `damage` relit la phase après chaque coup. */
   phases: LynelPhases
 }
@@ -1246,6 +1282,18 @@ function damage(
     useGameStore.getState().endBossFight(true, [x, beast.groundY, z])
   } else if (beast.role === 'golden') {
     useGameStore.getState().registerGoldenKill()
+  } else if (beast.role === 'wild' || beast.role === 'wild-golden') {
+    /*
+      Le compteur commun, celui des Octoroks et des Moblins, avec le barème du
+      défi — voir `KILL_POINTS`. C'est lui qui aiguille vers le score hors du
+      continent (voir `registerKill`).
+
+      Le doré sauvage vaut deux fois et demie l'argenté, et c'est ici que la
+      distinction se paie : mêmes cinquante-quatre points de vie, même cœur de
+      dégâts en plus, mais posté à cent quatre unités du Sanctuaire. Aller le
+      chercher est un pari sur le temps autant que sur la vie.
+    */
+    useGameStore.getState().registerKill(beast.role === 'wild-golden' ? 'golden' : 'lynel')
   } else {
     useGameStore.getState().registerTrialKill(beast.id)
   }

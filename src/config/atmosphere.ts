@@ -110,4 +110,35 @@ export const ATMOSPHERE: Record<MapId, Atmosphere> = {
     sun: { color: '#ffb190', intensity: 1.55, offset: [40, 26, 58] },
     rim: { color: '#9a7fe0', intensity: 0.75, position: [-46, 30, -52] },
   },
+
+  /*
+    L'Outremonde — l'aube qui ne se lève pas.
+
+    Les trois autres cartes sont des lieux ; celle-ci est une **récompense**, et
+    son air doit le dire dès la première image, avant qu'on ait fait un pas. Trois
+    réglages s'y emploient, et aucun n'est celui d'un monde ordinaire :
+
+     - **la brume est repoussée à 300** (60 sur le continent, 34 sur le marais).
+       C'est le réglage le plus important du fichier, et le seul qui coûte
+       quelque chose : rien n'est masqué, le monde entier est visible depuis le
+       promontoire d'arrivée — la crête enneigée à cent soixante unités comprise.
+       Les deux cents unités de terrain sont dessinées de toute façon, la brume
+       ne faisait que les cacher ;
+     - **le soleil est bas et vient du sud**, c'est-à-dire de derrière le joueur
+       qui arrive. Les ombres partent donc **vers l'horizon** et rayent le relief
+       dans l'axe du regard : c'est ce qui donne sa profondeur à une plaine vue de
+       haut, et c'est un truc de photographe, pas de moteur ;
+     - **le contre-jour est cyan et fort** (0,9 contre 0,5 ailleurs), sous un
+       rebond hémisphérique violet. Le ciel n'est d'aucune des deux familles de
+       couleurs du jeu — ni les ors du bâti, ni les verts du monde — exactement
+       comme le portail qui y mène. On est passé de l'autre côté, et la lumière
+       le dit avant le décor.
+  */
+  beyond: {
+    fog: { color: '#9b8ede', near: 110, far: 300 },
+    hemisphere: { sky: '#cdb4ff', ground: '#86b866', intensity: 0.78 },
+    ambient: 0.34,
+    sun: { color: '#ffd7a0', intensity: 2.35, offset: [26, 48, 62] },
+    rim: { color: '#7fe8ff', intensity: 0.9, position: [-38, 26, -48] },
+  },
 }

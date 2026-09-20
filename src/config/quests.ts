@@ -63,6 +63,14 @@ export interface QuestFacts {
   goldenSlain: boolean
   /** Malenia est tombée. Lu dans `maleniaSlainAt`, comme le doré dans le sien. */
   maleniaSlain: boolean
+  /**
+   * Un défi du maître a été mené à terme, au moins une fois.
+   *
+   * Lu dans `challengeBest`, qui n'est écrit que par `endChallenge` : un défi
+   * abandonné en franchissant l'anneau ne le touche pas. C'est donc exactement
+   * « le joueur est allé au bout d'un chronomètre », ce que la quête raconte.
+   */
+  challengeDone: boolean
 }
 
 /**
@@ -155,6 +163,28 @@ export function questBoard(facts: QuestFacts): QuestStatus[] {
       id: 'aeonia',
       state: !facts.goldenSlain ? 'locked' : facts.maleniaSlain ? 'done' : 'active',
       current: facts.maleniaSlain ? 1 : 0,
+      target: 1,
+    },
+    {
+      /*
+        L'Outremonde, et c'est la seule ligne du journal qui survive à son
+        accomplissement.
+
+        Les cinq autres se ferment sur un état de partie qui ne revient pas : la
+        carte est vide, l'île est atteinte, la bête est tombée. Celle-ci se ferme
+        sur un défi mené à terme — et rien n'interdit de le relancer pour faire
+        mieux. Elle est donc `done` dès le premier chronomètre achevé, quel qu'en
+        soit le score, y compris nul : ce qui était demandé était d'y aller, pas
+        de gagner.
+
+        Elle se déverrouille sur la chute de Malenia, parce que c'est elle qui
+        perce l'anneau du bassin — donc la seule chose qui rende ce monde
+        atteignable. Même raisonnement que les trois précédentes : la quête
+        paraît à l'instant où le chemin s'ouvre, et pas avant.
+      */
+      id: 'beyond',
+      state: !facts.maleniaSlain ? 'locked' : facts.challengeDone ? 'done' : 'active',
+      current: facts.challengeDone ? 1 : 0,
       target: 1,
     },
   ]

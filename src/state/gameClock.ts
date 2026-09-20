@@ -99,5 +99,18 @@ if (import.meta.env.DEV) {
     resetClock,
     hitStop,
     isHitStopped,
+    /*
+      Avancer l'horloge à la main, et c'est le seul crochet de ce module qui
+      **écrit**.
+
+      Il existe pour une raison précise : certains délais du jeu se comptent en
+      dizaines de secondes de temps de jeu — la réapparition des bêtes de
+      l'Outremonde en vaut vingt-cinq — et un test navigateur en rendu logiciel
+      tourne à quelques images par seconde, donc n'avance l'horloge que d'un
+      quart de seconde par seconde réelle. Attendre pour de bon coûterait deux
+      minutes de test par vérification. `advance` est déjà la fonction qu'appelle
+      `<GameClock />` à chaque frame ; l'exposer ne crée aucun second chemin.
+    */
+    advance,
   }
 }
