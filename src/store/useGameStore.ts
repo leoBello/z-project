@@ -14,7 +14,7 @@ import {
 import { preloadMap } from '../components/mapFragments'
 import { purgeRot, resetRot } from '../state/rot'
 import { BLAST_FORWARD_BY_MAP } from '../config/annihilation'
-import { PLAYER } from '../config/gameplay'
+import { ATTACK, PLAYER } from '../config/gameplay'
 import { chestById } from '../config/chests'
 import { enemyTotal } from '../config/enemies'
 import { itemById, type Equipment, type ItemSlot } from '../config/items'
@@ -67,6 +67,17 @@ export const SKY_BOON_HEARTS = 3
  * de coups économisés — ce qu'une valeur absolue oblige à calculer de tête.
  */
 export const SWORD_DAMAGE = 1
+
+/**
+ * Ce que vaut un coup critique.
+ *
+ * Le double, et pas davantage. Un critique doit se **sentir** sans rendre le
+ * reste du temps insignifiant : à ×3, un joueur qui en enchaîne deux abat un
+ * Lynel de l'épreuve en quatre coups, et le combat se met à dépendre du tirage
+ * plutôt que de la lecture — exactement ce que la parade a été écrite pour
+ * éviter.
+ */
+export const CRIT_MULTIPLIER = 2
 
 export interface GameState {
   phase: GamePhase
@@ -421,6 +432,24 @@ export interface GameState {
    */
   swordDamage: () => number
   /**
+   * Portée effective du coup d'épée, équipement compris.
+   *
+   * Une fonction et non un champ, comme `swordDamage()` et pour la même raison.
+   * Quatre appelants la lisent au moment de l'impact — les trois familles
+   * d'ennemis et le renvoi de projectile — là où ils lisaient jusqu'ici la
+   * constante `ATTACK.reach`. C'est ce qui permet à un objet d'allonger le bras
+   * sans qu'aucun d'eux ne le sache.
+   */
+  swordReach: () => number
+  /**
+   * Probabilité qu'un coup soit critique, équipement compris.
+   *
+   * Composée comme des événements indépendants — `1 − Π(1 − p)` — et non par
+   * addition : deux sources à 60 % additionnées donneraient une certitude
+   * obtenue par arithmétique plutôt que par conception.
+   */
+  critChance: () => number
+  /**
    * Dégâts réellement subis pour une agression de `amount`, équipement compris.
    *
    * Miroir exact de `swordDamage()`, et pour les mêmes raisons : une fonction
@@ -726,6 +755,30 @@ export const useGameStore = create<GameState>((set, get) => ({
     return maxHearts + bonusHearts
   },
 
+  swordReach: () => {
+    let multiplier = 1
+    for (const id of Object.values(get().equipped)) {
+      multiplier *= itemById(id)?.reachMultiplier ?? 1
+    }
+    return ATTACK.reach * multiplier
+  },
+
+  critChance: () => {
+    /*
+      La probabilité qu'**au moins une** source se déclenche.
+
+      `1 − Π(1 − p)` et non une somme. Avec une seule source les deux formules
+      donnent le même nombre, donc rien ne distinguerait le bon choix du mauvais
+      aujourd'hui — c'est le jour où un second objet en portera que la somme
+      dépasserait un, et ce jour-là le défaut serait déjà partout.
+    */
+    let miss = 1
+    for (const id of Object.values(get().equipped)) {
+      miss *= 1 - (itemById(id)?.critChance ?? 0)
+    }
+    return 1 - miss
+  },
+
   swordDamage: () => {
     // Produit sur **tout** l'équipement et non lecture du seul emplacement
     // d'arme : c'est ce que `damageTaken` fait déjà des dégâts reçus, et ce que
@@ -740,6 +793,21 @@ export const useGameStore = create<GameState>((set, get) => ({
     for (const id of worn) {
       multiplier *= itemById(id)?.attackMultiplier ?? 1
     }
+    /*
+      Le coup critique, appliqué **ici** et pas chez les appelants.
+
+      Trois familles d'ennemis lisent cette fonction pour savoir ce qu'elles
+      encaissent. Laisser chacune multiplier de son côté aurait été trois
+      occasions d'oublier — et un critique qui ne vaudrait que sur les Moblins
+      serait un défaut qu'on ne verrait jamais en jouant, parce qu'on ne compare
+      pas des dégâts entre deux espèces.
+
+      Le verdict, lui, ne se tire pas ici : il a été tiré au départ du geste
+      (voir `playerTransform.critical`). Cette fonction ne fait que le lire, et
+      c'est ce qui garantit qu'un balayage qui prend trois bêtes soit critique
+      sur les trois ou sur aucune.
+    */
+    if (playerTransform.critical) multiplier *= CRIT_MULTIPLIER
     // Arrondi parce que rien n'interdit un multiplicateur fractionnaire — il y
     // en a un — et que les points de vie des ennemis, eux, sont des entiers.
     return Math.round(SWORD_DAMAGE * multiplier)

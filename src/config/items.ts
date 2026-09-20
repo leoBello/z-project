@@ -190,6 +190,44 @@ export interface Item {
    */
   damageBy: Readonly<Partial<Record<EnemyKind, number>>>
   /**
+   * Multiplicateur appliqué à la **portée** du coup d'épée.
+   *
+   * Un pour tout ce qui n'y touche pas, comme les deux multiplicateurs de
+   * dégâts, et pour la même raison.
+   *
+   * **Ce champ a un coût que les autres n'ont pas, et il faut le dire.** La
+   * feuille de route l'avait repoussé dans ces termes : « le katana est plus
+   * long à l'écran seulement ; la hitbox et la traînée dérivent de
+   * `ATTACK.reach`, et `StrikeArc` construit sa géométrie **une fois par
+   * arme** ». C'était exact. Faire varier la portée demande donc trois choses
+   * qu'aucun autre champ ne demandait :
+   *
+   *  - une portée *effective* lue dans le store (`swordReach`) plutôt que la
+   *    constante, aux quatre endroits qui calculent le point d'impact — les
+   *    trois familles d'ennemis et le renvoi de projectile ;
+   *  - un anneau de traînée reconstruit quand elle change, et l'ancien libéré ;
+   *  - et l'acceptation que la hitbox et la traînée restent **dérivées du même
+   *    nombre**, sans quoi l'une mentirait sur l'autre.
+   *
+   * Les trois sont faits. Le jour prévu par la feuille de route est arrivé :
+   * c'est une tenue, et non une arme, qui le justifie.
+   */
+  reachMultiplier: number
+  /**
+   * Probabilité qu'un coup soit **critique**, entre 0 et 1.
+   *
+   * Zéro pour tout ce qui n'en donne pas. Plusieurs objets qui en portent se
+   * composent comme des événements indépendants — `1 − Π(1 − p)` — et non par
+   * addition : deux sources à 60 % additionnées donneraient 120 %, c'est-à-dire
+   * une certitude obtenue par arithmétique plutôt que par conception.
+   *
+   * Le sort est tiré **une fois par coup porté**, au départ du geste, et non à
+   * chaque ennemi touché : un balayage qui prend trois bêtes est un seul coup,
+   * et le voir critique sur l'une et pas sur l'autre n'aurait aucun sens. Voir
+   * `playerTransform.critical`.
+   */
+  critChance: number
+  /**
    * Ce que l'objet fait au déplacement, en multiplicateurs.
    *
    * `NEUTRAL_TRAITS` pour tout ce qui n'y touche pas. Ces facteurs se
@@ -238,6 +276,8 @@ export const ZORO_GARB: Item = {
   damageMultiplier: 1,
   // La vitesse de cette tenue n'est pas ici mais dans `SKIN_TRAITS` : elle
   // vient du skin qu'elle donne, pas du vêtement. Voir `SkinTraits`.
+  reachMultiplier: 1,
+  critChance: 0,
   damageBy: EVERY_SPECIES_ALIKE,
   traits: NEUTRAL_TRAITS,
   outfit: 'zoro',
@@ -275,6 +315,8 @@ export const MADARA_GARB: Item = {
   damageMultiplier: 1,
   // Comme pour la tenue du bretteur : le poids de cette armure n'est pas ici
   // mais dans `SKIN_TRAITS`, parce qu'il vient du skin, pas du vêtement.
+  reachMultiplier: 1,
+  critChance: 0,
   damageBy: EVERY_SPECIES_ALIKE,
   traits: NEUTRAL_TRAITS,
   outfit: 'madara',
@@ -346,6 +388,8 @@ export const DAWN_CLOAK: Item = {
   damageMultiplier: 1,
   // Comme pour les deux autres tenues : ce que celle-ci fait au déplacement
   // vient du skin qu'elle donne, pas du vêtement. Voir `SKIN_TRAITS`.
+  reachMultiplier: 1,
+  critChance: 0,
   damageBy: EVERY_SPECIES_ALIKE,
   traits: NEUTRAL_TRAITS,
   outfit: 'pain',
@@ -359,6 +403,8 @@ export const KUSANAGI: Item = {
   revives: 0,
   attackMultiplier: 2,
   damageMultiplier: 1,
+  reachMultiplier: 1,
+  critChance: 0,
   damageBy: EVERY_SPECIES_ALIKE,
   traits: NEUTRAL_TRAITS,
   weapon: 'katana',
@@ -398,6 +444,8 @@ export const CURSED_BLADE: Item = {
   revives: 0,
   attackMultiplier: 3,
   damageMultiplier: 2,
+  reachMultiplier: 1,
+  critChance: 0,
   damageBy: EVERY_SPECIES_ALIKE,
   traits: NEUTRAL_TRAITS,
   weapon: 'cursed',
@@ -432,6 +480,8 @@ export const FISHMAN_SCALES: Item = {
   revives: 0,
   attackMultiplier: 1,
   damageMultiplier: 1,
+  reachMultiplier: 1,
+  critChance: 0,
   damageBy: EVERY_SPECIES_ALIKE,
   traits: { speed: 0.85, jump: 1, water: 2 },
   accent: '#7fd4e8',
@@ -476,6 +526,8 @@ export const DEMON_ARMOR: Item = {
   revives: 0,
   attackMultiplier: 1,
   damageMultiplier: 1,
+  reachMultiplier: 1,
+  critChance: 0,
   damageBy: { lynel: 0.5 },
   // Comme pour les autres tenues : le poids de cette armure n'est pas ici mais
   // dans `SKIN_TRAITS`, parce qu'il vient du skin et non du vêtement.
@@ -524,6 +576,8 @@ export const VADER_ARMOR: Item = {
   revives: 0,
   attackMultiplier: 1,
   damageMultiplier: 1,
+  reachMultiplier: 1,
+  critChance: 0,
   damageBy: EVERY_SPECIES_ALIKE,
   // Comme pour les quatre autres tenues : le poids de celle-ci n'est pas ici
   // mais dans `SKIN_TRAITS`, parce qu'il vient du skin et non du vêtement.
@@ -563,6 +617,8 @@ export const VADER_SABER: Item = {
   revives: 0,
   attackMultiplier: 4,
   damageMultiplier: 1,
+  reachMultiplier: 1,
+  critChance: 0,
   damageBy: EVERY_SPECIES_ALIKE,
   traits: NEUTRAL_TRAITS,
   weapon: 'saber',
@@ -605,6 +661,8 @@ export function hasEffect(item: Item): boolean {
     item.revives > 0 ||
     item.attackMultiplier !== 1 ||
     item.damageMultiplier !== 1 ||
+    item.reachMultiplier !== 1 ||
+    item.critChance > 0 ||
     item.traits.speed !== 1 ||
     item.traits.jump !== 1 ||
     item.traits.water !== 1 ||

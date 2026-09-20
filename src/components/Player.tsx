@@ -352,6 +352,16 @@ export function Player() {
       // Pas d'enchaînement tant que le coup précédent n'est pas terminé.
       if (attackElapsed >= ATTACK.durationMs) {
         playerTransform.attackStartedAt = gameNow()
+        /*
+          Le sort du critique se tire **ici**, au départ du geste.
+
+          Pas dans `swordDamage()`, qui est appelée une fois par ennemi touché :
+          un balayage qui prend trois bêtes l'aurait alors tiré trois fois, et
+          le même coup aurait été critique sur l'une et pas sur l'autre. Un coup
+          est critique ou il ne l'est pas — c'est une propriété du geste, pas de
+          la cible.
+        */
+        playerTransform.critical = Math.random() < useGameStore.getState().critChance()
         aimAtNearestEnemy(position.x, position.z)
         playSwing()
       }

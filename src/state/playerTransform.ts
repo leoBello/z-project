@@ -28,6 +28,18 @@ export const playerTransform = {
    * avoir à refaire le test de hitbox, qui doit rester dans `Enemy.tsx`.
    */
   lastLandedSwing: -Infinity,
+  /**
+   * Le coup en cours est-il **critique** ?
+   *
+   * Tiré une fois au départ du geste, et pas à chaque ennemi touché : un
+   * balayage qui prend trois bêtes est un seul coup, et le voir critique sur
+   * l'une et pas sur l'autre n'aurait aucun sens.
+   *
+   * Il vit ici plutôt que dans le store pour la raison qui vaut pour tout ce
+   * fichier : il est lu dans la boucle de chaque ennemi au moment de l'impact,
+   * donc potentiellement soixante fois par seconde et par bête.
+   */
+  critical: false,
 }
 
 /**
@@ -48,6 +60,7 @@ export const playerTransform = {
 export function resetCombat() {
   playerTransform.attackStartedAt = -Infinity
   playerTransform.lastLandedSwing = -Infinity
+  playerTransform.critical = false
   // Les horodatages de la parade vivent sur la même horloge, qui repart de zéro
   // à chaque partie : sans cette remise à plat, une garde ouverte dans la partie
   // précédente reste dans le « futur » de la nouvelle horloge et la parade est

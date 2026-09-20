@@ -422,8 +422,12 @@ export function Enemy({ spawn }: EnemyProps) {
 
     if (windowOpened && state.lastHitSwing !== swing) {
       state.lastHitSwing = swing
-      const hitX = playerTransform.position.x + Math.sin(playerTransform.yaw) * ATTACK.reach
-      const hitZ = playerTransform.position.z + Math.cos(playerTransform.yaw) * ATTACK.reach
+      // La portée **effective**, équipement compris, et non la constante : un
+      // objet peut allonger le bras, et le point d'impact doit suivre. Voir
+      // `swordReach`.
+      const armLength = store.swordReach()
+      const hitX = playerTransform.position.x + Math.sin(playerTransform.yaw) * armLength
+      const hitZ = playerTransform.position.z + Math.cos(playerTransform.yaw) * armLength
       const reach = ATTACK.radius + stats.radius
       if (Math.hypot(position.x - hitX, position.z - hitZ) < reach) {
         // Signale au reste du jeu que ce swing a porté : le retour visuel du
