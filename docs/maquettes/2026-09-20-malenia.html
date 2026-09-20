@@ -597,9 +597,9 @@
             <td>Un katana — même famille que celui du joueur, ce qui n'est pas un hasard : le jeu en a déjà un dans l'inventaire, qui fait <span class="mono">1,06</span> poignée comprise. La sienne fait 1,45 de lame seule. L'écart se voit en une image, et il ne ment qu'à moitié : à l'arrêt leurs allonges se valent (voir les cotes), l'avantage est dans ce qu'elle fait avec.</td>
           </tr>
           <tr>
-            <td>La tresse</td>
-            <td class="num">nuque → 1,05</td>
-            <td>Rouge sombre, cinq segments. Elle existe surtout pour la phase II, où elle se défait et devient la matière des ailes.</td>
+            <td>La chevelure</td>
+            <td class="num">9 mèches · nuque → 0,96</td>
+            <td>Rouge sombre, <strong>lâchée, et identique dans les deux phases</strong> — elle n'est pas tressée, ni sous le heaume ni sans lui. C'est la seule chose du personnage que la métamorphose ne touche pas, et c'est ce qui la rend utile : les ailes de la phase II sont des papillons cousus par ces cheveux-là, donc elles étaient déjà sur sa nuque pendant tout le premier combat.</td>
           </tr>
         </tbody>
       </table>
@@ -1858,27 +1858,77 @@ for (const s of [-1, 1]) {
   }
 }
 
-/*
-  Les cheveux.
-
-  En phase I : une tresse qui sort de la nuque et descend jusqu'aux reins, cinq
-  segments effilés. En phase II le heaume est tombé, la tresse se défait — la
-  chevelure libre est le même groupe, avec deux segments de plus et un écart
-  angulaire, et c'est elle qui *devient* la matière des ailes. Ce n'est pas une
-  métaphore : les nervures des ailes partent de là.
-*/
-const braid = joint(head, [0, -0.02, -0.12]);
-rig('braid', braid);
-let braidAt = braid;
-for (let i = 0; i < 5; i++) {
-  const seg = joint(braidAt, [0, i === 0 ? -0.08 : -0.19, i === 0 ? -0.04 : -0.012], [0.18, 0, 0]);
-  outline(part(seg, new THREE.CapsuleGeometry(0.052 - i * 0.006, 0.15, 4, 8), i % 2 ? MAT.hair : MAT.hairDark,
-    [0, -0.09, 0]), OUTLINE_THIN);
-  braidAt = seg;
+/**
+ * Une mèche : un tube le long d'une courbe, **effilé** vers la pointe.
+ *
+ * `TubeGeometry` a un rayon constant, et un cheveu de rayon constant est une
+ * corde. Le fuselage se fait donc après coup, en rapprochant chaque anneau de
+ * son centre : `getPointAt` redonne exactement le point que `TubeGeometry` a
+ * utilisé pour construire l'anneau — même paramétrage par longueur d'arc — donc
+ * le centre est le bon, et non une approximation qui tordrait la mèche.
+ *
+ * Sert aussi aux nervures des ailes, qui sont les mêmes cheveux.
+ */
+function strandGeometry(curve, radius, taper, tubular = 14, radial = 6) {
+  const geometry = new THREE.TubeGeometry(curve, tubular, radius, radial, false);
+  const position = geometry.attributes.position;
+  const ring = radial + 1;
+  const center = new THREE.Vector3();
+  for (let j = 0; j <= tubular; j++) {
+    curve.getPointAt(j / tubular, center);
+    const k = 1 - taper * (j / tubular);
+    for (let r = 0; r < ring; r++) {
+      const index = j * ring + r;
+      position.setXYZ(
+        index,
+        center.x + (position.getX(index) - center.x) * k,
+        center.y + (position.getY(index) - center.y) * k,
+        center.z + (position.getZ(index) - center.z) * k
+      );
+    }
+  }
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+  return geometry;
 }
-// La masse de cheveux sous le heaume : elle reste dans les deux phases.
-outline(part(head, faceted(new THREE.SphereGeometry(0.128, 11, 9)), MAT.hair,
-  [0, -0.01, -0.052], null, [0.96, 0.92, 0.9]));
+
+/*
+  Les cheveux — **lâchés, et dans les deux phases.**
+
+  Neuf mèches libres qui sortent de la nuque, s'écartent vers l'arrière et
+  retombent. Pas de tresse : elle n'en porte pas, ni casquée ni découverte, et
+  c'est une correction sur le premier jet de cette maquette.
+
+  Ce n'est pas un détail d'exactitude. La chevelure libre est ce qui *relie* les
+  deux phases : le heaume tombe, l'armure tombe, mais les cheveux ne changent
+  pas — et comme les ailes sont des papillons cousus par ces cheveux-là, la
+  phase II ne sort pas de nulle part. Elle était déjà sur sa nuque en phase I.
+
+  Les mèches du milieu sont les plus longues et les plus épaisses ; celles des
+  bords s'écartent et s'écourtent. Une chevelure de mèches égales fait une
+  perruque — c'est l'inégalité qui fait la masse.
+*/
+const hair = joint(head, [0, -0.02, -0.105]);
+rig('hair', hair);
+for (let i = 0; i < 9; i++) {
+  const t = i / 8 - 0.5;                       // -0,5 (une oreille) à +0,5 (l'autre)
+  const len = 0.96 - Math.abs(t) * 0.46;
+  const out = t * 0.36;
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(t * 0.12, 0, -0.01),
+    new THREE.Vector3(t * 0.21, -len * 0.3, -0.075 - Math.abs(t) * 0.03),
+    new THREE.Vector3(out, -len * 0.67, -0.055),
+    new THREE.Vector3(out * 1.3, -len, 0.03 + t * 0.04),
+  ]);
+  outline(
+    part(hair, strandGeometry(curve, 0.05 - Math.abs(t) * 0.022, 0.72), i % 2 ? MAT.hair : MAT.hairDark),
+    OUTLINE_THIN
+  );
+}
+// La calotte de cheveux sur le crâne, d'où partent les mèches. Sous le heaume en
+// phase I, à nu en phase II — elle ne bouge pas plus que les mèches.
+outline(part(head, faceted(new THREE.SphereGeometry(0.129, 11, 9)), MAT.hair,
+  [0, -0.008, -0.048], null, [0.97, 0.94, 0.92]));
 
 /* --- La Main de Malenia ---------------------------------------------------- */
 
@@ -2037,7 +2087,7 @@ function buildWing(side) {
       new THREE.Vector3(side * len, rise, -len * 0.42),
     ]);
 
-    const strand = part(wing, new THREE.TubeGeometry(curve, 16, 0.014, 5, false), MAT.hairDark);
+    const strand = part(wing, strandGeometry(curve, 0.016, 0.55, 16, 5), MAT.hairDark);
     layer('wings', strand);
 
     const count = 11 - n;
@@ -2423,7 +2473,7 @@ const POSES = {
       kneeR: [1.15, 0, 0],
       head: [-0.25, -0.1, 0],
       sash: [-1.0, 0, 0],
-      braid: [-0.8, 0, 0],
+      hair: [-0.8, 0, 0],
     },
   },
   aeonia: {
@@ -2445,7 +2495,7 @@ const POSES = {
       wingL: [0, 0, 0.3],
       wingR: [0, 0, -0.3],
       sash: [-0.5, 0, 0],
-      braid: [-0.5, 0, 0],
+      hair: [-0.5, 0, 0],
     },
   },
 };
