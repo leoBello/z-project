@@ -13,6 +13,7 @@ import {
 } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { PORTAL_NEAR_RADIUS } from '../../config/portal'
+import type { MapId } from '../../types/game'
 import { now as gameNow } from '../../state/gameClock'
 import { playerTransform } from '../../state/playerTransform'
 import { useGameStore } from '../../store/useGameStore'
@@ -122,9 +123,19 @@ interface PortalProps {
    * arrive que par lui, lui demander de se justifier n'aurait pas de sens.
    */
   openedAt: number | null
+  /**
+   * La carte où mène cet anneau.
+   *
+   * Il y en a quatre dans le jeu, et depuis qu'il y a trois cartes ils ne mènent
+   * plus tous « à l'autre ». Le portail de Nakano mène au ciel, celui de la
+   * prairie ramène au continent, celui du sommet mène au Marais, et celui du
+   * Marais ramène au sommet. Aucune de ces quatre destinations ne se déduit de
+   * la carte de départ, donc chacune est déclarée.
+   */
+  to: MapId
 }
 
-export function Portal({ at, openedAt }: PortalProps) {
+export function Portal({ at, openedAt, to }: PortalProps) {
   const root = useRef<Group>(null)
   const veil = useRef<BasicMesh>(null)
   const pool = useRef<BasicMesh>(null)
@@ -160,8 +171,16 @@ export function Portal({ at, openedAt }: PortalProps) {
     // Même discipline que les monuments et les coffres : le store n'est écrit
     // que sur **transition**, jamais à chaque frame. Sans ce test, le HUD se
     // re-rendrait soixante fois par seconde pour réafficher la même invite.
+    /*
+      Le store retient la **destination** du portail à portée, pas un booléen :
+      c'est ce qui permet à deux anneaux de coexister sur l'île sans que
+      l'interaction ait à deviner lequel. On n'écrit donc plus « près / pas
+      près » mais « vers `to` / vers rien », et la comparaison porte sur la même
+      valeur qu'on s'apprête à poser.
+    */
     const store = useGameStore.getState()
-    if (near !== store.nearbyPortal) store.setNearbyPortal(near)
+    const destination = near ? to : null
+    if (destination !== store.nearbyPortal) store.setNearbyPortal(destination)
 
     if (arch.current) arch.current.material.emissiveIntensity = intensity
 

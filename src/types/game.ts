@@ -11,13 +11,27 @@ export type GamePhase = 'playing' | 'paused' | 'gameover'
 /**
  * Carte sur laquelle se joue la partie.
  *
- * Deux, et c'est volontairement un type fermé plutôt qu'une table extensible :
- * chaque carte apporte son propre terrain, son propre collider et son propre
- * fond de minimap — en ajouter une n'est pas une ligne de configuration mais un
- * module. Le type fermé oblige à traiter le cas là où il faut, au lieu de
- * laisser une troisième carte se glisser dans un `default` silencieux.
+ * Volontairement un type fermé plutôt qu'une table extensible : chaque carte
+ * apporte son propre terrain, son propre collider et son propre fond de
+ * minimap — en ajouter une n'est pas une ligne de configuration mais un module.
+ * Le type fermé oblige à traiter le cas là où il faut, au lieu de laisser une
+ * carte se glisser dans un `default` silencieux.
+ *
+ * **Le pari n'a tenu qu'à moitié, et il faut le dire.** L'ajout de `rot` n'a
+ * sorti du compilateur qu'une seule erreur — la table d'`atmosphere.ts`, qui est
+ * un `Record<MapId, …>`. Les six autres endroits à traiter écrivaient
+ * `map === 'sky' ? … : …`, c'est-à-dire un `default` silencieux : le Marais y
+ * était traité comme le continent, sans un mot.
+ *
+ * Ce sont donc les `Record<MapId, …>` qui protègent, pas le type fermé tout
+ * seul. Les trois fonctions de `config/portal.ts` en sont devenues des tables
+ * pour cette raison, et c'est la règle à suivre pour la quatrième carte : **une
+ * table indexée par `MapId`, jamais un ternaire.**
+ *
+ * `rot` est le Marais d'Aeonia : on n'y accède que par le portail du sommet,
+ * une fois le Lynel doré tombé.
  */
-export type MapId = 'continent' | 'sky'
+export type MapId = 'continent' | 'sky' | 'rot'
 
 /** Machine à états de l'IA des ennemis (utilisée à l'étape "ennemis"). */
 export type EnemyState = 'idle' | 'patrol' | 'chase' | 'attack' | 'dead'

@@ -38,12 +38,16 @@
       "kicker": "La carte est vide",
       "name": "Un portail s'ouvre au Temple de Nakano",
       "hint": "Une lueur violette, tournée vers une île céleste",
-      "action": "Franchir le portail",
-      "back": "Revenir sur le continent"
+      "toward": {
+        "continent": "Revenir sur le continent",
+        "sky": "Gagner l'Île Céleste",
+        "rot": "Franchir le portail"
+      }
     },
     "maps": {
       "continent": "Continent",
-      "sky": "Île Céleste"
+      "sky": "Île Céleste",
+      "rot": "Marais d'Aeonia"
     },
     "quality": {
       "label": "Qualité graphique",

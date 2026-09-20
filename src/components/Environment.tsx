@@ -12,6 +12,7 @@ import { Landmarks } from './environment/Landmarks'
 import { Terrain } from './environment/Terrain'
 import { Vegetation } from './environment/Vegetation'
 import { StarrySky } from './environment/StarrySky'
+import { RotSky } from './rot/RotSky'
 import { Water } from './environment/Water'
 
 /**
@@ -143,6 +144,17 @@ function MapFog({ map }: { map: MapId }) {
 const SkyIsland = lazy(() => import('./skyisland/SkyIsland'))
 
 /**
+ * Le Marais d'Aeonia, chargé à la demande — mêmes règles que l'île.
+ *
+ * Il a lui aussi sa propre frontière `<Suspense>`, et pour la raison exposée
+ * juste au-dessus : suspendre depuis celle d'`App.tsx` détacherait le joueur et
+ * sa physique, ce qui le reposerait au spawn du continent au milieu du voyage.
+ * Le défaut est invisible dans le sens du retour, ce qui le rend très difficile
+ * à lire — il ne faut donc pas se fier aux essais pour le découvrir.
+ */
+const RotMarsh = lazy(() => import('./rot/RotMarsh'))
+
+/**
  * Décor complet de la carte courante.
  *
  * Le **ciel étoilé** reste hors du branchement, et lui seul : le continent et
@@ -165,10 +177,28 @@ export function Environment() {
 
   return (
     <>
-      <StarrySky />
+      {/*
+        Le firmament, et il y en a deux.
+
+        Le continent et l'île partagent le même — l'île flotte dans le ciel du
+        continent, pas dans un autre. Le Marais a le sien : `RotSky` n'est pas
+        `StarrySky` reparamétré, parce que celui-ci dessine des étoiles, une lune
+        et une Voie lactée, et qu'aucune des trois n'a sa place sous un ciel
+        malade. Lui passer des teintes rouges aurait donné une jolie nuit rouge,
+        ce qu'on ne veut surtout pas.
+
+        Il est **hors du `<Suspense>`** du Marais, et monté par le tronc commun :
+        un ciel est ce qu'on doit voir en premier, y compris pendant que le reste
+        de la carte arrive.
+      */}
+      {location === 'rot' ? <RotSky /> : <StarrySky />}
       <MapFog map={location} />
       <Lighting map={location} />
-      {location === 'continent' ? (
+      {location === 'rot' ? (
+        <Suspense fallback={null}>
+          <RotMarsh />
+        </Suspense>
+      ) : location === 'continent' ? (
         <>
           <Terrain />
           <Water />

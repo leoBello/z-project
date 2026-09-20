@@ -11,7 +11,7 @@ import {
   playRevive,
   playTreasure,
 } from '../audio/sfx'
-import { preloadSkyIsland } from '../components/skyisland/preload'
+import { preloadMap } from '../components/mapFragments'
 import { BLAST_FORWARD } from '../config/annihilation'
 import { chestById } from '../config/chests'
 import { enemyTotal } from '../config/enemies'
@@ -332,13 +332,19 @@ export interface GameState {
    */
   transitLandmark: LandmarkId | null
   /**
-   * Un portail est à portée. Même rôle que `nearbyChest`, et même discipline :
-   * écrit uniquement sur transition, jamais à chaque frame.
+   * La **destination** du portail à portée, ou `null` s'il n'y en a pas.
    *
-   * Un booléen et non un identifiant : il n'y a jamais qu'un portail par carte,
-   * et celle-ci est déjà connue.
+   * Même rôle que `nearbyChest`, et même discipline : écrit uniquement sur
+   * transition, jamais à chaque frame.
+   *
+   * C'était un booléen — « il y a un portail à côté » — et la destination se
+   * déduisait de la carte courante : depuis le continent on part vers le ciel,
+   * sinon on rentre. Avec une troisième carte la déduction est fausse, parce que
+   * l'île a maintenant **deux** portails qui ne mènent pas au même endroit :
+   * celui de la prairie ramène au continent, celui du sommet mène au Marais.
+   * C'est donc le portail qui dit où il va.
    */
-  nearbyPortal: boolean
+  nearbyPortal: MapId | null
   /**
    * Identifiant de la partie. Sert de `key` React sur le joueur et les ennemis :
    * l'incrémenter démonte et remonte tout le monde, ce qui remet positions,
@@ -474,7 +480,7 @@ export interface GameState {
   finishAnnihilation: () => void
 
   /** Signale qu'un portail est à portée, ou qu'il ne l'est plus. */
-  setNearbyPortal: (near: boolean) => void
+  setNearbyPortal: (to: MapId | null) => void
   /**
    * Compte une bête de l'épreuve, et donne le cœur si c'était la dernière.
    *
@@ -563,7 +569,7 @@ const initialState = {
   bossState: 'idle' as 'idle' | 'fighting' | 'defeated',
   transit: null as MapId | null,
   transitLandmark: null as LandmarkId | null,
-  nearbyPortal: false,
+  nearbyPortal: null as MapId | null,
 }
 
 /** Secousse du relèvement : plus ample que celle d'une mort d'ennemi. */
@@ -993,7 +999,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         // L'invite disparaît avec le départ, comme dans `enterMap` : on peut
         // très bien lancer la téléportation en se tenant devant le portail de
         // l'île, et son invite resterait affichée sous le voile.
-        nearbyPortal: false,
+        nearbyPortal: null,
       })
       return
     }
@@ -1091,7 +1097,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   // --- Voyage entre les cartes ----------------------------------------------
 
   /** Même discipline que les monuments et les coffres : écriture sur transition. */
-  setNearbyPortal: (near) => set({ nearbyPortal: near }),
+  setNearbyPortal: (to) => set({ nearbyPortal: to }),
 
   /**
    * Une bête de l'épreuve tombe.
@@ -1166,7 +1172,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { phase, transit, location } = get()
     if (phase !== 'playing' || transit !== null || location === to) return false
 
-    if (to === 'sky') void preloadSkyIsland()
+    // Le téléchargement commence **ici**, au lever du voile, et pas au palier
+    // opaque : voir l'en-tête de cette méthode. La table dit quel fragment, et
+    // le continent y répond « aucun » sans que l'appelant ait à le savoir.
+    void preloadMap(to)
     playPortal()
     set({
       phase: 'paused',
@@ -1177,7 +1186,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       transitLandmark: null,
       // L'invite disparaît avec le départ, sinon elle resterait affichée sous
       // le voile le temps que le joueur s'éloigne du portail à l'arrivée.
-      nearbyPortal: false,
+      nearbyPortal: null,
     })
     return true
   },

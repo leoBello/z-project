@@ -5,7 +5,7 @@ import { placePlayer } from '../state/playerBody'
 import { useGameStore } from '../store/useGameStore'
 import type { MapId } from '../types/game'
 import { EmberVeil } from './EmberVeil'
-import { preloadSkyIsland } from './skyisland/preload'
+import { preloadMap } from './mapFragments'
 
 /**
  * Le passage d'une carte à l'autre.
@@ -89,7 +89,7 @@ function Transit({ to }: { to: MapId }) {
       try {
         await Promise.all([
           new Promise((resolve) => setTimeout(resolve, COVER_MS)),
-          transit === 'sky' ? preloadSkyIsland() : Promise.resolve(),
+          preloadMap(transit),
         ])
       } catch {
         /*

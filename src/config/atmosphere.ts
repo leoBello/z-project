@@ -77,4 +77,37 @@ export const ATMOSPHERE: Record<MapId, Atmosphere> = {
     sun: { color: '#ffe3ad', intensity: 2.1, offset: [45, 70, 35] },
     rim: { color: '#9fb0e8', intensity: 0.5, position: [-30, 18, -35] },
   },
+
+  /*
+    Le Marais d'Aeonia — les mêmes quatre sources, retournées.
+
+    Sur les deux autres cartes, la clé est un soleil chaud et haut qui sculpte,
+    le rebond vient du ciel froid, et le contre-jour parme détoure. **Ici il n'y
+    a pas de soleil.** Les trois inversions, dans l'ordre d'importance :
+
+     - la clé est **rasante** (26 de haut pour 58 de recul, contre 70 pour 35) et
+       rouge. Une lumière basse fait des ombres longues, et des ombres longues
+       sur une nappe plate sont la seule chose qui donne du relief à un sol qui
+       n'en a pas. C'est le réglage qui fait exister cette carte ;
+     - le rebond hémisphérique a sa couleur **basse** à l'écarlate de l'eau, et
+       non à l'herbe. C'est la source qui dit où l'on est : ici, ce qui éclaire
+       par en dessous est la pourriture elle-même ;
+     - le contre-jour reste **violet**, et c'est le seul emprunt aux autres
+       cartes. C'est la seule teinte de la scène qu'aucune pourriture ne porte,
+       donc la seule qui détoure vraiment une silhouette rouge sur un fond rouge.
+       Le violet du portail, du reste — ce qui est cohérent : c'est bien la seule
+       chose de ce monde qui ne vienne pas de ce monde.
+
+    La brume est plus proche qu'ailleurs (34 contre 60) et de la couleur du sang
+    séché. Elle n'a pas ici le rôle de masquer un bord de carte — le marais
+    déborde de partout — mais celui de **fermer l'horizon** : on ne doit pas voir
+    où ça s'arrête, seulement l'arbre qui dépasse.
+  */
+  rot: {
+    fog: { color: '#3a1418', near: 34, far: 180 },
+    hemisphere: { sky: '#53303a', ground: '#7d1b26', intensity: 0.85 },
+    ambient: 0.22,
+    sun: { color: '#ffb190', intensity: 1.55, offset: [40, 26, 58] },
+    rim: { color: '#9a7fe0', intensity: 0.75, position: [-46, 30, -52] },
+  },
 }
