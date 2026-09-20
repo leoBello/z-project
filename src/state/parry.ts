@@ -80,7 +80,7 @@ export function parryOffered(now: number) {
  * C'est plus simple que ce que décrivait la maquette, qui distinguait l'appui
  * « avant le signal » de l'appui « après » avec deux durées différentes. La
  * distinction était inutile : la même formule punit déjà l'anticipation, parce
- * que 260 + 450 = 710 ms dépassent le plus long télégraphe du Lynel.
+ * que 320 + 450 = 770 ms dépassent le plus long télégraphe du Lynel.
  *
  * L'ordre des deux tests compte : la garde doit être sondée **avant** la
  * récupération, parce que `recoveryUntil` vaut toujours `guardUntil +
