@@ -3,6 +3,7 @@
  * sans fouiller dans les composants.
  */
 
+import { CAPSULE } from './capsule'
 import { WORLD, sampleHeight } from './world'
 
 /** Alias historiques — la source de vérité est `WORLD` dans `world.ts`. */
@@ -16,9 +17,16 @@ export const PLAYER = {
   jumpSpeed: 8,
   /** Gravité du monde (plus fort que la réalité = saut plus "jeu vidéo"). */
   gravity: -24,
-  /** Demi-hauteur de la capsule de collision (hors calottes). */
-  capsuleHalfHeight: 0.45,
-  capsuleRadius: 0.35,
+  /**
+   * Demi-hauteur de la capsule de collision (hors calottes), et son rayon.
+   *
+   * Repris de `capsule.ts` et non écrits ici : `landmarks` en a besoin aussi,
+   * et les lui faire lire dans `PLAYER` refermait un cycle de chargement que
+   * l'en-tête de ce fichier-là raconte. `PLAYER` reste l'adresse où le reste du
+   * jeu va les chercher.
+   */
+  capsuleHalfHeight: CAPSULE.halfHeight,
+  capsuleRadius: CAPSULE.radius,
   /** Vitesse de rotation du modèle vers la direction de déplacement. */
   turnDamping: 12,
   /** Vitesse conservée dans l'eau : patauger doit se sentir. */

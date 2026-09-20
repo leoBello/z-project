@@ -1,5 +1,5 @@
 import type { LandmarkId } from '../types/game'
-import { PLAYER } from './gameplay'
+import { FEET_TO_CENTER } from './capsule'
 
 /**
  * Points d'intérêt : les lieux construits de la carte.
@@ -333,7 +333,7 @@ export function landmarkArrival(landmark: Landmark) {
   const { x, z } = landmark.interact
   return {
     x,
-    y: landmark.altitude + PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius,
+    y: landmark.altitude + FEET_TO_CENTER,
     z,
     yaw: Math.atan2(landmark.x - x, landmark.z - z),
   }
