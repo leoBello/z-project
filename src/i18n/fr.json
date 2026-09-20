@@ -102,6 +102,51 @@
         "legend": "Légende de l'Outremonde"
       }
     },
+    "scores": {
+      "title": "Classement des défis",
+      "openBoard": "Voir le classement",
+      "back": "Revenir",
+      "pseudoLabel": "Enregistrer ce score au classement",
+      "pseudoPlaceholder": "Votre pseudo",
+      "save": "Enregistrer",
+      "saving": "Envoi…",
+      "saveError": "L'envoi a échoué. Le score reste affiché, vous pouvez réessayer.",
+      "standing": "Enregistré — {rank}ᵉ sur {total} dans cette catégorie",
+      "standingLoadout": "{rank}ᵉ sur {total} avec {outfit} et {weapon}",
+      "outfitLabel": "Tenue",
+      "weaponLabel": "Arme",
+      "anyOutfit": "Toutes",
+      "anyWeapon": "Toutes",
+      "loading": "Chargement du classement…",
+      "loadError": "Le classement est injoignable.",
+      "retry": "Réessayer",
+      "empty": "Personne n'a encore couru cette catégorie. À vous de l'ouvrir.",
+      "columnRank": "Rang",
+      "columnPseudo": "Joueur",
+      "columnScore": "Points",
+      "columnKills": "Au tapis",
+      "columnTime": "Temps",
+      "columnOutfit": "Tenue",
+      "columnWeapon": "Arme",
+      "columnDate": "Date",
+      "outfits": {
+        "luffy": "Chapeau de paille",
+        "zoro": "Chasseur de Pirates",
+        "madara": "Tenue du Clan",
+        "pain": "Manteau de l'Aube",
+        "demon": "Armure du Dieu Démon",
+        "vader": "Seigneur Noir",
+        "meruem": "Carapace du Roi",
+        "kuroro": "Manteau du Voleur"
+      },
+      "weapons": {
+        "fists": "Mains nues",
+        "sword": "Épée",
+        "katana": "Kusanagi",
+        "cursed": "Kitetsu",
+        "saber": "Lame de Lumière"
+      }
+    },
     "quality": {
       "label": "Qualité graphique",
       "high": "Qualité élevée",

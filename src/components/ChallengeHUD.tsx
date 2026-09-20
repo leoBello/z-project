@@ -12,9 +12,13 @@ import {
 } from '../config/challenge'
 import { format } from '../i18n'
 import { useI18n } from '../i18n/useI18n'
+import { scoresAvailable } from '../scores/firestore'
 import { now as gameNow } from '../state/gameClock'
 import { useGameStore } from '../store/useGameStore'
+import { useScoresStore } from '../store/useScoresStore'
 import { useDialogFocus } from './inventory/useDialogFocus'
+import { ScoreBoard } from './scores/ScoreBoard'
+import { ScoreSubmit } from './scores/ScoreSubmit'
 
 /**
  * Tout ce que le défi du maître montre à l'écran.
@@ -253,6 +257,7 @@ function SenseiOffer() {
   const setDuration = useGameStore((state) => state.setChallengeDuration)
   const accept = useGameStore((state) => state.acceptChallenge)
   const close = useGameStore((state) => state.closeSenseiOffer)
+  const openBoard = useScoresStore((state) => state.openBoard)
   const { dict } = useI18n()
   const panel = useRef<HTMLDivElement>(null)
   useDialogFocus(panel, close)
@@ -295,6 +300,21 @@ function SenseiOffer() {
             ? format(dict.ui.challenge.offerBest, { score: best.score, count: best.kills })
             : dict.ui.challenge.offerNoBest}
         </p>
+
+        {/* Le classement de la catégorie **qu'on s'apprête à jouer**, et c'est
+            pour ça que le bouton est ici plutôt que dans un menu : la ligne
+            au-dessus dit ce qu'on a fait de mieux, celle-ci dit ce que les
+            autres ont fait. C'est aussi la seule porte du tableau qui ne
+            demande pas d'avoir couru — parler au maître suffit. */}
+        {scoresAvailable() && (
+          <button
+            type="button"
+            className="challenge-modal__link"
+            onClick={() => openBoard({ duration, difficulty })}
+          >
+            {dict.ui.scores.openBoard}
+          </button>
+        )}
 
         <div className="challenge-modal__actions">
           <button type="button" onClick={accept}>
@@ -388,6 +408,12 @@ function ChallengeResult() {
           )
         )}
 
+        {/* L'enregistrement au classement, après le rang et le record : le
+            joueur lit d'abord ce qu'il a fait, et décide ensuite s'il veut le
+            laisser. Le formulaire décide seul de paraître — voir `ScoreSubmit`,
+            qui le refuse à qui est tombé. */}
+        <ScoreSubmit />
+
         <div className="challenge-modal__actions">
           <button type="button" onClick={dismiss}>
             {dict.ui.challenge.keepFighting}
@@ -404,12 +430,18 @@ function ChallengeResult() {
 export function ChallengeHUD() {
   const phase = useGameStore((state) => state.challenge)
   const offer = useGameStore((state) => state.senseiOffer)
+  const board = useScoresStore((state) => state.open)
 
   return (
     <>
       {(phase === 'countdown' || phase === 'running') && <ChallengeClock />}
       {phase === 'over' && <ChallengeResult />}
       {offer && <SenseiOffer />}
+      {/* En dernier, et l'ordre du DOM fait tout : le tableau se pose par-dessus
+          celui des deux panneaux qui l'a ouvert, sans z-index à arbitrer.
+          Monté seulement quand il est ouvert — il installe un piège de focus,
+          voir son en-tête. */}
+      {board && <ScoreBoard />}
     </>
   )
 }

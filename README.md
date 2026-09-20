@@ -30,6 +30,9 @@ src/
   config/beyond.ts            l'Outremonde : relief, roue des biomes, Sanctuaire
   config/beyondEnemies.ts     peuplement de l'Outremonde, postes des Lynels
   config/challenge.ts         le défi : difficultés, durées, barème, rangs
+  scores/entry.ts             le classement : pseudo, rang, tamis (pur, testé)
+  scores/firestore.ts         les deux seuls échanges réseau : lire, enregistrer
+  firebase/app.ts             l'app Firebase, chargée à la demande
   config/biomes.ts            palettes des sept biomes
   config/enemies.ts           statistiques par espèce, placement
   config/landmarks.ts         points d'intérêt : position, terrasse, découverte
@@ -43,6 +46,7 @@ src/
   state/gameClock.ts          horloge de jeu : s'arrête en pause
   types/game.ts               types métier (phase, ennemis, biomes)
   store/useGameStore.ts       état de partie zustand (vie, phase, kills)
+  store/useScoresStore.ts     le classement en ligne : filtres, lignes, envoi
   store/quests.ts             le journal, relu depuis l'état de partie
   state/playerTransform.ts    transform du joueur partagé hors React (60 fps)
   state/cameraView.ts         matrice view-projection publiée hors React + projection écran
@@ -102,8 +106,48 @@ src/
     beyond/Sensei.tsx         le maître : modèle, salut, proximité
     beyond/BeyondPopulation.tsx  ennemis, cinq Lynels et une Malenia
     ChallengeHUD.tsx          réglages du défi, décompte, chronomètre, résultat
+    scores/ScoreSubmit.tsx    enregistrer son score, et la place obtenue
+    scores/ScoreBoard.tsx     le tableau : quatre filtres, huit colonnes
     BeyondArrival.tsx         la fanfare des cinq premières secondes
 ```
+
+## Classement en ligne
+
+Les scores du défi du maître sont enregistrés dans **Firestore**. C'est la seule
+partie du jeu qui sorte du navigateur, et elle est entièrement facultative : sans
+configuration, le jeu est complet et le classement n'apparaît nulle part.
+
+**Configuration.** Copier `.env.example` en `.env` et y mettre les identifiants du
+projet Firebase (console Firebase > Paramètres du projet > Vos applications). Ces
+identifiants sont publics par construction : ils désignent le projet, ils ne
+l'autorisent pas — c'est le rôle des règles de sécurité.
+
+**Règles de sécurité.** `firestore.rules` est à publier une fois, depuis la
+console (Firestore Database > Règles) ou avec
+`firebase deploy --only firestore:rules`. Sans elles, un projet en mode test
+s'ouvre à tout et se referme au bout de trente jours : le classement marcherait
+un mois, puis cesserait sans prévenir. Elles n'autorisent que la création, jamais
+la modification ni la suppression, et valident la forme de chaque ligne.
+
+**Aucun index à créer.** La lecture ne filtre que sur un seul champ — la
+catégorie — parce que Firestore indexe automatiquement les champs pris isolément.
+Le tri et les filtres de tenue et d'arme sont faits en mémoire, ce qui les rend
+instantanés. Voir l'en-tête de `src/scores/firestore.ts`.
+
+**Le SDK ne pèse pas sur le démarrage.** Il arrive par `import()` au premier
+affichage du classement, dans un chunk à part : un visiteur qui ne finit jamais
+le jeu ne le télécharge jamais.
+
+**Ce que le classement ne peut pas faire.** Le jeu n'a pas de comptes : il n'y a
+donc pas d'auteur à qui restreindre l'écriture, et rien n'empêche quelqu'un de
+poster un score qu'il n'a pas fait. Les règles valident la forme, pas la
+sincérité. C'est un classement de jeu de navigateur, et la seule protection
+sérieuse serait de rejouer la partie côté serveur.
+
+**Les règles de jeu**, elles, sont dans le client : seul un joueur **encore en
+vie** à la fin de son défi se voit proposer d'enregistrer, et personne n'y est
+obligé. Les pseudos identiques sont autorisés — sans compte, un nom n'a pas de
+propriétaire.
 
 ## Assets 3D
 

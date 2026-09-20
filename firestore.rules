@@ -1,0 +1,90 @@
+rules_version = '2';
+
+// Règles de sécurité du classement des défis.
+//
+// À déposer dans la console Firebase (Firestore Database > Règles), ou à
+// publier avec `firebase deploy --only firestore:rules`. Sans elles, un projet
+// en mode test s'ouvre à tout et se referme au bout de trente jours : le
+// classement marcherait un mois, puis cesserait sans prévenir.
+//
+// **Ce qu'elles peuvent, et ce qu'elles ne peuvent pas.** Le jeu n'a pas de
+// comptes — c'est un portfolio, on y arrive par un lien et on y joue tout de
+// suite — donc il n'y a pas d'auteur à qui restreindre l'écriture. Ces règles
+// ne valident donc que la **forme** : les champs attendus, leurs types, leurs
+// bornes. Elles empêchent un document malformé de casser le tableau pour tout
+// le monde ; elles n'empêchent pas quelqu'un de poster un score qu'il n'a pas
+// fait. C'est un classement de jeu de navigateur, et la seule protection
+// sérieuse contre ça serait de recalculer la partie côté serveur.
+//
+// Le client se méfie de ce qu'il relit malgré tout — voir `readDoc` dans
+// `src/scores/firestore.ts`.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /challenge-scores/{score} {
+
+      // Lecture ouverte : le classement est public, c'est sa raison d'être.
+      allow read: if true;
+
+      // Écriture : une création, et rien d'autre. Ni modification ni
+      // suppression — une ligne posée ne bouge plus, et personne ne peut
+      // effacer le score d'un autre.
+      allow update, delete: if false;
+
+      allow create: if isWellFormed(request.resource.data);
+    }
+
+    // Tout le reste est fermé.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isWellFormed(data) {
+      return data.keys().hasOnly([
+               'pseudo', 'score', 'kills', 'ranMs',
+               'duration', 'difficulty', 'outfit', 'weapon',
+               'category', 'at'
+             ])
+          && data.keys().hasAll([
+               'pseudo', 'score', 'kills', 'ranMs',
+               'duration', 'difficulty', 'outfit', 'weapon',
+               'category', 'at'
+             ])
+
+          // Le pseudo : non vide, et borné à ce que la colonne peut montrer.
+          // `PSEUDO_MAX` vaut seize côté client ; la marge ici couvre les
+          // caractères comptés différemment des deux côtés.
+          && data.pseudo is string
+          && data.pseudo.size() > 0
+          && data.pseudo.size() <= 32
+
+          // Les compteurs : des entiers positifs et bornés. Le plafond du score
+          // n'est pas une règle de jeu, c'est un garde-fou contre le nombre absurde
+          // qui écraserait un tableau entier en s'y installant en tête.
+          && data.score is int && data.score > 0 && data.score <= 1000000
+          && data.kills is int && data.kills >= 0 && data.kills <= 100000
+          && data.ranMs is int && data.ranMs >= 0
+
+          // Les énumérations, écrites en clair : c'est la seule façon d'empêcher
+          // une catégorie inventée de créer une case que l'interface ne sait pas
+          // afficher.
+          && data.duration in ['2min', '5min', '10min', 'endless']
+          && data.difficulty in ['easy', 'normal', 'hard']
+          && data.outfit in ['luffy', 'zoro', 'madara', 'pain', 'demon', 'vader', 'meruem', 'kuroro']
+          && data.weapon in ['fists', 'sword', 'katana', 'cursed', 'saber']
+
+          // La clé dénormalisée doit correspondre aux deux champs qu'elle résume :
+          // c'est elle qui sert à la requête, et une ligne qui mentirait dessus
+          // apparaîtrait dans la mauvaise catégorie.
+          && data.category == data.duration + '/' + data.difficulty
+
+          // La date est posée par le client — voir `submitScore` — donc on ne peut
+          // pas exiger qu'elle soit exacte, seulement qu'elle soit plausible : pas
+          // dans le passé du projet, pas plus d'un jour dans le futur du serveur.
+          && data.at is int
+          && data.at > 1735689600000
+          && data.at < request.time.toMillis() + 86400000;
+    }
+  }
+}
