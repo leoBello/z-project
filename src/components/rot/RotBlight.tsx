@@ -15,12 +15,14 @@ import { useGameStore } from '../../store/useGameStore'
  * pour une jauge qui reste à zéro.
  *
  * **L'eau se détecte à l'altitude des pieds, pas à un test de zone.** Le marais
- * est plat à 0, la nappe à 0,30, les racines démarrent à 0,40 et le dallage de
- * l'arène est à 0,45 : un seul seuil à 0,20 sépare donc « dans l'eau » de « au
- * sec », sans avoir à savoir *sur quoi* le joueur se tient. C'est ce qui fait
- * que les racines, l'arène et les bancs de vase protègent tous les trois sans
- * qu'aucun n'ait à se déclarer — et qu'un quatrième objet posé plus haut que
- * vingt centimètres protégera aussi, sans une ligne de plus.
+ * est plat à 0, la nappe à 0,30, le dallage de l'arène à 0,45 et le tablier de
+ * la chaussée à 0,90 : un seul seuil à 0,20 sépare donc « dans l'eau » de « au
+ * sec », sans avoir à savoir *sur quoi* le joueur se tient.
+ *
+ * C'est ce qui fait que la chaussée, l'arène et les bancs de vase protègent tous
+ * les trois sans qu'aucun n'ait à se déclarer — et la règle a déjà tenu une
+ * refonte : le chemin est passé de racines rondes à une chaussée de pierre, à
+ * une tout autre altitude, sans qu'une ligne d'ici ne change.
  */
 
 /** Altitude des pieds sous laquelle on est dans la nappe. */

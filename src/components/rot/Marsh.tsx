@@ -16,26 +16,41 @@ import type { MarshMaterials } from './materials'
  * n'y a ni échantillonneur de hauteur à écrire ni trimesh à construire.
  *
  * Ce choix a un prix, et il vaut d'être écrit : il n'y a rien à escalader ici.
- * Le saut du joueur n'a aucun usage sur cette carte en dehors des racines. C'est
- * assumé — ce n'est pas une carte d'exploration, c'est un chemin vers un combat.
+ * Le saut ne sert qu'à franchir un parapet de la chaussée ou à y remonter. C'est
+ * assumé — ce n'est pas une carte d'exploration, c'est un chemin vers un
+ * combat.
  *
  * L'eau est **au-dessus** du sol de trente centimètres, et c'est tout ce qui la
  * distingue : le joueur marche sur le disque et l'eau lui arrive à la cheville.
  * Elle n'a pas de collider — on la traverse, c'est même son seul intérêt.
  */
 
-/** Les bancs de vase, tirés une fois. Un semis à la main, pas un bruit. */
-const BANKS = Array.from({ length: 22 }, (_, i) => {
-  // Une spirale ouverte plutôt qu'un tirage aléatoire : le semis reste le même
-  // à chaque montage de la carte, donc le paysage est le même d'une visite à
-  // l'autre. Un marais qui se réarrange dans le dos du joueur n'est pas un lieu.
-  const angle = (i / 22) * Math.PI * 2 * 2.6 + 0.7
-  const radius = 18 + ((i * 37) % 62)
+/**
+ * Les bancs de vase.
+ *
+ * **Quarante au lieu de vingt-deux, plus larges, et ils émergent.** Le premier
+ * jet les posait sous la nappe : on ne voyait donc qu'une étendue rouge d'un
+ * bord à l'autre du cadre, et le retour de la première partie l'a dit — « il y
+ * a beaucoup trop de marécage ». Ce n'était pas la couleur qui était en cause,
+ * c'était l'absence de terre.
+ *
+ * Ils sont hauts de `radius × 0,34` pour un centre à −0,45 : les plus gros
+ * montent à plus d'une unité au-dessus de l'eau, les plus petits affleurent à
+ * peine. Cette inégalité est ce qui fait un rivage plutôt qu'un archipel de
+ * plateformes identiques.
+ *
+ * Une spirale ouverte plutôt qu'un tirage aléatoire : le semis reste le même à
+ * chaque montage de la carte, donc le paysage est le même d'une visite à
+ * l'autre. Un marais qui se réarrange dans le dos du joueur n'est pas un lieu.
+ */
+const BANKS = Array.from({ length: 40 }, (_, i) => {
+  const angle = (i / 40) * Math.PI * 2 * 3.7 + 0.7
+  const radius = 16 + ((i * 31) % 74)
   return {
-    position: [Math.sin(angle) * radius, -0.6 - (i % 3) * 0.2, Math.cos(angle) * radius] as const,
+    position: [Math.sin(angle) * radius, -0.45 - (i % 3) * 0.15, Math.cos(angle) * radius] as const,
     rotation: [0, angle, 0] as const,
-    scale: [1 + (i % 4) * 0.3, 0.3, 1 + (i % 3) * 0.4] as const,
-    radius: 2.4 + (i % 5),
+    scale: [1 + (i % 4) * 0.34, 0.34, 1 + (i % 3) * 0.46] as const,
+    radius: 3.6 + (i % 7) * 1.4,
   }
 })
 
@@ -75,10 +90,17 @@ export function Marsh({ materials }: { materials: MarshMaterials }) {
       />
 
       {/*
-        Les bancs de vase, **sous** la nappe pour l'essentiel : ils n'émergent
-        que de quelques dizaines de centimètres. C'est ce qui donne une texture à
-        une surface qui n'en a aucune, sans jamais offrir un endroit sec où se
-        réfugier — ce serait annuler la seule contrainte de la carte.
+        Les bancs de vase, qui **émergent**.
+
+        Ils donnent au marais ce qui lui manquait le plus : de la terre. Un
+        joueur peut s'y réfugier, et c'est désormais voulu — la contrainte de la
+        carte n'est plus « tout est dangereux », elle est « il faut regarder où
+        l'on met les pieds », ce qui est un jeu et non une punition.
+
+        Ils reçoivent les ombres et n'en portent pas : ce sont des masses de
+        vase basses et molles, et une ombre projetée par une flaque de boue sur
+        une autre flaque de boue ne se voit pas — elle coûte seulement une passe
+        de plus dans la carte d'ombres.
       */}
       {BANKS.map((spot, i) => (
         <mesh

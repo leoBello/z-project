@@ -18,6 +18,13 @@ export interface MarshMaterials {
   barkDark: MeshToonMaterial
   mud: MeshToonMaterial
   bloom: MeshToonMaterial
+  /** La pierre d'Elphaël : la seule valeur claire du lieu avec l'or. */
+  stone: MeshToonMaterial
+  stoneWorn: MeshToonMaterial
+  stoneDark: MeshToonMaterial
+  gold: MeshToonMaterial
+  /** Le feuillage de l'Arbre : la seule source de lumière du paysage. */
+  foliage: MeshToonMaterial
   /**
    * L'eau : **non éclairée**, et c'est le seul choix qui tienne ici.
    *
@@ -53,6 +60,21 @@ export function useMarshMaterials(): MarshMaterials {
       // sur un sol de la même famille de teintes, sans pour autant rivaliser
       // avec leur propre cœur, qui est la seule chose vraiment lumineuse.
       bloom: toon(ROT_COLORS.rotDeep, ROT_COLORS.rot, 0.35),
+      stone: toon(ROT_COLORS.stone),
+      stoneWorn: toon(ROT_COLORS.stoneWorn),
+      stoneDark: toon(ROT_COLORS.stoneDark),
+      // Le même or que partout dans le jeu, émissif compris : les pilastres de
+      // la chaussée appartiennent à la même main que l'armure de Malenia.
+      gold: toon(ROT_COLORS.gold, ROT_COLORS.gold, 0.32),
+      /*
+        Le feuillage luit, et c'est son unique fonction.
+
+        Un émissif de 0,55 le fait franchir le seuil de bloom du jeu (0,82) sur
+        ses faces éclairées : à cent unités, dans une brume qui sature à 180, il
+        ne reste que cette lueur au-dessus de la tête du joueur. C'est la seule
+        chose du paysage qui donne envie d'avancer.
+      */
+      foliage: toon(ROT_COLORS.foliage, ROT_COLORS.foliageGlow, 0.55),
       water: new MeshBasicMaterial({ color: new Color(ROT_COLORS.water) }),
       spore: new MeshBasicMaterial({ color: new Color(ROT_COLORS.rotBright) }),
     }

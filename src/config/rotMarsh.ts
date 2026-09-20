@@ -15,8 +15,10 @@ import { PLAYER } from './gameplay'
  * hauteur, et le fond de minimap dessiné à partir du relief.
  *
  * Le prix de ce choix est réel : il n'y a **rien à escalader** sur cette carte.
- * Le saut du joueur n'y sert à rien, sauf sur les racines. C'est assumé — ce
- * n'est pas une carte d'exploration, c'est un chemin vers un combat.
+ * Le saut n'y sert qu'à deux choses — repasser un parapet de la chaussée, et
+ * remonter dessus si l'on en est descendu. Ces deux usages ne sont pas une
+ * consolation, ce sont des cotes : le tablier est posé à 0,90 précisément parce
+ * que le saut culmine à 1,33 (v² / 2g = 64 / 48). Voir `CAUSEWAY`.
  */
 
 /* --- La nappe --------------------------------------------------------------- */
@@ -94,43 +96,48 @@ export const ARENA_RING = [9.6, 11.6] as const
 /* --- La traversée ----------------------------------------------------------- */
 
 /**
- * Les trois racines, décrites par leurs points de contrôle.
+ * La chaussée d'Elphaël — la traversée, et pourquoi ce n'est plus une racine.
  *
- * C'est la géométrie de la Voie de l'île, reprise telle quelle : une courbe, un
- * tube, un collider de boîte par tronçon. Rien de neuf à écrire, et c'est
- * l'essentiel de l'économie de cette carte.
+ * La première version était un tube de racine de 1,9 de rayon dont la crête
+ * montait à 2,90 au-dessus du marais. Le saut du joueur culmine à **1,33**
+ * (v² / 2g = 64 / 48) : une chute était donc **sans retour**. On atterrissait
+ * dans la pourriture, la jauge montait, et il fallait patauger jusqu'au portail
+ * pour reprendre le chemin depuis le début. Aucune largeur n'aurait rattrapé ça.
  *
- * Elles s'enchaînent — le dernier point de l'une est le premier de la suivante —
- * pour qu'il n'y ait aucun saut à faire entre deux. Un trou dans le chemin
- * transformerait une traversée en épreuve d'adresse, ce qu'elle n'est pas.
+ * Trois corrections, et elles tiennent ensemble :
+ *
+ *  - **plate et basse.** Le tablier est à 0,90, sous la hauteur de saut : on
+ *    remonte dessus d'un bond depuis le marais. Une surface plane, aussi, plutôt
+ *    que la crête d'un cylindre où l'on glissait sur les flancs ;
+ *  - **bordée.** Deux parapets à colliders : on ne tombe plus par accident. On
+ *    peut toujours descendre en sautant par-dessus, ce qui garde au marais son
+ *    rôle — mais c'est alors un choix, pas une punition ;
+ *  - **courte.** Cinquante-deux unités au lieu de cent trente, soit sept
+ *    secondes et demie de marche. La traversée doit installer un lieu, pas
+ *    occuper le joueur.
+ *
+ * Et c'est de la **pierre**, pas du bois mort : Elphaël est une ville, et la
+ * beauté de ce monde vient de ce qu'il a été construit avant de pourrir. Une
+ * passerelle de racines disait le contraire.
  */
-export const SPANS: readonly (readonly (readonly [number, number, number])[])[] = [
-  [[2, -0.2, 118], [6, 0.8, 96], [4, 0.5, 74], [1, 0.2, 58]],
-  [[1, 0.2, 58], [-7, 1.0, 46], [-9, 0.7, 32], [-4, 0.1, 22]],
-  [[-4, 0.1, 22], [1, 0.6, 18], [4, 0.3, 15], [0, -0.1, 12.2]],
+export const CAUSEWAY: readonly (readonly [number, number])[] = [
+  [1, 66],
+  [3, 54],
+  [2, 42],
+  [-3, 30],
+  [-1, 20],
+  [0, 14],
 ]
 
-/**
- * Rayon du tube d'une racine.
- *
- * **Élargi de 1,15 à 1,9 après la première partie jouée**, et la raison est
- * mesurable : le joueur fait 0,70 de large (capsule de rayon 0,35). À 1,15 de
- * rayon pour un collider à 82 %, le chemin faisait 1,89 — soit deux largeurs et
- * demie de personnage, sur un tracé courbe vu de trois quarts en plongée. On en
- * tombait sans comprendre pourquoi.
- *
- * À 1,9, la surface praticable fait 3,42, soit près de cinq largeurs. C'est
- * généreux, et ça doit l'être : cette traversée n'est pas une épreuve d'adresse,
- * c'est un chemin vers un combat. Tout ce qu'elle doit produire, c'est le
- * sentiment de ne pas pouvoir couper par le marais.
- *
- * Les altitudes des points de contrôle ont baissé d'autant : la surface de
- * marche est le sommet du tube, donc l'élargir l'aurait relevée de trois quarts
- * d'unité sur toute la longueur. Elles culminent maintenant à 2,9 au-dessus de
- * la nappe — assez pour lire une passerelle, assez peu pour qu'une chute soit un
- * pas de côté et non une punition.
- */
-export const SPAN_RADIUS = 1.9
+/** Altitude du dessus du tablier. Sous les 1,33 du saut : on y remonte. */
+export const DECK_Y = 0.9
+/** Demi-largeur praticable. 5,2 de large, soit sept largeurs de personnage. */
+export const DECK_HALF = 2.6
+/** Épaisseur du tablier. */
+export const DECK_THICK = 0.45
+/** Parapets : hauteur au-dessus du tablier, et épaisseur. */
+export const PARAPET_H = 0.8
+export const PARAPET_W = 0.32
 
 /* --- Les deux bouts --------------------------------------------------------- */
 
@@ -142,18 +149,16 @@ export const SPAN_RADIUS = 1.9
  * immédiatement. Toute la mise en scène de cette carte tient dans ce cap.
  */
 export const MARSH_PORTAL = {
-  x: 2,
+  x: CAUSEWAY[0][0],
   /**
-   * Posé **sur** la racine, et l'altitude en est déduite.
+   * Posé **sur** le tablier, et l'altitude en est déduite.
    *
-   * La première version le mettait à 0,4, c'est-à-dire à peu près au niveau de
-   * l'eau — et le joueur y apparaissait donc enfoncé jusqu'à la taille dans la
-   * première racine, dont la surface est à 1,7. Écrire la cote à la main était
-   * l'erreur : elle dépend de deux nombres qui ont bougé depuis (l'altitude du
-   * premier point de contrôle, et le rayon des racines).
+   * Une première version l'écrivait à la main, et le joueur y naissait enfoncé
+   * jusqu'à la taille dans le chemin. La cote dépend de la géométrie de la
+   * chaussée ; elle se lit donc dans la chaussée.
    */
-  y: SPANS[0][0][1] + SPAN_RADIUS,
-  z: 117,
+  y: DECK_Y,
+  z: 63,
   yaw: 0,
 } as const
 

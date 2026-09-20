@@ -22,8 +22,8 @@ import {
   MARSH_MAP_CENTER_Z,
   MARSH_MAP_SIZE,
   MARSH_PORTAL,
-  SPANS,
-  SPAN_RADIUS,
+  CAUSEWAY,
+  DECK_HALF,
   TREE,
 } from '../config/rotMarsh'
 import { ROT_COLORS } from '../config/rotPalette'
@@ -78,24 +78,18 @@ function renderMarshMap() {
   context.fillStyle = ROT_COLORS.minimapWater
   context.fillRect(0, 0, MAP_RESOLUTION, MAP_RESOLUTION)
 
-  // Les trois racines. Dessinées comme un seul trait continu, parce qu'elles
-  // s'enchaînent bout à bout : les traiter séparément aurait laissé paraître
-  // deux coupures là où le joueur marche sans s'arrêter.
-  context.strokeStyle = ROT_COLORS.minimapRoot
-  context.lineWidth = SPAN_RADIUS * 2 * scale
+  // La chaussée, d'un seul trait : elle est continue, et la dessiner en
+  // morceaux aurait laissé paraître des coupures là où le joueur marche sans
+  // s'arrêter. Sa largeur est la vraie, à l'échelle de la vignette.
+  context.strokeStyle = ROT_COLORS.minimapStone
+  context.lineWidth = DECK_HALF * 2 * scale
   context.lineCap = 'round'
   context.lineJoin = 'round'
   context.beginPath()
-  let started = false
-  for (const span of SPANS) {
-    for (const [x, , z] of span) {
-      if (started) context.lineTo(px(x), py(z))
-      else {
-        context.moveTo(px(x), py(z))
-        started = true
-      }
-    }
-  }
+  CAUSEWAY.forEach(([x, z], i) => {
+    if (i === 0) context.moveTo(px(x), py(z))
+    else context.lineTo(px(x), py(z))
+  })
   context.stroke()
 
   // Le bassin, puis le tronc par-dessus : l'arène est au pied de l'arbre, donc

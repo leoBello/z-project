@@ -77,6 +77,34 @@ export const ROT_COLORS = {
   steel: '#cfd8e8',
   steelDark: '#76809a',
 
+  /*
+    La pierre d'Elphaël.
+
+    **C'est ce qui manquait au premier jet, et le retour de la première partie
+    l'a dit en une phrase : « le biome est sombre mais beau, là il y a beaucoup
+    trop de marécage ».** Le diagnostic était juste et la cause était dans cette
+    table : il n'y avait que de la vase, de l'eau et du bois mort, c'est-à-dire
+    trois teintes de pourriture et aucune de ce qui a pourri.
+
+    Un blanc très légèrement rosé, presque lumineux sous un ciel sombre. C'est
+    la seule valeur claire du lieu en dehors de l'or, et c'est elle qui fait la
+    beauté : la pourriture n'est belle que si elle mange quelque chose de beau.
+  */
+  stone: '#d8cfc4',
+  stoneWorn: '#b9ada0',
+  stoneDark: '#6f6459',
+
+  /*
+    Le feuillage de l'Arbre blafard.
+
+    Il n'en avait **aucun** : un tronc nu de cent vingt unités, ce qui donnait un
+    piquet géant et non un arbre sacré. Ces deux teintes-là sont l'autre moitié
+    de la réponse au « sombre mais beau » — un or pâle qui luit faiblement, et
+    qui est la seule source de lumière de tout le paysage.
+  */
+  foliage: '#e6d79a',
+  foliageGlow: '#fff3c4',
+
   /* --- La minimap --------------------------------------------------------- */
   /*
     Les trois teintes du fond de carte sont **plus claires** que celles de la
@@ -86,5 +114,6 @@ export const ROT_COLORS = {
   */
   minimapWater: '#6e1a23',
   minimapRoot: '#b3a476',
+  minimapStone: '#cfc6ba',
   minimapBark: '#5f5c44',
 } as const

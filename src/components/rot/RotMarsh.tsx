@@ -8,7 +8,8 @@ import { Flora } from './Flora'
 import { Marsh } from './Marsh'
 import { PaleTree } from './PaleTree'
 import { RotBlight } from './RotBlight'
-import { Roots } from './Roots'
+import { Causeway } from './Causeway'
+import { Ruins } from './Ruins'
 import { useMarshMaterials } from './materials'
 
 /**
@@ -58,7 +59,8 @@ export default function RotMarsh() {
       <RotBlight />
 
       <Marsh materials={materials} />
-      <Roots materials={materials} />
+      <Causeway materials={materials} />
+      <Ruins materials={materials} />
       <Flora materials={materials} />
       <PaleTree materials={materials} />
       <Arena materials={materials} />
