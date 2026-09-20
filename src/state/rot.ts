@@ -41,6 +41,27 @@ export const rot = {
 }
 
 /**
+ * Solde une contamination arrivée à son terme : la jauge repart de zéro.
+ *
+ * Extraite parce que **deux** entrées peuvent en constater la fin, et que
+ * l'ordre dans lequel elles tombent ne se décide pas ici : `RotBlight` verse
+ * avant de sonder, donc dès que le joueur a encore les pieds dans l'eau à la
+ * seconde où la contamination expire, c'est `soakRot` qui voit l'expiration en
+ * premier.
+ *
+ * Tant que `tickRot` était seule à savoir solder, ce versement-là retrouvait une
+ * jauge encore pleine — `level` vaut `ROT.max` pendant toute la contamination —
+ * et en rallumait donc une deuxième pour dix secondes, puis une troisième, sans
+ * fin tant qu'on pataugeait. C'est-à-dire exactement pendant qu'on cherche à
+ * sortir, et la sortie est à plusieurs secondes de nage.
+ */
+function settleContamination(now: number) {
+  if (rot.contaminatedUntil === -Infinity || now < rot.contaminatedUntil) return
+  rot.level = 0
+  rot.contaminatedUntil = -Infinity
+}
+
+/**
  * Verser de la pourriture.
  *
  * Appelée par le marais (au temps passé dans l'eau) comme par Malenia (à la
@@ -54,6 +75,10 @@ export const rot = {
  */
 export function soakRot(amount: number, now = gameNow()) {
   if (now < rot.contaminatedUntil) return
+  // Celle qui vient de finir est soldée avant d'accepter quoi que ce soit :
+  // sans cette ligne, le versement de la frame d'expiration retombe sur une
+  // jauge pleine et rechaîne. Voir `settleContamination`.
+  settleContamination(now)
   rot.lastSoakAt = now
   rot.level = Math.min(ROT.max, rot.level + amount)
   if (rot.level >= ROT.max) {
@@ -86,11 +111,11 @@ export function tickRot(now: number, delta: number): number {
   }
 
   // La contamination vient de finir : la jauge repart de zéro. Elle a été payée.
-  if (rot.level >= ROT.max) {
-    rot.level = 0
-    rot.contaminatedUntil = -Infinity
-    return 0
-  }
+  // Le plus souvent `soakRot` a déjà soldé, dans la même frame et quelques
+  // lignes plus haut chez l'appelant — mais pas quand le joueur est sorti de
+  // l'eau entre-temps, auquel cas plus personne ne verse et c'est ici que ça se
+  // passe.
+  settleContamination(now)
 
   // Le reflux ne commence qu'après un délai sans versement : traverser une
   // flaque en courant ne doit pas revenir gratuit parce qu'on en est sorti.
