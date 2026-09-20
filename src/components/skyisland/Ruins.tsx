@@ -682,6 +682,14 @@ function buildRuins() {
  * couvre l'écran. Dans un `useMemo`, ces deux cents maillages se seraient bâtis
  * à la frame où l'île apparaît — celle où React démonte déjà tout le continent,
  * ses colliders de végétation compris. C'est cette frame-là qui saccadait.
+ *
+ * **Ce qu'un objet de module coûte, et qu'il faut savoir avant d'en ajouter un
+ * autre** : il survit au démontage, donc tout ce que React ou three écrit
+ * dessus lui survit aussi. `visible` en est le cas réel — une frontière
+ * `<Suspense>` qui masque l'arbre pose `visible = false` sur ces groupes-ci, et
+ * rien ne le corrigeait au montage suivant. Voir la note de la `key` par carte
+ * dans `Environment.tsx` : c'est elle qui ferme ce chemin, et c'est à elle
+ * qu'il faut penser si une carte gagne un jour une seconde frontière.
  */
 const RUINS = buildRuins()
 

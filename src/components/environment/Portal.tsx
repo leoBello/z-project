@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import {
   CircleGeometry,
@@ -142,6 +142,28 @@ export function Portal({ at, openedAt, to }: PortalProps) {
   const shards = useRef<Group>(null)
   const arch = useRef<ToonMesh>(null)
 
+  /*
+    Et il se retire quand il cesse d'exister.
+
+    Sans ça, l'invite survivait à la carte qui la portait : on franchit l'anneau
+    en se tenant dessus, donc en étant à portée jusqu'à la dernière image, et
+    l'annonce restait dans le store sur la carte d'arrivée. Un joueur téléporté
+    du sommet vers la Pyramide par le menu se retrouvait devant un monument avec
+    « Rejoindre le Marais d'Aeonia » à l'écran — et la touche d'interaction l'y
+    emmenait pour de bon.
+
+    `enterMap` et `teleportTo` effacent déjà le champ au départ, et ça ne
+    suffisait pas : le voile met sept dixièmes de seconde à monter, pendant
+    lesquels cet anneau-ci tourne toujours et se réannonce. C'est au démontage,
+    et là seulement, qu'il n'a plus rien à dire.
+  */
+  useEffect(
+    () => () => {
+      useGameStore.getState().setNearbyPortal(to, false)
+    },
+    [to],
+  )
+
   useFrame(() => {
     const group = root.current
     if (!group) return
@@ -168,19 +190,20 @@ export function Portal({ at, openedAt, to }: PortalProps) {
       ) < PORTAL_NEAR_RADIUS
     const intensity = near ? NEAR_INTENSITY : IDLE_INTENSITY
 
-    // Même discipline que les monuments et les coffres : le store n'est écrit
-    // que sur **transition**, jamais à chaque frame. Sans ce test, le HUD se
-    // re-rendrait soixante fois par seconde pour réafficher la même invite.
     /*
-      Le store retient la **destination** du portail à portée, pas un booléen :
-      c'est ce qui permet à deux anneaux de coexister sur l'île sans que
-      l'interaction ait à deviner lequel. On n'écrit donc plus « près / pas
-      près » mais « vers `to` / vers rien », et la comparaison porte sur la même
-      valeur qu'on s'apprête à poser.
+      L'anneau **se signale**, il ne décide pas pour les autres.
+
+      Il disait « à portée : vers `to` » ou « pas à portée : vers rien », et la
+      seconde moitié de cette phrase était de trop : sur une carte à deux
+      portes, l'anneau lointain effaçait chaque image ce que le proche venait
+      d'annoncer. C'est le store qui arbitre désormais — voir la note de
+      `setNearbyPortal`, qui porte le détail de ce que ça coûtait.
+
+      Appelé à chaque frame et sans condition ici : la discipline d'écriture
+      « sur transition seulement » est tenue de l'autre côté, par la sortie
+      anticipée de l'action.
     */
-    const store = useGameStore.getState()
-    const destination = near ? to : null
-    if (destination !== store.nearbyPortal) store.setNearbyPortal(destination)
+    useGameStore.getState().setNearbyPortal(to, near)
 
     if (arch.current) arch.current.material.emissiveIntensity = intensity
 

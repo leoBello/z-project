@@ -234,3 +234,51 @@ describe('déclencher l interaction', () => {
     }
   })
 })
+
+/**
+ * L'arbitrage entre les anneaux d'une même carte.
+ *
+ * Deux cartes en portent deux — l'Île Céleste depuis qu'elle mène au Marais, le
+ * Marais depuis qu'il mène à l'Outremonde — et leurs deux boucles tournent côte
+ * à côte, à chaque image, sur le même champ. Ce que ces tests fixent est la
+ * seule règle qui les rende compatibles : **un anneau ne parle que de lui-même.**
+ *
+ * Le défaut qu'ils ferment ne ressemblait pas à un défaut de portail : il
+ * s'ouvrait à une *victoire* — la chute du Lynel doré, puis celle de Malenia —
+ * et il retirait au joueur le chemin du retour sans rien afficher d'anormal.
+ */
+describe('les cartes à deux anneaux', () => {
+  it('l anneau lointain n efface pas l annonce du proche', () => {
+    // L'ordre est celui des `useFrame` de la carte : le proche d'abord, le
+    // lointain ensuite. C'est celui qui condamnait le retour.
+    store().setNearbyPortal('continent', true)
+    store().setNearbyPortal('rot', false)
+
+    expect(store().nearbyPortal).toBe('continent')
+  })
+
+  it('et il ne l efface pas davantage dans l autre ordre', () => {
+    store().setNearbyPortal('rot', false)
+    store().setNearbyPortal('continent', true)
+
+    expect(store().nearbyPortal).toBe('continent')
+  })
+
+  it('un anneau retire la sienne en s éloignant', () => {
+    store().setNearbyPortal('continent', true)
+
+    store().setNearbyPortal('continent', false)
+
+    expect(store().nearbyPortal).toBeNull()
+  })
+
+  it('le second à portée prend la main', () => {
+    // Théorique — cent trente unités séparent les deux anneaux d'une carte pour
+    // sept de portée — mais l'ordre de précédence doit exister quand même.
+    store().setNearbyPortal('continent', true)
+
+    store().setNearbyPortal('rot', true)
+
+    expect(store().nearbyPortal).toBe('rot')
+  })
+})
