@@ -31,7 +31,15 @@ export type ItemSlot = ItemKind
  * Le premier est celui du départ de partie : c'est lui que `outfitOf` renvoie
  * quand l'emplacement est vide, et il n'existe donc aucun objet qui le donne.
  */
-export type OutfitId = 'luffy' | 'zoro' | 'madara' | 'pain' | 'demon' | 'vader'
+export type OutfitId =
+  | 'luffy'
+  | 'zoro'
+  | 'madara'
+  | 'pain'
+  | 'demon'
+  | 'vader'
+  | 'meruem'
+  | 'kuroro'
 
 /**
  * Ce que le personnage tient en main droite. Voir `HeroPlaceholder`.
@@ -132,6 +140,32 @@ const SKIN_TRAITS: Record<OutfitId, SkinTraits> = {
   // déplacement en échange. Les deux dernières tenues du jeu restent donc un
   // choix, exactement comme les trois premières le sont entre elles.
   vader: { speed: 0.86, jump: 0.82, water: 1 },
+  /*
+    **Le sommet des deux axes de déplacement, et il n'y a pas de second.**
+
+    1,28 de course et 1,4 de détente : au-dessus du bretteur (1,18) et du
+    manteau de l'Aube (1,18 / 1,3), qui détenaient chacun un record. La hauteur
+    d'un saut variant comme le carré de la vitesse initiale, ×1,4 sur
+    `jumpSpeed`, ce sont **96 %** de franchissement en plus que le skin de
+    départ — presque le double.
+
+    Rien de tout ça n'est un échange : la carapace ne coûte ni vitesse ni
+    détente. Ce qu'elle coûte est ailleurs, et à un seul endroit — voir
+    `MERUEM_CARAPACE` et ses trois cœurs, les moins nombreux des cinq dernières
+    tenues. C'est le seul axe où il n'est pas premier, et c'est ce qui empêche
+    l'armure de Vador de devenir une pièce de collection.
+  */
+  meruem: { speed: 1.28, jump: 1.4, water: 1 },
+  /*
+    Juste derrière lui sur les deux axes, et **devant tout le reste**.
+
+    1,24 et 1,35, soit 82 % de franchissement en plus que le départ. L'écart
+    avec la carapace est volontairement mince : ces deux tenues sortent du même
+    combat, à trois pas l'une de l'autre, et si l'une était nettement plus lente
+    le choix n'en serait pas un. Ce qui les sépare est ailleurs — la force et la
+    portée pour l'une, le coup critique et deux cœurs de plus pour l'autre.
+  */
+  kuroro: { speed: 1.24, jump: 1.35, water: 1 },
 }
 
 export interface Item {
@@ -625,12 +659,115 @@ export const VADER_SABER: Item = {
   accent: '#ff3b30',
 }
 
+/**
+ * Carapace du Roi — **la tenue la plus puissante du jeu, et elle se paie.**
+ *
+ * Elle est première sur quatre axes et dernière sur un, ce qui est exactement
+ * la forme qu'il fallait pour qu'elle n'annule pas les autres :
+ *
+ *  - **la course et la détente** (`SKIN_TRAITS`), au-dessus du bretteur et du
+ *    manteau de l'Aube, qui détenaient chacun un record ;
+ *  - **les dégâts**, ×2, et c'est le premier multiplicateur d'attaque porté par
+ *    une tenue depuis le manteau de l'Aube (×1,5). Il se **compose** avec
+ *    l'arme, comme celui-ci : avec la Lame de Lumière, le coup de base monte à
+ *    8 (`1 × 4 × 2`), le pic absolu du jeu ;
+ *  - **la portée**, ×1,45, et c'est le seul objet de la table qui y touche.
+ *    Voir `reachMultiplier` pour ce que ce champ a coûté ;
+ *  - **les cœurs**, et c'est là qu'elle paie : trois, soit le moins des cinq
+ *    dernières tenues. L'armure de Vador en donne cinq, le manteau du Voleur
+ *    quatre. Un joueur qui porte la carapace frappe deux fois plus fort et
+ *    tombe deux coups plus tôt.
+ *
+ * **Le sabre reste « l'arme qui frappe le plus fort », et sa description reste
+ * donc vraie.** C'était le risque de cet objet : une tenue qui aurait rendu
+ * l'arme insignifiante aurait obligé à réécrire un texte déjà traduit. En
+ * composant au lieu de remplacer, les deux affirmations coexistent — l'une est
+ * la meilleure arme, l'autre la meilleure tenue, et le joueur qui a les deux a
+ * gagné le droit de les porter ensemble.
+ *
+ * L'accent est un violet de carapace, franchement saturé. Il a un voisin dans
+ * la table — le prune du clan — et s'en sépare par la valeur autant que par la
+ * température : celui-là est un tissu sombre et sourd, celui-ci une chitine qui
+ * accroche la lumière.
+ */
+export const MERUEM_CARAPACE: Item = {
+  id: 'meruem-garb',
+  kind: 'outfit',
+  bonusHearts: 3,
+  revives: 0,
+  attackMultiplier: 2,
+  damageMultiplier: 1,
+  reachMultiplier: 1.45,
+  critChance: 0,
+  damageBy: EVERY_SPECIES_ALIKE,
+  // Comme pour les cinq autres tenues : la course et la détente viennent du
+  // skin et non du vêtement, donc de `SKIN_TRAITS`.
+  traits: NEUTRAL_TRAITS,
+  outfit: 'meruem',
+  accent: '#8a4fd0',
+}
+
+/**
+ * Manteau du Voleur — la seconde récompense du Marais.
+ *
+ * Elle sort du même combat que la carapace, à trois pas d'elle, et toute la
+ * question était de faire en sorte que l'une ne soit pas simplement « la
+ * mauvaise ». Ce qui les sépare n'est donc pas un niveau mais une **nature** :
+ *
+ *  - la carapace frappe plus fort et plus loin, **tout le temps** ;
+ *  - celui-ci est plus vif, saute presque aussi haut, porte deux cœurs de plus,
+ *    et son **coup critique à 30 %** le rattrape par à-coups sans jamais
+ *    l'égaler en moyenne. Un critique double les dégâts (voir
+ *    `CRIT_MULTIPLIER`) : trois coups sur dix valent double, soit +30 % de
+ *    dégâts espérés, là où la carapace en donne +100 % de façon certaine.
+ *
+ * L'arithmétique dit donc que la carapace frappe plus fort, et c'est voulu.
+ * Ce que le manteau offre, c'est **de ne rien perdre** — quatre cœurs contre
+ * trois, et un déplacement à peine inférieur. Il est le choix de qui traverse le
+ * monde ; elle, celui de qui va se battre.
+ *
+ * Quatre cœurs, soit un de moins que l'armure de Vador. C'est la cote qui fixe
+ * toute la table du haut : Vador reste la tenue qui encaisse, et son
+ * déplacement écrasé (0,86 / 0,82) reste ce qu'elle paie pour ça.
+ *
+ * L'accent est un gris de fourrure, très clair. C'est la seule teinte presque
+ * neutre de l'inventaire — l'acier de Vador est bleuté, la nacre des écailles
+ * tire au bleu aussi. Celle-ci ne tire nulle part, ce qui est le seul moyen
+ * qu'elle avait de ne ressembler à aucune des dix autres.
+ */
+export const KURORO_COAT: Item = {
+  id: 'kuroro-garb',
+  kind: 'outfit',
+  bonusHearts: 4,
+  revives: 0,
+  attackMultiplier: 1,
+  damageMultiplier: 1,
+  reachMultiplier: 1,
+  /*
+    Trois coups sur dix. C'est assez rare pour qu'on le remarque quand ça
+    arrive, assez fréquent pour qu'on y compte sur la durée d'un combat de boss
+    — Malenia a quarante-quatre points de vie, soit une trentaine de coups pour
+    un joueur bien équipé, donc une petite dizaine de critiques.
+
+    Sous 20 %, un joueur pourrait finir un combat entier sans en voir un seul et
+    conclure que l'objet ne fait rien. Au-dessus de 40 %, ce n'est plus un coup
+    critique mais un dégât moyen déguisé.
+  */
+  critChance: 0.3,
+  damageBy: EVERY_SPECIES_ALIKE,
+  traits: NEUTRAL_TRAITS,
+  outfit: 'kuroro',
+  accent: '#d7d9de',
+}
+
 export const ITEMS: readonly Item[] = [
   ZORO_GARB,
   MADARA_GARB,
   DAWN_CLOAK,
   DEMON_ARMOR,
   VADER_ARMOR,
+  MERUEM_CARAPACE,
+  KURORO_COAT,
   KUSANAGI,
   CURSED_BLADE,
   VADER_SABER,
@@ -704,6 +841,20 @@ export function outfitOf(equipment: Equipment): OutfitId {
  */
 const DEFAULT_WEAPON: Record<OutfitId, WeaponId> = {
   luffy: 'fists',
+  /*
+    Mains nues, tous les deux, et pour la même raison qu'ils n'ont pas la même :
+
+     - le Roi **est** son arme. Une épée dans la main de quelqu'un dont la queue
+       se termine en dard serait un aveu que le corps ne suffit pas ;
+     - le Voleur se bat de la main ouverte, un livre dans l'autre. Lui donner une
+       lame d'office aurait effacé ce qu'il est.
+
+    `StrikeArc` dessine déjà une onde d'impact au bout du poing quand l'arme vaut
+    `fists`, au lieu d'une traînée de lame : les deux dernières tenues du jeu
+    rendent donc au joueur le geste du tout premier, sans une ligne à écrire.
+  */
+  meruem: 'fists',
+  kuroro: 'fists',
   zoro: 'sword',
   madara: 'sword',
   // Mains nues, comme le skin de départ, et c'est tout l'intérêt : `StrikeArc`

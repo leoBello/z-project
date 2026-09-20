@@ -1200,6 +1200,183 @@ function ScarletSaber() {
   )
 }
 
+/**
+ * Les deux récompenses du Marais, et ce qui les sépare à l'œil.
+ *
+ * Elles s'ouvrent à trois pas l'une de l'autre, donc leurs cartes se voient
+ * presque coup sur coup. Les deux fonds sont sombres — on est sous un arbre
+ * mort — et tout l'écart tient dans la **teinte du halo** : violet saturé pour
+ * la carapace, blanc froid pour le manteau. C'est la même discipline que les
+ * deux coffres du sommet, dont l'un tire au rouge et l'autre à l'acier.
+ */
+const KING = {
+  carapace: '#5d3583',
+  plate: '#4a2a68',
+  seam: '#7a4fa8',
+  crest: '#8a5fb8',
+  sting: '#f0e2ff',
+  eye: '#ff3b5c',
+  shadow: '#2e1740',
+}
+
+const THIEF = {
+  coat: '#15161a',
+  fold: '#23262d',
+  fur: '#d7d9de',
+  furShade: '#9a9ea8',
+  skin: '#e8c9a8',
+  ink: '#0d0e12',
+}
+
+function MeruemCarapace() {
+  return (
+    <svg viewBox="0 0 320 300" role="img" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="king-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#140a1e" />
+          <stop offset="100%" stopColor="#3c1c56" />
+        </linearGradient>
+        <radialGradient id="king-halo" cx="0.5" cy="0.34" r="0.6">
+          <stop offset="0%" stopColor="#a866ff" stopOpacity="0.34" />
+          <stop offset="100%" stopColor="#a866ff" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <rect width="320" height="300" fill="url(#king-sky)" />
+      <circle cx="160" cy="102" r="150" fill="url(#king-halo)" />
+      <path d="M0 278 L86 262 L160 270 L238 258 L320 274 L320 300 L0 300 Z" fill="#1c0f28" />
+
+      {/*
+        La queue, dessinée **avant** le corps : elle passe derrière lui, sort du
+        cadre par la droite et y revient. C'est la seule illustration de la
+        série dont le sujet déborde de sa propre silhouette, et c'est ce qui la
+        rend reconnaissable en vignette.
+      */}
+      <path
+        d="M186 210 C244 214 282 186 288 138 C292 104 276 84 258 78"
+        stroke={KING.plate}
+        strokeWidth="22"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M186 210 C244 214 282 186 288 138 C292 104 276 84 258 78"
+        stroke={KING.crest}
+        strokeWidth="9"
+        strokeLinecap="round"
+        fill="none"
+        opacity="0.55"
+      />
+      {/* Le dard : la seule valeur claire du dessin avec le regard, et il est à
+          l'autre bout du corps — c'est ce qui fait lire la longueur. */}
+      <path d="M258 84 L246 40 L282 66 Z" fill={KING.sting} />
+
+      {/* Le tronc : conique, épaules larges et taille étroite. */}
+      <path d="M160 96 L214 122 L222 196 L206 268 L114 268 L98 196 L106 122 Z" fill={KING.carapace} />
+
+      {/* Les trois plaques pectorales, qui se recouvrent vers le bas. */}
+      <path d="M112 128 L208 128 L204 152 L116 152 Z" fill={KING.plate} />
+      <path d="M116 156 L204 156 L200 178 L120 178 Z" fill={KING.plate} />
+      <path d="M120 182 L200 182 L196 202 L124 202 Z" fill={KING.plate} />
+
+      {/* La rainure abdominale : trois traits qui rétrécissent, et rien d'autre
+          ne dit « segmenté » à cette taille. */}
+      <path
+        d="M136 216 H184 M140 232 H180 M144 248 H176"
+        stroke={KING.seam}
+        strokeWidth="7"
+        strokeLinecap="round"
+      />
+
+      {/* Les deux épaulières, pointues et tournées vers l'arrière. */}
+      <path d="M106 122 L74 96 L96 148 Z" fill={KING.crest} />
+      <path d="M214 122 L246 96 L224 148 Z" fill={KING.crest} />
+
+      {/* Le crâne, et la crête : trois lames par côté, d'inégale longueur. */}
+      <path d="M160 18 C130 18 116 42 118 72 L120 100 L200 100 L202 72 C204 42 190 18 160 18 Z" fill={KING.carapace} />
+      <path d="M124 60 L84 26 L112 82 Z" fill={KING.crest} />
+      <path d="M132 44 L110 8 L148 32 Z" fill={KING.plate} />
+      <path d="M196 60 L236 26 L208 82 Z" fill={KING.crest} />
+      <path d="M188 44 L210 8 L172 32 Z" fill={KING.plate} />
+
+      {/* Le regard — la seule chose vivante de tout le dessin. Deux amandes
+          pleines, sans blanc : un œil humain sur un crâne d'insecte se lit comme
+          un costume. */}
+      <path d="M134 72 L156 64 L158 82 L134 88 Z" fill={KING.eye} />
+      <path d="M186 72 L164 64 L162 82 L186 88 Z" fill={KING.eye} />
+      {/* L'arête frontale, qui les sépare. */}
+      <path d="M160 58 L166 96 L154 96 Z" fill={KING.shadow} />
+      {/* La bouche : une fente. */}
+      <path d="M146 104 H174" stroke={KING.shadow} strokeWidth="6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function KuroroCoat() {
+  return (
+    <svg viewBox="0 0 320 300" role="img" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="thief-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#0c0d11" />
+          <stop offset="100%" stopColor="#2c3038" />
+        </linearGradient>
+        <radialGradient id="thief-halo" cx="0.5" cy="0.32" r="0.58">
+          <stop offset="0%" stopColor="#eef1f6" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#eef1f6" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <rect width="320" height="300" fill="url(#thief-sky)" />
+      <circle cx="160" cy="96" r="148" fill="url(#thief-halo)" />
+      <path d="M0 280 L84 266 L160 274 L240 262 L320 278 L320 300 L0 300 Z" fill="#14161b" />
+
+      {/* Le manteau : fermé, évasé jusqu'au bas du cadre. */}
+      <path d="M160 108 L216 130 L246 284 L74 284 L104 130 Z" fill={THIEF.coat} />
+      {/* Le pli central, seul relief d'une masse autrement plate : sans lui, un
+          manteau noir sur fond sombre est un trou dans l'image. */}
+      <path d="M160 130 L176 284 L144 284 Z" fill={THIEF.fold} />
+
+      {/*
+        La fourrure — **la pièce qui fait l'image**.
+
+        Une bande dentelée, plus large que les épaules, et la seule valeur claire
+        du dessin avec le visage. C'est elle qui empêche cette carte de ressembler
+        à celle de l'armure noire : là-bas le repère est un plastron rouge au
+        centre du corps, ici une barre blanche tout en haut. Les deux ne peuvent
+        pas se confondre.
+      */}
+      <path
+        d="M86 132 L100 108 L116 126 L132 104 L148 124 L160 100 L172 124 L188 104
+           L204 126 L220 108 L234 132 L224 150 L96 150 Z"
+        fill={THIEF.fur}
+      />
+      <path
+        d="M96 150 L224 150 L220 160 L100 160 Z"
+        fill={THIEF.furShade}
+      />
+
+      {/* La tête : pâle, et c'est le seul personnage du jeu dont le visage soit
+          plus clair que sa tenue. */}
+      <path d="M160 18 C132 18 120 40 120 66 C120 92 136 108 160 108 C184 108 200 92 200 66 C200 40 188 18 160 18 Z" fill={THIEF.skin} />
+
+      {/* Les cheveux : plaqués en arrière, front **découvert**. Le front doit
+          rester libre, sans quoi la croix disparaît — et la croix est la moitié
+          de ce qui rend ce personnage reconnaissable. */}
+      <path d="M160 14 C128 14 116 38 120 62 L128 48 C134 34 144 28 160 28 C176 28 186 34 192 48 L200 62 C204 38 192 14 160 14 Z" fill={THIEF.ink} />
+      <path d="M118 56 L104 92 L124 78 Z" fill={THIEF.ink} />
+      <path d="M202 56 L216 92 L196 78 Z" fill={THIEF.ink} />
+
+      {/* La croix inversée : barre longue verticale, barre courte **en bas**.
+          C'est cette position basse, et elle seule, qui distingue cette croix
+          d'une croix ordinaire. */}
+      <path d="M160 34 V70 M146 62 H174" stroke={THIEF.ink} strokeWidth="7" strokeLinecap="round" />
+
+      {/* Les yeux : deux traits sombres, mi-clos. */}
+      <path d="M138 80 H150 M170 80 H182" stroke={THIEF.ink} strokeWidth="6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 const ILLUSTRATIONS: Record<ItemId, () => React.JSX.Element> = {
   'zoro-garb': ZoroGarb,
   'madara-garb': MadaraGarb,
@@ -1210,6 +1387,8 @@ const ILLUSTRATIONS: Record<ItemId, () => React.JSX.Element> = {
   'demon-armor': DemonArmour,
   'vader-armor': VaderArmour,
   'vader-saber': ScarletSaber,
+  'meruem-garb': MeruemCarapace,
+  'kuroro-garb': KuroroCoat,
 }
 
 export function ItemIllustration({ id }: { id: ItemId }) {

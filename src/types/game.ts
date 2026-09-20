@@ -163,6 +163,8 @@ export type ItemId =
   | 'demon-armor'
   | 'vader-armor'
   | 'vader-saber'
+  | 'meruem-garb'
+  | 'kuroro-garb'
 
 /** Identifiant de coffre au trésor. La table vit dans `config/chests.ts`. */
 export type ChestId =
@@ -175,6 +177,8 @@ export type ChestId =
   | 'road-chest'
   | 'summit-armor-chest'
   | 'summit-saber-chest'
+  | 'aeonia-king-chest'
+  | 'aeonia-thief-chest'
 
 /** Identifiant de biome. Pilote le sol, la végétation et la minimap. */
 export type BiomeId =

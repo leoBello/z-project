@@ -255,6 +255,56 @@ const GLYPHS: Record<ItemId, React.JSX.Element> = {
       />
     </>
   ),
+
+  'meruem-garb': (
+    <>
+      {/* Le buste : une carapace conique, épaules larges et taille étroite. Pas
+          d'échancrure, pas de pans — c'est un corps, pas un vêtement, et c'est
+          ce qui sépare cette case des cinq autres tenues. */}
+      <path d="M12 3.4 16.6 6l1 5.4-1.6 8.8h-8L6.4 11.4 7.4 6z" fill="currentColor" opacity="0.9" />
+      {/* Les trois rainures du ventre : la seule chose qui dise « segmenté ». */}
+      <path
+        d="M9.6 12h4.8M9.9 14.4h4.2M10.2 16.8h3.6"
+        stroke="#171226"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+      {/* La queue et son dard, qui sortent du cadre de la silhouette. C'est le
+          seul glyphe de la grille dont la forme déborde par la droite — et à
+          quarante-quatre pixels, déborder est ce qui se remarque en premier. */}
+      <path
+        d="M16.2 17.4c3.4.6 4.8-1.6 4.4-4.4"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path d="M20.6 13.4 21.9 8.8 18.7 11z" fill="currentColor" />
+    </>
+  ),
+  'kuroro-garb': (
+    <>
+      {/* Le manteau : fermé et évasé, comme celui du clan. Ce qui les sépare est
+          au-dessus. */}
+      <path d="M12 6.4 16.8 8l1.6 12H5.6L7.2 8z" fill="currentColor" opacity="0.88" />
+      {/* La fourrure — **la pièce qui fait la case**. Une bande dentelée plus
+          large que les épaules, et le seul glyphe de la grille qui en porte
+          une. C'est elle qui empêche cette silhouette de se confondre avec les
+          trois autres manteaux sombres. */}
+      <path
+        d="M5.4 7.6 7 5.4l1.8 1.8L10.6 5l1.4 2.2L13.4 5l1.8 2.2L17 5.4l1.6 2.2-1.2 1.6H6.6z"
+        fill="currentColor"
+      />
+      {/* La croix inversée : barre longue en haut, barre courte **en bas**, et
+          c'est cette position basse qui la distingue d'une croix ordinaire. */}
+      <path
+        d="M12 1.2v3.2M10.6 3.6h2.8"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </>
+  ),
 }
 
 export function ItemIcon({ id, accent }: { id: ItemId; accent: string }) {

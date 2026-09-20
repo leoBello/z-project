@@ -313,6 +313,91 @@ const OUTFITS: Record<OutfitId, Palette> = {
     gear: '#8d97ad',
     gearTrim: '#cdd3de',
   },
+
+  /*
+    Le Roi — une chitine violette, et **aucun vêtement**.
+
+    C'est la première silhouette du casting qui ne porte rien : ce qu'on prend
+    pour une armure *est* le corps. Toutes les entrées de vêtement sont donc
+    détournées vers des teintes de carapace, et l'écart entre elles ne décrit
+    plus une étoffe posée sur une peau mais l'épaisseur d'une plaque sur la
+    suivante.
+
+    Le violet est le seul de la table à être franchement **saturé**. Les cinq
+    autres skins sont des valeurs — clair et chaud, sombre et froid, sombre et
+    chaud, noir. Celui-ci est une teinte, et c'est ce qui le sépare d'eux à
+    vingt-et-une unités sans avoir à compter sur sa forme.
+  */
+  meruem: {
+    // La carapace du buste, et les plaques d'épaule.
+    garment: '#5d3583',
+    // Le bas du corps : plus sombre d'un ton, parce qu'une carapace d'une seule
+    // valeur du col aux pieds fait un maillot et non une créature.
+    trouser: '#4a2a68',
+    // La rainure abdominale — la seule ligne claire du tronc, et ce qui dit
+    // que ce ventre est segmenté.
+    belt: '#7a4fa8',
+    // Détourné : il n'y a pas de peau. C'est la chitine des mains et du cou,
+    // soit exactement les deux endroits où le rig pose `skin`.
+    skin: '#6b3f93',
+    // Détourné : les sutures entre les plaques, et le liseré de la bouche.
+    scar: '#2e1740',
+    // Détourné : pas un cheveu. C'est le lustre de la crête, la seule chose qui
+    // empêche le crâne d'être une masse plate.
+    hair: '#8a5fb8',
+    boot: '#3b2154',
+    blade: '#dfe4ee',
+    guard: '#8a5fb8',
+    grip: '#3b2154',
+    cord: '#e05070',
+    /*
+      Le regard, et c'est **la seule chose vivante** de toute la silhouette.
+
+      Un cramoisi franc sur une masse violette : c'est le seul endroit du
+      personnage qui ne soit pas de la carapace, donc le seul qui dise qu'il y a
+      quelqu'un dedans. Le masque de Vador fait l'inverse — ses lentilles sont
+      éteintes, et tout l'effet tient à ce qu'elles ne rendent rien.
+    */
+    eye: '#ff3b5c',
+    outline: '#180c22',
+    // La queue : ses plaques, puis son dard. Le dard est la seule valeur claire
+    // du personnage avec le regard, et il est à l'autre bout du corps — c'est ce
+    // qui fait lire la longueur de l'animal.
+    gear: '#8a5fb8',
+    gearTrim: '#f0e2ff',
+  },
+
+  /*
+    Le Voleur — noir sur noir, et une fourrure qui porte tout.
+
+    Le manteau est aussi sombre que celui de Vador, et il a fallu le régler
+    contre lui : deux silhouettes noires à vingt-et-une unités seraient la même.
+    Ce qui les sépare est la **fourrure**, presque blanche, qui double la
+    largeur des épaules et n'a aucun équivalent dans le casting. Vador se lit
+    par son plastron rouge au centre du corps ; celui-ci se lit par une bande
+    claire tout en haut.
+
+    La peau est pâle, et c'est le second écart : c'est le seul personnage du jeu
+    dont le visage soit franchement plus clair que sa tenue.
+  */
+  kuroro: {
+    garment: '#15161a',
+    trouser: '#1d1f25',
+    belt: '#2a2d35',
+    skin: '#e8c9a8',
+    scar: '#c9a184',
+    hair: '#0d0e12',
+    boot: '#101216',
+    blade: '#dde6ef',
+    guard: '#6f7683',
+    grip: '#23262d',
+    cord: '#b8bec9',
+    eye: '#2f3542',
+    outline: '#06070a',
+    // La fourrure du col, et son ombre. C'est la pièce qui fait la silhouette.
+    gear: '#d7d9de',
+    gearTrim: '#9a9ea8',
+  },
 }
 
 /**
@@ -415,6 +500,38 @@ const SKINS: Record<OutfitId, Skin> = {
     swing: 0.045,
     air: 0.1,
     roll: 0.015,
+  },
+  /*
+    La crête est de l'os soudé au crâne : son ressort est le plus bas du
+    casting, à peine au-dessus de celui du casque de Vador. Un retard marqué
+    l'aurait fait lire comme une coiffe posée, or elle pousse de la tête.
+
+    Le roulis est nul, pour la raison donnée sur `Skin` : ce qui tient au crâne
+    ne roule pas sur l'axe Z sans se lire comme un défaut.
+  */
+  meruem: {
+    torso: KingTorso,
+    face: KingFace,
+    headwear: KingCrest,
+    rest: -0.03,
+    swing: 0.05,
+    air: 0.12,
+    roll: 0,
+  },
+  /*
+    Des cheveux courts et plaqués : le même registre que la coupe du bretteur,
+    dont ils reprennent presque les réglages. Une masse longue aurait demandé le
+    ressort de la crinière du clan — et deux crinières dans le casting auraient
+    rendu les deux silhouettes cousines de dos.
+  */
+  kuroro: {
+    torso: ThiefTorso,
+    face: ThiefFace,
+    headwear: ThiefHair,
+    rest: -0.08,
+    swing: 0.1,
+    air: 0.22,
+    roll: 0.02,
   },
 }
 
@@ -3092,6 +3209,397 @@ function Sword({ palette }: { palette: Palette }) {
  * avec l'arme demanderait de la reconstruire à chaque équipement. Ce que l'objet
  * change, ce sont les dégâts.
  */
+/* --- Le Roi ---------------------------------------------------------------- */
+
+/**
+ * Buste du septième skin — une carapace, et **la queue**.
+ *
+ * C'est la première silhouette du casting qui ne porte rien : ce qu'on prend
+ * pour une armure *est* le corps. Le tronc est donc bâti en plaques qui se
+ * recouvrent — trois segments de poitrine, une rainure abdominale, deux
+ * épaulières de chitine — et non en pièces de tissu posées dessus.
+ *
+ * **La queue est ce qui vend le personnage**, et elle est la seule pièce du jeu
+ * qui sorte du volume du rig vers l'arrière. C'est délibéré : à vingt-et-une
+ * unités de recul, les six autres skins se distinguent par la largeur de leurs
+ * épaules et la masse de leur tête, deux endroits déjà très chargés. Celui-ci
+ * se reconnaît **à ce qui dépasse derrière lui**, ce qu'aucun autre ne fait.
+ *
+ * Elle est composée en dur segment par segment plutôt qu'en boucle, pour la
+ * même raison que les pans de la cape de Vador : chacun a sa propre inclinaison
+ * et son propre rétrécissement, et une courbe régulière se lirait comme un
+ * tuyau. Le dard, lui, est la seule valeur claire de tout le personnage avec le
+ * regard — et il est à l'autre bout du corps, ce qui fait lire la longueur de
+ * l'animal.
+ */
+function KingTorso({ palette }: { palette: Palette }) {
+  return (
+    <>
+      {/* Le tronc : un cylindre franchement conique, épaules larges et taille
+          étroite. C'est la carrure d'un insecte, pas celle d'un homme habillé. */}
+      <mesh castShadow position={[0, 0.3, 0]}>
+        <cylinderGeometry args={[0.24, 0.185, 0.6, 14]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      {/* Les trois plaques pectorales, qui se recouvrent du haut vers le bas.
+          L'écart de rayon entre elles (0,015) est ce qui fait voir le
+          recouvrement : à rayon égal elles forment un tube lisse. */}
+      {[
+        { y: 0.5, r: 0.245 },
+        { y: 0.41, r: 0.23 },
+        { y: 0.32, r: 0.215 },
+      ].map((plate) => (
+        <mesh key={plate.y} castShadow position={[0, plate.y, 0.01]}>
+          <cylinderGeometry args={[plate.r, plate.r - 0.012, 0.075, 14]} />
+          <meshToonMaterial color={palette.trouser} gradientMap={toonGradient} />
+          <Outlines thickness={OUTLINE} color={palette.outline} />
+        </mesh>
+      ))}
+
+      {/* La rainure abdominale : la seule ligne claire du tronc, et ce qui dit
+          que ce ventre est segmenté plutôt que moulé d'un bloc. */}
+      {[0.19, 0.12, 0.05].map((y) => (
+        <mesh key={y} position={[0, y, 0.15]}>
+          <boxGeometry args={[0.2 - (0.19 - y) * 0.3, 0.035, 0.07]} />
+          <meshToonMaterial color={palette.belt} gradientMap={toonGradient} />
+        </mesh>
+      ))}
+
+      {/* Les deux épaulières de chitine. Pointues et tournées vers l'arrière :
+          une épaulière ronde aurait donné une armure, et il n'en porte pas. */}
+      {[1, -1].map((side) => (
+        <mesh
+          key={side}
+          castShadow
+          position={[side * 0.215, 0.5, -0.02]}
+          rotation={[0.3, 0, side * -0.4]}
+        >
+          <coneGeometry args={[0.105, 0.22, 5]} />
+          <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
+          <Outlines thickness={OUTLINE} color={palette.outline} />
+        </mesh>
+      ))}
+
+      <KingTail palette={palette} />
+    </>
+  )
+}
+
+/**
+ * La queue — six segments décroissants et un dard.
+ *
+ * Elle part du bas du dos, descend, puis se relève : c'est ce relèvement qui la
+ * fait lire comme une queue **portée** plutôt que traînée, et qui la garde dans
+ * le cadre d'une caméra qui plonge de dix-sept degrés. Une queue qui traîne au
+ * sol serait cachée par le corps à cet angle.
+ *
+ * Les segments sont posés un par un et non déroulés en boucle : chacun a son
+ * inclinaison et son rétrécissement propres, et une progression régulière se
+ * lirait comme un tuyau d'arrosage.
+ */
+function KingTail({ palette }: { palette: Palette }) {
+  const segments = [
+    { position: [0, 0.06, -0.19] as const, rotation: [0.9, 0, 0] as const, r: 0.075, h: 0.2 },
+    { position: [0, -0.02, -0.34] as const, rotation: [1.3, 0, 0] as const, r: 0.066, h: 0.2 },
+    { position: [0, -0.05, -0.51] as const, rotation: [1.62, 0, 0] as const, r: 0.058, h: 0.2 },
+    { position: [0, -0.01, -0.68] as const, rotation: [1.9, 0, 0] as const, r: 0.05, h: 0.2 },
+    { position: [0, 0.09, -0.81] as const, rotation: [2.25, 0, 0] as const, r: 0.042, h: 0.19 },
+    { position: [0, 0.23, -0.88] as const, rotation: [2.7, 0, 0] as const, r: 0.034, h: 0.17 },
+  ]
+
+  return (
+    <group position={[0, 0.16, 0]}>
+      {segments.map((segment, i) => (
+        <mesh
+          key={i}
+          castShadow
+          position={segment.position}
+          rotation={segment.rotation}
+        >
+          <cylinderGeometry args={[segment.r * 0.82, segment.r, segment.h, 8]} />
+          <meshToonMaterial
+            color={i % 2 ? palette.gear : palette.trouser}
+            gradientMap={toonGradient}
+          />
+          <Outlines thickness={OUTLINE} color={palette.outline} />
+        </mesh>
+      ))}
+
+      {/* Le dard. Il pointe vers l'avant par-dessus l'épaule, et c'est ce qui
+          transforme la queue en menace plutôt qu'en appendice. */}
+      <mesh castShadow position={[0, 0.37, -0.88]} rotation={[-0.5, 0, 0]}>
+        <coneGeometry args={[0.042, 0.19, 6]} />
+        <meshToonMaterial color={palette.gearTrim} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+    </group>
+  )
+}
+
+/**
+ * Visage du Roi — deux yeux cramoisis, et rien d'autre.
+ *
+ * C'est le seul endroit vivant de toute la silhouette : le reste est de la
+ * chitine. Le masque de Vador fait exactement l'inverse — ses lentilles sont
+ * éteintes, et tout son effet tient à ce qu'elles ne rendent rien.
+ *
+ * Les yeux sont **grands et rapprochés**, et sans blanc. Un œil humain posé sur
+ * un crâne d'insecte se lit comme un costume ; une amande pleine qui occupe le
+ * quart de la face se lit comme un animal.
+ */
+function KingFace({ palette }: { palette: Palette }) {
+  return (
+    <group>
+      {/* Les deux amandes. `meshBasicMaterial` : elles ne doivent pas s'assombrir
+          dans l'ombre du front, faute de quoi le seul point vivant du
+          personnage s'éteint dès qu'il se tourne. */}
+      {[1, -1].map((side) => (
+        <mesh
+          key={side}
+          position={[side * 0.072, 0.03, 0.148]}
+          rotation={[0, 0, side * 0.34]}
+          scale={[1, 0.62, 1]}
+        >
+          <sphereGeometry args={[0.052, 10, 8]} />
+          <meshBasicMaterial color={palette.eye} />
+        </mesh>
+      ))}
+
+      {/* L'arête frontale, qui descend entre les deux yeux : elle les sépare, et
+          c'est elle qui empêche la face d'être un dôme lisse. */}
+      <mesh castShadow position={[0, 0.07, 0.15]} rotation={[0.25, 0, 0]}>
+        <boxGeometry args={[0.038, 0.16, 0.055]} />
+        <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
+      </mesh>
+
+      {/* La bouche : une fente, pas des lèvres. */}
+      <mesh position={[0, -0.075, 0.152]}>
+        <boxGeometry args={[0.085, 0.016, 0.02]} />
+        <meshToonMaterial color={palette.scar} gradientMap={toonGradient} />
+      </mesh>
+    </group>
+  )
+}
+
+/**
+ * La crête du Roi — deux cornes qui se rejoignent en couronne.
+ *
+ * Elles balaient vers l'arrière et vers le haut, comme les ailes du heaume de
+ * Malenia et pour la même raison : à vingt-et-une unités, c'est la **largeur
+ * au-dessus des épaules** qui fait reconnaître une silhouette de dos. Les trois
+ * lames de chaque côté sont d'inégale longueur — trois lames égales font un
+ * peigne, et un peigne n'est pas une couronne.
+ *
+ * Elle est classée en `headwear`, donc elle traîne d'un pas derrière le
+ * mouvement (voir `Skin`). Son ressort est réglé bas : c'est de l'os soudé au
+ * crâne, pas une masse de cheveux.
+ */
+function KingCrest({ palette }: { palette: Palette }) {
+  return (
+    <group>
+      {/* La calotte, qui prolonge le crâne vers l'arrière en pointe. */}
+      <mesh castShadow position={[0, 0.06, -0.04]} scale={[1, 0.86, 1.25]}>
+        <sphereGeometry args={[0.152, 14, 11]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      {[1, -1].map((side) =>
+        [0.3, 0.24, 0.18].map((length, i) => (
+          <mesh
+            key={`${side}-${i}`}
+            castShadow
+            position={[side * (0.055 + i * 0.038), 0.13 - i * 0.045, -0.05 - i * 0.02]}
+            rotation={[-0.55 - i * 0.18, side * -0.24, side * (0.3 + i * 0.16)]}
+          >
+            <coneGeometry args={[0.031, length, 5]} />
+            <meshToonMaterial
+              color={i % 2 ? palette.hair : palette.gear}
+              gradientMap={toonGradient}
+            />
+            <Outlines thickness={OUTLINE} color={palette.outline} />
+          </mesh>
+        )),
+      )}
+    </group>
+  )
+}
+
+/* --- Le Voleur ------------------------------------------------------------- */
+
+/**
+ * Buste du huitième skin — un manteau long, et **une fourrure**.
+ *
+ * Le manteau est aussi sombre que celui de Vador, et il a fallu le régler
+ * contre lui : deux silhouettes noires à vingt-et-une unités seraient la même.
+ * Ce qui les sépare est la fourrure, presque blanche, qui double la largeur des
+ * épaules et n'a aucun équivalent dans le casting. Vador se lit par son
+ * plastron rouge **au centre** du corps ; celui-ci par une bande claire **tout
+ * en haut**. Les deux repères ne peuvent pas se confondre.
+ *
+ * Le manteau s'évase comme la cape de Vador et pour la même raison — un bord
+ * parallèle fait un rideau — mais il est **fermé devant** là où celle-ci est un
+ * secteur ouvert : c'est un vêtement porté, pas une étoffe accrochée aux
+ * épaules.
+ */
+function ThiefTorso({ palette }: { palette: Palette }) {
+  return (
+    <>
+      {/* Le corps du manteau. */}
+      <mesh castShadow position={[0, 0.29, 0]}>
+        <cylinderGeometry args={[0.225, 0.275, 0.62, 16]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      {/* Les pans, qui descendent sous la ceinture et s'évasent. Fendus devant
+          et derrière comme le tablier de Vador : c'est la fente qui laisse voir
+          les jambes à la course, sans quoi le bas du corps est une cloche. */}
+      {[0.14, -0.14].map((z) => (
+        <mesh key={z} castShadow position={[0, -0.12, z]} rotation={[z > 0 ? 0.06 : -0.06, 0, 0]}>
+          <boxGeometry args={[0.38, 0.34, 0.06]} />
+          <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+          <Outlines thickness={OUTLINE} color={palette.outline} />
+        </mesh>
+      ))}
+
+      {/* La ceinture, sobre : elle marque la taille sans attirer l'œil, qui doit
+          monter à la fourrure. */}
+      <mesh castShadow position={[0, 0.05, 0]}>
+        <cylinderGeometry args={[0.272, 0.278, 0.07, 16]} />
+        <meshToonMaterial color={palette.belt} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      <ThiefFur palette={palette} />
+    </>
+  )
+}
+
+/**
+ * La fourrure du col — **la pièce qui fait la silhouette**.
+ *
+ * Neuf touffes réparties sur un tore, de tailles inégales. L'inégalité est tout
+ * l'effet : neuf sphères identiques font un collier de perles, et il faut que ça
+ * lise comme de la fourrure ébouriffée. Les tailles suivent un motif fixe et non
+ * un tirage — le personnage doit être le même d'une partie à l'autre.
+ *
+ * Elle est **plus large que les épaules** (0,3 contre 0,24 de pivot), ce qui est
+ * exactement ce qu'on lui demande : c'est la seule chose de cette tenue qui
+ * dépasse, et donc la seule qui la distingue d'une masse noire.
+ */
+function ThiefFur({ palette }: { palette: Palette }) {
+  const tufts = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+  return (
+    <group position={[0, 0.575, -0.01]}>
+      {/* L'assise du col, sous les touffes : sans elle, on voit le cou entre
+          deux boules de fourrure au moindre pivot. */}
+      <mesh castShadow>
+        <cylinderGeometry args={[0.2, 0.225, 0.11, 14]} />
+        <meshToonMaterial color={palette.gearTrim} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      {tufts.map((i) => {
+        const angle = (i / tufts.length) * Math.PI * 2
+        // Trois tailles qui alternent selon un motif de période 3 décalée : le
+        // tour du col ne compte pas un multiple de trois touffes, donc le motif
+        // ne se referme pas sur lui-même et ne se lit jamais comme une répétition.
+        const size = [0.105, 0.082, 0.094][i % 3]
+        return (
+          <mesh
+            key={i}
+            castShadow
+            position={[Math.sin(angle) * 0.2, 0.03 + (i % 2) * 0.022, Math.cos(angle) * 0.2]}
+            scale={[1, 0.86, 1]}
+          >
+            <dodecahedronGeometry args={[size, 0]} />
+            <meshToonMaterial color={palette.gear} gradientMap={toonGradient} />
+            <Outlines thickness={OUTLINE} color={palette.outline} />
+          </mesh>
+        )
+      })}
+    </group>
+  )
+}
+
+/**
+ * Visage du Voleur — pâle, et **la croix inversée au front**.
+ *
+ * C'est le seul personnage du jeu dont le visage soit franchement plus clair que
+ * sa tenue, et c'est le second écart qui le sépare de Vador : celui-ci n'a pas
+ * de visage du tout.
+ *
+ * La croix est posée **ici et non dans la coiffe**, et la nuance compte : la
+ * coiffe traîne d'un pas derrière le mouvement (voir `Skin`), et un tatouage qui
+ * glisse sur un front est un autocollant. Il appartient au crâne.
+ */
+function ThiefFace({ palette }: { palette: Palette }) {
+  return (
+    <group>
+      {[1, -1].map((side) => (
+        <mesh key={side} position={[side * 0.062, 0.012, 0.145]} scale={[1, 0.72, 1]}>
+          <sphereGeometry args={[0.028, 9, 7]} />
+          <meshBasicMaterial color={palette.eye} />
+        </mesh>
+      ))}
+
+      {/* La croix inversée : la barre longue verticale, la courte en travers et
+          **en bas**, ce qui est tout ce qui distingue cette croix d'une autre. */}
+      <mesh position={[0, 0.115, 0.146]}>
+        <boxGeometry args={[0.022, 0.095, 0.012]} />
+        <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
+      </mesh>
+      <mesh position={[0, 0.085, 0.147]}>
+        <boxGeometry args={[0.058, 0.021, 0.012]} />
+        <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
+      </mesh>
+    </group>
+  )
+}
+
+/**
+ * La coiffe du Voleur — des cheveux noirs plaqués en arrière.
+ *
+ * Volontairement plate et près du crâne : c'est le contraire de la crinière du
+ * clan, qui descend aux reins et qui est *sa* signature. Deux masses de cheveux
+ * longues auraient rendu les deux silhouettes cousines de dos.
+ *
+ * Elle laisse le front **découvert**, sans quoi la croix disparaîtrait — et la
+ * croix est la moitié de ce qui rend ce personnage reconnaissable.
+ */
+function ThiefHair({ palette }: { palette: Palette }) {
+  return (
+    <group>
+      {/* La calotte, reculée de trois centimètres : c'est ce recul qui dégage le
+          front. */}
+      <mesh castShadow position={[0, 0.035, -0.03]} scale={[1, 0.92, 1.1]}>
+        <sphereGeometry args={[0.155, 14, 11]} />
+        <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      {/* Trois mèches plaquées vers l'arrière, d'inégale longueur. Elles
+          dépassent de la nuque et donnent au crâne une direction — une calotte
+          seule est une casquette. */}
+      {[-1, 0, 1].map((x) => (
+        <mesh
+          key={x}
+          castShadow
+          position={[x * 0.06, 0.02 - Math.abs(x) * 0.015, -0.14]}
+          rotation={[0.42, 0, x * 0.12]}
+        >
+          <boxGeometry args={[0.062, 0.14 - Math.abs(x) * 0.028, 0.045]} />
+          <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
+          <Outlines thickness={OUTLINE} color={palette.outline} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
 function Katana({ palette }: { palette: Palette }) {
   return (
     <group position={[-0.02, -0.3, 0.02]} rotation={[0.24, 0, -0.1]}>

@@ -231,7 +231,19 @@
         "name": "Lame de Lumière Écarlate",
         "meta": "Trouvée dans l'autre coffre du sommet, à trois pas du portail",
         "description": "Une poignée d'acier d'où sort, quand on l'éveille, une lame qui n'a pas de matière : un cœur blanc dans un halo écarlate, qui ne s'émousse jamais, ne pèse rien, et traverse ce qu'on lui oppose. Elle éclaire la main qui la tient et le sol sous les pieds.",
-        "effect": "dégâts d'épée multipliés par quatre — l'arme la plus forte du jeu"
+        "effect": "dégâts d'épée multipliés par quatre — l'arme la plus forte du jeu, et elle se cumule avec la tenue"
+      },
+      "meruem-garb": {
+        "name": "Carapace du Roi",
+        "meta": "Trouvée dans l'un des deux coffres du Marais, après la chute de Malenia",
+        "description": "Ce n'est pas une armure : c'est un corps. Une chitine violette montée en plaques qui se recouvrent, deux épaulières taillées en pointe, une crête d'os soudée au crâne, et une queue qui se termine en dard porté haut par-dessus l'épaule. Il n'a rien à tenir en main. Celui qui la porte n'a jamais eu à apprendre à se battre : il est né en sachant, et il a mis moins d'un mois à n'avoir plus rien à apprendre de personne.",
+        "effect": "dégâts doublés, portée du coup allongée de moitié, la course et la détente les plus hautes du jeu — mais seulement +3 cœurs jaunes"
+      },
+      "kuroro-garb": {
+        "name": "Manteau du Voleur",
+        "meta": "Trouvé dans l'autre coffre du Marais, à trois pas du premier",
+        "description": "Un manteau noir fermé jusqu'au col, une fourrure pâle qui double la largeur des épaules, et une croix retournée au milieu du front. Celui qui le portait n'avait pas de pouvoir à lui : il prenait ceux des autres et les rangeait dans un livre. On ne lui a jamais connu d'arme, et ceux qui l'ont vu venir n'ont pas eu le temps de s'en étonner.",
+        "effect": "+4 cœurs jaunes, un coup sur trois porte double, course et détente juste derrière la Carapace"
       }
     },
     "language": {
