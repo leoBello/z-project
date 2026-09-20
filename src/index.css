@@ -3211,6 +3211,319 @@ body:has(.lightbox) .teleport-menu {
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* --- Classement en ligne ---------------------------------------------------- */
+
+/*
+  Le lien vers le tableau : un bouton qui ne ressemble pas à un bouton.
+
+  Il vit au milieu de deux panneaux qui ont déjà chacun leur paire d'actions, et
+  ces paires-là engagent quelque chose — lancer un défi, rendre la main. Consulter
+  un classement n'engage rien, et lui donner la même pastille verte aurait fait
+  trois propositions de même poids pour une seule décision à prendre.
+*/
+.challenge-modal__panel .challenge-modal__link {
+  margin-top: 14px;
+  padding: 4px 2px;
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #c79bff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.challenge-modal__panel .challenge-modal__link:hover {
+  background: transparent;
+  color: #ddc2ff;
+}
+
+/* --- Le formulaire d'enregistrement ----------------------------------------- */
+
+/*
+  Séparé du score par un filet, et c'est tout ce qu'il faut : au-dessus, ce qui
+  vient de se passer ; en dessous, ce qu'on peut en faire. Sans cette ligne, le
+  champ de saisie se lisait comme une suite du résultat.
+*/
+.scores-submit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.scores-submit__label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
+.scores-submit__row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+}
+
+.scores-submit__input {
+  font: inherit;
+  font-size: 14px;
+  min-width: 0;
+  flex: 1 1 auto;
+  max-width: 220px;
+  padding: 10px 14px;
+  border: 1px solid rgba(199, 155, 255, 0.3);
+  border-radius: 999px;
+  background: rgba(10, 6, 18, 0.55);
+  color: var(--hud-fg);
+  text-align: center;
+}
+
+.scores-submit__input::placeholder {
+  color: rgba(246, 242, 228, 0.35);
+}
+
+.scores-submit__input:focus-visible {
+  outline: 2px solid #c79bff;
+  outline-offset: 2px;
+}
+
+/*
+  Le bouton d'envoi désactivé reste lisible plutôt que d'être effacé : tant que
+  le champ est vide, il dit ce qui manque par sa seule présence à côté de lui.
+*/
+.gameover__panel .scores-submit button[disabled] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.scores-submit__error {
+  margin: 0;
+  font-size: 12px;
+  color: #ff9a8a;
+}
+
+/* La place obtenue, à la place du formulaire : c'est la réponse à la seule
+   question qu'on se posait en l'envoyant. */
+.scores-submit__standing {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #f5dc95;
+}
+
+.scores-submit__standing--loadout {
+  font-size: 12px;
+  font-weight: 500;
+  color: #c79bff;
+  opacity: 0.9;
+}
+
+.challenge-modal__panel .scores-submit__board {
+  margin-top: 2px;
+  padding: 4px 2px;
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #c79bff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.challenge-modal__panel .scores-submit__board:hover {
+  background: transparent;
+  color: #ddc2ff;
+}
+
+/* --- Le tableau ------------------------------------------------------------- */
+
+/*
+  Le panneau du classement est le plus large du jeu, et il a huit colonnes à
+  loger. Il est aussi le seul qui s'ouvre **par-dessus** un autre : le voile est
+  donc plus dense que celui des autres modales, pour que le panneau du dessous
+  cesse de se lire.
+*/
+.scores-board {
+  background: radial-gradient(
+    120% 90% at 50% 45%,
+    rgba(28, 18, 46, 0.72) 0%,
+    rgba(6, 4, 12, 0.92) 100%
+  );
+}
+
+.scores-board__panel {
+  max-width: min(880px, 100%);
+  width: 100%;
+  /* La hauteur est bornée pour que le tableau défile **dans** le panneau : sans
+     ça, cent lignes poussaient les boutons hors de l'écran. */
+  max-height: min(86vh, 760px);
+  padding: 26px 30px 24px;
+}
+
+.scores-board__panel:focus-visible {
+  outline: none;
+}
+
+.scores-board__title {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 0.04em;
+}
+
+.scores-board__filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 22px;
+  width: 100%;
+}
+
+.scores-board__filter {
+  margin-top: 12px;
+}
+
+.scores-board__panel .scores-board__filter .challenge-pick__option {
+  font-size: 12px;
+  padding: 5px 11px;
+}
+
+/* La zone qui défile. `min-height` retient la hauteur du panneau pendant un
+   chargement : sans elle, il se rétractait puis se rouvrait à chaque
+   changement de catégorie. */
+.scores-board__body {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 180px;
+  margin-top: 18px;
+  overflow: hidden;
+}
+
+.scores-board__scroll {
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 6, 18, 0.4);
+}
+
+.scores-board__note {
+  margin: auto;
+  font-size: 13px;
+  opacity: 0.6;
+}
+
+.scores-board__note--error {
+  color: #ff9a8a;
+  opacity: 1;
+}
+
+.challenge-modal__panel .scores-board__retry {
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: #c79bff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.scores-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+/*
+  L'en-tête reste visible pendant le défilement. Il est opaque et non
+  translucide : posé sur des lignes qui glissent dessous, un fond semi-
+  transparent aurait laissé passer les chiffres du tableau à travers ses
+  intitulés.
+*/
+.scores-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 10px 12px;
+  background: #241a38;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(246, 242, 228, 0.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.scores-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(246, 242, 228, 0.78);
+}
+
+.scores-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Tous les nombres du tableau sont à chasse fixe : des colonnes de chiffres qui
+   ne s'alignent pas ne se comparent pas, et comparer est la seule chose qu'on
+   fasse ici. */
+.scores-table__num,
+.scores-table__rank {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.scores-table__rank {
+  width: 1%;
+  color: rgba(246, 242, 228, 0.45);
+  font-weight: 600;
+}
+
+.scores-table__pseudo {
+  font-weight: 600;
+  color: var(--hud-fg);
+}
+
+.scores-table__points {
+  font-weight: 700;
+  color: #f5dc95;
+}
+
+.scores-table__date {
+  color: rgba(246, 242, 228, 0.45);
+  font-size: 12px;
+}
+
+/*
+  La ligne du joueur : un liseré à gauche et un fond violet, pas une couleur de
+  texte. On la cherche des yeux dans une colonne de cent, et une nuance de
+  caractère ne se repère pas en défilant.
+*/
+.scores-table__row--mine td {
+  background: rgba(139, 63, 240, 0.22);
+  color: var(--hud-fg);
+}
+
+.scores-table__row--mine td:first-child {
+  box-shadow: inset 3px 0 0 #c79bff;
+  color: #c79bff;
+}
+
+.scores-board__panel .challenge-modal__actions {
+  margin-top: 18px;
+}
+
 /* --- Arrivée sur l'Outremonde ---------------------------------------------- */
 
 /*
@@ -3317,6 +3630,27 @@ body:has(.lightbox) .teleport-menu {
 /* Écran étroit : le bandeau de chronomètre passe sous les cœurs, et le titre
    d'arrivée doit tenir sur la largeur d'un téléphone. */
 @media (max-width: 560px) {
+  /* Le classement garde ses huit colonnes et les fait défiler à l'horizontale :
+     en retirer aurait demandé de choisir laquelle des huit ne compte pas, et la
+     réponse dépend de ce que le joueur est venu comparer. */
+  .scores-board__panel {
+    padding: 20px 14px 18px;
+    max-height: 92vh;
+  }
+
+  .scores-board__filters {
+    gap: 2px 14px;
+  }
+
+  .scores-table {
+    font-size: 12px;
+  }
+
+  .scores-table thead th,
+  .scores-table td {
+    padding: 8px 9px;
+  }
+
   .challenge {
     top: auto;
     bottom: 104px;

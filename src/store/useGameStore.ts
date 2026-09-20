@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { track } from '../analytics'
+import { useScoresStore } from './useScoresStore'
 import {
   playChestCreak,
   playDamage,
@@ -29,7 +30,15 @@ import {
 import { ATTACK, PLAYER } from '../config/gameplay'
 import { chestById } from '../config/chests'
 import { enemyTotal } from '../config/enemies'
-import { itemById, type Equipment, type ItemSlot } from '../config/items'
+import {
+  itemById,
+  outfitOf,
+  weaponOf,
+  type Equipment,
+  type ItemSlot,
+  type OutfitId,
+  type WeaponId,
+} from '../config/items'
 import { TRIAL_COUNT } from '../config/quests'
 import { arrivalFor, arrivalYaw } from '../config/portal'
 import { WORLD, sampleHeight } from '../config/world'
@@ -509,6 +518,18 @@ export interface GameState {
   /** Le défi terminé s'est-il achevé sur une mort plutôt que sur le temps ? */
   challengeFailed: boolean
   /**
+   * La tenue et l'arme portées **au moment où le chronomètre s'est arrêté**.
+   *
+   * Figées ici et non relues dans `equipped` quand vient l'enregistrement du
+   * score : le panneau de résultat met la partie en pause mais le score, lui,
+   * reste affiché jusqu'au défi suivant. Sans cet instantané, ouvrir un coffre
+   * après sa course aurait réécrit ce avec quoi elle avait été faite — et le
+   * classement par tenue, qui est tout l'intérêt d'avoir huit silhouettes,
+   * aurait menti sur une ligne sur deux.
+   */
+  challengeResultOutfit: OutfitId
+  challengeResultWeapon: WeaponId
+  /**
    * Les records, **par catégorie** : une durée, une difficulté, douze cases.
    *
    * Les mélanger n'aurait aucun sens — dix minutes en facile et deux minutes en
@@ -839,6 +860,8 @@ const initialState = {
   challengeResultKills: 0,
   challengeResultMs: 0,
   challengeFailed: false,
+  challengeResultOutfit: 'luffy' as OutfitId,
+  challengeResultWeapon: 'fists' as WeaponId,
   challengeBests: {} as Record<string, { score: number; kills: number }>,
   populationId: 0,
 }
@@ -1917,6 +1940,15 @@ export const useGameStore = create<GameState>((set, get) => ({
       populationId: populationId + 1,
       challengeFailed: false,
     })
+    /*
+      Le formulaire du classement oublie la course précédente.
+
+      Il est le seul état du défi qui ne vive pas dans ce store — il survit à une
+      partie, comme le pseudo qu'il retient — donc `initialState` ne peut pas le
+      remettre à zéro. Sans cet appel, le panneau de résultat du deuxième défi
+      rouvrirait sur « enregistré, 4ᵉ sur 37 », qui est la place du premier.
+    */
+    useScoresStore.getState().forgetSave()
   },
 
   beginChallenge: () => {
@@ -1944,6 +1976,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     const key = categoryKey(state.challengeDuration, state.challengeDifficulty)
     const previous = state.challengeBests[key]
 
+    // L'équipement est figé **ici**, une fois pour la course. Voir la
+    // déclaration de `challengeResultOutfit` : relu plus tard, il aurait dit ce
+    // que le joueur porte, pas ce avec quoi il a marqué.
+    const outfit = outfitOf(state.equipped)
+    const weapon = weaponOf(state.equipped, outfit)
+
     playReward()
     track('challenge_ended', {
       score: challengeScore,
@@ -1958,6 +1996,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       challengeResultKills: challengeKills,
       challengeResultMs: ran,
       challengeFailed: failed,
+      challengeResultOutfit: outfit,
+      challengeResultWeapon: weapon,
       /*
         Le record de **cette catégorie**, et il ne retient que les défis menés à
         terme, morts comprises : on garde ce qu'on a marqué avant de tomber. Un

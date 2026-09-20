@@ -102,6 +102,51 @@
         "legend": "Legend of the Beyond"
       }
     },
+    "scores": {
+      "title": "Challenge leaderboard",
+      "openBoard": "View leaderboard",
+      "back": "Back",
+      "pseudoLabel": "Save this score to the leaderboard",
+      "pseudoPlaceholder": "Your name",
+      "save": "Save",
+      "saving": "Sending…",
+      "saveError": "Sending failed. Your score is still here — you can try again.",
+      "standing": "Saved — {rank} of {total} in this category",
+      "standingLoadout": "{rank} of {total} with {outfit} and {weapon}",
+      "outfitLabel": "Garb",
+      "weaponLabel": "Weapon",
+      "anyOutfit": "All",
+      "anyWeapon": "All",
+      "loading": "Loading the leaderboard…",
+      "loadError": "The leaderboard is out of reach.",
+      "retry": "Try again",
+      "empty": "Nobody has run this category yet. Go and open it.",
+      "columnRank": "Rank",
+      "columnPseudo": "Player",
+      "columnScore": "Points",
+      "columnKills": "Downed",
+      "columnTime": "Time",
+      "columnOutfit": "Garb",
+      "columnWeapon": "Weapon",
+      "columnDate": "Date",
+      "outfits": {
+        "luffy": "Straw Hat",
+        "zoro": "Pirate Hunter",
+        "madara": "Clan Garb",
+        "pain": "Cloak of the Dawn",
+        "demon": "Demon God's Armour",
+        "vader": "Dark Lord",
+        "meruem": "King's Carapace",
+        "kuroro": "Thief's Coat"
+      },
+      "weapons": {
+        "fists": "Bare fists",
+        "sword": "Sword",
+        "katana": "Kusanagi",
+        "cursed": "Kitetsu",
+        "saber": "Blade of Light"
+      }
+    },
     "quality": {
       "label": "Graphics quality",
       "high": "High quality",
