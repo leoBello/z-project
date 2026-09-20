@@ -298,6 +298,30 @@ describe('sorties du panneau de résultat', () => {
     expect(store().phase).toBe('playing')
   })
 
+  it('la sortie par le Sanctuaire refait toute la vie', () => {
+    run()
+    hit(2)
+    store().endChallenge(false)
+    expect(store().hearts).toBeLessThan(MAX_HEARTS)
+
+    store().returnToSanctuary()
+
+    expect(store().hearts).toBe(store().heartCapacity())
+  })
+
+  it('la sortie sur place ne soigne pas', () => {
+    run()
+    hit(2)
+    const left = store().hearts
+    store().endChallenge(false)
+
+    store().dismissChallengeResult()
+
+    // Le combat continue là où il en était : c'est tout le sens de cette
+    // sortie, et un soin gratuit en ferait la meilleure des deux.
+    expect(store().hearts).toBe(left)
+  })
+
   it('aucune des deux ne s applique à un défi encore en course', () => {
     run()
 

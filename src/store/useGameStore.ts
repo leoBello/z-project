@@ -2049,11 +2049,32 @@ export const useGameStore = create<GameState>((set, get) => ({
    * `Player.tsx` au même endroit que la résurrection, et avoir deux chemins pour
    * « reposer le joueur au Sanctuaire » est exactement ce qui finit par en
    * laisser un derrière.
+   *
+   * **Et elle soigne**, jusqu'à la capacité totale, cœurs jaunes compris —
+   * exactement ce que fait la mort sur l'Outremonde, qui repose au même endroit.
+   * C'était l'asymétrie absurde : tomber pendant le défi rendait toute la vie,
+   * survivre au chronomètre à un demi-cœur et rentrer de son plein gré ne
+   * rendait rien. Le défi suivant se lançait alors sur une barre vide, et la
+   * seule manière de repartir entier était de se faire tuer. Le Sanctuaire
+   * repose qui s'y présente, mort ou vif.
+   *
+   * `lastHitAt` suit pour la même raison que la résurrection : on arrive à
+   * quarante unités de ce qui frappait, la garde ne servira probablement jamais,
+   * mais une vie refaite qu'une bête posée là entamerait avant le premier pas ne
+   * serait pas un repos.
    */
   returnToSanctuary: () => {
-    if (get().challenge !== 'over') return
+    const state = get()
+    if (state.challenge !== 'over') return
     requestPlacement(arrivalFor('beyond'), arrivalYaw('beyond'))
-    set({ challenge: 'idle', challengeKills: 0, challengeScore: 0, phase: 'playing' })
+    set({
+      challenge: 'idle',
+      challengeKills: 0,
+      challengeScore: 0,
+      phase: 'playing',
+      hearts: state.maxHearts + state.bonusHearts,
+      lastHitAt: gameNow(),
+    })
   },
 
   // Les collections sont réécrites explicitement : `initialState` est un objet
