@@ -569,13 +569,32 @@ chronométré de deux minutes que propose le maître du Sanctuaire.
   non tirés** — un par grande région, pente mesurée sous 0,35, laisse de 18 —
   et la Déchue. Trois fois la densité du continent, parce que la carte existe
   pour un chronomètre de deux minutes
-- **Le défi du maître** : deux minutes, un compteur d'ennemis abattus, quatre
-  rangs. Tout se mesure sur l'**horloge de jeu**, donc ouvrir l'inventaire
-  suspend le chronomètre — on ne gagne pas de temps en lisant ses objets, et on
-  ne perd pas son défi parce qu'on a été interrompu. Le chronomètre lui-même ne
-  passe pas par React : il s'écrit dans le DOM depuis une boucle
-  `requestAnimationFrame`, comme la jauge de pourriture. Le compteur de bêtes,
-  lui, passe par le store — une mort est une transition, pas une valeur continue
+- **Le défi du maître** : trois difficultés × quatre durées (2, 5, 10 minutes,
+  illimité) = **douze catégories**, chacune avec son record. La difficulté
+  multiplie trois choses et trois seulement — ce que le joueur encaisse, ce que
+  les bêtes encaissent, ce que la victoire vaut — et jamais la vitesse ni les
+  télégraphes : un ennemi moins lisible n'est pas plus difficile. Tout se mesure
+  sur l'**horloge de jeu**, donc ouvrir l'inventaire suspend le chronomètre. Le
+  chronomètre lui-même ne passe pas par React : il s'écrit dans le DOM depuis
+  une boucle `requestAnimationFrame`, comme la jauge de pourriture. Le score et
+  le compte de bêtes, eux, passent par le store — une mort est une transition,
+  pas une valeur continue
+- **Le score est pondéré par l'adversaire**, et le compte de têtes reste affiché
+  à côté. Un Octorok vaut 10, un Moblin 15, un Lynel argenté 100, le doré 250,
+  la Déchue 500. Compter les têtes seules récompensait d'éviter tout ce qui était
+  intéressant à combattre. Le rang, lui, se mesure en **points par minute** :
+  c'est la seule façon qu'une course de dix minutes ne soit pas mécaniquement
+  mieux notée qu'une de deux
+- **Le monde se relève.** Les petites bêtes réapparaissent à leur poste vingt-cinq
+  secondes après être tombées ; les six grosses — cinq Lynels dont un doré, et la
+  Déchue — reviennent au défi suivant, par remontage du peuplement entier
+  (`populationId` en `key` React, l'idiome de `runId` restreint à une carte).
+  Sans ça, le second défi se courait sur un monde amputé de ses meilleures
+  cibles et le troisième sur des restes
+- **Deux sorties au panneau de résultat** : rester où l'on est, ou être reposé au
+  Sanctuaire. La première version n'en avait qu'une, libellée « Revenir au
+  Sanctuaire », qui ne ramenait nulle part — un libellé qui ment se signale comme
+  un bouton mort
 - **On ne meurt pas sur cette carte** : à zéro cœur, on est relevé au Sanctuaire,
   vie refaite, et c'est le défi en cours qui se paie. Le Game Over renverrait à
   l'écran de fin pour une charge de Lynel mal jugée dans un terrain de jeu, sur
@@ -1114,7 +1133,9 @@ codé.
 | Cotes du Sanctuaire, rayon de la trêve, place du maître | `SANCTUARY`, `SANCTUARY_TRUCE_R`, `SENSEI` dans `src/config/beyond.ts` |
 | Ce que la trêve empêche | `frozen` dans `src/components/Enemy.tsx` et `src/components/Lynel.tsx`, `src/state/sanctuary.ts` |
 | Nombre, espèces et postes des ennemis de l'Outremonde | `src/config/beyondEnemies.ts` |
-| Durée du défi, décompte, seuils de rang | `src/config/challenge.ts` |
+| Durées, difficultés, barème de points, seuils de rang, délai de réapparition | `src/config/challenge.ts` |
+| Ce qu'une difficulté multiplie | `DIFFICULTIES` dans `src/config/challenge.ts`, appliqué par `src/state/difficulty.ts` |
+| Quel poste porte le Lynel doré | `GOLDEN_POST_ID` dans `src/config/beyondEnemies.ts` |
 | Chronomètre, décompte, panneaux du défi | `src/components/ChallengeHUD.tsx` + `.challenge*` dans `src/index.css` |
 | Apparence et pose du maître | `src/components/beyond/Sensei.tsx` |
 | Dallage, monolithes, colonne de lumière du Sanctuaire | `src/components/beyond/Sanctuary.tsx` |

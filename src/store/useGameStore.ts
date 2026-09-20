@@ -14,7 +14,18 @@ import {
 import { preloadMap } from '../components/mapFragments'
 import { purgeRot, resetRot } from '../state/rot'
 import { requestPlacement } from '../state/playerBody'
+import { applyDifficulty, difficulty, resetDifficulty } from '../state/difficulty'
 import { BLAST_FORWARD_BY_MAP } from '../config/annihilation'
+import {
+  COUNTDOWN_MS,
+  DEFAULT_DIFFICULTY,
+  DEFAULT_DURATION,
+  categoryKey,
+  pointsFor,
+  type DifficultyId,
+  type DurationId,
+  type ScoreTarget,
+} from '../config/challenge'
 import { ATTACK, PLAYER } from '../config/gameplay'
 import { chestById } from '../config/chests'
 import { enemyTotal } from '../config/enemies'
@@ -463,14 +474,63 @@ export interface GameState {
    * ne pas récompenser celui qui s'en sert pour souffler.
    */
   challengeStartedAt: number
+  /**
+   * La difficulté et la durée choisies devant le maître.
+   *
+   * Elles vivent **hors du défi** et lui survivent : ce sont des préférences de
+   * joueur, pas l'état d'une course. Relancer enchaîne donc sur les mêmes
+   * réglages sans avoir à les recliquer, ce qui est tout l'intérêt d'un défi
+   * qu'on rejoue pour faire mieux.
+   *
+   * La difficulté agit aussi **hors défi**, sur toute la carte : elle est posée
+   * dans `state/difficulty.ts` dès qu'elle change, et les bêtes la lisent à leur
+   * apparition. Un joueur qui veut s'entraîner en facile n'a pas à lancer un
+   * chronomètre pour ça.
+   */
+  challengeDifficulty: DifficultyId
+  challengeDuration: DurationId
   /** Bêtes abattues depuis le départ du défi en cours. */
   challengeKills: number
+  /**
+   * Points marqués depuis le départ, difficulté comprise.
+   *
+   * Distinct du compte de victimes, et les deux sont affichés : le score dit ce
+   * qu'on a osé, le compte dit ce qu'on a abattu. Un Lynel doré vaut vingt-cinq
+   * Octoroks, et c'est ce rapport-là qui décide si l'on traverse la carte ou si
+   * l'on ratisse la plage. Voir `KILL_POINTS`.
+   */
+  challengeScore: number
   /** Score du dernier défi terminé, ou `null` s'il n'y en a pas encore eu. */
   challengeResult: number | null
+  /** Bêtes abattues lors du dernier défi terminé. */
+  challengeResultKills: number
+  /** Durée réellement courue par le dernier défi, en millisecondes de jeu. */
+  challengeResultMs: number
   /** Le défi terminé s'est-il achevé sur une mort plutôt que sur le temps ? */
   challengeFailed: boolean
-  /** Meilleur score de la partie, ou `null`. C'est lui que le maître retient. */
-  challengeBest: number | null
+  /**
+   * Les records, **par catégorie** : une durée, une difficulté, douze cases.
+   *
+   * Les mélanger n'aurait aucun sens — dix minutes en facile et deux minutes en
+   * difficile ne se comparent pas — et la seule façon de garder un record
+   * honnête est de ne jamais le faire tenir dans la même case qu'un autre. La
+   * clé vient de `categoryKey`, et elle est la même des deux côtés : le panneau
+   * du maître montre le record de la catégorie **qu'on s'apprête à jouer**.
+   */
+  challengeBests: Record<string, { score: number; kills: number }>
+  /**
+   * Génération du peuplement de l'Outremonde. Sert de `key` React.
+   *
+   * L'incrémenter démonte et remonte les soixante-treize corps de la carte —
+   * bêtes, Lynels et la Déchue — ce qui les remet tous debout, à leur poste, aux
+   * points de vie de la difficulté courante. C'est l'idiome de `runId` appliqué
+   * à une seule carte, et c'est ce qui permet de **relancer un défi autant de
+   * fois qu'on veut** sur un monde entier plutôt que sur ses restes.
+   *
+   * Les petites bêtes réapparaissent d'elles-mêmes en cours de course (voir
+   * `RESPAWN_MS`) ; les six gros, non. Eux ne reviennent qu'ici.
+   */
+  populationId: number
 
   /**
    * Identifiant de la partie. Sert de `key` React sur le joueur et les ennemis :
@@ -495,7 +555,16 @@ export interface GameState {
   isInvulnerable: () => boolean
   /** Rend des cœurs au joueur. Ignoré si la barre est déjà pleine. */
   healPlayer: (amount?: number) => boolean
-  registerKill: () => void
+  /**
+   * Compte une victime.
+   *
+   * L'espèce est passée par l'appelant depuis que le défi compte des **points**
+   * et plus seulement des têtes : un Octorok abattu de loin et un Lynel doré
+   * mené au bout de cinquante-quatre points de vie ne valent pas la même chose.
+   * Elle est facultative, et son absence vaut zéro point — le continent, lui, ne
+   * compte que des têtes, et n'a aucune raison de connaître un barème.
+   */
+  registerKill: (target?: ScoreTarget) => void
   /**
    * Ramasse le réceptacle d'un monument : un cœur maximal de plus, et la vie
    * refaite au passage. Retourne faux s'il était déjà pris, pour que
@@ -694,6 +763,10 @@ export interface GameState {
   openSenseiOffer: () => void
   /** La referme sans rien lancer. */
   closeSenseiOffer: () => void
+  /** Choisit la difficulté. Prend effet immédiatement, défi ou non. */
+  setChallengeDifficulty: (id: DifficultyId) => void
+  /** Choisit la durée. Ne prend effet qu'au défi suivant. */
+  setChallengeDuration: (id: DurationId) => void
   /** On accepte : le décompte part, la partie reprend. */
   acceptChallenge: () => void
   /** Fin du décompte — le chronomètre part. Appelé par la boucle du bandeau. */
@@ -707,8 +780,10 @@ export interface GameState {
    * avec un compteur déjà remis à zéro.
    */
   endChallenge: (failed: boolean) => void
-  /** Referme le panneau de résultat et rend la main. */
+  /** Referme le panneau de résultat et rend la main, sur place. */
   dismissChallengeResult: () => void
+  /** Referme le panneau **et** repose le joueur au Sanctuaire. */
+  returnToSanctuary: () => void
 }
 
 const initialState = {
@@ -756,10 +831,16 @@ const initialState = {
   senseiOffer: false,
   challenge: 'idle' as 'idle' | 'countdown' | 'running' | 'over',
   challengeStartedAt: -Infinity,
+  challengeDifficulty: DEFAULT_DIFFICULTY as DifficultyId,
+  challengeDuration: DEFAULT_DURATION as DurationId,
   challengeKills: 0,
+  challengeScore: 0,
   challengeResult: null as number | null,
+  challengeResultKills: 0,
+  challengeResultMs: 0,
   challengeFailed: false,
-  challengeBest: null as number | null,
+  challengeBests: {} as Record<string, { score: number; kills: number }>,
+  populationId: 0,
 }
 
 /** Secousse du relèvement : plus ample que celle d'une mort d'ennemi. */
@@ -828,10 +909,21 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { phase, hearts, isInvulnerable, damageTaken } = state
     if (phase !== 'playing' || isInvulnerable()) return
 
-    // L'appelant dit ce qu'il inflige **et qui il est**, l'équipement dit ce
-    // que ça coûte. Les ennemis n'ont toujours pas à connaître la table des
-    // objets : ils se nomment, ils ne se comparent pas.
-    const next = Math.max(0, hearts - damageTaken(amount, from))
+    /*
+      L'appelant dit ce qu'il inflige **et qui il est**, l'équipement dit ce que
+      ça coûte, et la difficulté dit sur quel terrain on joue.
+
+      Les trois se composent dans cet ordre, et la difficulté vient en premier
+      parce qu'elle décrit le monde : elle vaut un partout sauf sur l'Outremonde
+      (voir `state/difficulty.ts`), donc cette ligne ne change rien aux trois
+      autres cartes. Les ennemis, eux, n'ont toujours pas à connaître la table
+      des objets ni le réglage courant : ils se nomment, ils ne se comparent pas.
+
+      Le plancher d'un cœur de `damageTaken` s'applique après : en facile, ce
+      sont les gros coups qui sont divisés — une charge de Lynel à deux cœurs en
+      rend un — jamais les égratignures.
+    */
+    const next = Math.max(0, hearts - damageTaken(amount * difficulty.damage, from))
 
     /*
       Le coup était fatal, et quelque chose de porté l'annule.
@@ -1047,7 +1139,7 @@ export const useGameStore = create<GameState>((set, get) => ({
    * au-delà du compte — impossible aujourd'hui, mais c'est le genre de
    * condition qu'on ne relit jamais.
    */
-  registerKill: () => {
+  registerKill: (target) => {
     const { kills: previous, annihilation, portalOpenedAt, location, challenge } = get()
 
     /*
@@ -1066,7 +1158,24 @@ export const useGameStore = create<GameState>((set, get) => ({
       s'entraîne.
     */
     if (location !== 'continent') {
-      if (challenge === 'running') set({ challengeKills: get().challengeKills + 1 })
+      if (challenge !== 'running') return
+      /*
+        Le score et le compte, ensemble et dans le même `set`.
+
+        Les deux montent à la même victime mais ne disent pas la même chose, et
+        les écrire séparément aurait fait afficher un bandeau incohérent pendant
+        une frame — un Lynel doré ajoutant cent cinquante points avant d'ajouter
+        sa tête.
+
+        Le multiplicateur de difficulté est appliqué **ici** et pas au barème :
+        le barème dit ce que vaut une espèce, la difficulté dit ce que vaut la
+        partie. Arrondi, parce qu'un score est un entier.
+      */
+      const gained = target ? Math.round(pointsFor(target) * difficulty.score) : 0
+      set({
+        challengeKills: get().challengeKills + 1,
+        challengeScore: get().challengeScore + gained,
+      })
       return
     }
 
@@ -1565,7 +1674,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       façon de jouer.
     */
     if (get().challenge !== 'idle') {
-      set({ challenge: 'idle', challengeKills: 0 })
+      set({ challenge: 'idle', challengeKills: 0, challengeScore: 0 })
     }
 
     // Le téléchargement commence **ici**, au lever du voile, et pas au palier
@@ -1647,6 +1756,18 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
 
     /*
+      La difficulté est une propriété de **l'Outremonde**, pas du personnage.
+
+      Elle est posée à l'arrivée et remise à neutre partout ailleurs, exactement
+      comme la trêve du Sanctuaire est levée au démontage. Sans cette remise à
+      zéro, un joueur qui repart du Sanctuaire en difficile emporterait ses
+      dégâts majorés sur le continent — et un jeu devenu un peu plus dur ne
+      ressemble pas à un bug, donc personne ne le signalerait jamais.
+    */
+    if (transit === 'beyond') applyDifficulty(get().challengeDifficulty)
+    else resetDifficulty()
+
+    /*
       L'île rend trois cœurs, une seule fois.
 
       Elle est un aller sans retour tant que le Lynel est debout : on y arrive
@@ -1704,20 +1825,41 @@ export const useGameStore = create<GameState>((set, get) => ({
   /**
    * Ouvre la proposition.
    *
-   * La partie passe en pause, comme devant un panneau de monument : le texte
-   * fait quatre lignes, et les lire pendant qu'un Lynel arrive serait une
-   * mauvaise plaisanterie — sauf qu'ici aucun ne peut arriver, la trêve les
-   * tient. La pause est donc là pour le **confort de lecture**, et parce que
-   * tous les panneaux du jeu se comportent ainsi ; un seul qui laisserait la
-   * partie tourner derrière lui serait la vraie surprise.
+   * La partie passe en pause, comme devant un panneau de monument : on y choisit
+   * une difficulté et une durée, et faire ce choix pendant qu'un Lynel arrive
+   * serait une mauvaise plaisanterie — sauf qu'ici aucun ne peut arriver, la
+   * trêve les tient. La pause est donc là pour le **confort de lecture**, et
+   * parce que tous les panneaux du jeu se comportent ainsi.
    *
-   * Refusée pendant un défi : le maître n'a rien à dire à quelqu'un qui court
-   * déjà pour lui.
+   * Refusée pendant un défi : lui parler alors **termine** la course en cours
+   * (voir `triggerInteraction`), ce qui est la seule façon d'arrêter un mode
+   * illimité — et la seule façon d'abandonner une course de dix minutes sans
+   * mourir ni quitter la carte.
    */
   openSenseiOffer: () => {
     const { phase, challenge } = get()
     if (phase !== 'playing' || challenge !== 'idle') return
     set({ senseiOffer: true, phase: 'paused' })
+  },
+
+  /**
+   * La difficulté prend effet **tout de suite**, défi ou non.
+   *
+   * C'est ce qui permet de s'entraîner en facile sans lancer de chronomètre, et
+   * ça ne peut pas casser une course en cours : le panneau qui l'appelle est
+   * fermé pendant un défi. Les points de vie déjà posés ne bougent pas — une
+   * bête calibre les siens à son apparition — donc le réglage se voit au défi
+   * suivant, qui remonte tout le peuplement.
+   */
+  setChallengeDifficulty: (id) => {
+    if (get().challengeDifficulty === id) return
+    applyDifficulty(id)
+    set({ challengeDifficulty: id })
+  },
+
+  setChallengeDuration: (id) => {
+    if (get().challengeDuration === id) return
+    set({ challengeDuration: id })
   },
 
   closeSenseiOffer: () => set({ senseiOffer: false, phase: 'playing' }),
@@ -1736,16 +1878,43 @@ export const useGameStore = create<GameState>((set, get) => ({
    * venait de faire.
    */
   acceptChallenge: () => {
-    if (get().challenge !== 'idle') return
+    const { challenge, challengeDifficulty, challengeDuration, populationId } = get()
+    if (challenge !== 'idle') return
     playPortal()
-    track('challenge_started', {})
+    track('challenge_started', {
+      difficulty: challengeDifficulty,
+      duration: challengeDuration,
+    })
+    // La difficulté peut avoir été choisie avant d'arriver sur la carte : on la
+    // réaffirme au départ plutôt que de supposer qu'elle est déjà posée.
+    applyDifficulty(challengeDifficulty)
     set({
       senseiOffer: false,
       phase: 'playing',
       challenge: 'countdown',
       challengeStartedAt: gameNow(),
       challengeKills: 0,
+      challengeScore: 0,
       challengeResult: null,
+      /*
+        **Le monde entier se relève.**
+
+        C'est la correction qui manquait à la première version : les six gros
+        adversaires — cinq Lynels et la Déchue — restaient morts pour la session,
+        donc le deuxième défi se courait sur un monde amputé de ses meilleures
+        cibles, et le troisième sur des restes. On ne pouvait pas « recommencer
+        autant de fois qu'on veut », on pouvait recommencer une fois.
+
+        Incrémenter cet identifiant remonte les soixante-treize corps par une
+        `key` React, ce qui les repose à leur poste avec les points de vie de la
+        difficulté choisie. L'idiome est celui de `runId`, restreint à une carte.
+
+        Ça se paie d'un à-coup de quelques dizaines de millisecondes — soixante-
+        treize corps physiques recréés d'un coup — et il tombe pendant le
+        décompte, c'est-à-dire au seul moment de la course où le joueur n'a
+        encore rien à perdre.
+      */
+      populationId: populationId + 1,
       challengeFailed: false,
     })
   },
@@ -1756,28 +1925,95 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   endChallenge: (failed) => {
-    const { challenge, challengeKills, challengeBest } = get()
+    const state = get()
+    const { challenge, challengeKills, challengeScore } = state
     // Idempotent — voir la déclaration. Le temps qui tombe à zéro et un coup
     // fatal peuvent se produire sur la même frame.
     if (challenge === 'idle' || challenge === 'over') return
+
+    /*
+      La durée **réellement courue**, et non celle qui était prévue.
+
+      Elle sert au rang, qui se mesure en points par minute : un mode illimité
+      arrêté au bout de trois minutes doit être jugé sur trois minutes, et une
+      course de dix interrompue par une mort à la sixième aussi. Le décompte de
+      départ est retiré — on ne marque rien pendant, il ne doit pas diluer le
+      rythme.
+    */
+    const ran = Math.max(0, gameNow() - state.challengeStartedAt - COUNTDOWN_MS)
+    const key = categoryKey(state.challengeDuration, state.challengeDifficulty)
+    const previous = state.challengeBests[key]
+
     playReward()
-    track('challenge_ended', { kills: challengeKills, failed })
+    track('challenge_ended', {
+      score: challengeScore,
+      kills: challengeKills,
+      failed,
+      difficulty: state.challengeDifficulty,
+      duration: state.challengeDuration,
+    })
     set({
       challenge: 'over',
-      challengeResult: challengeKills,
+      challengeResult: challengeScore,
+      challengeResultKills: challengeKills,
+      challengeResultMs: ran,
       challengeFailed: failed,
-      // Le record ne retient que les défis **menés à terme**, morts comprises :
-      // on garde ce qu'on a tué avant de tomber. Un score n'est pas annulé parce
-      // qu'il s'est mal fini, il est seulement plus bas.
-      challengeBest: Math.max(challengeBest ?? 0, challengeKills),
+      /*
+        Le record de **cette catégorie**, et il ne retient que les défis menés à
+        terme, morts comprises : on garde ce qu'on a marqué avant de tomber. Un
+        score n'est pas annulé parce qu'il s'est mal fini, il est seulement plus
+        bas.
+
+        Le compte de victimes suit le score et n'est pas maximisé de son côté :
+        un record est un instantané d'une course, pas un assemblage des
+        meilleures moitiés de plusieurs.
+      */
+      challengeBests:
+        challengeScore > (previous?.score ?? -1)
+          ? {
+              ...state.challengeBests,
+              [key]: { score: challengeScore, kills: challengeKills },
+            }
+          : state.challengeBests,
       // Le panneau met la partie en pause, comme tous les panneaux du jeu.
       phase: 'paused',
     })
   },
 
+  /**
+   * Referme le panneau et rend la main **sur place**.
+   *
+   * C'est la sortie par défaut, et elle manquait : la première version n'offrait
+   * qu'un bouton, libellé « Revenir au Sanctuaire », qui ne ramenait nulle part
+   * et se contentait de fermer. Le joueur restait au milieu de la carte devant
+   * un bouton qui avait promis autre chose — le défaut ressemblait à un bouton
+   * mort, alors que c'était un libellé qui mentait.
+   *
+   * Les deux sorties existent donc maintenant pour de bon : celle-ci laisse le
+   * joueur là où le chronomètre l'a surpris, avec les bêtes autour de lui, parce
+   * qu'une carte d'entraînement ne doit pas interrompre un combat en cours pour
+   * annoncer un score.
+   */
   dismissChallengeResult: () => {
     if (get().challenge !== 'over') return
-    set({ challenge: 'idle', challengeKills: 0, phase: 'playing' })
+    set({ challenge: 'idle', challengeKills: 0, challengeScore: 0, phase: 'playing' })
+  },
+
+  /**
+   * Referme le panneau **et** repose le joueur au Sanctuaire.
+   *
+   * L'autre sortie, celle que le libellé promettait. Elle passe par une demande
+   * de placement et non par une écriture directe dans le corps physique : la
+   * partie est en pause quand le panneau est ouvert, donc le monde de Rapier est
+   * arrêté et l'écriture serait sûre — mais la demande est appliquée par
+   * `Player.tsx` au même endroit que la résurrection, et avoir deux chemins pour
+   * « reposer le joueur au Sanctuaire » est exactement ce qui finit par en
+   * laisser un derrière.
+   */
+  returnToSanctuary: () => {
+    if (get().challenge !== 'over') return
+    requestPlacement(arrivalFor('beyond'), arrivalYaw('beyond'))
+    set({ challenge: 'idle', challengeKills: 0, challengeScore: 0, phase: 'playing' })
   },
 
   // Les collections sont réécrites explicitement : `initialState` est un objet
@@ -1793,6 +2029,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     // survivent au remontage du joueur : sans ça, `attackStartedAt` reste dans
     // le futur de l'horloge fraîchement remise à zéro et l'attaque se bloque.
     resetCombat()
+    // Même famille, même raison : la difficulté de l'Outremonde vit hors de
+    // React et ne serait pas remise à neutre par le retour à `initialState`.
+    // Une nouvelle partie commencée en difficile encaisserait les dégâts majorés
+    // dès le premier Moblin du continent.
+    resetDifficulty()
     set((state) => ({
       ...initialState,
       discovered: [],

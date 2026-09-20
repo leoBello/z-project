@@ -73,6 +73,24 @@ const POSTS: readonly BeyondPost[] = [
 ]
 
 /**
+ * Le poste du **Lynel doré**, et pourquoi c'est celui-là.
+ *
+ * Le contrefort du nord-est est le plus éloigné des cinq : cent quatre unités du
+ * Sanctuaire, soit près d'une minute de course aller. C'est le seul poste dont
+ * l'aller-retour ne tient pas dans un défi de deux minutes sans y sacrifier tout
+ * le reste — donc le seul où la question « est-ce que j'y vais ? » se pose
+ * vraiment. Une grosse récompense posée à vingt unités de la ligne de départ
+ * n'aurait été qu'un passage obligé.
+ *
+ * Il est monté en `wild-golden` : robe d'or, seuils de phase du doré,
+ * cinquante-quatre points de vie et un cœur de dégâts en plus. C'est la même
+ * bête que celle du sommet de la Montagne de l'Ouest — sauf que sa mort, ici,
+ * ne clôt aucune quête et ne donne aucun réceptacle. Elle vaut deux cent
+ * cinquante points, et rien d'autre.
+ */
+export const GOLDEN_POST_ID = 'beyond-lynel-mountain'
+
+/**
  * Rayon de la laisse d'un Lynel de l'Outremonde.
  *
  * Bien plus large que celle du gardien de la rotonde, qui tient sur son dallage

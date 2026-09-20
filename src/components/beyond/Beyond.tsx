@@ -1,4 +1,5 @@
 import { BEYOND_PORTAL, BEYOND_SHAPE } from '../../config/beyond'
+import { useGameStore } from '../../store/useGameStore'
 import { Portal } from '../environment/Portal'
 import { Terrain } from '../environment/Terrain'
 import { Vegetation } from '../environment/Vegetation'
@@ -38,6 +39,17 @@ import { useBeyondMaterials } from './materials'
  */
 export default function Beyond() {
   const materials = useBeyondMaterials()
+  /*
+    La génération du peuplement, qui sert de `key` au monde vivant.
+
+    Chaque défi accepté l'incrémente, ce qui démonte et remonte les
+    soixante-treize corps de la carte : les cinq Lynels, la Déchue et les bêtes
+    se retrouvent debout, à leur poste, aux points de vie de la difficulté
+    choisie. C'est l'idiome de `runId` d'`App.tsx`, restreint à une carte, et
+    c'est ce qui permet de relancer le défi autant de fois qu'on veut sur un
+    monde entier plutôt que sur ses restes.
+  */
+  const populationId = useGameStore((state) => state.populationId)
 
   return (
     <>
@@ -61,7 +73,7 @@ export default function Beyond() {
       <Crucible materials={materials} />
       <Sensei />
 
-      <BeyondPopulation />
+      <BeyondPopulation key={populationId} />
 
       {/*
         L'anneau du retour, qui ramène au Marais.

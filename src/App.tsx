@@ -167,10 +167,12 @@ export default function App() {
         qu'aucun défi ne court, et le tester ici aurait mis dans `App.tsx` une
         troisième connaissance de la carte courante.
       */}
-      <ChallengeHUD />
-      {/* La fanfare d'arrivée sur l'Outremonde, au même rang et pour les mêmes
-          raisons. Elle ne rend rien ailleurs, ni après ses six secondes. */}
+      {/* La fanfare d'arrivée sur l'Outremonde, **avant** le défi et pas après :
+          c'est l'ordre du DOM qui décide ce qui recouvre quoi, et le panneau du
+          maître peut très bien s'ouvrir pendant les six secondes qu'elle dure.
+          Elle ne rend rien ailleurs, ni passé ce délai. */}
       <BeyondArrival />
+      <ChallengeHUD />
       {/* La révélation d'un coffre passe devant tout le reste : c'est le seul
           moment du jeu où l'écran a une seule chose à dire. */}
       <ChestReveal />

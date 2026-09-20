@@ -1,8 +1,12 @@
 import { useEffect, useRef } from 'react'
 import {
-  CHALLENGE_MS,
   CHALLENGE_URGENT_MS,
   COUNTDOWN_MS,
+  DIFFICULTIES,
+  DURATIONS,
+  categoryKey,
+  durationById,
+  formatElapsed,
   formatRemaining,
   rankFor,
 } from '../config/challenge'
@@ -24,15 +28,14 @@ import { useDialogFocus } from './inventory/useDialogFocus'
  * **Le chronomètre ne passe pas par React, et c'est la décision du fichier.**
  * Un compte à rebours est, par nature, une valeur qui change à chaque image :
  * le poser dans un `useState` aurait re-rendu tout le sous-arbre soixante fois
- * par seconde pendant deux minutes, sur une carte qui porte déjà quatre-vingts
- * ennemis et quatorze mille instances de végétation. Il est donc écrit
+ * par seconde pendant dix minutes, sur une carte qui porte déjà quatre-vingts
+ * corps physiques et quatorze mille instances de végétation. Il est donc écrit
  * directement dans le DOM depuis une boucle `requestAnimationFrame`, exactement
  * comme la jauge de pourriture du Marais — voir `RotMeter`, qui a inauguré cet
  * idiome pour la même raison.
  *
- * Le **compteur de bêtes**, lui, passe par le store : une mort est une
- * transition, pas une valeur continue. Deux ou trois re-rendus par seconde dans
- * le pire des cas, c'est le prix normal d'un affichage réactif.
+ * Le **score et le compte de bêtes**, eux, passent par le store : une mort est
+ * une transition, pas une valeur continue.
  *
  * Tout se mesure sur l'**horloge de jeu**. Ouvrir l'inventaire met la partie en
  * pause, donc arrête l'horloge, donc arrête le chronomètre : on ne gagne pas de
@@ -61,12 +64,20 @@ const GO_MS = 700
  * Personne d'autre ne pourrait le faire : un `setTimeout` courrait en temps
  * réel, donc continuerait pendant une pause — le défi se terminerait derrière un
  * panneau d'inventaire ouvert.
+ *
+ * **Le mode illimité compte à l'endroit.** Il n'a pas d'échéance, donc rien à
+ * décompter : le bandeau montre le temps couru, et c'est le joueur qui arrête,
+ * en revenant parler au maître.
  */
 function ChallengeClock() {
   const phase = useGameStore((state) => state.challenge)
   const startedAt = useGameStore((state) => state.challengeStartedAt)
+  const durationId = useGameStore((state) => state.challengeDuration)
   const kills = useGameStore((state) => state.challengeKills)
+  const score = useGameStore((state) => state.challengeScore)
   const { dict } = useI18n()
+
+  const limit = durationById(durationId).ms
 
   const strip = useRef<HTMLDivElement>(null)
   const time = useRef<HTMLSpanElement>(null)
@@ -81,9 +92,7 @@ function ChallengeClock() {
       L'effet se relance au passage du décompte au chronomètre — la phase est
       dans ses dépendances — et repartir de la chaîne vide lui faisait oublier
       qu'un « GO ! » était à l'écran : le test d'effacement, qui exige un mot
-      précédent, ne passait jamais. Le mot restait dans le DOM. Il était
-      invisible, son animation s'étant achevée sur une opacité nulle, mais c'est
-      le genre d'invisibilité qui tient à une règle de CSS et pas au code.
+      précédent, ne passait jamais.
     */
     let lastCue = cue.current?.textContent ?? ''
 
@@ -116,18 +125,24 @@ function ChallengeClock() {
       }
 
       if (phase === 'running') {
-        const remaining = CHALLENGE_MS - (elapsed - COUNTDOWN_MS)
-        if (remaining <= 0) {
-          store.endChallenge(false)
-          return
-        }
-        if (time.current) time.current.textContent = formatRemaining(remaining)
-        if (strip.current) {
-          // Les cinq dernières secondes, et rien d'autre. Un chronomètre qui
-          // s'affole pendant vingt secondes n'alarme plus personne au bout de
-          // trois essais ; un qui change cinq secondes avant la fin fait lever
-          // les yeux.
-          strip.current.dataset.state = remaining <= CHALLENGE_URGENT_MS ? 'urgent' : 'running'
+        const ran = elapsed - COUNTDOWN_MS
+        if (limit === null) {
+          // Illimité : le compteur monte, et rien ne s'arrête tout seul.
+          if (time.current) time.current.textContent = formatElapsed(ran)
+        } else {
+          const remaining = limit - ran
+          if (remaining <= 0) {
+            store.endChallenge(false)
+            return
+          }
+          if (time.current) time.current.textContent = formatRemaining(remaining)
+          if (strip.current) {
+            // Les dernières secondes, et rien d'autre. Un chronomètre qui
+            // s'affole pendant une minute n'alarme plus personne au bout de
+            // trois essais ; un qui change dix secondes avant la fin fait lever
+            // les yeux.
+            strip.current.dataset.state = remaining <= CHALLENGE_URGENT_MS ? 'urgent' : 'running'
+          }
         }
         // Le « GO ! » déborde sur le départ, puis s'efface.
         if (cue.current && elapsed > COUNTDOWN_MS + GO_MS && lastCue !== '') {
@@ -141,20 +156,28 @@ function ChallengeClock() {
 
     frame = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(frame)
-  }, [phase, startedAt, dict])
+  }, [phase, startedAt, limit, dict])
 
   return (
     <>
       <div ref={cue} className="challenge__cue" aria-hidden="true" />
       <div ref={strip} className="challenge" data-state={phase}>
         <div className="challenge__cell">
-          <span className="challenge__label">{dict.ui.challenge.timeLabel}</span>
+          <span className="challenge__label">
+            {limit === null ? dict.ui.challenge.elapsedLabel : dict.ui.challenge.timeLabel}
+          </span>
           {/* La valeur de départ est écrite dans le JSX et non laissée vide :
               entre le montage et la première image, le bandeau afficherait
               sinon un trou à la place du chronomètre. */}
           <span ref={time} className="challenge__time">
-            {formatRemaining(CHALLENGE_MS)}
+            {limit === null ? formatElapsed(0) : formatRemaining(limit)}
           </span>
+        </div>
+        {/* Le score d'abord, le compte ensuite : c'est le score qu'on joue, et
+            le compte n'est là que pour dire de combien de têtes il est fait. */}
+        <div className="challenge__cell">
+          <span className="challenge__label">{dict.ui.challenge.scoreLabel}</span>
+          <span className="challenge__score">{score}</span>
         </div>
         <div className="challenge__cell">
           <span className="challenge__label">{dict.ui.challenge.killsLabel}</span>
@@ -166,36 +189,113 @@ function ChallengeClock() {
 }
 
 /**
- * La proposition du maître.
+ * Une rangée de choix : la difficulté, ou la durée.
+ *
+ * Des boutons et non un `<select>`, pour trois raisons : les options sont peu
+ * nombreuses et doivent toutes être visibles d'un coup ; le jeu n'a pas un seul
+ * menu déroulant et en introduire un ici aurait fait tache ; et surtout un
+ * bouton se pointe au pouce, ce qui compte sur une carte qu'on joue aussi au
+ * tactile.
+ */
+function ChoiceRow<T extends string>({
+  label,
+  options,
+  value,
+  onPick,
+}: {
+  label: string
+  options: readonly { id: T; label: string }[]
+  value: T
+  onPick: (id: T) => void
+}) {
+  return (
+    <div className="challenge-pick">
+      <span className="challenge-pick__label">{label}</span>
+      <div className="challenge-pick__row" role="group" aria-label={label}>
+        {options.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            className="challenge-pick__option"
+            // `aria-pressed` et non une classe seule : au lecteur d'écran, une
+            // rangée de boutons sans état dit trois fois la même chose.
+            aria-pressed={option.id === value}
+            onClick={() => onPick(option.id)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * La proposition du maître — et le seul endroit du jeu où l'on règle quelque
+ * chose qui ne soit pas un réglage de page.
  *
  * Même cadre que les autres modales du jeu — voile sombre, carte centrée — parce
  * que les écrans modaux doivent se reconnaître avant d'être lus. Ce qui la
- * distingue est qu'elle porte **deux** boutons : c'est le seul endroit du jeu où
- * l'on peut dire non.
+ * distingue est qu'elle porte **des choix** : trois difficultés, quatre durées,
+ * et le record de la catégorie qu'ils désignent. Ce record est le seul texte de
+ * l'écran qui change quand on clique ailleurs, et c'est voulu : il dit ce qu'il
+ * y a à battre **ici**, pas ce qu'on a fait de mieux en général.
  *
  * Le piège de focus est celui de l'inventaire et du journal, repris tel quel :
  * la partie est en pause derrière, et une tabulation qui sortirait du panneau
  * irait promener le curseur sur des contrôles inertes.
  */
 function SenseiOffer() {
-  const best = useGameStore((state) => state.challengeBest)
+  const difficulty = useGameStore((state) => state.challengeDifficulty)
+  const duration = useGameStore((state) => state.challengeDuration)
+  const bests = useGameStore((state) => state.challengeBests)
+  const setDifficulty = useGameStore((state) => state.setChallengeDifficulty)
+  const setDuration = useGameStore((state) => state.setChallengeDuration)
   const accept = useGameStore((state) => state.acceptChallenge)
   const close = useGameStore((state) => state.closeSenseiOffer)
   const { dict } = useI18n()
   const panel = useRef<HTMLDivElement>(null)
   useDialogFocus(panel, close)
 
+  const best = bests[categoryKey(duration, difficulty)]
+
   return (
     <div className="gameover challenge-modal">
-      <div ref={panel} className="gameover__panel challenge-modal__panel" role="dialog" aria-modal="true">
+      <div
+        ref={panel}
+        className="gameover__panel challenge-modal__panel"
+        role="dialog"
+        aria-modal="true"
+      >
         <span className="challenge-modal__who">{dict.ui.challenge.senseiName}</span>
         <h1>{dict.ui.challenge.offerTitle}</h1>
         <p className="challenge-modal__body">{dict.ui.challenge.offerBody}</p>
-        {best !== null && (
-          <p className="challenge-modal__best">
-            {format(dict.ui.challenge.offerBest, { count: best })}
-          </p>
-        )}
+
+        <ChoiceRow
+          label={dict.ui.challenge.difficultyLabel}
+          options={DIFFICULTIES.map((entry) => ({
+            id: entry.id,
+            label: dict.ui.challenge.difficulties[entry.id],
+          }))}
+          value={difficulty}
+          onPick={setDifficulty}
+        />
+        <ChoiceRow
+          label={dict.ui.challenge.durationLabel}
+          options={DURATIONS.map((entry) => ({
+            id: entry.id,
+            label: dict.ui.challenge.durations[entry.id],
+          }))}
+          value={duration}
+          onPick={setDuration}
+        />
+
+        <p className="challenge-modal__best">
+          {best
+            ? format(dict.ui.challenge.offerBest, { score: best.score, count: best.kills })
+            : dict.ui.challenge.offerNoBest}
+        </p>
+
         <div className="challenge-modal__actions">
           <button type="button" onClick={accept}>
             {dict.ui.challenge.accept}
@@ -210,38 +310,55 @@ function SenseiOffer() {
 }
 
 /**
- * Le résultat, une fois les deux minutes écoulées — ou le joueur tombé.
+ * Le résultat — le temps écoulé, le joueur tombé, ou le joueur qui a décidé
+ * d'arrêter.
  *
- * Il dit trois choses dans cet ordre : ce qui s'est passé, combien, et ce que ça
- * vaut. Le rang est la seule des trois qui ne soit pas un fait : « dix-huit » ne
- * veut rien dire tant qu'on ne sait pas si c'est bien, et c'est tout ce que
- * `rankFor` existe pour dire.
+ * Il dit quatre choses dans cet ordre : ce qui s'est passé, combien de points,
+ * de combien de têtes, et ce que ça vaut. Le rang est le seul des quatre qui ne
+ * soit pas un fait : « quatre cent dix » ne veut rien dire tant qu'on ne sait
+ * pas si c'est bien, et c'est tout ce que `rankFor` existe pour dire. Il se
+ * mesure en points **par minute**, ce qui le rend comparable entre une course de
+ * deux minutes et une de dix.
  *
- * Le pluriel a ses propres clés plutôt qu'une règle, comme l'écran de fin :
- * « 1 adversaire au tapis » et « 2 adversaires au tapis » n'accordent pas
- * seulement le nom, et toutes les langues ne coupent pas au même endroit.
+ * **Deux sorties, et c'est une correction.** La première version n'en offrait
+ * qu'une, libellée « Revenir au Sanctuaire », qui ne ramenait nulle part : le
+ * joueur restait au milieu de la carte devant un bouton qui avait promis autre
+ * chose. Les deux existent maintenant pour de bon, et celle qui ne bouge
+ * personne est en premier — on peut être interrompu par un chronomètre en plein
+ * combat, et l'interface n'a pas à décider de la fin de ce combat.
  */
 function ChallengeResult() {
   const score = useGameStore((state) => state.challengeResult)
+  const kills = useGameStore((state) => state.challengeResultKills)
+  const ranMs = useGameStore((state) => state.challengeResultMs)
   const failed = useGameStore((state) => state.challengeFailed)
-  const best = useGameStore((state) => state.challengeBest)
+  const difficulty = useGameStore((state) => state.challengeDifficulty)
+  const duration = useGameStore((state) => state.challengeDuration)
+  const bests = useGameStore((state) => state.challengeBests)
   const dismiss = useGameStore((state) => state.dismissChallengeResult)
+  const goHome = useGameStore((state) => state.returnToSanctuary)
   const { dict } = useI18n()
   const panel = useRef<HTMLDivElement>(null)
   useDialogFocus(panel, dismiss)
 
-  const kills = score ?? 0
+  const points = score ?? 0
+  const best = bests[categoryKey(duration, difficulty)]
   // Le record vient d'être écrit par `endChallenge`, donc l'égalité **est** le
   // nouveau record. Tester `>` ne l'aurait jamais trouvé.
-  const isBest = best !== null && kills >= best && kills > 0
+  const isBest = best !== undefined && points >= best.score && points > 0
 
   return (
     <div className="gameover challenge-modal">
-      <div ref={panel} className="gameover__panel challenge-modal__panel" role="dialog" aria-modal="true">
+      <div
+        ref={panel}
+        className="gameover__panel challenge-modal__panel"
+        role="dialog"
+        aria-modal="true"
+      >
         <span className="challenge-modal__who">
           {failed ? dict.ui.challenge.resultFailed : dict.ui.challenge.resultTitle}
         </span>
-        <h1 className="challenge-modal__score">{kills}</h1>
+        <h1 className="challenge-modal__score">{points}</h1>
         <p className="challenge-modal__body">
           {kills === 0
             ? dict.ui.challenge.resultNone
@@ -252,24 +369,30 @@ function ChallengeResult() {
                 { count: kills },
               )}
         </p>
-        <p className="challenge-modal__rank">{dict.ui.challenge.ranks[rankFor(kills)]}</p>
+        <p className="challenge-modal__rank">{dict.ui.challenge.ranks[rankFor(points, ranMs)]}</p>
+        <p className="challenge-modal__category">
+          {dict.ui.challenge.durations[duration]} · {dict.ui.challenge.difficulties[difficulty]}
+        </p>
         {/* Un record nul n'est pas un record : la ligne ne paraît que s'il y a
-            quelque chose à battre. « Record de la partie : 0 » sous un score de
-            zéro est la seule phrase que cet écran pouvait dire de trop. */}
+            quelque chose à battre. */}
         {isBest ? (
           <p className="challenge-modal__best challenge-modal__best--new">
             {dict.ui.challenge.resultNewBest}
           </p>
         ) : (
-          best !== null &&
-          best > 0 && (
+          best !== undefined &&
+          best.score > 0 && (
             <p className="challenge-modal__best">
-              {format(dict.ui.challenge.resultBest, { count: best })}
+              {format(dict.ui.challenge.resultBest, { score: best.score })}
             </p>
           )
         )}
+
         <div className="challenge-modal__actions">
           <button type="button" onClick={dismiss}>
+            {dict.ui.challenge.keepFighting}
+          </button>
+          <button type="button" className="challenge-modal__ghost" onClick={goHome}>
             {dict.ui.challenge.close}
           </button>
         </div>

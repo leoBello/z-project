@@ -156,8 +156,15 @@ interface Events {
    * après. C'est le chiffre qui dit si l'après-partie valait d'être écrite.
    */
   beyond_entered: { hearts: number }
-  /** Un défi de deux minutes est accepté. Le dénominateur du suivant. */
-  challenge_started: Record<string, never>
+  /**
+   * Un défi est accepté, avec ses réglages.
+   *
+   * Les deux champs sont le seul moyen de savoir si les douze catégories servent
+   * ou si onze d'entre elles sont du décor. C'est la question qu'on se pose
+   * toujours après avoir ajouté des options : le joueur choisit-il, ou prend-il
+   * ce qui est proposé en premier ?
+   */
+  challenge_started: { difficulty: string; duration: string }
   /**
    * Un défi se termine, avec son score et ce qui l'a arrêté.
    *
@@ -166,7 +173,13 @@ interface Events {
    * `failed` dit qu'elle est trop vide. Le même nombre, deux corrections
    * opposées.
    */
-  challenge_ended: { kills: number; failed: boolean }
+  challenge_ended: {
+    score: number
+    kills: number
+    failed: boolean
+    difficulty: string
+    duration: string
+  }
 }
 
 declare global {

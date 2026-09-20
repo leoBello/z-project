@@ -120,7 +120,15 @@ export function interactionLabel(target: Interaction, dict: Dictionary): string 
   // « Parler au maître », et non « Relever le défi » : l'invite annonce le
   // geste, pas ce qu'il déclenche. Le défi se refuse, et une invite qui
   // promettrait de le lancer mentirait à qui veut seulement écouter.
-  if (target.kind === 'sensei') return dict.ui.challenge.talk
+  if (target.kind === 'sensei') {
+    // L'invite dit ce que la touche fera **à cet instant** : engager la
+    // conversation, ou clore la course. Un libellé unique aurait promis un
+    // dialogue à quelqu'un qui allait arrêter son chronomètre.
+    const running = useGameStore.getState().challenge
+    return running === 'countdown' || running === 'running'
+      ? dict.ui.challenge.stop
+      : dict.ui.challenge.talk
+  }
   if (target.kind === 'chest') return dict.ui.chest.action
   const section = landmarkById(target.id)?.section
   return section ? dict.ui.sectionActions[section] : ''
@@ -140,7 +148,22 @@ export function triggerInteraction() {
   if (target.kind === 'portal') {
     store.enterMap(target.to)
   } else if (target.kind === 'sensei') {
-    store.openSenseiOffer()
+    /*
+      Lui parler **pendant** un défi le termine.
+
+      C'est la seule façon d'arrêter un mode illimité, qui n'a par définition pas
+      d'échéance — et la seule d'abandonner une course de dix minutes sans mourir
+      ni quitter la carte. `failed` vaut faux : on n'est pas tombé, on a décidé
+      de s'arrêter, et le score compte.
+
+      Le maître est donc à la fois la ligne de départ et la ligne d'arrivée, ce
+      qui est exactement ce qu'on attend de quelqu'un qui tient le chronomètre.
+    */
+    if (store.challenge === 'countdown' || store.challenge === 'running') {
+      store.endChallenge(false)
+    } else {
+      store.openSenseiOffer()
+    }
   } else if (target.kind === 'chest') {
     store.openChest(target.id)
   } else {

@@ -29,7 +29,18 @@ export function useQuestBoard(): QuestStatus[] {
   const trialSlain = useGameStore((state) => state.trialSlain.length)
   const goldenSlain = useGameStore((state) => state.goldenSlainAt !== null)
   const maleniaSlain = useGameStore((state) => state.maleniaSlainAt !== null)
-  const challengeDone = useGameStore((state) => state.challengeBest !== null)
+  /*
+    Un défi mené à terme, dans n'importe laquelle des douze catégories.
+
+    La table des records est vide tant qu'aucun chronomètre n'est allé au bout —
+    `endChallenge` est le seul à y écrire — donc sa taille répond exactement à la
+    question que pose la quête. Lire une catégorie en particulier aurait demandé
+    d'en choisir une, c'est-à-dire de décider à la place du joueur laquelle
+    compte.
+  */
+  const challengeDone = useGameStore(
+    (state) => Object.keys(state.challengeBests).length > 0,
+  )
 
   return questBoard({
     kills,

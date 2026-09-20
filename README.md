@@ -29,7 +29,7 @@ src/
   config/continentShape.ts    le continent, vu comme une `WorldShape`
   config/beyond.ts            l'Outremonde : relief, roue des biomes, Sanctuaire
   config/beyondEnemies.ts     peuplement de l'Outremonde, postes des Lynels
-  config/challenge.ts         le défi du maître : durées, rangs, chronomètre
+  config/challenge.ts         le défi : difficultés, durées, barème, rangs
   config/biomes.ts            palettes des sept biomes
   config/enemies.ts           statistiques par espèce, placement
   config/landmarks.ts         points d'intérêt : position, terrasse, découverte
@@ -101,7 +101,7 @@ src/
     beyond/Crucible.tsx       le dallage noir du centre, où attend la Déchue
     beyond/Sensei.tsx         le maître : modèle, salut, proximité
     beyond/BeyondPopulation.tsx  ennemis, cinq Lynels et une Malenia
-    ChallengeHUD.tsx          proposition, décompte, chronomètre, résultat
+    ChallengeHUD.tsx          réglages du défi, décompte, chronomètre, résultat
     BeyondArrival.tsx         la fanfare des cinq premières secondes
 ```
 

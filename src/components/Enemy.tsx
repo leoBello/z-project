@@ -30,6 +30,7 @@ import { shake } from '../state/cameraShake'
 import { spawnDeathPuff, spawnDeathRing } from '../state/deathPuffs'
 import { enemyRegistry, updateEnemyMarker } from '../state/enemyRegistry'
 import { sanctuary } from '../state/sanctuary'
+import { scaledHp } from '../state/difficulty'
 import { hitStop, isHitStopped, now as gameNow } from '../state/gameClock'
 import { dropPickup } from '../state/pickups'
 import {
@@ -38,7 +39,7 @@ import {
   projectiles,
 } from '../state/projectiles'
 import { useGameStore } from '../store/useGameStore'
-import type { EnemySpawn, EnemyState } from '../types/game'
+import type { EnemyKind, EnemySpawn, EnemyState } from '../types/game'
 import { MoblinModel, OctorokModel, useEnemyMaterials } from './enemies/models'
 
 /** Au-delà de cette distance, l'ennemi n'est ni affiché ni mis à jour. */
@@ -131,6 +132,7 @@ function damageEnemy(
   x: number,
   z: number,
   spawnId: string,
+  kind: EnemyKind,
   now: number,
   fromX: number,
   fromZ: number,
@@ -156,6 +158,7 @@ function damageEnemy(
   killEnemy(
     state,
     spawnId,
+    kind,
     now,
     // Le tirage se fait ici, à l'instant de la mort, et avec `Math.random` et
     // non la graine du monde — une graine fixe rendrait les lâchers identiques
@@ -196,6 +199,7 @@ function damageEnemy(
 function killEnemy(
   state: EnemyRuntime,
   spawnId: string,
+  kind: EnemyKind,
   now: number,
   dropsHeart: boolean,
 ) {
@@ -203,7 +207,10 @@ function killEnemy(
   state.deathAt = now
   state.popped = false
   state.dropsHeart = dropsHeart
-  useGameStore.getState().registerKill()
+  // L'espèce est passée au compteur depuis que le défi de l'Outremonde marque
+  // des **points** : un Octorok et un Moblin ne valent pas la même chose. Le
+  // continent, lui, ne compte que des têtes et ignore l'argument.
+  useGameStore.getState().registerKill(kind)
 
   // Un Moblin tué pendant sa préparation laisserait son offre derrière lui :
   // l'anneau resterait allumé et une parade partirait dans le vide.
@@ -230,6 +237,20 @@ function killEnemy(
 
 interface EnemyProps {
   spawn: EnemySpawn
+  /**
+   * Délai de réapparition, en millisecondes de temps de jeu, ou `undefined`
+   * pour une bête qui ne revient pas.
+   *
+   * **Le continent ne le passe pas, et c'est tout son sujet** : y vider la carte
+   * ouvre le portail de Nakano, donc une bête qui se relève rendrait la première
+   * quête du jeu impossible à finir. L'Outremonde le passe, parce qu'une carte
+   * d'entraînement qui s'épuise en dix minutes n'est pas un terrain
+   * d'entraînement — voir `RESPAWN_MS`.
+   *
+   * Une prop et non une lecture de la carte courante : ce composant ne sait pas
+   * où il est monté, et il n'a aucune raison de l'apprendre pour ça.
+   */
+  respawnMs?: number
 }
 
 /**
@@ -240,7 +261,7 @@ interface EnemyProps {
  * `ENEMIES[kind]` et dans le modèle affiché — ajouter un troisième type ne
  * demandera pas de toucher à cette logique.
  */
-export function Enemy({ spawn }: EnemyProps) {
+export function Enemy({ spawn, respawnMs }: EnemyProps) {
   const stats = ENEMIES[spawn.kind]
   const materials = useEnemyMaterials(spawn.kind)
 
@@ -248,8 +269,22 @@ export function Enemy({ spawn }: EnemyProps) {
   const visual = useRef<Group>(null)
   const [removed, setRemoved] = useState(false)
 
+  /*
+    Les points de vie, à la difficulté courante.
+
+    Lus **à l'apparition** et jamais ensuite : une bête qui verrait sa barre
+    changer de longueur en plein combat parce qu'on a touché un réglage serait
+    incompréhensible. C'est aussi pour cette raison que le peuplement entier
+    remonte au départ d'un défi (voir `populationId`) — c'est ce remontage qui
+    fait prendre le nouveau calibre, pas une mise à jour en place.
+
+    `scaledHp` vaut l'identité hors de l'Outremonde : les trois autres cartes ne
+    voient aucune différence.
+  */
+  const [maxHp] = useState(() => scaledHp(stats.hp))
+
   const runtime = useRef<EnemyRuntime>({
-    hp: stats.hp,
+    hp: maxHp,
     state: 'idle',
     stateSince: 0,
     lastAttackAt: -Infinity,
@@ -275,18 +310,23 @@ export function Enemy({ spawn }: EnemyProps) {
       y: spawn.position[1],
       z: spawn.position[2],
       state: 'idle',
-      hp: stats.hp,
-      maxHp: stats.hp,
+      hp: maxHp,
+      maxHp: maxHp,
       lastHitAt: -Infinity,
     })
     return () => {
       enemyRegistry.delete(spawn.id)
     }
-  }, [spawn])
+    // `maxHp` est figé pour la vie du composant — `useState` avec initialiseur
+    // paresseux — mais il est dans les dépendances quand même : le jour où il
+    // deviendrait recalculable, l'inscription au registre doit suivre, et un
+    // tableau qui ment est plus dangereux qu'un rendu de trop.
+  }, [maxHp, spawn])
 
   useFrame((_, rawDelta) => {
     const rb = body.current
     const group = visual.current
+
     if (!rb || !group || removed) return
 
     const delta = Math.min(rawDelta, 0.05)
@@ -327,6 +367,27 @@ export function Enemy({ spawn }: EnemyProps) {
       } else if (!state.popped) {
         state.popped = true
         group.visible = false
+        /*
+          Le corps sort de la simulation, il n'en est pas retiré.
+
+          `setEnabled(false)` suspend le corps **et ses colliders** : le cadavre
+          invisible cesse de bousculer le joueur, et Rapier cesse de l'intégrer.
+          C'est ce qui permet de garder le `<RigidBody>` monté pendant les
+          vingt-cinq secondes qui séparent une bête de sa réapparition.
+
+          **Pourquoi ne pas démonter.** La première version de la réapparition
+          passait par `setRemoved`, donc par un démontage puis un remontage React.
+          Le mode illimité l'a mise en défaut tout de suite : l'onde
+          d'annihilation tue les soixante-treize bêtes en même temps, donc les
+          remonte en même temps, et recréer soixante-dix corps physiques dans une
+          seule frame faisait paniquer le wasm de Rapier — « unreachable », puis
+          « recursive use of an object », puis plus aucune frame. Le monde se
+          vidait et ne revenait jamais.
+
+          Suspendre et réveiller ne crée ni ne détruit rien : aucun corps
+          physique n'est alloué après le montage de la carte.
+        */
+        if (respawnMs !== undefined) rb.setEnabled(false)
         spawnDeathPuff(position.x, position.y, position.z, materials.base.body)
         // L'anneau se pose sur la surface **visible** du terrain, pas sous le
         // centre de la capsule : même échantillonneur que le mesh, le collider
@@ -346,8 +407,71 @@ export function Enemy({ spawn }: EnemyProps) {
         if (import.meta.env.DEV) lastDeath.poppedAt = now
       }
 
-      rb.setLinvel({ x: 0, y: rb.linvel().y, z: 0 }, false)
-      if (age >= DEATH_REMOVE_MS) setRemoved(true)
+      /*
+        La réapparition, ou le retrait définitif.
+
+        Sans délai passé, la bête est retirée pour de bon comme sur le continent
+        — y vider la carte ouvre le portail de Nakano, une bête qui se relève
+        rendrait la première quête du jeu impossible à finir.
+
+        Avec un délai, elle **revient à son poste**. Tout est remis à plat à la
+        main parce que rien n'a été démonté : l'état d'exécution est une `ref`,
+        elle a survécu à la mort. La ligne qui manquerait le plus est `deathAt` :
+        sans elle, la ressuscitée serait reprise par cette branche à la frame
+        suivante, qui la trouverait vieille de vingt-cinq secondes.
+
+        Le compte est fait sur l'horloge de **jeu**, donc une bête ne réapparaît
+        pas derrière un panneau d'inventaire ouvert.
+      */
+      if (respawnMs === undefined) {
+        rb.setLinvel({ x: 0, y: rb.linvel().y, z: 0 }, false)
+        if (age >= DEATH_REMOVE_MS) setRemoved(true)
+        return
+      }
+
+      if (age < respawnMs) return
+
+      state.hp = maxHp
+      state.state = 'idle'
+      state.stateSince = now
+      state.deathAt = -Infinity
+      state.popped = false
+      state.dropsHeart = false
+      state.lastAttackAt = -Infinity
+      state.attackBlockedUntil = -Infinity
+      state.windupPending = false
+      state.hitFlashUntil = -Infinity
+      state.patrolUntil = 0
+      state.lastHitSwing = -Infinity
+
+      // La pose de mort avait écrasé puis étiré le groupe : sans cette remise à
+      // zéro, la bête revient aplatie et décalée de vingt centimètres.
+      group.scale.set(1, 1, 1)
+      group.position.set(0, 0, 0)
+      group.visible = true
+
+      rb.setEnabled(true)
+      // Reposée **à son poste** et non là où elle est tombée : c'est ce qui
+      // garde le peuplement étalé sur la carte. Sans ça, une heure de défi finit
+      // par empiler toutes les bêtes du monde à l'endroit où le joueur combat.
+      rb.setTranslation(
+        { x: spawn.position[0], y: spawn.position[1] + 1.5, z: spawn.position[2] },
+        true,
+      )
+      rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
+
+      // Le point revient sur la minimap avec le corps : la branche de mort
+      // l'avait retiré du registre au pic de la détente.
+      enemyRegistry.set(spawn.id, {
+        kind: spawn.kind,
+        x: spawn.position[0],
+        y: spawn.position[1],
+        z: spawn.position[2],
+        state: 'idle',
+        hp: maxHp,
+        maxHp: maxHp,
+        lastHitAt: -Infinity,
+      })
       return
     }
 
@@ -366,7 +490,7 @@ export function Enemy({ spawn }: EnemyProps) {
       if (Math.hypot(position.x - blast.x, position.z - blast.z) < reach) {
         // Aucun cœur lâché : vingt-six cœurs jaillissant en même temps d'une
         // carte qu'on vient de vider ne récompensent rien, ils encombrent.
-        killEnemy(state, spawn.id, now, false)
+        killEnemy(state, spawn.id, spawn.kind, now, false)
         return
       }
     }
@@ -441,6 +565,7 @@ export function Enemy({ spawn }: EnemyProps) {
           position.x,
           position.z,
           spawn.id,
+          spawn.kind,
           now,
           playerTransform.position.x,
           playerTransform.position.z,
@@ -478,6 +603,7 @@ export function Enemy({ spawn }: EnemyProps) {
         position.x,
         position.z,
         spawn.id,
+        spawn.kind,
         now,
         projectile.position.x,
         projectile.position.z,

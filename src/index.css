@@ -2932,10 +2932,9 @@ body:has(.lightbox) .teleport-menu {
   top: 64px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 3;
   display: flex;
-  gap: 26px;
-  padding: 8px 22px;
+  gap: 20px;
+  padding: 8px 20px;
   border-radius: 14px;
   border: 1px solid rgba(199, 155, 255, 0.4);
   background: rgba(24, 18, 38, 0.66);
@@ -2960,9 +2959,23 @@ body:has(.lightbox) .teleport-menu {
   opacity: 0.6;
 }
 
+/*
+  Le score est la valeur qu'on joue : il est le plus gros des trois, et le seul
+  en or. Le temps et le compte l'encadrent, en plus petit — l'un dit combien il
+  reste, l'autre de combien de têtes le score est fait.
+*/
+.challenge__score {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  color: #f5dc95;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55), 0 0 18px rgba(245, 220, 149, 0.3);
+}
+
 .challenge__time,
 .challenge__kills {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 700;
   line-height: 1.05;
   /* Chiffres à chasse fixe : sans ça, le bandeau se dilate et se contracte à
@@ -2976,7 +2989,7 @@ body:has(.lightbox) .teleport-menu {
 }
 
 .challenge__kills {
-  color: #f5dc95;
+  color: #e8dfc8;
 }
 
 /* Les cinq dernières secondes. La bordure rougit et le nombre bat : deux
@@ -3009,7 +3022,6 @@ body:has(.lightbox) .teleport-menu {
   top: 26%;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 3;
   pointer-events: none;
   font-size: 88px;
   font-weight: 800;
@@ -3105,6 +3117,75 @@ body:has(.lightbox) .teleport-menu {
   font-weight: 600;
 }
 
+/*
+  Une rangée de choix : son intitulé, et ses options.
+
+  Les options sont des boutons à `aria-pressed`, et l'état sélectionné se lit
+  sur cet attribut plutôt que sur une classe — une seule source de vérité pour
+  le style et pour le lecteur d'écran, qui ne peuvent donc pas se contredire.
+*/
+.challenge-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.challenge-pick__label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
+.challenge-pick__row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.challenge-modal__panel .challenge-pick__option {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(246, 242, 228, 0.65);
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.challenge-modal__panel .challenge-pick__option:hover {
+  background: rgba(255, 255, 255, 0.11);
+  color: var(--hud-fg);
+}
+
+/* Le choix courant : le violet de l'Outremonde, plein. C'est la seule pastille
+   remplie de l'écran, donc la seule qu'on cherche des yeux. */
+.challenge-modal__panel .challenge-pick__option[aria-pressed='true'] {
+  background: rgba(139, 63, 240, 0.85);
+  border-color: rgba(199, 155, 255, 0.7);
+  color: #f6f2e4;
+}
+
+.challenge-modal__panel .challenge-pick__option:focus-visible {
+  outline: 2px solid #f6f2e4;
+  outline-offset: 2px;
+}
+
+/* La catégorie du résultat : durée et difficulté, en petit, sous le rang. Elle
+   dit dans quelle des douze cases le score vient d'être rangé. */
+.challenge-modal__category {
+  margin: 4px 0 0;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.45;
+}
+
 .challenge-modal__actions {
   display: flex;
   gap: 10px;
@@ -3140,10 +3221,19 @@ body:has(.lightbox) .teleport-menu {
   montée, un seul effacement, et il commence déjà à 78 % — il prend le relais du
   voile de braises qui achève de se lever.
 */
+/*
+  Aucun `z-index` sur la fanfare d'arrivée, et c'est une correction.
+
+  Elle en portait un (4), ce qui la faisait passer **par-dessus** les modales du
+  jeu : ouvrir le panneau du maître dans les six secondes qui suivent l'arrivée
+  affichait « L'Outremonde » en travers du texte. Les couches du HUD n'ont pas
+  besoin d'indices — l'ordre du DOM dans `App.tsx` les range déjà, et c'est là
+  qu'il faut regarder pour savoir ce qui recouvre quoi. La fanfare est donc
+  montée **avant** le défi, ce qui la met dessous.
+*/
 .beyond-flash {
   position: fixed;
   inset: 0;
-  z-index: 4;
   pointer-events: none;
   background: radial-gradient(
     130% 100% at 50% 55%,
@@ -3169,7 +3259,6 @@ body:has(.lightbox) .teleport-menu {
   top: 20%;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 4;
   display: flex;
   flex-direction: column;
   align-items: center;

@@ -218,6 +218,15 @@ export interface MaleniaProps {
   arenaR?: number
   engageR?: number
   leashR?: number
+  /**
+   * Points de vie de départ. Ceux de la table — soixante — par défaut.
+   *
+   * Une prop parce que l'Outremonde les calibre sur sa difficulté, exactement
+   * comme il calibre ceux des Octoroks et des Lynels. Le plafond de soin de la
+   * phase II le suit : sans ça, une Déchue en facile se serait soignée au-delà
+   * de son propre maximum et serait repassée casquée en plein combat.
+   */
+  hp?: number
   role?: 'aeonia' | 'outcast'
 }
 
@@ -228,6 +237,7 @@ export function Malenia({
   arenaR = ARENA_R,
   engageR = ENGAGE_R,
   leashR = LEASH_R,
+  hp = MALENIA_HP,
   role = 'aeonia',
 }: MaleniaProps = {}) {
   /** Verse-t-elle de la pourriture ? Voir l'en-tête des props. */
@@ -265,7 +275,7 @@ export function Malenia({
     leur propre `useState`, et c'est exactement ce qui les distingue du reste.
   */
   const runtime = useRef<Runtime>({
-    hp: MALENIA_HP,
+    hp,
     phase: 'blade',
     pending: null,
     strikeOrigin: -Infinity,
@@ -304,14 +314,14 @@ export function Malenia({
       y: arena[1],
       z: arena[2],
       state: 'idle',
-      hp: MALENIA_HP,
-      maxHp: MALENIA_HP,
+      hp,
+      maxHp: hp,
       lastHitAt: -Infinity,
     })
     return () => {
       enemyRegistry.delete(id)
     }
-  }, [arena, id])
+  }, [arena, hp, id])
 
   useFrame((_, rawDelta) => {
     const rb = body.current
@@ -697,7 +707,7 @@ export function Malenia({
         défaut ne se serait vu qu'en jouant mal, c'est-à-dire exactement quand il
         aurait fait le plus de mal.
       */
-      const ceiling = state.phase === 'goddess' ? MORPH_AT : MALENIA_HP
+      const ceiling = state.phase === 'goddess' ? MORPH_AT : hp
       state.hp = Math.min(ceiling, state.hp + amount)
       const marker = enemyRegistry.get(id)
       if (marker) {

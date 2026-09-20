@@ -420,11 +420,18 @@ export interface LynelProps {
    * une autre bête qui appellerait `startBossFight` en refermerait les
    * barrières sur un boss déjà mort.
    *
-   * `wild` est le quatrième, et le seul qui ne déclenche **rien** : ce sont les
-   * cinq bêtes de l'Outremonde, qui ne gardent aucune récompense et n'avancent
-   * aucune quête. Leur mort ne vaut qu'une ligne au compteur du défi, par le
-   * chemin ordinaire de `registerKill` — le même que le moindre Octorok. Une
-   * carte d'après-partie ne donne rien, c'est sa définition.
+   * `wild` et `wild-golden` sont les deux derniers, et les seuls qui ne
+   * déclenchent **rien** : ce sont les bêtes de l'Outremonde, qui ne gardent
+   * aucune récompense et n'avancent aucune quête. Leur mort ne vaut que des
+   * points au compteur du défi, par le chemin ordinaire de `registerKill` — le
+   * même que le moindre Octorok. Une carte d'après-partie ne donne rien, c'est
+   * sa définition.
+   *
+   * La différence entre les deux est **entièrement cosmétique et statistique** :
+   * `wild-golden` porte la robe d'or, les seuils de phase du doré et son cœur de
+   * dégâts en plus, exactement comme `golden`. Ce qui les sépare est ce que leur
+   * mort déclenche, et c'est bien la seule chose que ce champ décrit — d'où deux
+   * rôles plutôt qu'une prop « doré » qu'on aurait pu cocher sur un gardien.
    *
    * Le doré y ajoute trois réglages — sa robe, ses seuils de phase et le cœur
    * qu'il ajoute à chaque coup — et ils sont **déduits du rôle** plutôt que
@@ -432,7 +439,7 @@ export interface LynelProps {
    * monter un doré argenté qui frappe comme un gardien, c'est-à-dire un état
    * que rien ne décrit.
    */
-  role?: 'guardian' | 'trial' | 'golden' | 'wild'
+  role?: 'guardian' | 'trial' | 'golden' | 'wild' | 'wild-golden'
 }
 
 export function Lynel({
@@ -443,7 +450,10 @@ export function Lynel({
   role = 'guardian',
 }: LynelProps = {}) {
   const stats = ENEMIES.lynel
-  const golden = role === 'golden'
+  // La robe, les seuils de phase et le cœur de dégâts en plus : le doré du
+  // sommet et celui de l'Outremonde sont la même bête. Seul ce que leur mort
+  // déclenche les distingue.
+  const golden = role === 'golden' || role === 'wild-golden'
   const materials = useEnemyMaterials('lynel', golden ? GOLDEN_LYNEL_PALETTE : undefined)
   /** Ses seuils de phase, et le cœur qu'il ajoute à chaque coup. Voir `role`. */
   const phases: LynelPhases = golden ? GOLDEN_PHASES : PHASE_THRESHOLDS
@@ -1193,7 +1203,7 @@ interface Beast {
   id: string
   /** Altitude du poste, où se pose l'anneau de mort. */
   groundY: number
-  role: 'guardian' | 'trial' | 'golden' | 'wild'
+  role: 'guardian' | 'trial' | 'golden' | 'wild' | 'wild-golden'
   /** Ses seuils de phase : `damage` relit la phase après chaque coup. */
   phases: LynelPhases
 }
@@ -1272,10 +1282,18 @@ function damage(
     useGameStore.getState().endBossFight(true, [x, beast.groundY, z])
   } else if (beast.role === 'golden') {
     useGameStore.getState().registerGoldenKill()
-  } else if (beast.role === 'wild') {
-    // Le compteur commun, celui des Octoroks et des Moblins. C'est lui qui
-    // aiguille vers le défi hors du continent — voir `registerKill`.
-    useGameStore.getState().registerKill()
+  } else if (beast.role === 'wild' || beast.role === 'wild-golden') {
+    /*
+      Le compteur commun, celui des Octoroks et des Moblins, avec le barème du
+      défi — voir `KILL_POINTS`. C'est lui qui aiguille vers le score hors du
+      continent (voir `registerKill`).
+
+      Le doré sauvage vaut deux fois et demie l'argenté, et c'est ici que la
+      distinction se paie : mêmes cinquante-quatre points de vie, même cœur de
+      dégâts en plus, mais posté à cent quatre unités du Sanctuaire. Aller le
+      chercher est un pari sur le temps autant que sur la vie.
+    */
+    useGameStore.getState().registerKill(beast.role === 'wild-golden' ? 'golden' : 'lynel')
   } else {
     useGameStore.getState().registerTrialKill(beast.id)
   }
