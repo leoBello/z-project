@@ -28,6 +28,33 @@ import type { MarshMaterials } from './materials'
 /** Nombre de boîtes par racine. Une tous les ~2,5 unités sur une portée de 60. */
 const COLLIDERS_PER_SPAN = 24
 
+/**
+ * Demi-épaisseur des boîtes de collision.
+ *
+ * Elles sont **plaquées sous le sommet du tube** et non centrées sur la courbe :
+ * `position.y = courbe + SPAN_RADIUS − COLLIDER_HALF_Y`, donc leur face
+ * supérieure tombe exactement sur la crête visible de la racine.
+ *
+ * La première version les centrait sur la courbe avec une demi-épaisseur de 0,3,
+ * et le commentaire affirmait qu'elles « affleuraient le dessus du tube ».
+ * C'était faux de 0,85 unité : on marchait **sous** la surface qu'on voyait,
+ * dans une tranchée invisible, et on tombait de bords qui avaient l'air solides.
+ * C'est le défaut que la première partie jouée a fait remonter, et il ne se
+ * serait jamais vu sans manette — le collider et le maillage ont l'air corrects
+ * chacun de son côté.
+ */
+const COLLIDER_HALF_Y = 0.4
+
+/**
+ * Part de la largeur du tube qui est praticable.
+ *
+ * Légèrement en deçà du rayon : on ne doit pas pouvoir tenir en équilibre sur le
+ * flanc arrondi, là où le maillage descend déjà. À 0,9, le bord du collider tombe
+ * sur le point où la racine a perdu un dixième de sa hauteur — un endroit dont on
+ * accepte de tomber, parce qu'on le voit pencher.
+ */
+const WALKABLE = 0.9
+
 interface Piece {
   position: [number, number, number]
   rotation: [number, number, number]
@@ -55,9 +82,20 @@ function boxesAlong(curve: CatmullRomCurve3): Piece[] {
     const dz = b.z - a.z
     const span = Math.hypot(dx, dz)
     pieces.push({
-      // Au milieu du segment, et à la hauteur du plus haut des deux bouts : la
-      // boîte affleure donc le dessus du tube plutôt que de s'y enfoncer.
-      position: [(a.x + b.x) / 2, Math.max(a.y, b.y), (a.z + b.z) / 2],
+      /*
+        Au milieu du segment, et **plaquée sous la crête** du tube : la face
+        supérieure de la boîte tombe sur `courbe + SPAN_RADIUS`, c'est-à-dire
+        exactement là où l'on voit le dessus de la racine.
+
+        Le plus haut des deux bouts, et non leur moyenne : sur une pente, une
+        boîte posée à la moyenne laisse le joueur s'enfoncer de la moitié du
+        dénivelé à chaque segment montant.
+      */
+      position: [
+        (a.x + b.x) / 2,
+        Math.max(a.y, b.y) + SPAN_RADIUS - COLLIDER_HALF_Y,
+        (a.z + b.z) / 2,
+      ],
       rotation: [0, Math.atan2(dx, dz), 0],
       // Un chouïa plus longue que le segment, pour que deux boîtes voisines se
       // recouvrent : un interstice d'un millimètre entre deux colliders est un
@@ -128,7 +166,7 @@ export function Roots({ materials }: { materials: MarshMaterials }) {
         {pieces.map((piece, i) => (
           <CuboidCollider
             key={i}
-            args={[SPAN_RADIUS * 0.82, 0.3, piece.halfLength]}
+            args={[SPAN_RADIUS * WALKABLE, COLLIDER_HALF_Y, piece.halfLength]}
             position={piece.position}
             rotation={piece.rotation}
           />

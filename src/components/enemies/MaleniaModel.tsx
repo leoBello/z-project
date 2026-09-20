@@ -61,7 +61,7 @@ const BASE_COLORS: Record<(typeof FLASHED)[number], string> = {
   bronze: ROT_COLORS.bronze,
 }
 const WHITE = '#ffffff'
-import type { MaleniaRig } from './maleniaRig'
+import { POSES, dampToPose, type MaleniaRig, type PoseId } from './maleniaRig'
 
 /**
  * Le modèle de Malenia — le rig, les deux phases, et rien d'autre.
@@ -251,9 +251,26 @@ export interface MaleniaModelProps {
    * côté de React, pas dedans.
    */
   hit: RefObject<number>
+  /**
+   * La pose à tenir, écrite par la machine à états.
+   *
+   * Une référence, comme `hit`, et pour la même raison : la pose change à chaque
+   * coup d'une séquence — dix fois en trois secondes pendant un vol de sarcelle —
+   * et chacun de ces changements ne doit pas re-rendre deux cents maillages.
+   */
+  pose: RefObject<PoseId>
+  /**
+   * Sa vitesse au sol, de 0 à 1, écrite par la machine à états.
+   *
+   * Elle sert **uniquement** au pas : sans lui, elle traversait l'arène en
+   * glissant, jambes figées dans sa garde — ce qui se lit comme un défaut
+   * d'affichage et non comme un personnage qui marche. C'est l'autre moitié du
+   * « elle ne bouge pas » remonté par la première partie jouée.
+   */
+  speed: RefObject<number>
 }
 
-export function MaleniaModel({ rig, goddess, hit }: MaleniaModelProps) {
+export function MaleniaModel({ rig, goddess, hit, pose, speed }: MaleniaModelProps) {
   const materials = useMaleniaMaterials()
   const flashing = useRef(false)
   /*
@@ -267,6 +284,8 @@ export function MaleniaModel({ rig, goddess, hit }: MaleniaModelProps) {
     la machine garde un `body` intact pour les poses qu'elle écrira.
   */
   const hover = useRef<Group>(null)
+  /** Phase du pas, accumulée. Avance avec la vitesse, pas avec le temps. */
+  const stride = useRef(0)
 
   /*
     Le rig est déstructuré d'un coup, et pas lu `rig.torso` au fil du JSX.
@@ -315,9 +334,33 @@ export function MaleniaModel({ rig, goddess, hit }: MaleniaModelProps) {
       comme un décollage. C'est aussi ce qui donne à la métamorphose ses deux
       secondes de montée pendant qu'elle est invulnérable.
     */
+    /*
+      La pose, et l'élévation qu'elle porte.
+
+      Les deux sont amortis et non posés : un boss qui change de pose d'une frame
+      à l'autre ne se lit pas comme quelqu'un qui bouge, il se lit comme un défaut
+      d'affichage. La constante de 14 est un compromis — assez vif pour qu'un armé
+      de 460 ms soit arrivé avant l'impact, assez mou pour qu'on voie le geste
+      plutôt que son résultat.
+    */
+    /*
+      Le pas.
+
+      Sa phase avance avec la **vitesse** et non avec le temps : une bête qui
+      pédale sur place quand elle s'arrête est pire que pas de pas du tout.
+      Seules la garde et le vol en portent — pendant une attaque, les jambes
+      appartiennent à la pose, et un balancier par-dessus lui ferait faire un pas
+      au milieu d'un estoc.
+    */
+    const current = POSES[pose.current]
+    const walking = pose.current === 'garde' || pose.current === 'vol' ? speed.current : 0
+    stride.current += walking * delta * 9
+    dampToPose(rig, current, 14, delta, Math.sin(stride.current) * 0.5 * walking)
+
     const joint = hover.current
     if (joint) {
-      joint.position.y = MathUtils.damp(joint.position.y, goddess ? HOVER : 0, 4, delta)
+      const target = (goddess ? HOVER : 0) + (current.lift ?? 0)
+      joint.position.y = MathUtils.damp(joint.position.y, target, 4, delta)
     }
   })
   // La marbrure de la peau et l'intensité des veines : deux écritures dans des

@@ -30,11 +30,13 @@ export const ROT = {
   /**
    * Montée par touche encaissée en phase II.
    *
-   * Douze, donc huit coups pour une contamination. Elle en porte dix en trente
-   * secondes quand on joue mal : la pourriture est la vraie punition de la
-   * phase II, et les cœurs n'en sont que la moitié.
+   * Huit, donc douze coups pour une contamination — descendu de douze après la
+   * première partie. À douze, les trois fantômes et les deux coups de la fauche
+   * ailée suffisaient presque à remplir la jauge en une rotation, et la
+   * pourriture cessait d'être une accumulation qu'on surveille pour devenir un
+   * second compteur de dégâts.
    */
-  perHit: 12,
+  perHit: 8,
 
   /**
    * Montée par seconde dans une flaque laissée par son plongeon.

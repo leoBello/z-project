@@ -14,6 +14,7 @@ import {
   MALENIA_ID,
   MORPH_AT,
   MORPH_MS,
+  BREATH_MS,
   PUNISH_MULTIPLIER,
   PUDDLES,
   PUDDLE_MS,
@@ -37,7 +38,7 @@ import { soakRot } from '../state/rot'
 import { useGameStore } from '../store/useGameStore'
 import type { MaleniaPhase } from '../types/game'
 import { MaleniaModel } from './enemies/MaleniaModel'
-import { applyBasePose, useMaleniaRig } from './enemies/maleniaRig'
+import { applyBasePose, useMaleniaRig, type PoseId } from './enemies/maleniaRig'
 import { ROT_COLORS } from '../config/rotPalette'
 
 /**
@@ -191,6 +192,17 @@ export function Malenia() {
     dans sa propre boucle — voir `MaleniaModel`.
   */
   const hit = useRef(-Infinity)
+  /**
+   * La pose courante, lue par le modèle dans sa propre boucle.
+   *
+   * Elle **manquait** à la première version, et c'est le défaut que la première
+   * partie jouée a fait remonter : la machine résolvait ses dix attaques, les
+   * dégâts tombaient, et le modèle ne bougeait pas un bras. Tout le travail de
+   * télégraphe — la moitié du combat — était invisible.
+   */
+  const pose = useRef<PoseId>('garde')
+  /** Sa vitesse au sol, normalisée. Pilote le pas — voir `MaleniaModel`. */
+  const speed = useRef(0)
 
   /*
     Tout l'état de combat vit dans une **référence**, comme celui du Lynel.
@@ -455,6 +467,17 @@ export function Malenia() {
     state.yaw = MathUtils.damp(state.yaw, nearestAngle(state.yaw, targetYaw), YAW_DAMPING, delta)
     group.rotation.y = state.yaw
 
+    /*
+      Ce qu'elle montre, déduit de ce qu'elle fait.
+
+      Une fonction pure de l'état plutôt qu'un champ tenu à jour aux six endroits
+      qui le changent : c'est ce qui garantit qu'aucune transition ne puisse
+      oublier de reposer la pose, et deux de ces endroits sont dans la résolution
+      des coups, où l'on passe dix fois en trois secondes.
+    */
+    pose.current = poseFor(state, now)
+    speed.current = Math.hypot(velocity.x, velocity.z) / WALK_SPEED
+
     // --- Ouverture d'une séquence ------------------------------------------
     if (
       state.pending === null &&
@@ -502,7 +525,9 @@ export function Malenia() {
 
       if (state.struck >= attack.strikes.length) {
         state.pending = null
-        state.nextAttackAt = now + attack.recoveryMs
+        // La récupération de l'attaque, **plus une respiration commune**. Voir
+        // `BREATH_MS` : sans elle, elle enchaînait sans jamais rendre la main.
+        state.nextAttackAt = now + attack.recoveryMs + BREATH_MS
       }
     }
 
@@ -648,7 +673,15 @@ export function Malenia() {
       ref={body}
       type="dynamic"
       colliders={false}
-      position={[ARENA_CENTER[0], ARENA_CENTER[1] + 1.4, ARENA_CENTER[2] - 4]}
+      /*
+        Posée **sur** le dallage, pas dedans.
+
+        La surface du bassin est à 0,45 et sa capsule fait 1,3 de demi-hauteur
+        totale : elle naissait à 1,4, donc les pieds à 0,10 — enfoncée de 35 cm
+        dans le sol, que Rapier devait ensuite expulser. Le dixième d'unité de
+        marge lui laisse tomber sur ses pieds.
+      */
+      position={[ARENA_CENTER[0], 0.45 + BODY_HALF_HEIGHT + BODY_RADIUS + 0.1, ARENA_CENTER[2] - 4]}
       lockRotations
       mass={3}
       friction={0}
@@ -656,10 +689,43 @@ export function Malenia() {
     >
       <CapsuleCollider args={[BODY_HALF_HEIGHT, BODY_RADIUS]} />
       <group ref={visual} position={[0, -(BODY_HALF_HEIGHT + BODY_RADIUS), 0]}>
-        <MaleniaModel rig={rig} goddess={goddess} hit={hit} />
+        <MaleniaModel rig={rig} goddess={goddess} hit={hit} pose={pose} speed={speed} />
       </group>
     </RigidBody>
   )
+}
+
+/**
+ * La pose que son état commande.
+ *
+ * L'ordre des tests est l'ordre des priorités, et il compte : une garde brisée
+ * l'emporte sur une attaque en cours, parce que la parade **interrompt** — si
+ * l'armé continuait de s'afficher après une parade réussie, le joueur ne verrait
+ * pas l'ouverture qu'il vient de gagner, c'est-à-dire la seule récompense du
+ * geste le plus difficile du jeu.
+ */
+function poseFor(state: Runtime, now: number): PoseId {
+  if (now < state.staggerUntil) return 'brisee'
+  if (now < state.morphAt + MORPH_MS) return 'envol'
+
+  const attack = state.pending
+  if (attack) {
+    // Le vol de sarcelle et Aeonia se préparent **en l'air** : c'est leur seul
+    // télégraphe commun, et le seul qui se lise à toute la longueur de l'arène.
+    const airborne = attack.id === 'waterfowl' || attack.id === 'aeonia'
+    if (now < state.strikeOrigin) return airborne ? 'envol' : 'armee'
+    /*
+      Pendant la séquence, elle alterne armé et frappe à chaque coup résolu.
+
+      C'est ce qui donne au vol de sarcelle ses dix gestes distincts sans écrire
+      dix poses : la parité de `struck` suffit, et l'amortissement fait le reste.
+      Un seul geste tenu pendant trois secondes se serait lu comme une pose
+      figée pendant qu'on encaisse.
+    */
+    return state.struck % 2 === 1 ? 'frappe' : 'armee'
+  }
+
+  return state.phase === 'goddess' ? 'vol' : 'garde'
 }
 
 /**

@@ -105,13 +105,32 @@ export const ARENA_RING = [9.6, 11.6] as const
  * transformerait une traversée en épreuve d'adresse, ce qu'elle n'est pas.
  */
 export const SPANS: readonly (readonly (readonly [number, number, number])[])[] = [
-  [[2, 0.4, 118], [6, 3.2, 96], [4, 2.4, 74], [1, 1.4, 58]],
-  [[1, 1.4, 58], [-7, 3.6, 46], [-9, 2.8, 32], [-4, 1.2, 22]],
-  [[-4, 1.2, 22], [1, 2.6, 18], [4, 1.8, 15], [0, 0.6, 12.2]],
+  [[2, -0.2, 118], [6, 0.8, 96], [4, 0.5, 74], [1, 0.2, 58]],
+  [[1, 0.2, 58], [-7, 1.0, 46], [-9, 0.7, 32], [-4, 0.1, 22]],
+  [[-4, 0.1, 22], [1, 0.6, 18], [4, 0.3, 15], [0, -0.1, 12.2]],
 ]
 
-/** Rayon du tube d'une racine. C'est aussi la demi-largeur du chemin. */
-export const SPAN_RADIUS = 1.15
+/**
+ * Rayon du tube d'une racine.
+ *
+ * **Élargi de 1,15 à 1,9 après la première partie jouée**, et la raison est
+ * mesurable : le joueur fait 0,70 de large (capsule de rayon 0,35). À 1,15 de
+ * rayon pour un collider à 82 %, le chemin faisait 1,89 — soit deux largeurs et
+ * demie de personnage, sur un tracé courbe vu de trois quarts en plongée. On en
+ * tombait sans comprendre pourquoi.
+ *
+ * À 1,9, la surface praticable fait 3,42, soit près de cinq largeurs. C'est
+ * généreux, et ça doit l'être : cette traversée n'est pas une épreuve d'adresse,
+ * c'est un chemin vers un combat. Tout ce qu'elle doit produire, c'est le
+ * sentiment de ne pas pouvoir couper par le marais.
+ *
+ * Les altitudes des points de contrôle ont baissé d'autant : la surface de
+ * marche est le sommet du tube, donc l'élargir l'aurait relevée de trois quarts
+ * d'unité sur toute la longueur. Elles culminent maintenant à 2,9 au-dessus de
+ * la nappe — assez pour lire une passerelle, assez peu pour qu'une chute soit un
+ * pas de côté et non une punition.
+ */
+export const SPAN_RADIUS = 1.9
 
 /* --- Les deux bouts --------------------------------------------------------- */
 
@@ -124,8 +143,17 @@ export const SPAN_RADIUS = 1.15
  */
 export const MARSH_PORTAL = {
   x: 2,
-  y: 0.4,
-  z: 121,
+  /**
+   * Posé **sur** la racine, et l'altitude en est déduite.
+   *
+   * La première version le mettait à 0,4, c'est-à-dire à peu près au niveau de
+   * l'eau — et le joueur y apparaissait donc enfoncé jusqu'à la taille dans la
+   * première racine, dont la surface est à 1,7. Écrire la cote à la main était
+   * l'erreur : elle dépend de deux nombres qui ont bougé depuis (l'altitude du
+   * premier point de contrôle, et le rayon des racines).
+   */
+  y: SPANS[0][0][1] + SPAN_RADIUS,
+  z: 117,
   yaw: 0,
 } as const
 
