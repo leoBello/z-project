@@ -26,3 +26,7 @@ dist-ssr
 
 # Brainstorming companion mockups (local scratch, not for commit)
 .superpowers/
+
+# Rendus de mise au point des tenues (scripts/render-skins)
+.render-skins
+src/**/__render-skins-probe.tsx
