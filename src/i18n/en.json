@@ -30,6 +30,10 @@
       "kicker": "Heart container",
       "name": "Max hearts +1"
     },
+    "revive": {
+      "kicker": "Second wind",
+      "name": "The cloak raises you"
+    },
     "portal": {
       "kicker": "The map is clear",
       "name": "A portal opens at Nakano Temple",
@@ -153,6 +157,12 @@
         "meta": "Found in the chest at the Jungle Pyramid",
         "description": "A long-tailed plum coat strapped with lacquered crimson lamellae bound in gold. The collar rises to the nape; forearms and calves are wrapped in white linen. War dress of a clan whose name no one remembers.",
         "effect": "+3 golden hearts, but slower running and a shorter jump while worn"
+      },
+      "dawn-cloak": {
+        "name": "Cloak of the Dawn",
+        "meta": "Found in the rotunda chest, where the guardian fell",
+        "description": "A long black cloak falling to the ankle, closed by a crimson line from collar to hem and strewn with red clouds ringed in white. The collar stands up behind the neck. Whoever wore it had ember-orange hair, seven iron studs through his face, and eyes ringed with violet that never blinked.",
+        "effect": "+4 golden hearts, sword damage ×1.5, faster running and a higher jump — and the first fatal blow of the run does not kill"
       },
       "kusanagi": {
         "name": "Kusanagi Katana",

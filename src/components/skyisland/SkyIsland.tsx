@@ -2,6 +2,7 @@ import { SKY_PORTAL } from '../../config/portal'
 import { Portal } from '../environment/Portal'
 import { Lynel } from '../Lynel'
 import { ArenaGate } from './ArenaGate'
+import { RotundaChest } from './RotundaChest'
 import { RotundaReward } from './RotundaReward'
 import { Flora } from './Flora'
 import { Ruins } from './Ruins'
@@ -43,7 +44,13 @@ export default function SkyIsland() {
       <Lynel />
       {/* Elles ne paraissent que pendant le combat : voir `bossState`. */}
       <ArenaGate />
+      {/* Les deux récompenses du gardien, qui ne paraissent qu'après sa chute :
+          le réceptacle là où le corps est tombé, le coffre dans l'axe de la
+          travée écroulée. Montés ici et non dans `Ruins`, pour la même raison
+          que les coffres du continent sont montés à plat dans `Landmarks` : la
+          ruine décrit une pierre, ceux-ci sont un état de partie. */}
       <RotundaReward />
+      <RotundaChest />
     </>
   )
 }

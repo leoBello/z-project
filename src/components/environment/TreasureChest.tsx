@@ -20,6 +20,7 @@ import type { ItemId } from '../../types/game'
 import { seededRandom } from '../../config/world'
 import { now as gameNow } from '../../state/gameClock'
 import { useGameStore } from '../../store/useGameStore'
+import { cloudGeometry } from '../models/cloudGeometry'
 import { toonGradient } from '../models/toonGradient'
 import { faceted } from './faceted'
 import { box, Z_FIGHT_LIFT } from './solids'
@@ -169,6 +170,15 @@ function buildShards() {
 /** Construits une fois pour toutes : tous les coffres partagent ces maillages. */
 const shell = buildChest()
 const lidGeometry = buildLid()
+/**
+ * Le nuage de l'Aube, à la taille du manteau plié que le coffre présente.
+ *
+ * La même géométrie que celle cousue sur le vêtement porté, à l'échelle près :
+ * le coffre montre l'objet qu'on va porter, pas une variante dessinée pour
+ * l'occasion.
+ */
+const dawnCloudLoot = cloudGeometry(0.19)
+
 const shardGeometry = faceted(new IcosahedronGeometry(0.055, 0))
 const shards = buildShards()
 
@@ -267,6 +277,53 @@ function LootShape({ id, accent }: { id: ItemId; accent: string }) {
         <mesh castShadow position={[0, -0.25, 0]}>
           <boxGeometry args={[0.05, 0.2, 0.05]} />
           <meshToonMaterial gradientMap={toonGradient} color="#4a3325" />
+        </mesh>
+      </>
+    )
+  }
+
+  if (id === 'dawn-cloak') {
+    return (
+      <>
+        {/* Le manteau plié, et non le personnage : c'est un vêtement qu'on
+            trouve dans une caisse. Il est plus haut et plus étroit que la tenue
+            générique ci-dessous (0,46 contre 0,40, pour 0,30 de large contre
+            0,34) — le seul manteau du jeu qui tombe à la cheville doit se lire
+            comme tel jusque dans le faisceau. */}
+        <mesh castShadow position={[0, 0.02, 0]}>
+          <boxGeometry args={[0.3, 0.46, 0.13]} />
+          <meshToonMaterial
+            gradientMap={toonGradient}
+            color="#171724"
+            emissive="#171724"
+            emissiveIntensity={0.4}
+          />
+        </mesh>
+        {/* La ligne de fermeture, du col à l'ourlet : la verticale qui
+            distingue ce pli de n'importe quel autre tissu plié. */}
+        <mesh position={[0, 0.02, 0.071]}>
+          <boxGeometry args={[0.022, 0.44, 0.02]} />
+          <meshToonMaterial
+            gradientMap={toonGradient}
+            color="#8d2029"
+            emissive="#8d2029"
+            emissiveIntensity={0.55}
+          />
+        </mesh>
+        {/* Un nuage, à l'échelle du pli. */}
+        <mesh castShadow geometry={dawnCloudLoot} position={[0.075, -0.09, 0.078]}>
+          <meshToonMaterial
+            gradientMap={toonGradient}
+            color={accent}
+            emissive={accent}
+            emissiveIntensity={0.5}
+          />
+        </mesh>
+        {/* Le col, replié par-dessus : c'est lui qui dit « manteau » plutôt que
+            « drap », et il montre la doublure cramoisie. */}
+        <mesh castShadow position={[0, 0.235, 0.02]} rotation={[0.3, 0, 0]}>
+          <boxGeometry args={[0.28, 0.09, 0.1]} />
+          <meshToonMaterial gradientMap={toonGradient} color="#8d2029" />
         </mesh>
       </>
     )

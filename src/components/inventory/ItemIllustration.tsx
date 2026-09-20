@@ -280,6 +280,162 @@ function MadaraGarb() {
   )
 }
 
+/** Teintes partagées avec la silhouette 3D. Voir `OUTFITS.pain`. */
+const DAWN = {
+  coat: '#171724',
+  coatShade: '#0f0f19',
+  lining: '#8d2029',
+  cloud: '#ab2630',
+  cloudTrim: '#f2ece1',
+  hair: '#ea7a24',
+  skin: '#f0cdad',
+  steel: '#aeb7c7',
+  groove: '#5a6070',
+  iris: '#bcaeea',
+  ring: '#5a4f96',
+  wrap: '#e9e1d0',
+  trouser: '#2f3549',
+  sandal: '#3b4763',
+} as const
+
+/**
+ * Le blason de l'Aube, tracé une fois et posé deux fois.
+ *
+ * C'est **la même silhouette que la géométrie 3D** — trois lobes hauts, trois
+ * festons rentrants — transposée en un seul chemin : la carte doit montrer ce
+ * qu'on va voir courir dans l'herbe, et deux nuages dessinés séparément auraient
+ * divergé au premier ajustement.
+ */
+function DawnCloudMark({ x, y, size }: { x: number; y: number; size: number }) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${size})`}>
+      <path
+        d="M-46 20 Q-34 36 -18 26 Q-4 41 12 28 Q31 42 44 23 Q57 9 45 -7
+           Q57 -25 33 -30 Q24 -47 3 -40 Q-11 -55 -28 -38 Q-50 -41 -52 -16 Q-59 2 -46 20 Z"
+        fill={DAWN.cloud}
+        stroke={DAWN.cloudTrim}
+        strokeWidth={5}
+        strokeLinejoin="round"
+      />
+    </g>
+  )
+}
+
+/**
+ * Manteau de l'Aube.
+ *
+ * Même cadre portrait que les autres tenues, et la silhouette y est **plus
+ * haute qu'aucune autre** : le manteau descend jusqu'aux chevilles, là où celui
+ * du clan s'arrête à mi-cuisse. C'est le premier écart, et il est voulu — les
+ * deux tenues sont sombres, et la carte doit déjà les séparer.
+ *
+ * Trois choses portent la reconnaissance, dans cet ordre : la **couronne
+ * orange**, seule tache chaude de la carte ; les **deux nuages** cerclés de
+ * blanc ; et le **col en V** dressé derrière la nuque. Le visage vient juste
+ * après, et il compte ici plus que sur les autres cartes — c'est la seule
+ * illustration du jeu où le regard soit dessiné, anneaux compris.
+ *
+ * Le halo est resté doré comme sur les autres cartes : un halo orange derrière
+ * une couronne orange l'aurait effacée, et c'est elle qui identifie l'objet.
+ */
+function DawnCloak() {
+  return (
+    <svg viewBox="0 0 320 300" role="img" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="dawn-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#1d1930" />
+          <stop offset="100%" stopColor="#4e4670" />
+        </linearGradient>
+        <radialGradient id="dawn-halo" cx="0.5" cy="0.38" r="0.55">
+          <stop offset="0%" stopColor="#c9a04a" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#c9a04a" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <rect width="320" height="300" fill="url(#dawn-sky)" />
+      <circle cx="160" cy="115" r="140" fill="url(#dawn-halo)" />
+
+      {/* Crête sous les pieds : ancre la silhouette au sol plutôt que de la
+          laisser flotter au milieu du cadre. Le même tracé que les autres
+          cartes — c'est le sol du même monde. */}
+      <path d="M0 276 L86 258 L160 268 L240 254 L320 272 L320 300 L0 300 Z" fill="#241f38" />
+
+      {/*
+        Couronne, dessinée avant la tête : les mèches passent derrière le crâne.
+
+        Aucune ne descend sous le bandeau, et aucune ne revient sur le visage —
+        c'est la règle du modèle 3D, et elle vaut ici pour la même raison : tout
+        ce personnage tient dans son regard. Les longueurs sont inégales, les
+        plus grandes partent en arrière.
+      */}
+      <path
+        d="M160 16 L150 40 L138 22 L132 46 L118 32 L120 56 L104 50 L112 70
+           L124 62 L196 62 L208 70 L216 50 L200 56 L202 32 L188 46 L182 22
+           L170 40 Z"
+        fill={DAWN.hair}
+      />
+
+      {/* Pantalon d'ardoise, puis bandes de lin, puis sandales : dessinés avant
+          le manteau, qui les recouvre jusqu'aux genoux. */}
+      <path d="M138 214 h20 v34 h-20 Z M162 214 h20 v34 h-20 Z" fill={DAWN.trouser} />
+      <rect x="137" y="240" width="22" height="28" rx="5" fill={DAWN.wrap} />
+      <rect x="161" y="240" width="22" height="28" rx="5" fill={DAWN.wrap} />
+      <path d="M131 266 h30 v9 h-34 Z M159 266 h30 v9 h-34 Z" fill={DAWN.sandal} />
+
+      {/* Manches, sous le manteau : elles portent le revers cramoisi au
+          poignet, seul endroit avec le col où la doublure se voie. */}
+      <path d="M104 132 h22 v86 h-22 Z" fill={DAWN.coatShade} />
+      <path d="M194 132 h22 v86 h-22 Z" fill={DAWN.coatShade} />
+      <path d="M104 214 h22 v10 h-22 Z M194 214 h22 v10 h-22 Z" fill={DAWN.lining} />
+      <path d="M106 224 h18 v16 a9 9 0 0 1 -18 0 Z" fill={DAWN.skin} />
+      <path d="M196 224 h18 v16 a9 9 0 0 1 -18 0 Z" fill={DAWN.skin} />
+
+      {/* Le manteau : une cloche qui tombe à la cheville. */}
+      <path d="M122 126 L198 126 L226 268 L94 268 Z" fill={DAWN.coat} />
+      <path d="M160 126 L198 126 L226 268 L160 268 Z" fill={DAWN.coatShade} />
+      {/* La fente du bas, et la ligne de fermeture qui la prolonge jusqu'au col. */}
+      <path d="M157 232 h6 l2 36 h-10 Z" fill={DAWN.trouser} />
+      <path d="M158.5 126 h3 v106 h-3 Z" fill={DAWN.lining} />
+
+      <DawnCloudMark x={132} y={196} size={0.34} />
+      <DawnCloudMark x={196} y={210} size={0.3} />
+
+      {/* Visage. */}
+      <path d="M137 46 h46 v46 a23 23 0 0 1 -46 0 Z" fill={DAWN.skin} />
+      {/* Bandeau : plaque d'acier, quatre rainures, la rayure du déserteur. */}
+      <path d="M133 52 h54 v16 h-54 Z" fill={DAWN.steel} />
+      <path
+        d="M146 54 v12 M154 54 v12 M162 54 v12 M170 54 v12"
+        stroke={DAWN.groove}
+        strokeWidth="2.4"
+      />
+      <path d="M134 66 L186 54" stroke={DAWN.groove} strokeWidth="2.6" />
+      {/* Le regard : iris lavande, deux anneaux, pupille. Le sourcil et la
+          paupière piquent vers le nez — à l'envers, ils donnent un air abattu. */}
+      <path d="M141 74 L155 77 M179 74 L165 77" stroke={DAWN.hair} strokeWidth="3" strokeLinecap="round" />
+      <ellipse cx="149" cy="82" rx="8" ry="6" fill={DAWN.iris} />
+      <ellipse cx="171" cy="82" rx="8" ry="6" fill={DAWN.iris} />
+      <ellipse cx="149" cy="82" rx="5" ry="3.6" fill="none" stroke={DAWN.ring} strokeWidth="1.4" />
+      <ellipse cx="171" cy="82" rx="5" ry="3.6" fill="none" stroke={DAWN.ring} strokeWidth="1.4" />
+      <circle cx="149" cy="82" r="1.8" fill="#120e22" />
+      <circle cx="171" cy="82" r="1.8" fill="#120e22" />
+      {/* Les trois piercings de l'arête et les deux de la lèvre. */}
+      <path
+        d="M158 86 h4 M158 92 h4 M158 98 h4 M152 108 h4 M164 108 h4"
+        stroke={DAWN.coat}
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+
+      {/* Col en V, dressé derrière la nuque : doublure cramoisie visible entre
+          ses deux pans, exactement comme sur la silhouette 3D. */}
+      <path d="M124 130 L130 84 L160 108 L190 84 L196 130 L160 118 Z" fill={DAWN.lining} />
+      <path d="M124 130 L130 84 L152 102 L146 130 Z" fill={DAWN.coat} />
+      <path d="M196 130 L190 84 L168 102 L174 130 Z" fill={DAWN.coatShade} />
+    </svg>
+  )
+}
+
 /** Teintes partagées avec la lame 3D. Voir `Katana` dans `HeroPlaceholder`. */
 const KATANA = {
   blade: '#dde6ef',
@@ -603,6 +759,7 @@ function FishmanScales() {
 const ILLUSTRATIONS: Record<ItemId, () => React.JSX.Element> = {
   'zoro-garb': ZoroGarb,
   'madara-garb': MadaraGarb,
+  'dawn-cloak': DawnCloak,
   kusanagi: KusanagiKatana,
   'cursed-blade': KitetsuBlade,
   'fishman-scales': FishmanScales,

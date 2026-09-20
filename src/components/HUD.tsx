@@ -42,6 +42,7 @@ export function HUD() {
   const maxHearts = useGameStore((state) => state.maxHearts)
   const bonusHearts = useGameStore((state) => state.bonusHearts)
   const lastHitAt = useGameStore((state) => state.lastHitAt)
+  const revivedAt = useGameStore((state) => state.revivedAt)
   const kills = useGameStore((state) => state.kills)
   const phase = useGameStore((state) => state.phase)
   const discovered = useGameStore((state) => state.discovered)
@@ -82,6 +83,16 @@ export function HUD() {
         ça elle ne se déclencherait qu'une seule fois sur toute la partie.
       */}
       {Number.isFinite(lastHitAt) && <div key={lastHitAt} className="hud__damage" />}
+
+      {/*
+        Embrasement du second souffle, sur le même mécanisme de `key`.
+
+        Il part du **centre** quand le flash de dégâts vient des bords, et c'est
+        ce qui les sépare à l'instant où les deux pourraient se confondre : le
+        coup fatal et son annulation tombent sur la même frame. L'un dit « ça
+        vient de l'extérieur », l'autre « ça vient de vous ».
+      */}
+      {Number.isFinite(revivedAt) && <div key={revivedAt} className="hud__revive" />}
 
       {/*
         Embrasement de l'écran, sur le même mécanisme de `key` que le flash de
@@ -156,6 +167,22 @@ export function HUD() {
           <span className="discovery__kicker">{dict.ui.portal.kicker}</span>
           <strong className="discovery__name">{dict.ui.portal.name}</strong>
           <span className="discovery__hint">{dict.ui.portal.hint}</span>
+        </div>
+      )}
+
+      {/*
+        Bandeau du second souffle. Quatrième hauteur, et la plus basse : c'est
+        le seul des quatre qui puisse tomber pendant un combat de boss, donc le
+        seul qui ne doive rien recouvrir de ce qui se passe au centre de l'écran.
+
+        Sa clé est l'horodatage et non un booléen : le relèvement n'arrive
+        qu'une fois par partie, mais une seconde partie doit rejouer son
+        animation, et `reset` remet l'horloge à zéro en même temps que l'état.
+      */}
+      {Number.isFinite(revivedAt) && (
+        <div key={`revive-${revivedAt}`} className="discovery discovery--revive">
+          <span className="discovery__kicker">{dict.ui.revive.kicker}</span>
+          <strong className="discovery__name">{dict.ui.revive.name}</strong>
         </div>
       )}
 

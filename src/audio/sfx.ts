@@ -324,6 +324,24 @@ export function playTreasure() {
 }
 
 /**
+ * Second souffle : la tenue relève son porteur.
+ *
+ * Il devait se distinguer des deux fanfares sans leur ressembler, et le parti
+ * pris est l'inverse du leur : celles du coffre et du réceptacle **montent** dès
+ * la première note, celui-ci **part d'en bas**. Un coup sourd d'abord — le corps
+ * qui touche — puis deux notes tenues qui remontent chacune d'une octave, et un
+ * souffle clair pour finir. Une mélodie de plus se serait entendue comme une
+ * récompense, alors que c'est une mort qui n'a pas eu lieu.
+ */
+export function playRevive() {
+  // Le coup sourd, et il descend : c'est la chute, pas le relèvement.
+  tone('sine', 110, 55, 0.22, 0.5)
+  tone('triangle', 196, 392, 0.13, 0.85, 0.14)
+  tone('triangle', 392, 784, 0.11, 1, 0.34)
+  noiseBurst('highpass', 700, 2600, 0.8, 0.07, 0.5)
+}
+
+/**
  * Changement de tenue : la bouffée de fumée, et l'étoffe qui claque.
  *
  * Le souffle est filtré vers le haut puis retombe — un nuage qui se détend.
