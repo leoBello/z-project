@@ -714,8 +714,14 @@ export interface GameState {
   /** Range le champignon, en fin de séquence. */
   finishAnnihilation: () => void
 
-  /** Signale qu'un portail est à portée, ou qu'il ne l'est plus. */
-  setNearbyPortal: (to: MapId | null) => void
+  /**
+   * Un anneau **se signale** à portée, ou se retire.
+   *
+   * L'identité de l'anneau est dans la signature, et ce n'est pas décoratif :
+   * deux cartes portent deux portails, et ils tournaient tous les deux à chaque
+   * frame. Voir la règle d'arbitrage sur l'implémentation.
+   */
+  setNearbyPortal: (to: MapId, near: boolean) => void
   /**
    * Compte une bête de l'épreuve, et donne le cœur si c'était la dernière.
    *
@@ -1550,8 +1556,35 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   // --- Voyage entre les cartes ----------------------------------------------
 
-  /** Même discipline que les monuments et les coffres : écriture sur transition. */
-  setNearbyPortal: (to) => set({ nearbyPortal: to }),
+  /**
+   * **Un anneau ne parle que de lui-même**, et c'est toute la règle.
+   *
+   * Elle a été forcée par les cartes à deux portes. L'Île Céleste en a deux
+   * depuis qu'elle mène au Marais, le Marais depuis qu'il mène à l'Outremonde,
+   * et les deux `useFrame` tournaient côte à côte en écrivant « à portée / pas à
+   * portée » dans le même champ. Le lointain effaçait donc ce que le proche
+   * venait d'y poser, à chaque image, et le gagnant était simplement le dernier
+   * monté : sur l'île, l'anneau du sommet écrasait celui de la prairie, et le
+   * retour vers le continent cessait de répondre **à la seconde où le portail du
+   * sommet s'ouvrait** — c'est-à-dire à la chute du Lynel doré. Sur le Marais,
+   * la chute de Malenia condamnait de la même façon le retour vers l'île. Deux
+   * culs-de-sac, ouverts par une victoire.
+   *
+   * L'anneau s'annonce donc quand il est à portée, et ne retire que **sa
+   * propre** annonce. Les deux anneaux d'une carte sont à cent trente unités
+   * l'un de l'autre pour une portée de sept : il ne peut pas y en avoir deux à
+   * portée à la fois, donc `to` désigne sans ambiguïté celui qui parle.
+   *
+   * Même discipline d'écriture que les monuments et les coffres : la sortie
+   * anticipée garantit qu'on n'écrit que sur **transition**, jamais à chaque
+   * frame — sans quoi le HUD se re-rendrait soixante fois par seconde pour
+   * réafficher la même invite.
+   */
+  setNearbyPortal: (to, near) => {
+    const { nearbyPortal } = get()
+    if (near ? nearbyPortal === to : nearbyPortal !== to) return
+    set({ nearbyPortal: near ? to : null })
+  },
 
   /**
    * Une bête de l'épreuve tombe.

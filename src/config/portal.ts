@@ -8,6 +8,7 @@ import {
   MARSH_BEYOND_SPAWN,
   MARSH_SPAWN,
 } from './rotMarsh'
+import { SUMMIT_ARRIVAL_YAW, SUMMIT_SPAWN } from './skyMountain'
 import { sampleHeight } from './world'
 
 /**
@@ -72,7 +73,13 @@ export const PORTAL = (() => {
 export const PORTAL_NEAR_RADIUS = 7
 
 /**
- * Où le portail dépose sur l'île, en coordonnées monde de la carte céleste.
+ * Où le portail **de Nakano** dépose sur l'île, en coordonnées monde de la carte
+ * céleste.
+ *
+ * De Nakano et de lui seul, depuis que l'île a une seconde porte : on revient du
+ * Marais au sommet de la montagne, pas ici. Voir `SUMMIT_SPAWN`. Ce point reste
+ * en revanche l'apparition de toute la carte — c'est ici qu'on repose un joueur
+ * tombé de l'île, d'où qu'il soit tombé.
  *
  * Plein sud, et c'est forcé : la caméra du jeu est fixe et regarde le nord (voir
  * la note de cap des monuments dans `landmarks.ts`). Arriver par le sud met
@@ -189,22 +196,26 @@ const ARRIVALS: Record<MapId, { x: number; y: number; z: number }> = {
 }
 
 /**
- * Le Marais a **deux** portes depuis qu'il en a une vers l'Outremonde, et c'est
- * la seule carte du jeu dans ce cas.
+ * Deux cartes du jeu ont **deux** portes : le Marais, depuis qu'il mène à
+ * l'Outremonde, et l'Île Céleste, depuis qu'elle mène au Marais.
  *
  * D'où le second paramètre : la destination ne suffit plus à dire où déposer,
  * il faut savoir d'où l'on vient. Une table `Record<MapId, …>` par carte
- * d'origine aurait été seize entrées pour une seule exception ; un paramètre
+ * d'origine aurait été seize entrées pour deux exceptions ; un paramètre
  * facultatif dit exactement ce qui est vrai — « en général la carte suffit,
  * sauf ici ».
  *
- * Sans cette exception, revenir de l'Outremonde déposait au portail de la
- * chaussée, à cent trente unités de l'anneau franchi, avec tout le marais à
- * retraverser. C'est le défaut qu'avait connu le retour de l'Île Céleste au
- * début, et il se corrige de la même façon.
+ * Les deux exceptions corrigent le même défaut, et c'est le troisième
+ * exemplaire d'une série : sans elles, revenir déposait à l'arrivée *générale*
+ * de la carte, à cent trente unités de l'anneau qu'on venait de franchir, avec
+ * tout le chemin à refaire dans le mauvais sens. Le retour de l'Île Céleste
+ * l'avait connu en premier, celui de l'Outremonde ensuite, celui du Marais en
+ * dernier. Une porte ramène là d'où l'on est parti ; c'est même à peu près la
+ * seule chose qu'on attende d'une porte.
  */
 export function arrivalFor(map: MapId, from?: MapId) {
   if (map === 'rot' && from === 'beyond') return MARSH_BEYOND_SPAWN
+  if (map === 'sky' && from === 'rot') return SUMMIT_SPAWN
   return ARRIVALS[map]
 }
 
@@ -228,9 +239,12 @@ const ARRIVAL_YAWS: Record<MapId, number> = {
 }
 
 export function arrivalYaw(map: MapId, from?: MapId) {
-  // Même exception, et elle doit être ici aussi : déposer au bon endroit avec
-  // le cap de l'autre porte ferait sortir le joueur face à l'Arbre, c'est-à-dire
-  // dans le dos du chemin qu'il doit reprendre.
+  // Les mêmes exceptions, et elles doivent être ici aussi : déposer au bon
+  // endroit avec le cap de l'autre porte ferait sortir le joueur face à
+  // l'Arbre, ou, au sommet, face au nord du monde sur un plateau dont la
+  // descente s'ouvre au sud de la voie — c'est-à-dire, dans les deux cas, dos
+  // au chemin qu'il doit reprendre.
   if (map === 'rot' && from === 'beyond') return MARSH_BEYOND_ARRIVAL_YAW
+  if (map === 'sky' && from === 'rot') return SUMMIT_ARRIVAL_YAW
   return ARRIVAL_YAWS[map]
 }

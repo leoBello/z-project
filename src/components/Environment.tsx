@@ -221,12 +221,43 @@ export function Environment() {
       {location === 'rot' ? <RotSky /> : location === 'beyond' ? <BeyondSky /> : <StarrySky />}
       <MapFog map={location} />
       <Lighting map={location} />
+      {/*
+        Chaque carte différée a une frontière `<Suspense>` **à elle**, et la
+        `key` est tout ce qui le garantit.
+
+        Sans elle, les trois branches rendent le même élément — un `<Suspense>`
+        sans clé, à la même place — et React réutilise la frontière au lieu
+        d'en monter une neuve. Ce n'est pas un détail d'implémentation : quand
+        la carte d'arrivée suspend le temps de résoudre son `lazy` — ce qui
+        arrive à **chaque** voyage, même quand le module est déjà en mémoire
+        (voir `WorldTransition`) —, React garde la carte de départ montée et la
+        masque, en posant `visible = false` sur ses objets, le temps d'afficher
+        le repli. Puis il la supprime sans jamais la démasquer : il n'y a plus
+        rien à démasquer, l'arbre est parti.
+
+        Et ce masquage survivait au démontage. L'Île Céleste bâtit ses quatre
+        plus grosses pièces — ruines, flore, chaussée, eau — à l'import du
+        fragment, et les rend par `<primitive>` (voir l'en-tête de `Ruins.tsx`
+        pour la raison). Ce sont donc des `Object3D` de module, qui vivent plus
+        longtemps que le montage : le `visible = false` laissé par la
+        suspension restait sur eux, et aucune prop ne venait le corriger au
+        montage suivant. Descendre au Marais par le portail du sommet suffisait
+        à rendre l'île définitivement amputée — le terrain revenait, les ruines,
+        les arbres, l'eau et la voie ne revenaient plus, pour le reste de la
+        session.
+
+        Avec une clé par carte, React supprime la frontière de départ et en
+        monte une neuve : celle-ci n'a pas d'enfant à masquer, et personne ne
+        touche plus aux objets de la carte qu'on quitte. C'est aussi ce que le
+        reste du code a toujours cru qu'il se passait — « React doit démonter le
+        continent entier et monter l'île », dit l'en-tête de `WorldTransition`.
+      */}
       {location === 'beyond' ? (
-        <Suspense fallback={null}>
+        <Suspense key="beyond" fallback={null}>
           <Beyond />
         </Suspense>
       ) : location === 'rot' ? (
-        <Suspense fallback={null}>
+        <Suspense key="rot" fallback={null}>
           <RotMarsh />
         </Suspense>
       ) : location === 'continent' ? (
@@ -243,7 +274,7 @@ export function Environment() {
           <SkyIslandDistant />
         </>
       ) : (
-        <Suspense fallback={null}>
+        <Suspense key="sky" fallback={null}>
           <SkyIsland />
         </Suspense>
       )}

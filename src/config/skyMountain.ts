@@ -1,3 +1,4 @@
+import { FEET_TO_CENTER } from './capsule'
 import { groundAt, islandNoise, rimRadius } from './skyIsland'
 import { smoothstep } from './world'
 
@@ -478,6 +479,16 @@ export const SUMMIT_CENTER: [number, number, number] = [
 ]
 
 /**
+ * Recul de l'anneau depuis le centre du plateau, vers le nord de la voie.
+ *
+ * Nommé plutôt qu'écrit deux fois : le point d'arrivée du retour se mesure
+ * depuis l'anneau, donc depuis ce nombre-là. Deux littéraux qui doivent rester
+ * égaux finissent toujours par ne plus l'être, et le jour où cela arriverait le
+ * joueur réapparaîtrait à côté de la porte au lieu d'en sortir.
+ */
+const PORTAL_SETBACK = 6
+
+/**
  * Où s'ouvre le portail, une fois la bête tombée.
  *
  * Au nord du plateau, donc **en face** de l'arrivée de la spire, qui débouche au
@@ -490,12 +501,44 @@ export const SUMMIT_CENTER: [number, number, number] = [
  * passage.
  */
 export const SUMMIT_PORTAL = (() => {
-  const at = spurToWorld(MOUNT_X, MOUNT_Z - 6)
+  const at = spurToWorld(MOUNT_X, MOUNT_Z - PORTAL_SETBACK)
   // Le cap de la voie, parce que « faire face au sud » se dit dans **son**
   // repère : l'anneau regarde d'où l'on monte, quel que soit le cap du
   // promontoire.
   return { x: at.x, y: SUMMIT_Y, z: at.z, yaw: SPUR_YAW }
 })()
+
+/** Pas du retour, compté depuis l'anneau vers le plateau. */
+const SUMMIT_RETURN_STEP = 3
+
+/**
+ * Où l'on ressort du portail du sommet **en revenant du Marais**.
+ *
+ * Trois unités devant l'anneau, sur son axe et du côté du plateau : le joueur
+ * en sort dos à lui, face à l'arène et à la tête de la spire. C'est la cote et
+ * la posture du retour de Nakano, pour la même raison — on ne réapparaît ni
+ * dans la géométrie qu'on vient de franchir, ni en lui faisant face.
+ *
+ * **Sans ce point, le Marais ne ramenait pas là d'où l'on venait.** Le retour
+ * tombait sur l'arrivée générale de l'île, c'est-à-dire la prairie du sud, à
+ * cent trente unités et une montagne de l'anneau franchi — alors que le portail
+ * du bassin, lui, annonce le sommet. C'est le défaut qu'avaient déjà connu le
+ * retour de l'Île Céleste puis celui de l'Outremonde, et il se corrige de la
+ * même façon : l'Île Céleste a deux portes depuis qu'elle mène au Marais, et
+ * `arrivalFor` doit savoir par laquelle on rentre.
+ *
+ * L'altitude est celle du plateau — il est plat, c'est son propos — relevée du
+ * sol au centre de la capsule. `FEET_TO_CENTER` et non `PLAYER` : ce module
+ * décrit de l'arithmétique pure et n'a aucune raison de tirer la configuration
+ * du joueur, qui lit le relief à son chargement. Voir `capsule.ts`.
+ */
+export const SUMMIT_SPAWN = (() => {
+  const at = spurToWorld(MOUNT_X, MOUNT_Z - PORTAL_SETBACK + SUMMIT_RETURN_STEP)
+  return { x: at.x, y: SUMMIT_Y + FEET_TO_CENTER, z: at.z }
+})()
+
+/** Cap à l'arrivée depuis le Marais : dos à l'anneau, face à la descente. */
+export const SUMMIT_ARRIVAL_YAW = SPUR_YAW
 
 // --- Le cadrage de la minimap ------------------------------------------------
 
