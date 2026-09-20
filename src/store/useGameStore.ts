@@ -1229,20 +1229,40 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   endBossFight: (defeated, fellAt) => {
     /*
-      Les deux sorties ne sont pas symétriques.
+      Les deux sorties ne sont pas symétriques, et leurs **gardes** ne le sont
+      pas non plus.
 
       Vaincu, le combat ne peut plus reprendre : l'état reste `defeated` pour
       toute la partie, les barrières s'ouvrent et la caméra se rouvre. Mort, le
       joueur repart du continent et le Lynel remonte avec ses 36 points de vie —
       d'où le retour à `idle`, qui autorise un second engagement.
+
+      **Une victoire s'enregistre même si le combat n'avait pas été engagé**, et
+      c'est la correction d'un défaut réel. La garde unique d'avant —
+      `if (bossState !== 'fighting') return` — protégeait les deux sorties
+      ensemble, ce qui était juste tant que la seule façon de tuer le gardien
+      était de l'affronter. L'onde d'annihilation en a ouvert une seconde : la
+      bête mourait sans avoir jamais été engagée, l'appel sortait ici sans rien
+      faire, et **trois choses en dépendaient** — le coffre et le réceptacle de
+      la rotonde, qui lisent `defeated` ; les trois bêtes de l'épreuve, qui ne se
+      montent qu'à cette condition, donc ne pouvaient plus mourir, donc ne
+      levaient jamais la herse ; et le journal de quêtes.
+
+      Un boss mort est mort, quelle que soit la façon dont il l'est devenu. La
+      garde de `fighting` ne vaut donc que pour l'abandon, où elle a un sens :
+      on ne peut pas renoncer à un combat qu'on n'a pas commencé.
     */
-    if (get().bossState !== 'fighting') return
-    set({
-      bossState: defeated ? 'defeated' : 'idle',
-      bossFellAt: defeated ? (fellAt ?? null) : null,
-      arenaFight: null,
-    })
-    if (defeated) track('boss_defeated', { hearts: get().hearts })
+    const { bossState } = get()
+
+    if (defeated) {
+      if (bossState === 'defeated') return
+      set({ bossState: 'defeated', bossFellAt: fellAt ?? null, arenaFight: null })
+      track('boss_defeated', { hearts: get().hearts })
+      return
+    }
+
+    if (bossState !== 'fighting') return
+    set({ bossState: 'idle', bossFellAt: null, arenaFight: null })
   },
 
   /**
