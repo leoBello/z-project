@@ -2,6 +2,8 @@ import { Suspense, lazy, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Object3D, type DirectionalLight } from 'three'
 import { playerTransform } from '../state/playerTransform'
+import type { MapId } from '../types/game'
+import { ATMOSPHERE, type Atmosphere } from '../config/atmosphere'
 import { useGameStore } from '../store/useGameStore'
 import { useQualityStore } from '../store/useQualityStore'
 import { Bridge } from './environment/Bridge'
@@ -12,8 +14,6 @@ import { Vegetation } from './environment/Vegetation'
 import { StarrySky } from './environment/StarrySky'
 import { Water } from './environment/Water'
 
-/** Position du soleil relative au joueur. */
-const SUN_OFFSET = { x: 45, y: 70, z: 35 }
 /**
  * Demi-largeur de la zone couverte par les ombres.
  * Cadrer la shadow camera sur le joueur plutôt que sur la carte entière fait
@@ -29,7 +29,7 @@ const SHADOW_EXTENT = 42
  * shadow camera, elle, en a une : la déplacer avec le joueur garde toujours la
  * zone visible dans la carte d'ombres.
  */
-function SunLight() {
+function SunLight({ sun }: { sun: Atmosphere['sun'] }) {
   const light = useRef<DirectionalLight>(null)
   const target = useMemo(() => new Object3D(), [])
   // Une shadow map de 2048² coûte une passe de rendu de la scène à cette
@@ -42,9 +42,9 @@ function SunLight() {
     target.position.copy(position)
     target.updateMatrixWorld()
     light.current?.position.set(
-      position.x + SUN_OFFSET.x,
-      position.y + SUN_OFFSET.y,
-      position.z + SUN_OFFSET.z,
+      position.x + sun.offset[0],
+      position.y + sun.offset[1],
+      position.z + sun.offset[2],
     )
   })
 
@@ -55,8 +55,8 @@ function SunLight() {
         ref={light}
         target={target}
         castShadow
-        intensity={2.1}
-        color="#ffe3ad"
+        intensity={sun.intensity}
+        color={sun.color}
         shadow-mapSize={[shadowMapSize, shadowMapSize]}
         shadow-bias={-0.0008}
         shadow-normalBias={0.02}
@@ -72,28 +72,51 @@ function SunLight() {
 }
 
 /**
- * Éclairage "fin d'après-midi".
+ * L'éclairage de la carte courante.
  *
- * Trois sources, et c'est volontaire : une seule lumière blanche aplatit
- * n'importe quel style. La clé chaude sculpte, le rebond froid du ciel évite
- * les ombres noires et mortes, et le contre-jour détache les silhouettes du
- * fond — c'est lui qui fait "lire" le personnage sur la végétation.
+ * Quatre sources, et c'est volontaire : une seule lumière blanche aplatit
+ * n'importe quel style. La clé sculpte, le rebond hémisphérique évite les
+ * ombres noires et mortes, l'ambiante relève le tout, et le contre-jour détache
+ * les silhouettes du fond — c'est lui qui fait "lire" le personnage sur la
+ * végétation.
+ *
+ * Les quatre viennent de `config/atmosphere.ts` et non de ce fichier : c'est
+ * une propriété du **lieu**, pas du composant qui l'allume. Voir l'en-tête de
+ * cette table pour la raison du changement.
  */
-function Lighting() {
+function Lighting({ map }: { map: MapId }) {
+  const air = ATMOSPHERE[map]
   return (
     <>
-      {/*
-        Le ciel est violet, mais l'éclairage garde exactement les mêmes
-        intensités qu'avant : seules les teintes basculent vers le parme. Le
-        monde reste donc aussi lumineux, il est juste éclairé par un autre ciel.
-      */}
-      <hemisphereLight args={['#d2dcf4', '#6a7a42', 0.7]} />
-      <ambientLight intensity={0.28} />
-      <SunLight />
-      {/* Contre-jour parme, sans ombre : purement du détourage. */}
-      <directionalLight position={[-30, 18, -35]} intensity={0.5} color="#9fb0e8" />
+      <hemisphereLight
+        args={[air.hemisphere.sky, air.hemisphere.ground, air.hemisphere.intensity]}
+      />
+      <ambientLight intensity={air.ambient} />
+      <SunLight sun={air.sun} />
+      <directionalLight
+        position={air.rim.position}
+        intensity={air.rim.intensity}
+        color={air.rim.color}
+      />
     </>
   )
+}
+
+/**
+ * La brume de la carte courante.
+ *
+ * Elle était en dur dans `App.tsx`, et elle en sort pour la même raison que les
+ * lumières. Elle reste **hors** de `<Physics>` et de tout `<Suspense>` : c'est
+ * un attachement sur la scène, pas un objet qui se monte et se démonte.
+ *
+ * `attach="fog"` remplace l'objet précédent à chaque changement de carte, donc
+ * il n'y a rien à nettoyer — mais il n'y a pas d'interpolation non plus : la
+ * brume change d'un coup. Ça ne se voit pas, parce que le seul instant où elle
+ * change est celui où le voile de transition est opaque.
+ */
+function MapFog({ map }: { map: MapId }) {
+  const { color, near, far } = ATMOSPHERE[map].fog
+  return <fog attach="fog" args={[color, near, far]} />
 }
 
 /**
@@ -122,10 +145,15 @@ const SkyIsland = lazy(() => import('./skyisland/SkyIsland'))
 /**
  * Décor complet de la carte courante.
  *
- * Le ciel et les lumières sont **hors du branchement** : les deux cartes
- * partagent le même firmament et le même soleil, et c'est voulu — l'île flotte
- * dans le ciel du continent, pas dans un autre. Les monter deux fois les
- * recréerait à chaque voyage pour un résultat identique.
+ * Le **ciel étoilé** reste hors du branchement, et lui seul : le continent et
+ * l'île partagent le même firmament — l'île flotte dans le ciel du continent,
+ * pas dans un autre. Le monter deux fois le recréerait à chaque voyage pour un
+ * résultat identique.
+ *
+ * La brume et les lumières, elles, en sont sorties : elles sont désormais lues
+ * par carte dans `config/atmosphere.ts`. Pour les deux cartes existantes la
+ * table redonne exactement les valeurs qui étaient en dur ici et dans
+ * `App.tsx`, donc rien ne change à l'écran.
  *
  * Tout le reste change en bloc. Il n'y a délibérément aucune pièce commune au
  * sol : le continent est un champ de hauteurs sur grille carrée, l'île une
@@ -138,7 +166,8 @@ export function Environment() {
   return (
     <>
       <StarrySky />
-      <Lighting />
+      <MapFog map={location} />
+      <Lighting map={location} />
       {location === 'continent' ? (
         <>
           <Terrain />
