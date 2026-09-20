@@ -1200,6 +1200,287 @@ function ScarletSaber() {
   )
 }
 
+/**
+ * Les deux récompenses du Marais, et ce qui les sépare à l'œil.
+ *
+ * Elles s'ouvrent à trois pas l'une de l'autre, donc leurs cartes se voient
+ * presque coup sur coup. Les deux fonds sont sombres — on est sous un arbre
+ * mort — et tout l'écart tient dans la **teinte du halo** : violet saturé pour
+ * la carapace, blanc froid pour le manteau. C'est la même discipline que les
+ * deux coffres du sommet, dont l'un tire au rouge et l'autre à l'acier.
+ */
+/*
+  Le Roi : **vert pâle pigmenté de vert sombre**, et non violet.
+
+  Le premier jet en faisait un personnage violet saturé — un raisonnement de
+  lisibilité appliqué à une teinte qui n'est pas la sienne. Il ne lui reste de
+  violet que ses yeux et deux lignes sur son casque, et c'est cette rareté qui
+  leur donne leur valeur.
+*/
+const KING = {
+  chitin: '#b7d9bc',
+  shade: '#8fb894',
+  pigment: '#2c503c',
+  deep: '#12201a',
+  cool: '#93c9be',
+  royal: '#7b4ea8',
+  iris: '#cbb0e4',
+}
+
+const THIEF = {
+  coat: '#17141c',
+  fold: '#0d0b11',
+  fur: '#f2f0ec',
+  furShade: '#b6b3ad',
+  mark: '#f4f2ee',
+  skin: '#f0d3b4',
+  ink: '#241a2e',
+  jade: '#2e8f6e',
+}
+
+function MeruemCarapace() {
+  return (
+    <svg viewBox="0 0 320 300" role="img" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="king-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#081511" />
+          <stop offset="100%" stopColor="#1d4238" />
+        </linearGradient>
+        <radialGradient id="king-halo" cx="0.5" cy="0.34" r="0.6">
+          <stop offset="0%" stopColor="#3d7a62" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#3d7a62" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <rect width="320" height="300" fill="url(#king-sky)" />
+      <circle cx="160" cy="102" r="150" fill="url(#king-halo)" />
+      <path d="M0 278 L86 262 L160 270 L238 258 L320 274 L320 300 L0 300 Z" fill="#12201a" />
+
+      {/*
+        La queue, dessinée **avant** le corps : elle passe derrière lui, sort du
+        cadre par la droite et y revient. C'est la seule illustration de la
+        série dont le sujet déborde de sa propre silhouette, et c'est ce qui la
+        rend reconnaissable en vignette.
+      */}
+      <path
+        d="M186 214 C246 218 284 188 290 138 C294 102 278 82 258 76"
+        stroke={KING.pigment}
+        strokeWidth="26"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M186 214 C246 218 284 188 290 138 C294 102 278 82 258 76"
+        stroke={KING.chitin}
+        strokeWidth="10"
+        strokeLinecap="round"
+        fill="none"
+        opacity="0.5"
+      />
+      {/* Le dard : avec le regard, la seule valeur claire du dessin, et il est à
+          l'autre bout du corps — c'est ce qui fait lire la longueur. */}
+      <path d="M258 82 L244 36 L282 62 Z" fill={KING.cool} />
+
+      {/* Le tronc, en chitine claire : il n'y a pas de vêtement, ce qu'on prend
+          pour une armure *est* le corps. */}
+      <path d="M160 100 L212 126 L220 198 L204 268 L116 268 L100 198 L108 126 Z" fill={KING.chitin} />
+
+      {/* Le plastron sombre : un **bloc de couleur** qui coiffe le haut du tronc
+          et les épaules d'un seul tenant, et redescend en pointe au sternum. Ce
+          n'est pas un dessin d'anatomie — découpé en deux pectoraux, il donne
+          deux rondeurs sombres côte à côte, et c'est tout ce qu'on y voit. */}
+      <path d="M160 100 L212 126 L214 158 L160 182 L106 158 L108 126 Z" fill={KING.pigment} />
+
+      {/* La rainure abdominale : trois traits qui rétrécissent, et rien d'autre
+          ne dit « segmenté » à cette taille. */}
+      <path
+        d="M138 206 H182 M142 224 H178 M146 242 H174"
+        stroke={KING.shade}
+        strokeWidth="7"
+        strokeLinecap="round"
+      />
+
+      {/*
+        Le casque — **la pièce qui identifie le personnage**, et celle qui
+        manquait. Une calotte lisse posée sur un crâne est une bosse ; un casque
+        se reconnaît à trois choses, et il n'en avait aucune : un bord franc
+        autour de l'ouverture du visage, une arête médiane, et des cornes.
+      */}
+      <path d="M160 6 C116 6 96 40 98 78 L102 98 L218 98 L222 78 C224 40 204 6 160 6 Z" fill={KING.pigment} />
+      {/* La pointe arrière, qui allonge le crâne : de profil comme ici, sans
+          elle le casque est un bol rond. */}
+      <path d="M216 52 L268 34 L220 88 Z" fill={KING.deep} />
+      {/* L'arête médiane, en lame. */}
+      <path d="M154 8 H166 L170 60 H150 Z" fill={KING.deep} />
+      {/* Les deux lignes violettes, de part et d'autre de l'arête — avec le
+          regard, les deux seuls violets du personnage. */}
+      <path
+        d="M140 18 L134 66 M180 18 L186 66"
+        stroke={KING.royal}
+        strokeWidth="7"
+        strokeLinecap="round"
+      />
+      {/* Le bord du casque : sans ce trait franc, la chitine et la peau se
+          touchent sur une limite floue et le casque redevient une bosse. */}
+      <path
+        d="M100 92 C112 104 136 110 160 110 C184 110 208 104 220 92"
+        stroke={KING.deep}
+        strokeWidth="8"
+        strokeLinecap="round"
+        fill="none"
+      />
+      {/* La pointe frontale, au milieu du bord : un bord régulier fait un bol
+          renversé, la pointe lui donne un devant. */}
+      <path d="M148 100 H172 L160 122 Z" fill={KING.pigment} />
+
+      {/* Les cornes — **le trait qui tue l'homme-poisson.** Elles partent des
+          tempes et balaient vers l'arrière en s'écartant. Nées du sommet du
+          crâne elles font deux petites oreilles ; dressées, un casque à cornes
+          de fantaisie. */}
+      <path d="M100 74 L26 46 L64 88 L18 82 L96 106 Z" fill={KING.pigment} />
+      <path d="M220 74 L294 46 L256 88 L302 82 L224 106 Z" fill={KING.pigment} />
+
+      {/* La tête, sous le casque. */}
+      <path d="M160 96 C130 96 114 116 114 140 C114 166 134 182 160 182 C186 182 206 166 206 140 C206 116 190 96 160 96 Z" fill={KING.chitin} />
+
+      {/*
+        Le regard. Deux amandes **couchées** : rondes, deux grands yeux clairs
+        sur une face large font un œil de poisson, quelle que soit leur couleur.
+        L'iris domine la pupille — l'inverse donne deux gros yeux noirs.
+      */}
+      <path d="M126 140 C134 130 150 130 156 140 C150 150 134 150 126 140 Z" fill={KING.iris} />
+      <path d="M194 140 C186 130 170 130 164 140 C170 150 186 150 194 140 Z" fill={KING.iris} />
+      <circle cx="140" cy="141" r="5" fill={KING.deep} />
+      <circle cx="180" cy="141" r="5" fill={KING.deep} />
+      {/* Le trait de cil, posé sur le bord haut de l'amande, dont il mange les
+          derniers millimètres. C'est lui, et rien d'autre, qui fait un regard
+          qui juge plutôt qu'un regard qui s'étonne. */}
+      <path
+        d="M124 138 C132 128 150 128 158 138 M196 138 C188 128 170 128 162 138"
+        stroke={KING.deep}
+        strokeWidth="6"
+        strokeLinecap="round"
+        fill="none"
+      />
+      {/* La bouche : un trait, et seulement un trait. */}
+      <path d="M150 166 H170" stroke={KING.pigment} strokeWidth="6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function KuroroCoat() {
+  return (
+    <svg viewBox="0 0 320 300" role="img" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="thief-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#0c0d11" />
+          <stop offset="100%" stopColor="#2c3038" />
+        </linearGradient>
+        <radialGradient id="thief-halo" cx="0.5" cy="0.32" r="0.58">
+          <stop offset="0%" stopColor="#eef1f6" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#eef1f6" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <rect width="320" height="300" fill="url(#thief-sky)" />
+      <circle cx="160" cy="96" r="148" fill="url(#thief-halo)" />
+      <path d="M0 280 L84 266 L160 274 L240 262 L320 278 L320 300 L0 300 Z" fill="#14161b" />
+
+      {/* Le manteau : fermé, évasé jusqu'au bas du cadre. */}
+      <path d="M160 108 L216 130 L246 284 L74 284 L104 130 Z" fill={THIEF.coat} />
+      {/* Le pli central, seul relief d'une masse autrement plate : sans lui, un
+          manteau noir sur fond sombre est un trou dans l'image. */}
+      <path d="M160 130 L176 284 L144 284 Z" fill={THIEF.fold} />
+
+      {/*
+        La fourrure — **la pièce qui fait l'image**.
+
+        Une bande dentelée, plus large que les épaules, et la seule valeur claire
+        du dessin avec le visage. C'est elle qui empêche cette carte de ressembler
+        à celle de l'armure noire : là-bas le repère est un plastron rouge au
+        centre du corps, ici une barre blanche tout en haut. Les deux ne peuvent
+        pas se confondre.
+      */}
+      <path
+        d="M86 132 L100 108 L116 126 L132 104 L148 124 L160 100 L172 124 L188 104
+           L204 126 L220 108 L234 132 L224 150 L96 150 Z"
+        fill={THIEF.fur}
+      />
+      <path
+        d="M96 150 L224 150 L220 160 L100 160 Z"
+        fill={THIEF.furShade}
+      />
+
+      {/* Le laçage en X : un cordon fin, et non le laçage d'un corset — large,
+          il devient la première chose qu'on voit du personnage. */}
+      <path
+        d="M146 176 L174 194 M174 176 L146 194 M146 208 L174 226 M174 208 L146 226"
+        stroke={THIEF.mark}
+        strokeWidth="5"
+        strokeLinecap="round"
+      />
+      {/* La grande croix du pan. C'est le rapport d'échelle entre elle et le
+          laçage qui fait le dessin : une constellation de petites marques, et
+          une grande. */}
+      <path
+        d="M160 240 V282 M142 254 H178"
+        stroke={THIEF.mark}
+        strokeWidth="9"
+        strokeLinecap="round"
+      />
+
+      {/* L'ourlet hérissé : le troisième endroit où la fourrure apparaît, avec le
+          col et les poignets. L'oublier laissait le vêtement finir sur un trait
+          net, qu'il n'a pas. */}
+      <path
+        d="M74 284 L86 264 L98 284 L110 266 L122 284 L134 264 L146 284 L160 266
+           L174 284 L186 264 L198 284 L210 266 L222 284 L234 264 L246 284 Z"
+        fill={THIEF.fur}
+      />
+
+      {/* La tête : pâle, et c'est le seul personnage du jeu dont le visage soit
+          plus clair que sa tenue. */}
+      <path d="M160 18 C132 18 120 40 120 66 C120 92 136 108 160 108 C184 108 200 92 200 66 C200 40 188 18 160 18 Z" fill={THIEF.skin} />
+
+      {/* Les cheveux : plaqués en arrière, front **découvert**. Le front doit
+          rester libre, sans quoi la croix disparaît — et la croix est la moitié
+          de ce qui rend ce personnage reconnaissable. */}
+      <path d="M160 14 C128 14 116 38 120 62 L128 48 C134 34 144 28 160 28 C176 28 186 34 192 48 L200 62 C204 38 192 14 160 14 Z" fill={THIEF.ink} />
+      <path d="M118 56 L104 92 L124 78 Z" fill={THIEF.ink} />
+      <path d="M202 56 L216 92 L196 78 Z" fill={THIEF.ink} />
+
+      {/* La croix inversée : barre longue verticale, barre courte **en bas**.
+          C'est cette position basse, et elle seule, qui distingue cette croix
+          d'une croix ordinaire. */}
+      <path d="M160 34 V70 M146 62 H174" stroke={THIEF.ink} strokeWidth="7" strokeLinecap="round" />
+
+      {/*
+        Les yeux : deux amandes **couchées**, blanc puis iris presque noir. Deux
+        fentes verticales, même petites, se lisent comme des yeux d'insecte —
+        ce n'est pas la taille de l'œil qui compte ici mais son rapport.
+      */}
+      <path d="M132 82 C138 74 152 74 156 82 C150 89 138 89 132 82 Z" fill="#f4f1ea" />
+      <path d="M188 82 C182 74 168 74 164 82 C170 89 182 89 188 82 Z" fill="#f4f1ea" />
+      <ellipse cx="144" cy="82" rx="7" ry="5" fill={THIEF.ink} />
+      <ellipse cx="176" cy="82" rx="7" ry="5" fill={THIEF.ink} />
+      <path
+        d="M131 80 C137 72 152 72 157 80 M189 80 C183 72 168 72 163 80"
+        stroke={THIEF.ink}
+        strokeWidth="5"
+        strokeLinecap="round"
+        fill="none"
+      />
+
+      {/* Les boucles à perle verte — **le seul point coloré de tout le dessin**.
+          Le manteau est noir, la fourrure blanche, la peau pâle et les cheveux
+          sombres : deux points verts de part et d'autre du visage, et rien
+          d'autre. C'est la rareté qui leur donne leur valeur. */}
+      <circle cx="116" cy="92" r="7" fill={THIEF.jade} />
+      <circle cx="204" cy="92" r="7" fill={THIEF.jade} />
+    </svg>
+  )
+}
+
 const ILLUSTRATIONS: Record<ItemId, () => React.JSX.Element> = {
   'zoro-garb': ZoroGarb,
   'madara-garb': MadaraGarb,
@@ -1210,6 +1491,8 @@ const ILLUSTRATIONS: Record<ItemId, () => React.JSX.Element> = {
   'demon-armor': DemonArmour,
   'vader-armor': VaderArmour,
   'vader-saber': ScarletSaber,
+  'meruem-garb': MeruemCarapace,
+  'kuroro-garb': KuroroCoat,
 }
 
 export function ItemIllustration({ id }: { id: ItemId }) {

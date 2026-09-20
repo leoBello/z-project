@@ -124,30 +124,37 @@ export type LandmarkId = 'temple' | 'pyramid' | 'stele' | 'statue' | 'ruins' | '
  * Lynel ; l'annoncer sur la carte dès le départ le déflorerait. Même
  * raisonnement que le portail de l'île, qui n'est pas un monument non plus.
  *
- * `trial` et `golden` ne sont des lieux d'aucune sorte : ce sont les
- * récompenses de l'épreuve des trois Lynels et du Lynel doré, qui n'ont pas de
- * socle à ramasser. Elles passent quand même par ici plutôt que par un chemin à
+ * `trial`, `golden` et `malenia` ne sont des lieux d'aucune sorte : ce sont les
+ * récompenses de l'épreuve des trois Lynels, du Lynel doré et du Marais, qui
+ * n'ont pas de socle à ramasser.
+
+ * `malenia` fait exception dans l'exception : contrairement aux deux autres,
+ * elle **se ramasse** — un réceptacle posé là où le corps est tombé, comme celui
+ * de la rotonde. Elle passe par cette liste parce que c'est la même chose qu'un
+ * réceptacle de monument, pas parce qu'elle se donne toute seule. Elles passent quand même par ici plutôt que par un chemin à
  * elles, parce que le réceptacle *est* la chose — même cœur maximal, même soin
  * complet, même bandeau — et qu'un second chemin vers `maxHearts` serait un
  * second endroit où l'oublier.
  */
-export type HeartSourceId = LandmarkId | 'rotunda' | 'trial' | 'golden'
+export type HeartSourceId = LandmarkId | 'rotunda' | 'trial' | 'golden' | 'malenia'
 
 /**
  * Identifiant de quête. La table vit dans `config/quests.ts`, et les libellés
  * dans `src/i18n/*.json` sous `ui.quests.entries`.
  *
  * Un type fermé et non une table extensible, pour la même raison que `MapId` :
- * aucune de ces quatre quêtes n'est une ligne de configuration. Chacune se
- * termine sur un état de partie qui lui est propre — la carte vidée, l'île
- * atteinte, trois bêtes abattues, la montagne gravie — et en ajouter une
- * demandera de dire *où* elle s'achève, pas seulement comment elle s'intitule.
+ * aucune de ces cinq quêtes n'est une ligne de configuration. Chacune se termine
+ * sur un état de partie qui lui est propre — la carte vidée, l'île atteinte,
+ * trois bêtes abattues, la montagne gravie, le Marais traversé — et en ajouter
+ * une demandera de dire *où* elle s'achève, pas seulement comment elle
+ * s'intitule.
  */
 export type QuestId =
   | 'clear-continent'
   | 'sky-portal'
   | 'lynel-trial'
   | 'golden-lynel'
+  | 'aeonia'
 
 /**
  * Identifiant d'objet ramassable. La table vit dans `config/items.ts`, et les
@@ -163,6 +170,8 @@ export type ItemId =
   | 'demon-armor'
   | 'vader-armor'
   | 'vader-saber'
+  | 'meruem-garb'
+  | 'kuroro-garb'
 
 /** Identifiant de coffre au trésor. La table vit dans `config/chests.ts`. */
 export type ChestId =
@@ -175,6 +184,8 @@ export type ChestId =
   | 'road-chest'
   | 'summit-armor-chest'
   | 'summit-saber-chest'
+  | 'aeonia-king-chest'
+  | 'aeonia-thief-chest'
 
 /** Identifiant de biome. Pilote le sol, la végétation et la minimap. */
 export type BiomeId =

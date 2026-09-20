@@ -55,8 +55,11 @@ function tryParry(projectile: Projectile, now: number) {
   if (projectile.lastSwingTested === swing) return
   projectile.lastSwingTested = swing
 
-  const hitX = playerTransform.position.x + Math.sin(playerTransform.yaw) * ATTACK.reach
-  const hitZ = playerTransform.position.z + Math.cos(playerTransform.yaw) * ATTACK.reach
+  // La portée effective, comme pour les ennemis : un objet qui allonge le bras
+  // allonge aussi la fenêtre où l'on renvoie une flèche.
+  const armLength = useGameStore.getState().swordReach()
+  const hitX = playerTransform.position.x + Math.sin(playerTransform.yaw) * armLength
+  const hitZ = playerTransform.position.z + Math.cos(playerTransform.yaw) * armLength
   if (
     Math.hypot(
       projectile.position.x - hitX,

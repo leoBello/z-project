@@ -28,6 +28,7 @@ export function useQuestBoard(): QuestStatus[] {
   const bossDefeated = useGameStore((state) => state.bossState === 'defeated')
   const trialSlain = useGameStore((state) => state.trialSlain.length)
   const goldenSlain = useGameStore((state) => state.goldenSlainAt !== null)
+  const maleniaSlain = useGameStore((state) => state.maleniaSlainAt !== null)
 
   return questBoard({
     kills,
@@ -37,6 +38,7 @@ export function useQuestBoard(): QuestStatus[] {
     bossDefeated,
     trialSlain,
     goldenSlain,
+    maleniaSlain,
   })
 }
 

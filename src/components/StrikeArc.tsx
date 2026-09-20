@@ -132,6 +132,19 @@ export function StrikeArc() {
   const barehanded = useGameStore(
     (state) => weaponOf(state.equipped, outfitOf(state.equipped)) === 'fists',
   )
+  /*
+    La portée effective, et elle est **dans les dépendances du maillage**.
+
+    C'est le point que la feuille de route avait identifié comme bloquant : cet
+    anneau est construit une fois par arme, et faire varier la portée obligeait
+    à le reconstruire. C'est maintenant le cas — l'ancien est libéré par l'effet
+    de nettoyage déjà présent, qui existait pour le changement d'arme et couvre
+    celui-ci sans une ligne de plus.
+
+    Comme la hitbox, elle vient de `swordReach()` : les deux dérivent du même
+    nombre, sans quoi la traînée mentirait sur ce que le coup touche.
+  */
+  const reach = useGameStore((state) => state.swordReach())
 
   const { geometry, material } = useMemo(
     () =>
@@ -142,8 +155,8 @@ export function StrikeArc() {
           // anneau large vu en plongée remplit tout le sol devant le joueur et
           // se lit comme une flaque, pas comme une lame (constaté en capture).
           createRibbon(
-            ATTACK.reach - ATTACK.radius * 0.38,
-            ATTACK.reach + ATTACK.radius * 0.42,
+            reach - ATTACK.radius * 0.38,
+            reach + ATTACK.radius * 0.42,
             // L'anneau naît dans le plan XY, thêta mesuré depuis +X. Couché à
             // plat, thêta = -π/2 pointe vers +Z, c'est-à-dire l'avant du
             // personnage.
@@ -151,7 +164,7 @@ export function StrikeArc() {
             ARC_SPAN,
             true,
           ),
-    [barehanded],
+    [barehanded, reach],
   )
 
   // Changer d'arme construit une seconde paire : sans ça, la première resterait
@@ -226,9 +239,9 @@ export function StrikeArc() {
       // le même cap que le joueur — pas de balayage, un poing ne décrit pas
       // d'arc — et grandit sur place, ce qui suffit à dire l'impact.
       node.position.set(
-        playerTransform.position.x + Math.sin(playerTransform.yaw) * ATTACK.reach,
+        playerTransform.position.x + Math.sin(playerTransform.yaw) * reach,
         playerTransform.position.y - FEET_DROP + BLADE_HEIGHT - sink,
-        playerTransform.position.z + Math.cos(playerTransform.yaw) * ATTACK.reach,
+        playerTransform.position.z + Math.cos(playerTransform.yaw) * reach,
       )
       node.rotation.y = playerTransform.yaw
       node.scale.setScalar((0.5 + phase * 0.95) * verdictScale)

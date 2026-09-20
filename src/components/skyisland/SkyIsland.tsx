@@ -17,7 +17,7 @@ import { ROAD_CHEST } from '../../config/chests'
 import { Causeway } from './Causeway'
 import { Mountain } from './Mountain'
 import { RotundaChest } from './RotundaChest'
-import { SkyChest } from './SkyChest'
+import { MapChest } from '../environment/MapChest'
 import { SummitChests } from './SummitChests'
 import { RotundaReward } from './RotundaReward'
 import { Flora } from './Flora'
@@ -200,7 +200,7 @@ export default function SkyIsland() {
       {/* Le coffre de la Voie, lui, est là dès l'arrivée et ne dépend de rien :
           c'est tout son intérêt, on s'arme **avant** le gardien. Voir
           `ROAD_CHEST`. */}
-      <SkyChest chest={ROAD_CHEST} />
+      <MapChest chest={ROAD_CHEST} />
     </>
   )
 }

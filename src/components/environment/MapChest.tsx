@@ -3,17 +3,25 @@ import { useFrame } from '@react-three/fiber'
 import type { Chest } from '../../config/chests'
 import { playerTransform } from '../../state/playerTransform'
 import { useGameStore } from '../../store/useGameStore'
-import { TreasureChest } from '../environment/TreasureChest'
+import { TreasureChest } from './TreasureChest'
 
 /**
- * Un coffre de l'Île Céleste, **avec sa propre détection de proximité**.
+ * Un coffre posé hors du continent, **avec sa propre détection de proximité**.
  *
  * Les cinq coffres du continent sont balayés par une boucle unique, celle de
- * `Landmarks`. Cette boucle-là n'existe pas ici : elle vit dans le composant
- * des monuments, et il n'y a pas de monument sur cette carte. Chaque coffre
- * céleste porte donc la sienne — mais **une seule fois**, dans ce composant,
- * et non recopiée dans chacun d'eux. La discipline qui suit est délicate, et
- * deux copies auraient divergé à la première correction.
+ * `Landmarks`. Cette boucle-là n'existe pas ailleurs : elle vit dans le
+ * composant des monuments, et il n'y a de monument sur aucune autre carte.
+ * Chaque coffre de l'île et du Marais porte donc la sienne — mais **une seule
+ * fois**, dans ce composant, et non recopiée dans chacun d'eux. La discipline
+ * qui suit est délicate, et deux copies auraient divergé à la première
+ * correction.
+ *
+ * **Il vit dans le tronc commun et non dans un fragment de carte**, et c'est ce
+ * qui a motivé son déplacement depuis `skyisland/`. Le Marais en a besoin ; l'y
+ * importer depuis le fragment de l'île aurait tiré toute l'île dans celui du
+ * Marais, c'est-à-dire défait le découpage que `preload.ts` existe pour tenir.
+ * Un module partagé par deux fragments différés reste différé : il n'entre pas
+ * dans le bundle d'accueil, Rollup le range simplement dans un morceau commun.
  *
  * Trois précautions, et chacune répare un défaut qu'on ne voit qu'en jouant :
  *
@@ -31,7 +39,7 @@ import { TreasureChest } from '../environment/TreasureChest'
  *    la même invite. C'est la discipline de `LandmarkProximity`, et pour la
  *    même raison.
  */
-export function SkyChest({ chest }: { chest: Chest }) {
+export function MapChest({ chest }: { chest: Chest }) {
   useEffect(() => {
     return () => {
       const store = useGameStore.getState()

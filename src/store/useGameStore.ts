@@ -14,7 +14,7 @@ import {
 import { preloadMap } from '../components/mapFragments'
 import { purgeRot, resetRot } from '../state/rot'
 import { BLAST_FORWARD_BY_MAP } from '../config/annihilation'
-import { PLAYER } from '../config/gameplay'
+import { ATTACK, PLAYER } from '../config/gameplay'
 import { chestById } from '../config/chests'
 import { enemyTotal } from '../config/enemies'
 import { itemById, type Equipment, type ItemSlot } from '../config/items'
@@ -67,6 +67,17 @@ export const SKY_BOON_HEARTS = 3
  * de coups économisés — ce qu'une valeur absolue oblige à calculer de tête.
  */
 export const SWORD_DAMAGE = 1
+
+/**
+ * Ce que vaut un coup critique.
+ *
+ * Le double, et pas davantage. Un critique doit se **sentir** sans rendre le
+ * reste du temps insignifiant : à ×3, un joueur qui en enchaîne deux abat un
+ * Lynel de l'épreuve en quatre coups, et le combat se met à dépendre du tirage
+ * plutôt que de la lecture — exactement ce que la parade a été écrite pour
+ * éviter.
+ */
+export const CRIT_MULTIPLIER = 2
 
 export interface GameState {
   phase: GamePhase
@@ -310,6 +321,14 @@ export interface GameState {
    */
   maleniaSlainAt: number | null
   /**
+   * Où elle est tombée, pour y poser le réceptacle.
+   *
+   * Même rôle et même raison que `bossFellAt` : le composant du boss se démonte
+   * avec lui, donc le point de chute doit survivre dans le store — sans quoi la
+   * récompense n'aurait plus d'endroit où paraître.
+   */
+  maleniaFellAt: [number, number, number] | null
+  /**
    * Quel combat de boss est engagé, ou `null`.
    *
    * **Générique, là où `bossState` est celui de la rotonde.** La distinction a
@@ -420,6 +439,24 @@ export interface GameState {
    * une seconde source de vérité à côté de la table des objets.
    */
   swordDamage: () => number
+  /**
+   * Portée effective du coup d'épée, équipement compris.
+   *
+   * Une fonction et non un champ, comme `swordDamage()` et pour la même raison.
+   * Quatre appelants la lisent au moment de l'impact — les trois familles
+   * d'ennemis et le renvoi de projectile — là où ils lisaient jusqu'ici la
+   * constante `ATTACK.reach`. C'est ce qui permet à un objet d'allonger le bras
+   * sans qu'aucun d'eux ne le sache.
+   */
+  swordReach: () => number
+  /**
+   * Probabilité qu'un coup soit critique, équipement compris.
+   *
+   * Composée comme des événements indépendants — `1 − Π(1 − p)` — et non par
+   * addition : deux sources à 60 % additionnées donneraient une certitude
+   * obtenue par arithmétique plutôt que par conception.
+   */
+  critChance: () => number
   /**
    * Dégâts réellement subis pour une agression de `amount`, équipement compris.
    *
@@ -533,7 +570,7 @@ export interface GameState {
    */
   startMaleniaFight: () => void
   /** Elle tombe, ou le joueur quitte le bassin. */
-  endMaleniaFight: (defeated: boolean) => void
+  endMaleniaFight: (defeated: boolean, fellAt?: [number, number, number]) => void
   /**
    * Le combat s'arrête, vaincu ou non.
    *
@@ -597,6 +634,7 @@ const initialState = {
   trialSlain: [] as string[],
   goldenSlainAt: null as number | null,
   maleniaSlainAt: null as number | null,
+  maleniaFellAt: null as [number, number, number] | null,
   arenaFight: null as 'guardian' | 'malenia' | null,
   questsOpen: false,
   bossFellAt: null as [number, number, number] | null,
@@ -726,6 +764,30 @@ export const useGameStore = create<GameState>((set, get) => ({
     return maxHearts + bonusHearts
   },
 
+  swordReach: () => {
+    let multiplier = 1
+    for (const id of Object.values(get().equipped)) {
+      multiplier *= itemById(id)?.reachMultiplier ?? 1
+    }
+    return ATTACK.reach * multiplier
+  },
+
+  critChance: () => {
+    /*
+      La probabilité qu'**au moins une** source se déclenche.
+
+      `1 − Π(1 − p)` et non une somme. Avec une seule source les deux formules
+      donnent le même nombre, donc rien ne distinguerait le bon choix du mauvais
+      aujourd'hui — c'est le jour où un second objet en portera que la somme
+      dépasserait un, et ce jour-là le défaut serait déjà partout.
+    */
+    let miss = 1
+    for (const id of Object.values(get().equipped)) {
+      miss *= 1 - (itemById(id)?.critChance ?? 0)
+    }
+    return 1 - miss
+  },
+
   swordDamage: () => {
     // Produit sur **tout** l'équipement et non lecture du seul emplacement
     // d'arme : c'est ce que `damageTaken` fait déjà des dégâts reçus, et ce que
@@ -740,6 +802,21 @@ export const useGameStore = create<GameState>((set, get) => ({
     for (const id of worn) {
       multiplier *= itemById(id)?.attackMultiplier ?? 1
     }
+    /*
+      Le coup critique, appliqué **ici** et pas chez les appelants.
+
+      Trois familles d'ennemis lisent cette fonction pour savoir ce qu'elles
+      encaissent. Laisser chacune multiplier de son côté aurait été trois
+      occasions d'oublier — et un critique qui ne vaudrait que sur les Moblins
+      serait un défaut qu'on ne verrait jamais en jouant, parce qu'on ne compare
+      pas des dégâts entre deux espèces.
+
+      Le verdict, lui, ne se tire pas ici : il a été tiré au départ du geste
+      (voir `playerTransform.critical`). Cette fonction ne fait que le lire, et
+      c'est ce qui garantit qu'un balayage qui prend trois bêtes soit critique
+      sur les trois ou sur aucune.
+    */
+    if (playerTransform.critical) multiplier *= CRIT_MULTIPLIER
     // Arrondi parce que rien n'interdit un multiplicateur fractionnaire — il y
     // en a un — et que les points de vie des ennemis, eux, sont des entiers.
     return Math.round(SWORD_DAMAGE * multiplier)
@@ -1219,12 +1296,24 @@ export const useGameStore = create<GameState>((set, get) => ({
    * redevient disponible — elle remonte avec ses soixante points de vie, et sa
    * phase repart de la lame.
    */
-  endMaleniaFight: (defeated) => {
+  endMaleniaFight: (defeated, fellAt) => {
+    /*
+      La garde n'est pas la même dans les deux sens, exactement comme celle du
+      gardien de la rotonde — et pour la raison que l'onde d'annihilation a
+      révélée là-bas : **une victoire s'enregistre même si le combat n'avait pas
+      été formellement engagé.** Un boss mort est mort.
+    */
+    if (defeated) {
+      if (get().maleniaSlainAt !== null) return
+      set({ arenaFight: null, maleniaSlainAt: gameNow(), maleniaFellAt: fellAt ?? null })
+      // Le réceptacle n'est pas versé ici : il se **ramasse**, comme celui de la
+      // rotonde. Voir `MarshReward`.
+      track('malenia_defeated', { hearts: get().hearts })
+      return
+    }
+
     if (get().arenaFight !== 'malenia') return
-    set({
-      arenaFight: null,
-      maleniaSlainAt: defeated ? gameNow() : get().maleniaSlainAt,
-    })
+    set({ arenaFight: null })
   },
 
   endBossFight: (defeated, fellAt) => {
@@ -1411,6 +1500,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       trialSlain: [],
       goldenSlainAt: null,
       maleniaSlainAt: null,
+      maleniaFellAt: null,
       arenaFight: null,
       bonusCarry: {},
       runId: state.runId + 1,

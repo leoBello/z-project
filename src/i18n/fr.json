@@ -164,6 +164,10 @@
         "golden-lynel": {
           "name": "Le Lynel doré",
           "goal": "La herse s'est levée. Au bout de la voie de l'ouest, une montagne, et à son sommet une bête d'or. L'abattre vaut un cœur de plus — et ce qu'elle gardait."
+        },
+        "aeonia": {
+          "name": "Le Marais d'Aeonia",
+          "goal": "Un portail s'est ouvert au sommet, et il ne ramène pas chez soi. De l'autre côté : une eau rouge, un arbre mort, une chaussée de pierre qui mène à son pied. Quelque chose y attend, et n'en est jamais reparti."
         }
       }
     },
@@ -231,7 +235,19 @@
         "name": "Lame de Lumière Écarlate",
         "meta": "Trouvée dans l'autre coffre du sommet, à trois pas du portail",
         "description": "Une poignée d'acier d'où sort, quand on l'éveille, une lame qui n'a pas de matière : un cœur blanc dans un halo écarlate, qui ne s'émousse jamais, ne pèse rien, et traverse ce qu'on lui oppose. Elle éclaire la main qui la tient et le sol sous les pieds.",
-        "effect": "dégâts d'épée multipliés par quatre — l'arme la plus forte du jeu"
+        "effect": "dégâts d'épée multipliés par quatre — l'arme la plus forte du jeu, et elle se cumule avec la tenue"
+      },
+      "meruem-garb": {
+        "name": "Carapace du Roi",
+        "meta": "Trouvée dans l'un des deux coffres du Marais, après la chute de Malenia",
+        "description": "Ce n'est pas une armure : c'est un corps. Une chitine vert pâle pigmentée de vert sombre, un casque de carapace à l'arête en lame, deux cornes qui partent des tempes et balaient vers l'arrière, et une queue annelée qui se termine en dard porté haut par-dessus l'épaule. Il n'a rien à tenir en main. Celui qui la porte n'a jamais eu à apprendre à se battre : il est né en sachant, et il a mis moins d'un mois à n'avoir plus rien à apprendre de personne.",
+        "effect": "dégâts doublés, portée du coup allongée de moitié, la course et la détente les plus hautes du jeu — mais seulement +3 cœurs jaunes"
+      },
+      "kuroro-garb": {
+        "name": "Manteau du Voleur",
+        "meta": "Trouvé dans l'autre coffre du Marais, à trois pas du premier",
+        "description": "Un manteau noir semé de croix blanches, une fourrure pâle au col, aux poignets et à l'ourlet, et une croix retournée au milieu du front. Celui qui le portait n'avait pas de pouvoir à lui : il prenait ceux des autres et les rangeait dans un livre. On ne lui a jamais connu d'arme, et ceux qui l'ont vu venir n'ont pas eu le temps de s'en étonner.",
+        "effect": "+4 cœurs jaunes, un coup sur trois porte double, course et détente juste derrière la Carapace"
       }
     },
     "language": {

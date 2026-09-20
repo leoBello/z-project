@@ -61,6 +61,8 @@ export interface QuestFacts {
   trialSlain: number
   /** Le Lynel doré, au sommet de la montagne de l'ouest, est tombé. */
   goldenSlain: boolean
+  /** Malenia est tombée. Lu dans `maleniaSlainAt`, comme le doré dans le sien. */
+  maleniaSlain: boolean
 }
 
 /**
@@ -133,6 +135,26 @@ export function questBoard(facts: QuestFacts): QuestStatus[] {
             ? 'done'
             : 'active',
       current: facts.goldenSlain ? 1 : 0,
+      target: 1,
+    },
+    {
+      /*
+        Le Marais d'Aeonia, et ce qu'il y a au bout.
+
+        Elle se déverrouille sur **la chute du doré**, parce que c'est elle qui
+        perce le portail du sommet — donc la seule chose qui rende ce monde
+        atteignable. Même raisonnement que la montagne : la quête paraît à
+        l'instant où le chemin s'ouvre, et pas avant.
+
+        Le libellé ne nomme pas Malenia, et c'est délibéré. Les quatre autres
+        quêtes disent ce qu'il y a à faire parce que le joueur peut le voir de
+        loin — une carte à vider, un portail, trois bêtes, une montagne. Celle-ci
+        dit seulement qu'il y a un monde derrière l'anneau. Ce qui l'attend au
+        pied de l'arbre n'a pas à être annoncé par un panneau d'interface.
+      */
+      id: 'aeonia',
+      state: !facts.goldenSlain ? 'locked' : facts.maleniaSlain ? 'done' : 'active',
+      current: facts.maleniaSlain ? 1 : 0,
       target: 1,
     },
   ]

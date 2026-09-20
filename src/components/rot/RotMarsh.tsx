@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { MARSH_PORTAL } from '../../config/rotMarsh'
 import { useGameStore } from '../../store/useGameStore'
 import { Malenia } from '../Malenia'
+import { MarshRewards } from './MarshRewards'
 import { Portal } from '../environment/Portal'
 import { Arena } from './Arena'
 import { Flora } from './Flora'
@@ -85,6 +86,11 @@ export default function RotMarsh() {
         son corps elle-même.
       */}
       {standing && <Malenia />}
+
+      {/* Ce qu'elle laisse en tombant : un réceptacle là où le corps est resté,
+          et deux coffres qui encadrent l'axe du tronc. L'abonnement y est vivant
+          et non figé au montage — voir `MarshRewards`. */}
+      <MarshRewards />
 
       {/*
         L'anneau du retour, qui ramène **au sommet** de la Montagne de l'Ouest.

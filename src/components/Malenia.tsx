@@ -385,8 +385,12 @@ export function Malenia() {
     const invulnerable = now < state.morphAt + MORPH_MS
     if (windowOpened && state.lastHitSwing !== swing && !invulnerable) {
       state.lastHitSwing = swing
-      const hitX = playerTransform.position.x + Math.sin(playerTransform.yaw) * ATTACK.reach
-      const hitZ = playerTransform.position.z + Math.cos(playerTransform.yaw) * ATTACK.reach
+      // La portée **effective**, équipement compris, et non la constante : un
+      // objet peut allonger le bras, et le point d'impact doit suivre. Voir
+      // `swordReach`.
+      const armLength = store.swordReach()
+      const hitX = playerTransform.position.x + Math.sin(playerTransform.yaw) * armLength
+      const hitZ = playerTransform.position.z + Math.cos(playerTransform.yaw) * armLength
       if (Math.hypot(position.x - hitX, position.z - hitZ) < ATTACK.radius + BODY_RADIUS) {
         playerTransform.lastLandedSwing = swing
         // Dégâts triplés pendant l'ouverture d'une parade réussie : c'est ce qui
@@ -673,8 +677,10 @@ export function Malenia() {
       hitStop(180)
       shake(0.3, 700)
       playDefeat()
-      store.endMaleniaFight(true)
-      track('malenia_defeated', { hearts: store.hearts })
+      // La mesure d'audience part du store, avec le reste de ce que la victoire
+      // déclenche : deux appels depuis deux endroits auraient fini par compter
+      // deux fois, ou pas du tout.
+      store.endMaleniaFight(true, [position.x, position.y, position.z])
       return true
     }
   })
