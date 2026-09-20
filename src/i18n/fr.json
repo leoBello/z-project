@@ -158,7 +158,7 @@
         },
         "golden-lynel": {
           "name": "Le Lynel doré",
-          "goal": "La herse s'est levée. Au bout de la voie de l'ouest, une montagne, et à son sommet une bête d'or. L'abattre vaut un cœur de plus."
+          "goal": "La herse s'est levée. Au bout de la voie de l'ouest, une montagne, et à son sommet une bête d'or. L'abattre vaut un cœur de plus — et ce qu'elle gardait."
         }
       }
     },
@@ -215,6 +215,18 @@
         "meta": "Trouvée dans le coffre de la Voie, sur l'Île Céleste",
         "description": "Une tunique d'étoffe pâle sanglée sous un plastron d'acier à trois plaques, une épaulière d'or fermée d'une gemme d'ambre, et sept turquoises nouées au poignet. Celui qui la portait avait les cheveux blancs sous une capuche rabattue, des marques sombres en travers du front, et des yeux entièrement blancs qui ne se posaient sur personne.",
         "effect": "les dégâts du Lynel sont divisés par deux, mais course et détente réduites"
+      },
+      "vader-armor": {
+        "name": "Armure du Seigneur Noir",
+        "meta": "Trouvée dans l'un des deux coffres du sommet, après la chute du Lynel doré",
+        "description": "Une cuirasse laquée de noir, un plastron de commande semé de témoins rouges, une ceinture d'acier, et une cape qui traîne derrière chaque pas. Le casque ne laisse pas un pouce de peau à l'air. Celui qui la portait respirait par une machine : on l'entendait venir avant de le voir, et le souffle ne s'arrêtait jamais.",
+        "effect": "+5 cœurs jaunes — le plus du jeu — mais la course et la détente les plus basses"
+      },
+      "vader-saber": {
+        "name": "Lame de Lumière Écarlate",
+        "meta": "Trouvée dans l'autre coffre du sommet, à trois pas du portail",
+        "description": "Une poignée d'acier d'où sort, quand on l'éveille, une lame qui n'a pas de matière : un cœur blanc dans un halo écarlate, qui ne s'émousse jamais, ne pèse rien, et traverse ce qu'on lui oppose. Elle éclaire la main qui la tient et le sol sous les pieds.",
+        "effect": "dégâts d'épée multipliés par quatre — l'arme la plus forte du jeu"
       }
     },
     "language": {

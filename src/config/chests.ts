@@ -7,6 +7,13 @@ import {
   surfaceRelief,
   topHeight,
 } from './skyIsland'
+import {
+  MOUNT_X,
+  MOUNT_Z,
+  mountainHeightAt,
+  SPUR_YAW,
+  spurToWorld,
+} from './skyMountain'
 
 /**
  * Coffres au trésor de la carte.
@@ -400,6 +407,73 @@ export const ROAD_CHEST: Chest = {
   interactRadius: 2.6,
 }
 
+/** Écart à l'axe et recul au sud, dans le repère de la montagne. Voir `summitChest`. */
+const SUMMIT_CHEST_X = 3.4
+const SUMMIT_CHEST_Z = 3.6
+
+/**
+ * Les deux coffres du sommet — ce que gardait le Lynel doré.
+ *
+ * Ils ne paraissent qu'à sa chute (c'est `SummitChests` qui les monte, comme
+ * `RotundaChest` pour celui de la rotonde : cette table dit où sont les choses,
+ * pas quand elles existent), et ils sont **les seuls coffres jumeaux du jeu**.
+ * Tous les autres sont uniques et se trouvent seuls ; ceux-ci s'ouvrent l'un
+ * après l'autre, à six mètres d'écart, et c'est voulu — l'armure et la lame
+ * forment un équipement, et les séparer aurait fait de la seconde trouvaille un
+ * détour.
+ *
+ * **Leur distance au portail n'est pas décorative : elle est imposée.** La règle
+ * d'interaction donne la priorité au portail sur le coffre (voir `pick` dans
+ * `store/interaction.ts`), et l'anneau réagit à sept unités — un coffre posé à
+ * son pied serait donc *visible et inouvrable*, l'invite du HUD proposant de
+ * franchir le portail à l'endroit exact où l'on veut ouvrir un couvercle. Les
+ * deux zones doivent donc être disjointes : 7 pour le portail, 2,6 pour le
+ * coffre, il faut **9,6 unités** au minimum. Les coffres en sont à 10,18, ce qui
+ * laisse une demi-unité de marge.
+ *
+ * C'est aussi ce qui décide de *leur* écart : leurs deux zones d'interaction
+ * font 2,6 chacune, il leur faut donc 5,2 entre eux, et ils en ont 6,8.
+ *
+ * Le reste des cotes suit les mêmes contraintes que les six autres coffres :
+ *
+ *  - **4,95 unités du centre du plateau**, angles du coffre à 5,8 : le sommet
+ *    est plat à la valeur près jusqu'à 8,9 — au-delà, le raccord qui protège
+ *    l'arène de la spire commence à mordre (voir `shoulder` dans
+ *    `skyMountain.ts`). Aucun des deux ne peut donc flotter ni s'enfoncer ;
+ *  - **ils encadrent l'axe qui mène au portail.** La spire débouche au sud du
+ *    plateau, le portail est au nord : le joueur qui se relève du combat passe
+ *    **entre les deux** pour rentrer. Aucun des deux ne se cherche, et aucun des
+ *    deux ne barre le chemin ;
+ *  - **au sud du centre en coordonnées monde**, comme les six autres : c'est le
+ *    seul côté que la caméra, fixe et tournée vers le nord, montre franchement.
+ *
+ * L'altitude est **échantillonnée sur le relief de la montagne**, par la même
+ * fonction que son maillage et son collider, comme celle du coffre de la Voie
+ * l'est sur celui de l'île : c'est la seule façon qu'elle ne mente pas au
+ * prochain réglage du terrain.
+ *
+ * Le cap est de biais, et les deux se tournent **vers l'axe** : d'équerre, ils
+ * se seraient lus comme deux bornes du dallage plutôt que comme deux objets
+ * déposés là. Même correction que pour les six autres.
+ */
+function summitChest(id: ChestId, item: ItemId, side: 1 | -1): Chest {
+  const at = spurToWorld(MOUNT_X + side * SUMMIT_CHEST_X, MOUNT_Z + SUMMIT_CHEST_Z)
+  return {
+    id,
+    map: 'sky',
+    item,
+    world: { x: at.x, y: mountainHeightAt(at.x, at.z), z: at.z },
+    // Le cap se dit dans le repère de la voie, comme celui du portail du
+    // sommet : « faire face à qui monte » n'a de sens que là. Un lacet de biais,
+    // tourné vers l'intérieur — d'où le signe opposé à celui du côté.
+    worldYaw: SPUR_YAW - side * 0.4,
+    interactRadius: 2.6,
+  }
+}
+
+export const SUMMIT_ARMOR_CHEST = summitChest('summit-armor-chest', 'vader-armor', -1)
+export const SUMMIT_SABER_CHEST = summitChest('summit-saber-chest', 'vader-saber', 1)
+
 export const CHESTS: readonly Chest[] = [
   TEMPLE_CHEST,
   PYRAMID_CHEST,
@@ -412,6 +486,8 @@ export const CHESTS: readonly Chest[] = [
   // le pose au mauvais endroit.
   ROTUNDA_CHEST,
   ROAD_CHEST,
+  SUMMIT_ARMOR_CHEST,
+  SUMMIT_SABER_CHEST,
 ]
 
 /** Retrouve un coffre par son identifiant. */

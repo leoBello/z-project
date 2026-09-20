@@ -244,6 +244,75 @@ const OUTFITS: Record<OutfitId, Palette> = {
     gear: '#cfa24a',
     gearTrim: '#f3d789',
   },
+  /*
+    Le second noir du jeu, et il ne se dispute pas avec le premier.
+
+    Celui du manteau de l'Aube est un noir bleuté qui laisse voir un pantalon
+    d'ardoise, des bandes de lin claires et une tête orange : c'est une masse
+    sombre **ouverte**. Celui-ci est une laque fermée, plus froide et plus
+    sourde encore, où rien de clair ne dépasse — ni peau, ni cheveux, ni tissu.
+    À 21 unités, les deux ne se confondent pas une seconde : l'un a une couronne
+    orange sur la tête, l'autre est une silhouette noire à cape et à casque, la
+    seule du casting dont on ne voie **aucun morceau de corps**.
+
+    Ce qui la rend lisible, ce n'est donc pas sa teinte, ce sont ses quatre
+    éclats : le plastron de commande rouge sur la poitrine, la ceinture d'acier,
+    les cloches d'épaule de graphite, et — si on la porte — la lame écarlate.
+    Une tenue entièrement noire sans eux aurait été une ombre, pas un
+    personnage.
+
+    Trois champs sont détournés, et c'est le maximum qu'une palette à quinze
+    entrées supporte — même compte que la tenue du Dieu Démon, et pour la même
+    raison : `skin` porte le cuir des gants **et le dessous du casque**, puisque
+    ce personnage n'a pas un centimètre de peau à l'air ; `hair` porte le reflet
+    froid de la laque, faute de cheveux à teinter ; `cord` porte le rouge du
+    plastron. Le dernier a une conséquence visible — un katana équipé par-dessus
+    cette tenue aura une ligature écarlate, exactement comme le manteau de
+    l'Aube lui en donne une violette et l'armure du Dieu Démon une turquoise.
+  */
+  vader: {
+    garment: '#14161f',
+    // La combinaison matelassée, sous les plaques : deux tons au-dessus de la
+    // laque, et c'est tout ce qu'il faut. Une seule valeur de noir sur le corps
+    // entier faisait disparaître les jambes dans le tablier.
+    trouser: '#23262f',
+    belt: '#6a707d',
+    // Détourné : aucune peau visible sur ce personnage. C'est le cuir des gants
+    // et la nuque du casque — les deux endroits où le rig pose `skin`, et les
+    // deux qui doivent rester noirs.
+    skin: '#1b1e26',
+    // Détourné : ce ne sont pas des cicatrices mais les rainures d'ombre entre
+    // les plaques, et les fentes de la grille de bouche.
+    scar: '#080a0f',
+    // Détourné : pas un cheveu là-dessous. C'est le reflet froid de la laque du
+    // dôme, la seule chose qui empêche le casque d'être une boule plate.
+    hair: '#2c313c',
+    boot: '#191c24',
+    blade: '#dde6ef',
+    guard: '#8d97ad',
+    // Détourné : le graphite des cloches d'épaule et des plaques de tibia.
+    grip: '#3a3f4a',
+    // Détourné : le rouge du plastron de commande. Voir la note ci-dessus.
+    cord: '#d8252b',
+    /*
+      Les lentilles du masque, et elles sont **sombres**.
+
+      C'est le contraire du regard blanc du Dieu Démon, et c'est délibéré : ce
+      masque-là ne regarde pas, il ne rend rien. Deux amandes mortes sous une
+      arête de front, c'est la lecture qu'on veut — un œil clair y aurait mis de
+      l'expression, et tout l'effet tient à ce qu'il n'y en ait aucune.
+
+      Le ton est celui qu'il a fallu pour qu'elles existent. Deux mesures l'ont
+      fixé : un gris franchement plus sombre disparaissait purement et
+      simplement dans la laque en capture, et c'est aussi pour ça qu'un cadre
+      d'acier les cerne (voir `VaderMask`). Les deux corrections vont ensemble —
+      la lentille dit « éteint », le cadre dit « ici ».
+    */
+    eye: '#525b6b',
+    outline: '#080a12',
+    gear: '#8d97ad',
+    gearTrim: '#cdd3de',
+  },
 }
 
 /**
@@ -330,6 +399,22 @@ const SKINS: Record<OutfitId, Skin> = {
     swing: 0.09,
     air: 0.2,
     roll: 0.03,
+  },
+  // Le ressort le plus sec des six, et il est presque nul : **un casque est
+  // boulonné**. La capuche du Dieu Démon frémit parce que c'est une étoffe
+  // tendue ; celui-ci ne doit rien faire du tout, ou il cesse d'être une pièce
+  // rigide pour devenir un chapeau. Les valeurs ne sont pas mises à zéro pour
+  // autant : à zéro franc, la tête et le casque forment un bloc mort, et c'est
+  // le seul défaut que le rig ne sait pas rattraper ailleurs. Il reste donc le
+  // dixième de débattement qui dit qu'il y a une nuque dessous.
+  vader: {
+    torso: VaderTorso,
+    face: VaderMask,
+    headwear: VaderHelmet,
+    rest: -0.02,
+    swing: 0.045,
+    air: 0.1,
+    roll: 0.015,
   },
 }
 
@@ -560,6 +645,7 @@ export function HeroPlaceholder({
         </group>
         <group ref={armR} position={[-0.24, SHOULDER_Y - HIP_Y, 0]}>
           <Arm palette={palette} outfit={outfit} fist={barehanded} side={-1} />
+          {weapon === 'saber' && <Saber palette={palette} />}
           {weapon === 'cursed' && <CursedBlade palette={palette} />}
           {weapon === 'katana' && <Katana palette={palette} />}
           {weapon === 'sword' && <Sword palette={palette} />}
@@ -598,6 +684,54 @@ export function HeroPlaceholder({
  * bandé de lin sur une sandale plate.
  */
 function Leg({ palette, outfit }: { palette: Palette; outfit: OutfitId }) {
+  if (outfit === 'vader') {
+    return (
+      <group>
+        {/* La combinaison matelassée : trois anneaux qui débordent de la
+            cuisse, comme les bandes de lin du clan. Ce sont les interstices,
+            et non les anneaux, qui font lire du matelassé plutôt qu'un tube. */}
+        <mesh castShadow position={[0, -0.18, 0]}>
+          <capsuleGeometry args={[0.082, 0.24, 4, 10]} />
+          <meshToonMaterial color={palette.trouser} gradientMap={toonGradient} />
+          <Outlines thickness={OUTLINE} color={palette.outline} />
+        </mesh>
+        {[-0.08, -0.155, -0.23].map((y) => (
+          <mesh key={y} castShadow position={[0, y, 0]}>
+            <cylinderGeometry args={[0.09, 0.09, 0.042, 10]} />
+            <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+          </mesh>
+        ))}
+
+        {/* La plaque de tibia, en graphite, posée **devant** le mollet et non
+            centrée dessus : c'est l'erreur qu'avait faite le plastron du clan à
+            sa première version — il faut sortir du volume qu'on habille. */}
+        <mesh castShadow position={[0, -0.28, 0.055]}>
+          <boxGeometry args={[0.125, 0.19, 0.075]} />
+          <meshToonMaterial color={palette.grip} gradientMap={toonGradient} />
+          <Outlines thickness={OUTLINE} color={palette.outline} />
+        </mesh>
+
+        {/* La botte : haute, lourde, et **coiffée d'un revers d'acier**. C'est
+            la seule respiration claire de toute la jambe, et sans elle le
+            membre entier se lit comme une colonne d'encre. */}
+        <mesh castShadow position={[0, -0.355, 0]}>
+          <cylinderGeometry args={[0.104, 0.112, 0.06, 12]} />
+          <meshToonMaterial color={palette.gear} gradientMap={toonGradient} />
+        </mesh>
+        <mesh castShadow position={[0, -0.43, 0]}>
+          <cylinderGeometry args={[0.101, 0.11, 0.14, 12]} />
+          <meshToonMaterial color={palette.boot} gradientMap={toonGradient} />
+          <Outlines thickness={OUTLINE} color={palette.outline} />
+        </mesh>
+        <mesh castShadow position={[0, -0.47, 0.04]}>
+          <boxGeometry args={[0.16, 0.08, 0.23]} />
+          <meshToonMaterial color={palette.boot} gradientMap={toonGradient} />
+          <Outlines thickness={OUTLINE} color={palette.outline} />
+        </mesh>
+      </group>
+    )
+  }
+
   if (outfit === 'demon') {
     return (
       <group>
@@ -804,6 +938,7 @@ function Arm({
   // position, ni la main au bout. Même discipline que `Leg`.
   if (outfit === 'pain') return <DawnArm palette={palette} fist={fist} side={side} />
   if (outfit === 'demon') return <DemonArm palette={palette} fist={fist} side={side} />
+  if (outfit === 'vader') return <VaderArm palette={palette} fist={fist} side={side} />
 
   return (
     <group>
@@ -2457,6 +2592,449 @@ function DemonHood({ palette }: { palette: Palette }) {
 }
 
 /**
+ * Demi-ouverture de la cape, en radians.
+ *
+ * Elle ferme le dos et les deux flancs, et **s'arrête aux épaules** : ouverte
+ * davantage, elle se rejoignait sur la poitrine et le personnage disparaissait
+ * dans un cône. Le plastron de commande est la seule chose qui rende cette
+ * silhouette lisible de face — il ne doit jamais passer dessous.
+ */
+const CAPE_HALF = 1.62
+
+/**
+ * Buste du sixième skin : cuirasse laquée, plastron de commande, cape.
+ *
+ * C'est le troisième vêtement de buste fermé du jeu, après le clan et le Dieu
+ * Démon, et il s'en distingue par ce qu'il ajoute et non par sa coupe : **la
+ * cape**. Aucune autre tenue n'élargit la silhouette par l'arrière, et c'est
+ * elle qui fait reconnaître ce personnage de dos, à contre-jour, et en pleine
+ * course — bien avant le casque.
+ *
+ * Elle est montée **sur le buste** et non sur un groupe à elle : elle suit donc
+ * le pivot de torse du coup d'épée, ce qui suffit à la faire vivre. Un ressort
+ * dédié aurait demandé un troisième groupe animé dans `useFrame` — le rig n'en
+ * a que pour la pièce de tête — et une cape qui traîne d'un pas derrière le dos
+ * traverse les épaules à la moindre volte.
+ *
+ * Le plastron est posé **en avant de la cuirasse** (z = 0,235 pour un rayon de
+ * 0,23), pour la même raison que celui du Dieu Démon : une pièce d'armure doit
+ * sortir du volume qu'elle habille, sinon elle s'y loge et disparaît.
+ */
+function VaderTorso({ palette }: { palette: Palette }) {
+  return (
+    <>
+      {/* La cuirasse. */}
+      <mesh castShadow position={[0, 0.27, 0]}>
+        <cylinderGeometry args={[0.225, 0.29, 0.62, 16]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      {/*
+        La cape : un cylindre ouvert, comme le gilet du premier skin et la
+        capuche du Dieu Démon, et pour la même raison — `cylinderGeometry` sait
+        ne décrire qu'un secteur d'angle, là où deux plaques posées côte à côte
+        laisseraient voir le dos par la tranche au premier pivot du buste.
+
+        Elle s'évase franchement (0,30 en haut, 0,52 en bas) : une cape à bords
+        parallèles est un rideau, et c'est l'évasement qui lui donne du poids.
+      */}
+      <mesh castShadow position={[0, 0.16, -0.02]}>
+        <cylinderGeometry
+          args={[0.3, 0.52, 0.92, 18, 1, true, Math.PI - CAPE_HALF, CAPE_HALF * 2]}
+        />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} side={DoubleSide} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+      {/* La doublure, un centimètre et demi en dedans : c'est elle qu'on voit
+          quand la cape s'ouvre au pivot du coup, et sans elle la tranche
+          d'épaisseur nulle disparaît sous tout angle rasant. */}
+      <mesh position={[0, 0.16, -0.02]}>
+        <cylinderGeometry
+          args={[0.285, 0.5, 0.9, 18, 1, true, Math.PI - CAPE_HALF + 0.06, (CAPE_HALF - 0.06) * 2]}
+        />
+        <meshToonMaterial color={palette.grip} gradientMap={toonGradient} side={DoubleSide} />
+      </mesh>
+
+      {/* Les deux pattes d'épaule qui tiennent la cape. Sans elles, l'étoffe
+          part du vide au-dessus des bras. */}
+      {[0.19, -0.19].map((x) => (
+        <mesh key={x} castShadow position={[x, 0.5, -0.05]} rotation={[0, 0, x > 0 ? -0.25 : 0.25]}>
+          <boxGeometry args={[0.17, 0.06, 0.2]} />
+          <meshToonMaterial color={palette.grip} gradientMap={toonGradient} />
+        </mesh>
+      ))}
+
+      {/* Le col, qui monte derrière la nuque et se ferme devant : la seule
+          pièce du buste qui touche le casque, et ce qui empêche la tête de
+          flotter au-dessus des épaules. */}
+      <mesh castShadow position={[0, 0.575, -0.01]}>
+        <cylinderGeometry args={[0.185, 0.215, 0.1, 14]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      <VaderChestPlate palette={palette} />
+
+      {/* La ceinture d'acier et ses caissons : la seule bande claire du corps,
+          et c'est elle qui marque la taille d'une silhouette autrement
+          uniformément noire. */}
+      <mesh castShadow position={[0, 0.06, 0]}>
+        <cylinderGeometry args={[0.285, 0.295, 0.095, 16]} />
+        <meshToonMaterial color={palette.belt} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+      {[-0.28, 0, 0.28].map((a) => (
+        <mesh
+          key={a}
+          castShadow
+          position={[Math.sin(a) * 0.3, 0.06, Math.cos(a) * 0.3]}
+          rotation={[0, a, 0]}
+        >
+          <boxGeometry args={[0.09, 0.075, 0.05]} />
+          <meshToonMaterial color={palette.gearTrim} gradientMap={toonGradient} />
+        </mesh>
+      ))}
+
+      {/* Le tablier : deux pans qui pendent de la ceinture, devant et derrière,
+          et **pas une jupe**. C'est la fente entre les deux qui laisse voir les
+          jambes matelassées à la course — sans elle, le bas du personnage est
+          une cloche, ce qu'est déjà celui du Dieu Démon. */}
+      {[0.16, -0.16].map((z) => (
+        <mesh key={z} castShadow position={[0, -0.09, z]}>
+          <boxGeometry args={[0.36, 0.26, 0.055]} />
+          <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+          <Outlines thickness={OUTLINE} color={palette.outline} />
+        </mesh>
+      ))}
+    </>
+  )
+}
+
+/**
+ * Le plastron de commande — **la seule pièce colorée du personnage**.
+ *
+ * Tout le reste est noir, graphite ou acier. À 21 unités, c'est ce rectangle
+ * rouge et blanc qui dit où est la poitrine, donc dans quel sens regarde la
+ * silhouette : sans lui, la tenue de face et la tenue de dos sont deux masses
+ * noires identiques, et la cape ne les sépare qu'aux trois quarts.
+ *
+ * Les témoins sont posés en **deux rangs inégaux** — trois en haut, deux en bas
+ * décalés. Une grille régulière se serait lue comme une texture, et à cette
+ * taille une texture n'est plus rien du tout.
+ */
+function VaderChestPlate({ palette }: { palette: Palette }) {
+  return (
+    <group position={[0, 0.4, 0.235]}>
+      <mesh castShadow>
+        <boxGeometry args={[0.215, 0.155, 0.05]} />
+        <meshToonMaterial color={palette.grip} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+      {/* Les témoins. Le rouge est **non éclairé**, comme le regard du Dieu
+          Démon et les yeux du Lynel : c'est la pièce qui doit rester lisible
+          quelle que soit l'orientation de la lumière, et une diode qui s'éteint
+          dans l'ombre n'est plus une diode. */}
+      {[-0.06, 0, 0.06].map((x) => (
+        <mesh key={x} position={[x, 0.035, 0.028]}>
+          <boxGeometry args={[0.038, 0.03, 0.012]} />
+          <meshBasicMaterial color={palette.cord} />
+        </mesh>
+      ))}
+      {[-0.045, 0.045].map((x) => (
+        <mesh key={x} position={[x, -0.025, 0.028]}>
+          <boxGeometry args={[0.05, 0.022, 0.012]} />
+          <meshBasicMaterial color={palette.gearTrim} />
+        </mesh>
+      ))}
+      {/* Le cadran du bas, seul rond d'une pièce faite de rectangles. */}
+      <mesh position={[0, -0.058, 0.028]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.018, 0.018, 0.012, 10]} />
+        <meshBasicMaterial color={palette.cord} />
+      </mesh>
+    </group>
+  )
+}
+
+/**
+ * Bras du sixième skin : manche laquée, cloche d'épaule, gantelet noir.
+ *
+ * **Les deux cloches sont identiques**, et c'est une règle et non un oubli : la
+ * seule silhouette asymétrique du jeu est celle du Dieu Démon, dont l'épaulière
+ * d'or unique est la signature (voir `DemonPauldron`). Une seconde tenue
+ * asymétrique lui retirerait ce qui la distingue de dos.
+ *
+ * La cloche est **écartée de trois centimètres vers l'extérieur**, comme la
+ * manche du Dieu Démon et celle de l'Aube : le pivot d'épaule est à 0,24 de
+ * l'axe, il appartient au squelette partagé et ne bouge pour aucune tenue. La
+ * cuirasse faisant 0,24 de rayon à cette hauteur, une cloche centrée sur le
+ * pivot y serait à moitié enfouie.
+ */
+function VaderArm({ palette, fist, side }: { palette: Palette; fist: boolean; side: number }) {
+  return (
+    <group>
+      {/* La cloche d'épaule : un secteur de sphère aplati, posé sur le pivot.
+          C'est la pièce qui carre les épaules, et la carrure est la moitié de
+          cette silhouette. */}
+      <mesh
+        castShadow
+        position={[side * 0.03, 0.02, 0]}
+        scale={[1, 0.72, 1.12]}
+        rotation={[0, 0, side * -0.18]}
+      >
+        <sphereGeometry args={[0.135, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.62]} />
+        <meshToonMaterial color={palette.grip} gradientMap={toonGradient} side={DoubleSide} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      <mesh castShadow position={[0, -0.15, 0]}>
+        <capsuleGeometry args={[0.072, 0.18, 4, 10]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      {/* Le gantelet, et sa virole d'acier au poignet. La virole est le seul
+          repère clair du bras : sans elle, la main noire au bout d'une manche
+          noire ne se distingue plus, et le geste d'attaque cesse de se lire. */}
+      <mesh castShadow position={[0, -0.29, 0]}>
+        <cylinderGeometry args={[0.076, 0.085, 0.14, 12]} />
+        <meshToonMaterial color={palette.trouser} gradientMap={toonGradient} />
+      </mesh>
+      <mesh position={[0, -0.355, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.079, 0.014, 4, 14]} />
+        <meshToonMaterial color={palette.gear} gradientMap={toonGradient} />
+      </mesh>
+
+      {/* Le gant. Il grossit à mains nues comme celui des cinq autres skins,
+          bien que cette tenue dégaine une épée par défaut : le rig ne promet
+          nulle part qu'un skin garde son arme. */}
+      <mesh castShadow position={[0, -0.41, 0]}>
+        <sphereGeometry args={[fist ? 0.085 : 0.066, 10, 10]} />
+        <meshToonMaterial color={palette.skin} gradientMap={toonGradient} />
+        {fist && <Outlines thickness={OUTLINE} color={palette.outline} />}
+      </mesh>
+    </group>
+  )
+}
+
+/**
+ * Visage du sixième skin — c'est-à-dire **un masque**, et le premier du jeu.
+ *
+ * Les cinq autres ont un visage : deux yeux, une bouche, des marques. Celui-ci
+ * n'en a pas, et tout l'effet tient là. Les pièces claires sont donc les seules
+ * à porter la lecture, et elles sont **en acier** quand tout le reste du
+ * personnage est noir : le triangle du nez, la grille de bouche et les deux
+ * évents de joue. C'est le négatif exact d'un visage — on lit une machine à
+ * l'endroit où l'on attend des traits.
+ *
+ * Les lentilles, elles, sont sombres (voir `eye` dans la palette) : deux amandes
+ * à peine plus claires que la laque, inclinées vers le nez. La pente est la
+ * même que celle du masque du Dieu Démon, et pour la même raison — coin
+ * extérieur haut, coin intérieur bas. À l'envers, le personnage a l'air
+ * inquiet ; dans ce sens, il a l'air de viser.
+ */
+function VaderMask({ palette }: { palette: Palette }) {
+  return (
+    <>
+      {/*
+        La plaque de face, posée en avant du crâne : c'est elle qui donne au
+        profil son menton carré, là où le rig n'a qu'une sphère.
+
+        **Elle est volontairement plate** (0,45 d'aplatissement en Z) et reculée
+        à 0,10. Un premier jet la posait bombée à 0,145, et elle **avalait tout
+        le masque** : le triangle du nez et la grille de bouche, pourtant placés
+        plus en avant en apparence, tombaient à l'intérieur de son volume, et le
+        personnage n'avait plus qu'une tête noire et lisse. Constaté en capture.
+        La règle est la même que pour les plastrons du clan et du Dieu Démon, à
+        l'envers : une pièce posée **sur** une autre doit sortir de son volume,
+        donc c'est ici le support qui devait s'aplatir.
+      */}
+      <mesh castShadow position={[0, -0.04, 0.115]} scale={[1, 1.05, 0.6]}>
+        <sphereGeometry args={[0.222, 14, 12]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      {/* L'arête de front, qui surplombe les lentilles et les met dans son
+          ombre. Sans elle, les deux amandes flottent sur une face lisse. */}
+      <mesh castShadow position={[0, 0.09, 0.2]} rotation={[0.22, 0, 0]}>
+        <boxGeometry args={[0.285, 0.05, 0.09]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      {/*
+        Les lentilles, et le cadre d'acier qui les cerne.
+
+        Elles sont non éclairées, comme le regard du Dieu Démon : elles ne
+        doivent ni s'allumer ni s'éteindre quand la lumière tourne — un masque
+        qui change d'expression n'en est plus un.
+
+        **Le cadre est une licence, et elle est assumée.** Le casque de la
+        référence a des orbites noires cernées de noir : à 21 unités, deux
+        amandes sombres sur une laque sombre ne se voyaient pas du tout, et le
+        personnage n'avait plus de regard — seulement un appareil respiratoire au
+        milieu d'une boule noire. Le liseré d'acier reprend celui du nez et de la
+        grille, donc il n'invente pas une matière de plus : il dit juste où sont
+        les yeux. C'est la même règle que partout ailleurs dans ce fichier — la
+        lisibilité à distance passe avant l'exactitude du détail.
+      */}
+      {[0.088, -0.088].map((x) => (
+        <group key={x} position={[x, 0.045, 0.243]} rotation={[0, x > 0 ? -0.22 : 0.22, x > 0 ? 0.28 : -0.28]}>
+          <mesh>
+            <boxGeometry args={[0.125, 0.072, 0.018]} />
+            <meshToonMaterial color={palette.gear} gradientMap={toonGradient} />
+          </mesh>
+          <mesh position={[0, 0, 0.012]}>
+            <boxGeometry args={[0.1, 0.05, 0.016]} />
+            <meshBasicMaterial color={palette.eye} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Le triangle du nez, pointe en bas, et la grille de bouche sous lui :
+          les deux pièces d'acier de l'axe. Ce sont elles qu'on lit en premier à
+          distance, et elles sont volontairement plus grandes qu'un nez et une
+          bouche ne le seraient — ce n'est pas un visage, c'est un appareil. */}
+      <mesh castShadow position={[0, -0.03, 0.255]} rotation={[0, 0, Math.PI]} scale={[1, 1, 0.4]}>
+        <coneGeometry args={[0.052, 0.13, 3]} />
+        <meshToonMaterial color={palette.gear} gradientMap={toonGradient} />
+      </mesh>
+      <mesh castShadow position={[0, -0.13, 0.235]}>
+        <boxGeometry args={[0.135, 0.072, 0.045]} />
+        <meshToonMaterial color={palette.gear} gradientMap={toonGradient} />
+      </mesh>
+      {/* Les fentes de la grille : trois creux non éclairés, comme les rainures
+          du plastron du Dieu Démon. Une fente qui prend la lumière se lit comme
+          une moulure en relief, c'est-à-dire l'inverse d'une fente. */}
+      {[-0.035, 0, 0.035].map((x) => (
+        <mesh key={x} position={[x, -0.13, 0.259]}>
+          <boxGeometry args={[0.014, 0.066, 0.012]} />
+          <meshBasicMaterial color={palette.scar} />
+        </mesh>
+      ))}
+
+      {/* Les deux évents de joue, en biais le long de la mâchoire : la dernière
+          pièce claire du masque, et celle qui referme la face vers les oreilles
+          au lieu de la laisser s'arrêter net. */}
+      {[0.152, -0.152].map((x) => (
+        <mesh
+          key={x}
+          castShadow
+          position={[x, -0.09, 0.2]}
+          rotation={[0, x > 0 ? 0.62 : -0.62, x > 0 ? -0.34 : 0.34]}
+        >
+          <boxGeometry args={[0.055, 0.115, 0.04]} />
+          <meshToonMaterial color={palette.gear} gradientMap={toonGradient} />
+        </mesh>
+      ))}
+    </>
+  )
+}
+
+/**
+ * Pièce de tête du sixième skin : un casque, et c'est le premier du jeu.
+ *
+ * Les cinq autres sont des matières souples — paille, cheveux, étoffe — qui
+ * rebondissent, frémissent ou flottent. Celle-ci est **rigide**, et son ressort
+ * est réglé en conséquence (voir `SKINS.vader`) : elle ne fait presque rien.
+ *
+ * Trois pièces, et chacune répond à une question de silhouette :
+ *
+ *  - **le dôme**, qui donne la hauteur. Il déborde franchement du crâne (0,30
+ *    contre 0,26) : un casque à la taille de la tête se lit comme un bonnet ;
+ *  - **la jupe évasée**, qui descend sur la nuque et les épaules. C'est elle qui
+ *    ferme la silhouette par le bas et qui fait qu'aucun morceau de cou n'est
+ *    jamais visible ;
+ *  - **les deux joues**, qui tombent de part et d'autre du masque. Elles sont ce
+ *    qui distingue ce contour de celui de la capuche du Dieu Démon, seul autre
+ *    couvre-chef fermé du casting : la capuche est un ovale continu, celui-ci a
+ *    deux angles.
+ */
+/**
+ * Demi-ouverture de la jupe du casque, en radians.
+ *
+ * Elle dégage cent trente degrés sur le devant : assez pour que le masque
+ * entier soit visible, pas assez pour que la nuque le soit. Voir la note de la
+ * jupe.
+ */
+const HELM_OPEN = 1.15
+
+function VaderHelmet({ palette }: { palette: Palette }) {
+  return (
+    <>
+      <mesh castShadow position={[0, -0.01, -0.05]} scale={[1, 1, 1]}>
+        <sphereGeometry args={[0.285, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.52]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      {/* Le reflet de laque, sur le devant du dôme. C'est le seul endroit du
+          personnage où le noir s'éclaircit, et il n'est pas décoratif : sans
+          lui, le casque est une boule plate en contre-jour, c'est-à-dire dans
+          la moitié des situations de cette carte. */}
+      <mesh position={[0, 0.04, 0]} scale={[0.85, 0.5, 0.95]}>
+        <sphereGeometry args={[0.26, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.32]} />
+        <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
+      </mesh>
+
+      {/*
+        La jupe du casque : un cylindre ouvert, évasé, qui coiffe la nuque.
+
+        **Elle est ouverte sur le devant**, et ce n'est pas un détail de
+        géométrie : montée en cylindre complet, elle entourait le visage à
+        hauteur de menton et **cachait entièrement le masque** — le personnage
+        n'avait plus qu'une tête noire et lisse, le triangle du nez et la grille
+        d'acier étant à l'intérieur du volume. Constaté en capture, corrigé ici.
+        C'est le même secteur d'angle que la capuche du Dieu Démon, pour une
+        raison différente : chez elle, l'ouverture montre le visage ; ici, elle
+        montre l'appareil.
+      */}
+      <mesh castShadow position={[0, -0.235, -0.015]}>
+        <cylinderGeometry
+          args={[0.295, 0.345, 0.2, 16, 1, true, HELM_OPEN, Math.PI * 2 - 2 * HELM_OPEN]}
+        />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} side={DoubleSide} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+      {/* Le liseré d'acier qui ferme la jupe par le bas. Même rôle que le
+          gorgerin du Dieu Démon : sans lui, la pièce se termine sur une tranche
+          d'épaisseur nulle et disparaît sous tout angle rasant. Il suit le même
+          secteur que la jupe, sans quoi il repasserait devant le masque que
+          celle-ci vient de dégager. */}
+      <mesh position={[0, -0.33, -0.015]} rotation={[Math.PI / 2, 0, -HELM_OPEN]}>
+        <torusGeometry
+          args={[0.342, 0.016, 4, 22, Math.PI * 2 - 2 * HELM_OPEN]}
+        />
+        <meshToonMaterial color={palette.grip} gradientMap={toonGradient} />
+      </mesh>
+
+      {/* Les deux joues, en biais. */}
+      {[0.245, -0.245].map((x) => (
+        <mesh
+          key={x}
+          castShadow
+          position={[x, -0.25, 0.045]}
+          rotation={[0, 0, x > 0 ? -0.16 : 0.16]}
+        >
+          <boxGeometry args={[0.095, 0.24, 0.24]} />
+          <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+          <Outlines thickness={OUTLINE} color={palette.outline} />
+        </mesh>
+      ))}
+
+      {/* La masse de nuque, qui comble l'écart entre le casque et le col. Même
+          pièce que sous la capuche du Dieu Démon, et même raison : sans elle, on
+          voit le crâne nu par l'arrière dès que la tête se tourne. */}
+      <mesh castShadow position={[0, -0.26, -0.09]} scale={[1, 0.8, 0.82]}>
+        <sphereGeometry args={[0.2, 12, 10]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+      </mesh>
+    </>
+  )
+}
+
+/**
  * Épée tenue dans la main droite.
  *
  * Au repos, la lame pointe vers le haut, légèrement inclinée vers l'arrière :
@@ -2644,6 +3222,120 @@ function CursedBlade({ palette }: { palette: Palette }) {
       <mesh castShadow position={[0, 0.73, -0.008]}>
         <boxGeometry args={[0.07, 0.06, 0.03]} />
         <meshToonMaterial color={CURSED_STEEL} gradientMap={toonGradient} />
+      </mesh>
+    </group>
+  )
+}
+
+/**
+ * Teintes de la lame de lumière, **hors palette**.
+ *
+ * C'est le second objet du jeu à faire ça, après la lame maudite, et pour la
+ * même raison : ces trois teintes appartiennent à l'**arme**, pas à celui qui la
+ * porte. Un fil rouge qui virerait au vert sur la tenue du bretteur ne serait
+ * plus le fil de cette lame-là. La poignée, elle, aurait pu suivre la palette —
+ * elle ne le fait pas non plus, parce qu'une garde dorée sous une lame de
+ * lumière écarlate fait un objet de deux époques.
+ *
+ * Le cœur est presque blanc et le halo franchement rouge : c'est ce **dégradé
+ * du centre vers le bord** qui fait lire une source de lumière plutôt qu'un
+ * bâton peint. Une lame rouge uniforme avait été essayée d'abord ; elle se
+ * lisait comme un néon de fête foraine.
+ */
+const SABER_CORE = '#ffe2df'
+const SABER_GLOW = '#ff2f27'
+const SABER_HILT = '#b9c0cc'
+const SABER_GRIP = '#15171d'
+
+/**
+ * Lame de Lumière Écarlate.
+ *
+ * Même point d'attache et même repère que les trois autres armes : elle vit
+ * dans celui du bras et suit donc l'animation d'attaque sans un calcul de plus.
+ * Ce qui la sépare des trois autres tient en deux choses, et les deux sont des
+ * conséquences d'une seule idée — **ce n'est pas de l'acier, c'est de la
+ * lumière** :
+ *
+ *  - **rien n'est cel-shadé au-dessus de la poignée.** Les trois autres lames
+ *    passent par `meshToonMaterial` et par le contour d'`Outlines`, qui les
+ *    inscrivent dans le monde ; celle-ci est rendue en `meshBasicMaterial`,
+ *    c'est-à-dire sans éclairage du tout. Elle garde donc exactement la même
+ *    intensité à l'ombre d'une montagne qu'en plein soleil — ce qu'on attend
+ *    d'un objet qui **émet** au lieu de recevoir. C'est la règle des yeux du
+ *    Lynel et du regard du Dieu Démon, appliquée à une arme entière ;
+ *  - **elle est doublée d'un halo**, un second cylindre à peine plus large,
+ *    translucide et sans écriture de profondeur. C'est lui qui donne l'épaisseur
+ *    lumineuse, et le `depthWrite` désactivé est ce qui l'empêche de découper un
+ *    trou dans ce qui passe derrière — même discipline que la traînée de
+ *    `StrikeArc`.
+ *
+ * Deux capsules et non deux cylindres : une lame de lumière est arrondie aux
+ * deux bouts, et une pointe conique en aurait refait une épée.
+ *
+ * Attention à la portée, comme pour le katana : cette lame est plus longue **à
+ * l'écran** seulement. La hitbox reste celle d'`ATTACK`. Ce que l'objet change,
+ * ce sont les dégâts.
+ */
+function Saber({ palette }: { palette: Palette }) {
+  return (
+    /*
+      Le seul lacet de la série qui penche **vers l'extérieur** (+0,18 là où les
+      trois lames d'acier sont à −0,11), et c'est la conséquence d'un défaut
+      mesuré : la tenue du Seigneur Noir porte un casque de 0,30 de rayon quand
+      le crâne nu du rig n'en fait que 0,26, et une arme dressée dans l'axe du
+      bras passait **derrière la tête** — la moitié basse de la lame
+      disparaissait dans le casque au repos, c'est-à-dire dans la pose qu'on
+      voit le plus. Penchée de dix degrés vers le dehors, elle sort du profil du
+      casque sur toute sa longueur.
+
+      Les trois autres armes gardent leur lacet : elles sont portées par des
+      skins dont la pièce de tête ne déborde pas, et c'est la lame qui s'écarte
+      pour le casque, jamais le rig qui bouge pour une arme.
+    */
+    <group position={[-0.02, -0.28, 0.02]} rotation={[0.3, 0, 0.18]}>
+      {/* Poignée : un cylindre d'acier, deux bagues noires, et le pommeau. Elle
+          est plus courte que celle du katana et plus longue que celle de la lame
+          maudite — elle se tient à une main, mais il y a de quoi la reprendre à
+          deux. */}
+      <mesh castShadow position={[0, 0.1, 0]}>
+        <cylinderGeometry args={[0.033, 0.036, 0.24, 10]} />
+        <meshToonMaterial color={SABER_HILT} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+      {[0.04, 0.13].map((y) => (
+        <mesh key={y} castShadow position={[0, y, 0]}>
+          <cylinderGeometry args={[0.038, 0.038, 0.045, 10]} />
+          <meshToonMaterial color={SABER_GRIP} gradientMap={toonGradient} />
+        </mesh>
+      ))}
+      <mesh castShadow position={[0, -0.03, 0]}>
+        <cylinderGeometry args={[0.038, 0.032, 0.035, 10]} />
+        <meshToonMaterial color={SABER_GRIP} gradientMap={toonGradient} />
+      </mesh>
+
+      {/* L'émetteur : la bague large d'où sort la lame. C'est la seule pièce qui
+          dise où finit l'objet et où commence la lumière. */}
+      <mesh castShadow position={[0, 0.235, 0]}>
+        <cylinderGeometry args={[0.042, 0.038, 0.045, 10]} />
+        <meshToonMaterial color={SABER_HILT} gradientMap={toonGradient} />
+      </mesh>
+      {/* Le témoin rouge de la poignée : trois millimètres que personne ne verra
+          courir dans l'herbe, mais le coffre présente l'objet en gros plan, et
+          c'est là qu'il paie. Même raison que l'anneau de l'Aube au pouce. */}
+      <mesh position={[0, 0.17, 0.037]}>
+        <boxGeometry args={[0.018, 0.03, 0.012]} />
+        <meshBasicMaterial color={SABER_GLOW} />
+      </mesh>
+
+      {/* Le cœur de la lame, presque blanc. */}
+      <mesh position={[0, 0.79, 0]}>
+        <capsuleGeometry args={[0.026, 1, 4, 10]} />
+        <meshBasicMaterial color={SABER_CORE} />
+      </mesh>
+      {/* Le halo, un peu plus large et translucide. */}
+      <mesh position={[0, 0.79, 0]}>
+        <capsuleGeometry args={[0.052, 1, 4, 12]} />
+        <meshBasicMaterial color={SABER_GLOW} transparent opacity={0.55} depthWrite={false} />
       </mesh>
     </group>
   )

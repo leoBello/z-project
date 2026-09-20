@@ -121,6 +121,8 @@ export type ItemId =
   | 'fishman-scales'
   | 'dawn-cloak'
   | 'demon-armor'
+  | 'vader-armor'
+  | 'vader-saber'
 
 /** Identifiant de coffre au trésor. La table vit dans `config/chests.ts`. */
 export type ChestId =
@@ -131,6 +133,8 @@ export type ChestId =
   | 'ruins-chest'
   | 'rotunda-chest'
   | 'road-chest'
+  | 'summit-armor-chest'
+  | 'summit-saber-chest'
 
 /** Identifiant de biome. Pilote le sol, la végétation et la minimap. */
 export type BiomeId =

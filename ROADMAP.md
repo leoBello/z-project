@@ -4,8 +4,9 @@ Mini-jeu 3D navigateur inspiré de Zelda, pour portfolio front-end.
 Direction artistique : **diorama low-poly cozy** — cel-shading, FOV étroit,
 tilt-shift. La recette caméra + post-traitement du HD-2D, appliquée à de la 3D.
 
-Dernière mise à jour : 20 septembre 2026 — la Montagne de l'Ouest : une voie
-gardée par une herse, une spire à gravir, et le Lynel doré au sommet.
+Dernière mise à jour : 20 septembre 2026 — les deux coffres du sommet : ce que
+gardait le Lynel doré, l'armure qui rend le plus de cœurs et la lame qui frappe
+le plus fort.
 
 ---
 
@@ -336,9 +337,11 @@ gardée par une herse, une spire à gravir, et le Lynel doré au sommet.
   a quelque chose là-haut avant de savoir comment y monter. Elle ne coûte rien à
   laisser tourner : hors de son rayon de détection, elle reste au repos, et le
   calque de combat ne montre de barre que pour une bête engagée ou blessée
-- Sa chute donne **un cœur maximal** et ouvre un **troisième portail** sur le
+- Sa chute donne **un cœur maximal**, ouvre un **troisième portail** sur le
   plateau, qui ramène au continent sans une ligne de code de plus — la règle
-  d'interaction envoie déjà vers l'autre carte que la carte courante
+  d'interaction envoie déjà vers l'autre carte que la carte courante — et fait
+  paraître **deux coffres** de part et d'autre de l'axe qui y mène (voir
+  « Objets et inventaire »)
 - La volée garde son dégât : une flèche passe par le système commun de
   projectiles, qui ne sait pas qui l'a tirée. Un dégât par projectile est une
   autre tâche
@@ -460,6 +463,56 @@ gardée par une herse, une spire à gravir, et le Lynel doré au sommet.
   tout l'échange — c'est une tenue qu'on enfile pour un combat et qu'on retire
   après, et le premier objet qui fasse exister pour de bon le système
   d'emplacements
+- **Les deux coffres du sommet** paraissent à la chute du Lynel doré, de part et
+  d'autre de l'axe qui mène au portail du retour : l'**Armure du Seigneur Noir**
+  dans l'un, la **Lame de Lumière Écarlate** dans l'autre. Ce sont les seuls
+  coffres jumeaux du jeu — l'armure et la lame forment un équipement, et les
+  séparer aurait fait de la seconde trouvaille un détour. Ils sont montés par un
+  composant à eux (`SummitChests`), jumeau de `RotundaChest` : tout ce qu'il
+  ajoute à `SkyChest`, c'est leur condition d'existence
+- **Leur distance au portail est imposée, pas choisie.** La règle d'interaction
+  donne la priorité au portail sur le coffre (`pick` dans `store/interaction.ts`)
+  et l'anneau réagit à 7 unités : un coffre posé à son pied aurait été *visible
+  et inouvrable*, l'invite proposant de franchir le portail à l'endroit exact où
+  l'on veut ouvrir un couvercle. Les deux zones doivent donc être disjointes —
+  7 + 2,6 = **9,6 au minimum**, et les coffres sont à 10,18. Mesuré aussi : 4,95
+  du centre du plateau (plat jusqu'à 8,9), 6,8 entre eux pour 5,2 nécessaires, et
+  altitude échantillonnée sur `mountainHeightAt`, donc nulle chance de flotter au
+  prochain réglage du relief
+- **Armure du Seigneur Noir** (coffre du sommet) : **+5 cœurs jaunes, le plus du
+  jeu** — un de plus que le manteau de l'Aube, qui détenait le record — et c'est
+  tout ce qu'elle donne. En échange, la course et la détente les plus basses du
+  casting (86 % et 82 %) : c'est une armure scellée, elle se paie au pas. Ce qui
+  l'empêche d'être le manteau de l'Aube en mieux — celui-ci court à 118 % et saute
+  à 130 %, relèvement compris — donc les deux dernières tenues du jeu restent un
+  choix, exactement comme les trois premières le sont entre elles
+- **Lame de Lumière Écarlate** (l'autre coffre du sommet) : **dégâts d'épée ×4,
+  l'arme la plus forte du jeu**. Le palier change ce que ×3 ne changeait pas
+  déjà : le gardien passe de 12 coups à 9, chaque bête de l'épreuve de 6 à 5, le
+  doré de 18 à 14 ; portée avec le manteau de l'Aube elle monte à 6, seul
+  équipement qui couche une bête de l'épreuve en trois coups. Elle **ne se paie
+  pas**, second gain sec de la table après le manteau et pour la même raison :
+  elle tombe au bout du dernier combat du jeu, il n'y a plus rien à équilibrer
+  derrière elle
+- **Le sixième skin est le premier masque du jeu**, et le premier casque. Les cinq
+  autres ont un visage ; celui-ci a un appareil — triangle de nez, grille de
+  bouche et évents de joue en acier, à l'endroit où l'on attend des traits. Trois
+  défauts n'ont été vus qu'en capture, et chacun tient à la même règle : *une
+  pièce posée sur une autre doit sortir de son volume*. La jupe du casque, montée
+  en cylindre complet, entourait le visage et cachait le masque entier (elle est
+  désormais ouverte de 130° sur le devant) ; la plaque de face, bombée, avalait le
+  nez et la grille (elle est aplatie et reculée) ; et le dôme, trop large,
+  surplombait les lentilles (rétréci et reculé). Les lentilles ont fini cernées
+  d'un liseré d'acier — licence assumée, la référence les a noires sur noir, et à
+  21 unités le personnage n'avait alors plus de regard du tout
+- **La lame de lumière est la seule arme du jeu rendue sans éclairage** :
+  `meshBasicMaterial` pour le cœur presque blanc, un halo translucide sans
+  écriture de profondeur par-dessus. Elle garde donc la même intensité à l'ombre
+  d'une montagne qu'en plein soleil, ce qu'on attend d'un objet qui émet au lieu
+  de recevoir — c'est la règle des yeux du Lynel, appliquée à une arme entière.
+  Son lacet penche **vers l'extérieur** (+0,18 là où les trois lames d'acier sont
+  à −0,11) : le casque fait 0,30 de rayon quand le crâne nu du rig en fait 0,26,
+  et une arme dressée dans l'axe du bras passait derrière la tête
 - Réserve de cœurs jaunes mémorisée par objet (`bonusCarry`) : retirer puis
   remettre une tenue ne soigne pas gratuitement
 - Coffres décrits **dans le repère de leur monument** (`src/config/chests.ts`),

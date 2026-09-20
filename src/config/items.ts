@@ -31,7 +31,7 @@ export type ItemSlot = ItemKind
  * Le premier est celui du départ de partie : c'est lui que `outfitOf` renvoie
  * quand l'emplacement est vide, et il n'existe donc aucun objet qui le donne.
  */
-export type OutfitId = 'luffy' | 'zoro' | 'madara' | 'pain' | 'demon'
+export type OutfitId = 'luffy' | 'zoro' | 'madara' | 'pain' | 'demon' | 'vader'
 
 /**
  * Ce que le personnage tient en main droite. Voir `HeroPlaceholder`.
@@ -40,7 +40,7 @@ export type OutfitId = 'luffy' | 'zoro' | 'madara' | 'pain' | 'demon'
  * mains nues, et c'est `StrikeArc` qui en tire les conséquences — une onde
  * d'impact au bout du poing plutôt qu'une traînée de lame.
  */
-export type WeaponId = 'fists' | 'sword' | 'katana' | 'cursed'
+export type WeaponId = 'fists' | 'sword' | 'katana' | 'cursed' | 'saber'
 
 /**
  * Aptitude de déplacement propre à un skin.
@@ -121,6 +121,17 @@ const SKIN_TRAITS: Record<OutfitId, SkinTraits> = {
   // du tout hors de l'arène. C'est voulu — tout ce qu'elle donne, elle le donne
   // contre une seule bête. Voir `DEMON_ARMOR`.
   demon: { speed: 0.95, jump: 0.9, water: 1 },
+  // **La silhouette la plus lourde du casting**, et de loin : les deux
+  // aptitudes sont sous le réglage de base, comme la tenue du clan et celle du
+  // Dieu Démon, mais plus bas qu'aucune des deux. C'est une armure scellée —
+  // plaques, cape longue, et un souffle mécanique qui ne s'arrête jamais — et
+  // elle se paie au pas.
+  //
+  // C'est ce qui l'empêche d'être le manteau de l'Aube en mieux : celui-ci
+  // court à 118 % et saute à 130 %, celle-là donne le cœur de plus et prend le
+  // déplacement en échange. Les deux dernières tenues du jeu restent donc un
+  // choix, exactement comme les trois premières le sont entre elles.
+  vader: { speed: 0.86, jump: 0.82, water: 1 },
 }
 
 export interface Item {
@@ -473,13 +484,100 @@ export const DEMON_ARMOR: Item = {
   accent: '#8fd0c4',
 }
 
+/**
+ * Armure du Seigneur Noir — la sixième tenue, et **celle qui rend le plus de
+ * cœurs du jeu**.
+ *
+ * Elle tombe au sommet de la Montagne de l'Ouest, dans l'un des deux coffres
+ * que la chute du Lynel doré fait paraître au bord du portail. C'est le dernier
+ * combat du jeu : il n'y a rien après lui, et c'est ce qui autorise une tenue à
+ * reprendre le record de cœurs au manteau de l'Aube sans rien déséquilibrer
+ * derrière elle.
+ *
+ * **Cinq cœurs jaunes**, un de plus que le manteau, qui détenait le record. Et
+ * c'est tout ce qu'elle donne : ni relèvement, ni dégâts, ni course. L'échange
+ * se lit donc d'un coup, et il est le plus net de la table — c'est la tenue la
+ * plus lente et la moins détendue du casting (voir `SKIN_TRAITS`). Le joueur qui
+ * ouvre les deux coffres du sommet ne reçoit pas « la meilleure tenue » : il
+ * reçoit **une barre de vie contre un déplacement**, et le manteau de l'Aube
+ * reste le bon choix pour qui préfère franchir et frapper.
+ *
+ * Une synergie en sort seule, et elle est voulue : la lame du même coffre fait
+ * tomber ce qu'elle touche en un coup, et cette armure donne de quoi encaisser
+ * les erreurs qu'une course lente rend plus fréquentes. Rien n'a été écrit pour
+ * ça — c'est la table qui le produit, comme elle produisait déjà la synergie de
+ * la lame maudite et des cœurs jaunes.
+ *
+ * L'accent est un acier bleuté. Il ne pouvait pas être la laque du casque : un
+ * noir presque pur devient un trou sur les fonds sombres de l'interface, exactement
+ * comme le manteau de l'Aube l'avait appris à sa palette. Il ne pouvait pas non
+ * plus être le rouge du plastron — la lame du coffre voisin le prend, et deux
+ * récompenses ouvertes à trois pas l'une de l'autre ne peuvent pas avoir le même
+ * éclat. L'acier n'a aucun voisin dans l'inventaire : c'est la seule teinte
+ * **désaturée** de la table, là où le céladon du Dieu Démon et la nacre des
+ * écailles tirent franchement l'un sur le vert, l'autre sur le bleu.
+ */
+export const VADER_ARMOR: Item = {
+  id: 'vader-armor',
+  kind: 'outfit',
+  bonusHearts: 5,
+  revives: 0,
+  attackMultiplier: 1,
+  damageMultiplier: 1,
+  damageBy: EVERY_SPECIES_ALIKE,
+  // Comme pour les quatre autres tenues : le poids de celle-ci n'est pas ici
+  // mais dans `SKIN_TRAITS`, parce qu'il vient du skin et non du vêtement.
+  traits: NEUTRAL_TRAITS,
+  outfit: 'vader',
+  accent: '#8d97ad',
+}
+
+/**
+ * Lame de Lumière Écarlate — **l'arme qui frappe le plus fort du jeu**.
+ *
+ * Quatre fois les dégâts, et le palier change quelque chose que ×3 ne changeait
+ * pas déjà : le coup de base passe de 1 à 4, donc **le moblin comme l'octorok
+ * tombent d'un coup**, ce que la lame maudite faisait déjà — mais surtout le
+ * gardien de la rotonde passe de 12 coups à 9, l'épreuve de 6 à 5 par bête, et
+ * le doré lui-même de 18 à 14. Portée avec le manteau de l'Aube, elle monte à 6
+ * (`Math.round(1 × 4 × 1,5)`), et c'est le seul équipement du jeu qui couche une
+ * bête de l'épreuve en trois coups.
+ *
+ * **Elle ne se paie pas**, et c'est le second gain sec de la table après le
+ * manteau de l'Aube, pour exactement la même raison : elle tombe au bout du
+ * dernier combat du jeu. La lame maudite, elle, reste un échange — elle se
+ * trouve au tiers du continent, il y a toute une carte et deux Lynels derrière
+ * elle, et c'est là que le doublement des dégâts reçus a un sens.
+ *
+ * L'accent est le rouge de la lame elle-même, et c'est le seul rouge **pur** de
+ * l'inventaire. Ses deux voisins chauds s'en séparent par la nature autant que
+ * par la valeur : les lamelles du clan sont une laque cramoisie, le fil de
+ * Kitetsu un sang séché, tous deux sourds et terreux. Celui-ci est une source de
+ * lumière — il est plus clair, plus saturé, et c'est la seule teinte de la table
+ * qui soit censée éclairer ce qui l'entoure.
+ */
+export const VADER_SABER: Item = {
+  id: 'vader-saber',
+  kind: 'weapon',
+  bonusHearts: 0,
+  revives: 0,
+  attackMultiplier: 4,
+  damageMultiplier: 1,
+  damageBy: EVERY_SPECIES_ALIKE,
+  traits: NEUTRAL_TRAITS,
+  weapon: 'saber',
+  accent: '#ff3b30',
+}
+
 export const ITEMS: readonly Item[] = [
   ZORO_GARB,
   MADARA_GARB,
   DAWN_CLOAK,
   DEMON_ARMOR,
+  VADER_ARMOR,
   KUSANAGI,
   CURSED_BLADE,
+  VADER_SABER,
   FISHMAN_SCALES,
 ]
 
@@ -560,6 +658,11 @@ const DEFAULT_WEAPON: Record<OutfitId, WeaponId> = {
   // Une épée, comme le bretteur et le clan : c'est une tenue de plaques, et
   // celui qui la porte n'a jamais rien eu d'un moine.
   demon: 'sword',
+  // Une épée, et non le sabre de lumière : l'arme est un **objet**, pas une
+  // dotation du skin. Les deux se trouvent dans deux coffres distincts, et rien
+  // n'oblige à ouvrir les deux ni à porter les deux ensemble. Armer la tenue
+  // d'office aurait rendu le second coffre sans effet pour qui ouvre le premier.
+  vader: 'sword',
 }
 
 /**
