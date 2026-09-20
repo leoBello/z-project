@@ -23,5 +23,8 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": [
+    "src",
+    "firebase.ts" // <--- AJOUTÉ : permet à TypeScript d'analyser ce fichier à la racine
+  ]
 }
