@@ -1202,6 +1202,55 @@ canvas {
   .hud__damage { animation-duration: 1ms; }
 }
 
+/*
+  Embrasement du second souffle : une braise qui monte du centre.
+
+  L'inverse exact du flash de dégâts, qui vient des bords et tire sur le rouge
+  sombre. Celui-ci part du milieu, dans l'orange de la tenue, et se referme en
+  600 ms — assez pour qu'on le voie, trop court pour cacher ce qui vient de
+  manquer de tuer le joueur.
+*/
+.hud__revive {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(224, 131, 46, 0.5) 0%,
+    rgba(224, 131, 46, 0.18) 38%,
+    rgba(224, 131, 46, 0) 70%
+  );
+  animation: revive-flash 620ms ease-out forwards;
+}
+
+@keyframes revive-flash {
+  from { opacity: 1; transform: scale(0.82); }
+  to { opacity: 0; transform: scale(1.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud__revive { animation-duration: 1ms; }
+}
+
+/*
+  Variante second souffle : l'orange de la tenue, et la quatrième hauteur.
+
+  C'est le seul des quatre bandeaux qui puisse s'afficher en plein combat de
+  boss — d'où la position la plus basse, qui laisse le centre de l'écran à ce
+  qui est en train d'essayer de tuer le joueur.
+*/
+.discovery--revive {
+  top: 52%;
+  border-top-color: rgba(224, 131, 46, 0.7);
+  border-bottom-color: rgba(224, 131, 46, 0.7);
+  animation-duration: 3400ms;
+}
+
+.discovery--revive .discovery__name {
+  color: #f7a65a;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), 0 0 18px rgba(224, 131, 46, 0.5);
+}
+
 /* --- Embrasement de l'annihilation ----------------------------------------- */
 
 /*

@@ -8,6 +8,7 @@ import {
   playPickup,
   playPortal,
   playReward,
+  playRevive,
   playTreasure,
 } from '../audio/sfx'
 import { preloadSkyIsland } from '../components/skyisland/preload'
@@ -18,6 +19,7 @@ import { itemById, type Equipment, type ItemSlot } from '../config/items'
 import { WORLD, sampleHeight } from '../config/world'
 import { now as gameNow, resetClock } from '../state/gameClock'
 import { playerTransform, resetCombat } from '../state/playerTransform'
+import { shake } from '../state/cameraShake'
 import { clearProjectiles } from '../state/projectiles'
 import type {
   Annihilation,
@@ -95,6 +97,22 @@ export interface GameState {
    * transférerait les jaunes de l'une à l'autre.
    */
   bonusCarry: Partial<Record<ItemId, number>>
+  /**
+   * Le relèvement de la partie a-t-il été consommé ?
+   *
+   * **Par partie et non par objet**, et c'est la seule règle qui empêche
+   * l'effet d'être une immortalité : l'inventaire met le jeu en pause, donc un
+   * compteur porté par la tenue se rechargerait en la retirant et en la
+   * remettant, à volonté, y compris à un cœur du game over.
+   */
+  reviveUsed: boolean
+  /**
+   * Instant du relèvement, sur l'horloge de jeu, ou `-Infinity`.
+   *
+   * Lu par le HUD, qui s'en sert de clé pour rejouer son bandeau et son flash —
+   * même mécanisme que `lastHitAt` pour le flash de dégâts.
+   */
+  revivedAt: number
   /**
    * Horodatage du dernier dégât subi, sur l'**horloge de jeu**.
    *
@@ -450,6 +468,8 @@ const initialState = {
   bonusHearts: 0,
   bonusCarry: {} as Partial<Record<ItemId, number>>,
   lastHitAt: -Infinity,
+  reviveUsed: false,
+  revivedAt: -Infinity,
   kills: 0,
   discovered: [] as LandmarkId[],
   heartContainers: [] as HeartSourceId[],
@@ -473,6 +493,27 @@ const initialState = {
   transit: null as MapId | null,
   transitLandmark: null as LandmarkId | null,
   nearbyPortal: false,
+}
+
+/** Secousse du relèvement : plus ample que celle d'une mort d'ennemi. */
+const REVIVE_SHAKE = 0.22
+const REVIVE_SHAKE_MS = 420
+
+/**
+ * Un coup fatal peut-il être annulé, là, maintenant ?
+ *
+ * Fonction pure et non action du store : elle est appelée depuis
+ * `damagePlayer`, qui tient déjà son instantané d'état et ne doit pas le relire
+ * au milieu de son calcul.
+ *
+ * Elle parcourt tout l'équipement plutôt que le seul emplacement de tenue, par
+ * la même discipline que `damageTaken` et `swordDamage` : c'est la table des
+ * objets qui dit ce qu'un objet fait, et rien n'interdit qu'une babiole relève
+ * un jour.
+ */
+function reviveAvailable(state: GameState) {
+  if (state.reviveUsed) return false
+  return Object.values(state.equipped).some((id) => (itemById(id)?.revives ?? 0) > 0)
 }
 
 /**
@@ -516,12 +557,45 @@ export const useGameStore = create<GameState>((set, get) => ({
   runId: 0,
 
   damagePlayer: (amount = 1) => {
-    const { phase, hearts, isInvulnerable, damageTaken } = get()
+    const state = get()
+    const { phase, hearts, isInvulnerable, damageTaken } = state
     if (phase !== 'playing' || isInvulnerable()) return
 
     // L'appelant dit ce qu'il inflige, l'équipement dit ce que ça coûte. Les
     // ennemis n'ont donc pas à connaître la table des objets.
     const next = Math.max(0, hearts - damageTaken(amount))
+
+    /*
+      Le coup était fatal, et quelque chose de porté l'annule.
+
+      Trois choix se lisent dans ce bloc :
+
+       - **`playDamage` n'est pas joué.** Le son du dégât et celui du
+         relèvement se marcheraient dessus à l'instant précis où le joueur doit
+         comprendre ce qui vient de se passer ; `playRevive` part d'ailleurs sur
+         un coup sourd, qui tient le rôle du premier ;
+       - **seuls les cœurs rouges reviennent.** La réserve jaune de la tenue est
+         dépensée, et c'est ce qui empêche le second souffle d'être une remise à
+         neuf : on repart avec la barre de base, pas avec celle de l'équipement.
+         Le modèle de barre unique fait le reste — `bonusHearts` reste au
+         plafond, sa portion est simplement vide ;
+       - **`lastHitAt` est repoussé.** Sans lui, aucune invulnérabilité ne
+         couvre le relèvement, et le contact qui vient de tuer le referait à la
+         frame suivante — le second souffle serait consommé sans qu'on ait eu le
+         temps de bouger.
+    */
+    if (next === 0 && reviveAvailable(state)) {
+      playRevive()
+      shake(REVIVE_SHAKE, REVIVE_SHAKE_MS)
+      set({
+        hearts: state.maxHearts,
+        reviveUsed: true,
+        revivedAt: gameNow(),
+        lastHitAt: gameNow(),
+      })
+      return
+    }
+
     playDamage()
     set({
       hearts: next,
@@ -541,11 +615,22 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   swordDamage: () => {
-    const held = get().equipped.weapon
-    const weapon = held ? itemById(held) : undefined
-    // Arrondi parce que rien n'interdira un multiplicateur fractionnaire un
-    // jour, et que les points de vie des ennemis, eux, sont des entiers.
-    return Math.round(SWORD_DAMAGE * (weapon?.attackMultiplier ?? 1))
+    // Produit sur **tout** l'équipement et non lecture du seul emplacement
+    // d'arme : c'est ce que `damageTaken` fait déjà des dégâts reçus, et ce que
+    // la table des objets décrit depuis le début — `attackMultiplier` est
+    // déclaré par tous les objets, pas seulement par les armes, précisément
+    // pour que le store n'ait pas à reconnaître ce qu'il multiplie. Tant
+    // qu'aucune tenue n'y touchait, la lecture d'un seul emplacement donnait le
+    // même résultat ; le manteau de l'Aube est le premier à faire mentir ce
+    // raccourci.
+    const worn = Object.values(get().equipped)
+    let multiplier = 1
+    for (const id of worn) {
+      multiplier *= itemById(id)?.attackMultiplier ?? 1
+    }
+    // Arrondi parce que rien n'interdit un multiplicateur fractionnaire — il y
+    // en a un — et que les points de vie des ennemis, eux, sont des entiers.
+    return Math.round(SWORD_DAMAGE * multiplier)
   },
 
   damageTaken: (amount) => {

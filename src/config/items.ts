@@ -93,16 +93,19 @@ const SKIN_TRAITS: Record<OutfitId, SkinTraits> = {
   // long, et elle se paie au pas. Ce qu'elle rend est ailleurs — un cœur jaune
   // de plus que la tenue du bretteur. Voir `MADARA_GARB`.
   madara: { speed: 0.92, jump: 0.95, water: 1 },
-  // Le seul skin dont les **deux** aptitudes de déplacement soient au-dessus du
-  // réglage de base, et c'est l'échange : il n'apporte qu'un cœur jaune, contre
-  // deux et trois pour les autres tenues. Les trois premiers skins se
-  // départageaient sur l'axe détente / vitesse, chacun payant l'un par l'autre ;
-  // celui-ci ouvre le seul axe qui restait — il prend les deux et paie en
-  // encaisse. La détente surtout : la hauteur d'un saut varie comme le carré de
-  // la vitesse initiale, donc ×1,3 sur `jumpSpeed`, ce sont 69 % de
-  // franchissement en plus. C'est la récompense d'un boss, elle doit changer la
-  // façon de traverser la carte, pas ajouter une ligne de chiffres.
-  pain: { speed: 1.08, jump: 1.3, water: 1 },
+  // **Le skin le plus puissant du jeu, et il ne s'en cache pas.** Les trois
+  // premiers sont des échanges — chacun paie une aptitude par une autre, et
+  // aucun n'est au-dessus du réglage de base sur les deux axes. Celui-ci prend
+  // la course du bretteur (1,18, la même valeur exactement) *et* une détente
+  // supérieure à celle du skin de départ. La hauteur d'un saut variant comme le
+  // carré de la vitesse initiale, ×1,3 sur `jumpSpeed`, ce sont 69 % de
+  // franchissement en plus.
+  //
+  // C'est un gain sec, assumé comme tel : il tombe au bout du seul combat de
+  // boss du jeu, après l'île, le portail et un gardien à six attaques. Rien ne
+  // vient après lui qu'il pourrait déséquilibrer — il est la fin de la
+  // progression, pas une étape dedans.
+  pain: { speed: 1.18, jump: 1.3, water: 1 },
 }
 
 export interface Item {
@@ -115,6 +118,17 @@ export interface Item {
    * quels objets sont des armures : il additionne ce champ pour l'objet équipé.
    */
   bonusHearts: number
+  /**
+   * Nombre de morts que le port de l'objet annule, **sur toute la partie**.
+   *
+   * Zéro pour tout le reste, comme `bonusHearts`, et pour la même raison : le
+   * store additionne et compare sans avoir à reconnaître les objets qui
+   * relèvent. La réserve n'est pas par objet mais par partie (`reviveUsed`
+   * dans le store) — retirer puis remettre la tenue ne rend pas un second
+   * souffle déjà consommé, sinon l'inventaire, qui met le jeu en pause,
+   * deviendrait une immortalité à un clic.
+   */
+  revives: number
   /**
    * Multiplicateur appliqué aux dégâts du coup d'épée.
    *
@@ -178,6 +192,7 @@ export const ZORO_GARB: Item = {
   id: 'zoro-garb',
   kind: 'outfit',
   bonusHearts: 2,
+  revives: 0,
   attackMultiplier: 1,
   damageMultiplier: 1,
   // La vitesse de cette tenue n'est pas ici mais dans `SKIN_TRAITS` : elle
@@ -213,6 +228,7 @@ export const MADARA_GARB: Item = {
   id: 'madara-garb',
   kind: 'outfit',
   bonusHearts: 3,
+  revives: 0,
   attackMultiplier: 1,
   damageMultiplier: 1,
   // Comme pour la tenue du bretteur : le poids de cette armure n'est pas ici
@@ -237,19 +253,34 @@ export const MADARA_GARB: Item = {
  * arme légendaire de la même teinte se serait lue comme un trésor de plus.
  */
 /**
- * Manteau de l'Aube — le quatrième skin, et le seul qui ne s'ouvre pas dans un
- * coffre posé sur un monument.
+ * Manteau de l'Aube — le quatrième skin, et **la tenue la plus puissante du
+ * jeu**. Le seul objet, aussi, qui ne s'ouvre pas dans un coffre posé sur un
+ * monument : il faut abattre le gardien de la rotonde pour l'atteindre.
  *
  * Il occupe le même emplacement que les deux autres tenues : on ne porte qu'une
  * silhouette à la fois, et trouver celle-ci ne retire pas les précédentes de
  * l'inventaire.
  *
- * **Un seul cœur jaune**, contre deux et trois pour les tenues précédentes, et
- * c'est délibéré. C'est la récompense du gardien de la rotonde, donc la
- * tentation était de la faire meilleure partout ; une tenue plus rapide, plus
- * détendue *et* mieux protégée que les trois autres les aurait retirées du jeu
- * le jour où elle tombe. L'échange se lit donc d'un coup : c'est la tenue qui se
- * déplace, pas celle qui encaisse. Voir `SKIN_TRAITS`.
+ * Il touche à **quatre** des cinq effets que la table sait décrire, là où aucun
+ * autre objet n'en touche plus de deux :
+ *
+ *  - **quatre cœurs jaunes**, un de plus que la tenue du clan, qui détenait le
+ *    record ;
+ *  - **dégâts d'épée ×1,5**, et c'est la première tenue du jeu qui touche au
+ *    combat. Le produit est arrondi (voir `swordDamage`), donc le coup de base
+ *    passe de 1 à 2 : l'octorok tombe d'un coup au lieu de deux. Porté avec
+ *    Kusanagi, il monte à 3, et le moblin tombe d'un coup lui aussi ;
+ *  - **course et détente au-dessus du réglage de base**, la première à égalité
+ *    exacte avec le bretteur. Voir `SKIN_TRAITS` ;
+ *  - **un relèvement**, et c'est le seul effet du jeu qui ne soit pas un
+ *    nombre : le coup fatal ne tue pas, il rend les cœurs rouges. Une fois par
+ *    partie, jamais deux. Voir `revives` et `damagePlayer`.
+ *
+ * C'est un gain sec, et c'est délibéré : il n'y a rien après lui. Le jeu n'a
+ * qu'un boss, il est au bout de la seconde carte, et sa récompense n'a plus
+ * aucun palier à équilibrer derrière elle. Les trois tenues précédentes restent
+ * des échanges entre elles — c'est entre *elles* que le choix doit rester
+ * ouvert, et il le reste jusqu'à ce que le Lynel tombe.
  *
  * L'accent est un orange de braise. Il n'a aucun voisin dans l'inventaire — le
  * cramoisi de la tenue du clan est deux fois plus sombre et tire sur le rouge —
@@ -261,8 +292,14 @@ export const MADARA_GARB: Item = {
 export const DAWN_CLOAK: Item = {
   id: 'dawn-cloak',
   kind: 'outfit',
-  bonusHearts: 1,
-  attackMultiplier: 1,
+  bonusHearts: 4,
+  revives: 1,
+  // Une **tenue** qui multiplie les dégâts : la première, et le champ existait
+  // pour ça depuis le début — il est déclaré par tous les objets, pas seulement
+  // par les armes, précisément pour que le store n'ait jamais à reconnaître ce
+  // qu'il multiplie. Voir `swordDamage`, qui fait le produit sur tout
+  // l'équipement comme `damageTaken` le fait déjà des dégâts reçus.
+  attackMultiplier: 1.5,
   damageMultiplier: 1,
   // Comme pour les deux autres tenues : ce que celle-ci fait au déplacement
   // vient du skin qu'elle donne, pas du vêtement. Voir `SKIN_TRAITS`.
@@ -275,6 +312,7 @@ export const KUSANAGI: Item = {
   id: 'kusanagi',
   kind: 'weapon',
   bonusHearts: 0,
+  revives: 0,
   attackMultiplier: 2,
   damageMultiplier: 1,
   traits: NEUTRAL_TRAITS,
@@ -312,6 +350,7 @@ export const CURSED_BLADE: Item = {
   id: 'cursed-blade',
   kind: 'weapon',
   bonusHearts: 0,
+  revives: 0,
   attackMultiplier: 3,
   damageMultiplier: 2,
   traits: NEUTRAL_TRAITS,
@@ -344,6 +383,7 @@ export const FISHMAN_SCALES: Item = {
   id: 'fishman-scales',
   kind: 'trinket',
   bonusHearts: 0,
+  revives: 0,
   attackMultiplier: 1,
   damageMultiplier: 1,
   traits: { speed: 0.85, jump: 1, water: 2 },
@@ -380,6 +420,7 @@ export function itemById(id: ItemId): Item | undefined {
 export function hasEffect(item: Item): boolean {
   return (
     item.bonusHearts > 0 ||
+    item.revives > 0 ||
     item.attackMultiplier !== 1 ||
     item.damageMultiplier !== 1 ||
     item.traits.speed !== 1 ||

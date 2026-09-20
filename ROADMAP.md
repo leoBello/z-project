@@ -259,15 +259,37 @@ de l'Île Céleste, et la parade qui va avec.
   une seule se porte, et le joueur choisit sa silhouette au lieu de la subir dans
   l'ordre où tombent les coffres. C'est la tenue qui encaisse, là où les deux
   autres se déplacent
-- **Manteau de l'Aube** (coffre de la rotonde, après la chute du Lynel) : +1 cœur
-  jaune seulement, mais course à 108 % et détente à 130 % — le seul skin dont les
-  *deux* aptitudes de déplacement soient au-dessus du réglage de base. Les trois
-  premiers se départageaient sur l'axe détente / vitesse en payant l'un par
-  l'autre ; celui-ci prend les deux et paie en encaisse. Récompense d'un boss :
-  elle devait changer la façon de traverser la carte, pas ajouter une ligne de
-  chiffres. Il se bat **à mains nues**, comme le skin de départ — `StrikeArc`
-  dessine alors une onde d'impact au lieu d'une traînée de lame, et le dernier
-  skin du jeu rend au joueur le geste du premier sans une ligne à écrire
+- **Manteau de l'Aube** (coffre de la rotonde, après la chute du Lynel) : **la
+  tenue la plus puissante du jeu**, et le seul objet qui touche à quatre effets
+  quand aucun autre n'en touche plus de deux — +4 cœurs jaunes (un de plus que la
+  tenue du clan, qui détenait le record), dégâts d'épée ×1,5, course à 118 %
+  (la valeur du bretteur, exactement) et détente à 130 %, plus **un relèvement**.
+  C'est un gain sec, assumé : il n'y a rien après lui. Le jeu n'a qu'un boss, il
+  est au bout de la seconde carte, et sa récompense n'a plus aucun palier à
+  équilibrer derrière elle — les trois tenues précédentes restent des échanges
+  **entre elles**, et c'est là que le choix doit rester ouvert. Il se bat **à
+  mains nues**, comme le skin de départ : `StrikeArc` dessine alors une onde
+  d'impact au lieu d'une traînée de lame, et le dernier skin du jeu rend au
+  joueur le geste du premier sans une ligne à écrire
+- **Le relèvement est le seul effet qui ne soit pas un nombre.** Le coup fatal ne
+  tue pas : il rend les cœurs **rouges**, la réserve jaune de la tenue restant
+  dépensée — on repart avec la barre de base, pas avec celle de l'équipement.
+  Il est compté **par partie** (`reviveUsed`) et non par objet, et c'est la seule
+  règle qui l'empêche d'être une immortalité : l'inventaire met le jeu en pause,
+  donc un compteur porté par la tenue se rechargerait en la retirant et en la
+  remettant, à volonté, y compris à un cœur du game over. `lastHitAt` est repoussé
+  au passage, sans quoi le contact qui vient de tuer le referait à la frame
+  suivante. Trois retours le signalent — un son qui part d'en bas quand les deux
+  fanfares du jeu montent, un embrasement qui part du **centre** quand le flash de
+  dégâts vient des bords, et un bandeau posé plus bas que les trois autres parce
+  que c'est le seul qui puisse tomber en plein combat de boss
+- **`swordDamage()` fait le produit sur tout l'équipement**, comme `damageTaken()`
+  le fait déjà des dégâts reçus. Il ne lisait que l'emplacement d'arme ; tant
+  qu'aucune tenue ne touchait au combat, le résultat était le même, et le manteau
+  de l'Aube est le premier à faire mentir ce raccourci. La table des objets le
+  décrivait pourtant depuis le début — `attackMultiplier` est déclaré par *tous*
+  les objets, précisément pour que le store n'ait jamais à reconnaître ce qu'il
+  multiplie
 - **Le nuage de l'Aube est une géométrie, pas une texture** (`cloudGeometry.ts`,
   voisin de `heartGeometry.ts`) : dix courbes de Bézier extrudées, une seule
   géométrie pour les sept exemplaires cousus sur la tenue, et son liseré blanc est
