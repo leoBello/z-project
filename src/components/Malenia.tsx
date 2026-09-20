@@ -677,8 +677,10 @@ export function Malenia() {
       hitStop(180)
       shake(0.3, 700)
       playDefeat()
-      store.endMaleniaFight(true)
-      track('malenia_defeated', { hearts: store.hearts })
+      // La mesure d'audience part du store, avec le reste de ce que la victoire
+      // déclenche : deux appels depuis deux endroits auraient fini par compter
+      // deux fois, ou pas du tout.
+      store.endMaleniaFight(true, [position.x, position.y, position.z])
       return true
     }
   })

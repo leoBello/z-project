@@ -1,6 +1,6 @@
 import { ROTUNDA_CHEST } from '../../config/chests'
 import { useGameStore } from '../../store/useGameStore'
-import { SkyChest } from './SkyChest'
+import { MapChest } from '../environment/MapChest'
 
 /**
  * Le coffre que la chute du gardien rend atteignable.
@@ -22,5 +22,5 @@ export function RotundaChest() {
   const defeated = useGameStore((state) => state.bossState === 'defeated')
   if (!defeated) return null
 
-  return <SkyChest chest={ROTUNDA_CHEST} />
+  return <MapChest chest={ROTUNDA_CHEST} />
 }

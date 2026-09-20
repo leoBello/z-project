@@ -1,6 +1,6 @@
 import { SUMMIT_ARMOR_CHEST, SUMMIT_SABER_CHEST } from '../../config/chests'
 import { useGameStore } from '../../store/useGameStore'
-import { SkyChest } from './SkyChest'
+import { MapChest } from '../environment/MapChest'
 
 /**
  * Les deux coffres que la chute du Lynel doré fait paraître au sommet.
@@ -30,8 +30,8 @@ export function SummitChests() {
 
   return (
     <>
-      <SkyChest chest={SUMMIT_ARMOR_CHEST} />
-      <SkyChest chest={SUMMIT_SABER_CHEST} />
+      <MapChest chest={SUMMIT_ARMOR_CHEST} />
+      <MapChest chest={SUMMIT_SABER_CHEST} />
     </>
   )
 }

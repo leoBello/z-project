@@ -321,6 +321,14 @@ export interface GameState {
    */
   maleniaSlainAt: number | null
   /**
+   * Où elle est tombée, pour y poser le réceptacle.
+   *
+   * Même rôle et même raison que `bossFellAt` : le composant du boss se démonte
+   * avec lui, donc le point de chute doit survivre dans le store — sans quoi la
+   * récompense n'aurait plus d'endroit où paraître.
+   */
+  maleniaFellAt: [number, number, number] | null
+  /**
    * Quel combat de boss est engagé, ou `null`.
    *
    * **Générique, là où `bossState` est celui de la rotonde.** La distinction a
@@ -562,7 +570,7 @@ export interface GameState {
    */
   startMaleniaFight: () => void
   /** Elle tombe, ou le joueur quitte le bassin. */
-  endMaleniaFight: (defeated: boolean) => void
+  endMaleniaFight: (defeated: boolean, fellAt?: [number, number, number]) => void
   /**
    * Le combat s'arrête, vaincu ou non.
    *
@@ -626,6 +634,7 @@ const initialState = {
   trialSlain: [] as string[],
   goldenSlainAt: null as number | null,
   maleniaSlainAt: null as number | null,
+  maleniaFellAt: null as [number, number, number] | null,
   arenaFight: null as 'guardian' | 'malenia' | null,
   questsOpen: false,
   bossFellAt: null as [number, number, number] | null,
@@ -1287,12 +1296,24 @@ export const useGameStore = create<GameState>((set, get) => ({
    * redevient disponible — elle remonte avec ses soixante points de vie, et sa
    * phase repart de la lame.
    */
-  endMaleniaFight: (defeated) => {
+  endMaleniaFight: (defeated, fellAt) => {
+    /*
+      La garde n'est pas la même dans les deux sens, exactement comme celle du
+      gardien de la rotonde — et pour la raison que l'onde d'annihilation a
+      révélée là-bas : **une victoire s'enregistre même si le combat n'avait pas
+      été formellement engagé.** Un boss mort est mort.
+    */
+    if (defeated) {
+      if (get().maleniaSlainAt !== null) return
+      set({ arenaFight: null, maleniaSlainAt: gameNow(), maleniaFellAt: fellAt ?? null })
+      // Le réceptacle n'est pas versé ici : il se **ramasse**, comme celui de la
+      // rotonde. Voir `MarshReward`.
+      track('malenia_defeated', { hearts: get().hearts })
+      return
+    }
+
     if (get().arenaFight !== 'malenia') return
-    set({
-      arenaFight: null,
-      maleniaSlainAt: defeated ? gameNow() : get().maleniaSlainAt,
-    })
+    set({ arenaFight: null })
   },
 
   endBossFight: (defeated, fellAt) => {
@@ -1479,6 +1500,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       trialSlain: [],
       goldenSlainAt: null,
       maleniaSlainAt: null,
+      maleniaFellAt: null,
       arenaFight: null,
       bonusCarry: {},
       runId: state.runId + 1,

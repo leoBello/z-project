@@ -164,6 +164,10 @@
         "golden-lynel": {
           "name": "The Golden Lynel",
           "goal": "The portcullis is up. At the end of the western causeway stands a mountain, and on its summit a beast of gold. Fell it for one more heart — and for what it guarded."
+        },
+        "aeonia": {
+          "name": "The Marsh of Aeonia",
+          "goal": "A portal has opened at the summit, and it does not lead home. On the other side: red water, a dead tree, a stone causeway running to its foot. Something waits there, and has never left."
         }
       }
     },

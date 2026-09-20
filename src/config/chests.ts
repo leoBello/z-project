@@ -474,6 +474,38 @@ function summitChest(id: ChestId, item: ItemId, side: 1 | -1): Chest {
 export const SUMMIT_ARMOR_CHEST = summitChest('summit-armor-chest', 'vader-armor', -1)
 export const SUMMIT_SABER_CHEST = summitChest('summit-saber-chest', 'vader-saber', 1)
 
+/**
+ * Les deux coffres que la chute de Malenia fait paraître dans le bassin.
+ *
+ * Le décalage est le même que celui des coffres du sommet, et pour une raison
+ * qu'on ne devine pas : le portail de retour est au bord du bassin et son anneau
+ * réagit à sept unités, or **le portail l'emporte sur le coffre** dans la règle
+ * de priorité d'`interaction.ts`. Deux coffres posés dans son rayon auraient été
+ * visibles et inouvrables.
+ *
+ * Ils encadrent l'axe qui mène de la chaussée au tronc, à six unités de part et
+ * d'autre du centre et quatre en avant : le joueur qui vient de la gagner les
+ * voit tous les deux sans avoir à chercher, et ils ne sont ni sur le corps de
+ * Malenia — où le réceptacle se pose — ni dans l'anneau d'eau de la lèvre.
+ */
+function marshChest(id: ChestId, item: ItemId, side: 1 | -1): Chest {
+  return {
+    id,
+    map: 'rot',
+    item,
+    // Le dallage du bassin est à 0,45, et `TreasureChest` pose son socle sur
+    // l'altitude qu'on lui donne : c'est la surface, pas le sol nu du marais.
+    world: { x: side * 6, y: 0.45, z: 4 },
+    // Tournés vers l'intérieur, comme ceux du sommet : deux coffres parallèles
+    // se lisent comme deux bornes plutôt que comme deux objets déposés là.
+    worldYaw: side * 0.42,
+    interactRadius: 2.6,
+  }
+}
+
+export const AEONIA_KING_CHEST = marshChest('aeonia-king-chest', 'meruem-garb', -1)
+export const AEONIA_THIEF_CHEST = marshChest('aeonia-thief-chest', 'kuroro-garb', 1)
+
 export const CHESTS: readonly Chest[] = [
   TEMPLE_CHEST,
   PYRAMID_CHEST,
@@ -488,6 +520,8 @@ export const CHESTS: readonly Chest[] = [
   ROAD_CHEST,
   SUMMIT_ARMOR_CHEST,
   SUMMIT_SABER_CHEST,
+  AEONIA_KING_CHEST,
+  AEONIA_THIEF_CHEST,
 ]
 
 /** Retrouve un coffre par son identifiant. */

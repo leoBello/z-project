@@ -164,6 +164,10 @@
         "golden-lynel": {
           "name": "Le Lynel doré",
           "goal": "La herse s'est levée. Au bout de la voie de l'ouest, une montagne, et à son sommet une bête d'or. L'abattre vaut un cœur de plus — et ce qu'elle gardait."
+        },
+        "aeonia": {
+          "name": "Le Marais d'Aeonia",
+          "goal": "Un portail s'est ouvert au sommet, et il ne ramène pas chez soi. De l'autre côté : une eau rouge, un arbre mort, une chaussée de pierre qui mène à son pied. Quelque chose y attend, et n'en est jamais reparti."
         }
       }
     },
