@@ -5,6 +5,7 @@ import { Euler, InstancedMesh, MathUtils, Matrix4, MeshBasicMaterial, Quaternion
 import type { Group, Material } from 'three'
 import {
   ANKLE_Y,
+  CAPE_PIECES,
   CUIRASS_PIECES,
   EYE_ROT_PIECES,
   FAULD_PIECES,
@@ -396,6 +397,15 @@ export function MaleniaModel({ rig, goddess, hit, pose, speed }: MaleniaModelPro
           <Pieces pieces={TORSO_PIECES} materials={materials} />
           {goddess && <Pieces pieces={VEIN_PIECES} materials={materials} />}
           {!goddess && <Pieces pieces={CUIRASS_PIECES} materials={materials} />}
+          {/* La cape, suspendue à la nuque et non aux épaules : accrochée aux
+              épaules, elle aurait suivi les bras — et une cape qui se lève
+              quand on porte un coup d'estoc n'est pas une cape, c'est un
+              drapeau. Voir `CAPE_PIECES`. */}
+          {!goddess && (
+            <group position={[0, SHOULDER_Y - HIP_Y - 0.04, -0.02]}>
+              <Pieces pieces={CAPE_PIECES} materials={materials} />
+            </group>
+          )}
 
           {/* Le bras droit : la prothèse, et la lame. */}
           <group ref={shoulderR} position={[RIGHT * SHOULDER_X, SHOULDER_Y - HIP_Y - 0.02, 0]}>

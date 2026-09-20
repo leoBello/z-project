@@ -113,7 +113,18 @@ export function applyBasePose(rig: MaleniaRig) {
  * quinze rotations, y compris celles qu'elle ne change pas — et la première
  * correction de la garde les rendrait toutes fausses.
  */
-export type PoseId = 'garde' | 'armee' | 'frappe' | 'vol' | 'envol' | 'brisee'
+export type PoseId =
+  | 'garde'
+  | 'armee'
+  | 'frappe'
+  | 'vol'
+  | 'envol'
+  | 'brisee'
+  | 'estoc'
+  | 'pied'
+  | 'saisie'
+  | 'plongeon'
+  | 'fauche'
 
 export interface Pose {
   /** Écarts angulaires, par articulation. Absente = inchangée. */
@@ -203,6 +214,101 @@ export const POSES: Record<PoseId, Pose> = {
       head: [-0.25, 0, 0],
       sash: [-1.0, 0, 0],
       hair: [-0.8, 0, 0],
+    },
+  },
+
+  /**
+   * L'estoc — le bras tendu, le corps derrière la pointe.
+   *
+   * Sa première version partageait `frappe` avec le balayage, et c'était le
+   * défaut le plus coûteux du lot : l'estoc est le coup qui punit le pas en
+   * arrière, donc celui que le joueur doit reconnaître **à la préparation**. Un
+   * geste qui ressemble à celui d'à côté ne s'annonce pas, il surprend.
+   */
+  estoc: {
+    rig: {
+      torso: [0.15, -0.72, 0],
+      shoulderR: [-1.62, 0, -0.18],
+      elbowR: [0.26, 0, 0],
+      wristR: [1.1, 0, 0],
+      shoulderL: [0.35, 0, -0.55],
+      hipR: [-0.62, 0, 0],
+      kneeR: [0.66, 0, 0],
+      hipL: [0.46, 0, 0],
+      kneeL: [-0.28, 0, 0],
+      head: [0.12, -0.24, 0],
+      sash: [-0.42, 0, 0],
+    },
+  },
+
+  /** Le coup de pied tournant : le corps pivote, la jambe d'or part à plat. */
+  pied: {
+    rig: {
+      root: [0, 1.5, 0],
+      torso: [0.1, -0.5, 0],
+      hipL: [-0.35, 0, 1.15],
+      kneeL: [0.15, 0, 0],
+      hipR: [0.2, 0, -0.2],
+      shoulderR: [-0.6, 0, 0.9],
+      shoulderL: [-0.6, 0, -0.9],
+      sash: [-0.55, 0, 0],
+    },
+  },
+
+  /**
+   * La saisie — la main de chair, ouverte, en avant.
+   *
+   * C'est la seule pose du combat où la **gauche** mène. Tout le reste part de
+   * la lame ; celle-ci part du corps, et c'est très exactement la règle de
+   * lecture rendue visible : ce qui ne vient pas de la lame ne se pare pas.
+   */
+  saisie: {
+    rig: {
+      torso: [0.2, 0.42, 0],
+      shoulderL: [-1.75, 0, -0.3],
+      elbowL: [0.35, 0, 0],
+      shoulderR: [0.3, 0, 0.5],
+      elbowR: [-0.2, 0, 0],
+      hipL: [-0.5, 0, 0],
+      kneeL: [0.5, 0, 0],
+      head: [0.15, 0.1, 0],
+      sash: [-0.35, 0, 0],
+    },
+  },
+
+  /** Le plongeon : la lame plantée, le corps ramassé au-dessus. */
+  plongeon: {
+    rig: {
+      root: [0.35, 0, 0],
+      torso: [0.4, 0, 0],
+      shoulderR: [-0.35, 0, 0.55],
+      elbowR: [-0.15, 0, 0],
+      wristR: [0.9, 0, 0],
+      shoulderL: [-0.3, 0, -0.7],
+      hipL: [-0.55, 0, 0.2],
+      kneeL: [0.85, 0, 0],
+      hipR: [-0.5, 0, -0.2],
+      kneeR: [0.8, 0, 0],
+      head: [0.5, 0, 0],
+    },
+  },
+
+  /** La fauche ailée : le vol rasant, la lame tendue de côté. */
+  fauche: {
+    lift: 0.9,
+    rig: {
+      root: [-0.35, 0, 0],
+      torso: [-0.2, -0.5, 0],
+      shoulderR: [-1.55, 0, -1.1],
+      elbowR: [0.15, 0, 0],
+      wristR: [0.4, 0, 0],
+      shoulderL: [-0.5, 0, 1.0],
+      hipL: [0.6, 0, 0.15],
+      kneeL: [0.35, 0, 0],
+      hipR: [0.55, 0, -0.15],
+      kneeR: [0.3, 0, 0],
+      sash: [-0.75, 0, 0],
+      hair: [-0.6, 0, 0],
     },
   },
 

@@ -365,6 +365,40 @@ export const SASH_PIECES: Piece[] = Array.from({ length: 5 }, (_, i) => {
   }
 })
 
+/**
+ * La cape — sept pans de tissu suspendus aux épaules.
+ *
+ * **C'est la pièce qui manquait le plus au modèle**, et la raison est
+ * géométrique : à quatorze unités de recul dans la caméra d'arène, un personnage
+ * humanoïde de trois unités n'occupe qu'une fraction de l'image, et tout ce
+ * qu'on en lit est sa **silhouette**. Or la sienne était celle d'une figurine
+ * mince — deux bras, deux jambes, rien qui déborde. La cape lui donne une masse
+ * qui bouge, et une masse qui bouge est ce qui distingue un personnage d'un
+ * pion.
+ *
+ * Sept pans séparés plutôt qu'un seul plan : c'est ce qui permet au bas de se
+ * déchirer en lanières, donc à la cape de finir en loques plutôt qu'en rideau.
+ * Les pans du milieu sont les plus longs — une cape à pans égaux fait une nappe.
+ *
+ * Elle appartient à l'armure et tombe donc à la métamorphose, avec le heaume et
+ * le plastron. C'est ce qui fait de la phase II une silhouette franchement plus
+ * étroite, juste avant que les ailes ne la rendent deux fois plus large.
+ */
+export const CAPE_PIECES: Piece[] = Array.from({ length: 7 }, (_, i): Piece => {
+  const t = i / 6 - 0.5
+  const len = 1.35 - Math.abs(t) * 0.72
+  return {
+    geometry: faceted(new BoxGeometry(0.125, len, 0.03)),
+    material: i % 2 ? 'cloth' : 'clothDark',
+    position: [t * 0.46, -len / 2 + 0.06, -0.19 - Math.abs(t) * 0.05],
+    // Les pans s'écartent vers le bas et s'inclinent vers l'extérieur : une
+    // cape verticale pend, une cape évasée *tombe*, et c'est la seconde qui a
+    // l'air d'avoir un poids.
+    rotation: [0.16, 0, t * 0.5],
+    outline: OUTLINE_THIN,
+  }
+})
+
 /* --- Le torse -------------------------------------------------------------- */
 
 export const TORSO_PIECES: Piece[] = [

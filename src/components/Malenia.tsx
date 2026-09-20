@@ -36,7 +36,7 @@ import { cancelParry, consumeParry, offerParry } from '../state/parry'
 import { playerTransform } from '../state/playerTransform'
 import { soakRot } from '../state/rot'
 import { useGameStore } from '../store/useGameStore'
-import type { MaleniaPhase } from '../types/game'
+import type { MaleniaAttackId, MaleniaPhase } from '../types/game'
 import { MaleniaModel } from './enemies/MaleniaModel'
 import { applyBasePose, useMaleniaRig, type PoseId } from './enemies/maleniaRig'
 import { ROT_COLORS } from '../config/rotPalette'
@@ -704,25 +704,49 @@ export function Malenia() {
  * pas l'ouverture qu'il vient de gagner, c'est-à-dire la seule récompense du
  * geste le plus difficile du jeu.
  */
+/**
+ * Le geste de chaque attaque : sa préparation, et sa libération.
+ *
+ * **Les dix partageaient deux poses**, et c'était le défaut le plus coûteux du
+ * premier jet d'animation : l'estoc, le coup de pied et la saisie s'annonçaient
+ * tous par le même armé. Or ce sont les trois seules attaques de la phase I
+ * dont la réponse diffère — l'une se pare, les deux autres non. Un télégraphe
+ * qui ne distingue pas ce que le joueur doit distinguer ne télégraphie rien.
+ *
+ * `alternate` ne vaut que pour les séquences de lame : c'est ce qui donne au vol
+ * de sarcelle ses huit gestes distincts sans écrire huit poses. Sur une attaque
+ * à un seul coup, alterner reviendrait à revenir à l'armé pendant la frappe.
+ */
+const GESTURE: Record<MaleniaAttackId, { wind: PoseId; hit: PoseId; alternate?: boolean }> = {
+  slash: { wind: 'armee', hit: 'frappe', alternate: true },
+  flurry: { wind: 'armee', hit: 'frappe', alternate: true },
+  thrust: { wind: 'armee', hit: 'estoc' },
+  kick: { wind: 'armee', hit: 'pied' },
+  grab: { wind: 'saisie', hit: 'saisie' },
+  // Le vol de sarcelle et Aeonia se préparent **en l'air** : c'est leur seul
+  // télégraphe commun, et le seul qui se lise à toute la longueur de l'arène.
+  waterfowl: { wind: 'envol', hit: 'frappe', alternate: true },
+  aeonia: { wind: 'envol', hit: 'plongeon' },
+  plunge: { wind: 'envol', hit: 'plongeon' },
+  flying: { wind: 'envol', hit: 'fauche' },
+  phantoms: { wind: 'armee', hit: 'frappe', alternate: true },
+}
+
 function poseFor(state: Runtime, now: number): PoseId {
   if (now < state.staggerUntil) return 'brisee'
   if (now < state.morphAt + MORPH_MS) return 'envol'
 
   const attack = state.pending
   if (attack) {
-    // Le vol de sarcelle et Aeonia se préparent **en l'air** : c'est leur seul
-    // télégraphe commun, et le seul qui se lise à toute la longueur de l'arène.
-    const airborne = attack.id === 'waterfowl' || attack.id === 'aeonia'
-    if (now < state.strikeOrigin) return airborne ? 'envol' : 'armee'
+    const gesture = GESTURE[attack.id]
+    if (now < state.strikeOrigin) return gesture.wind
     /*
-      Pendant la séquence, elle alterne armé et frappe à chaque coup résolu.
-
-      C'est ce qui donne au vol de sarcelle ses dix gestes distincts sans écrire
-      dix poses : la parité de `struck` suffit, et l'amortissement fait le reste.
-      Un seul geste tenu pendant trois secondes se serait lu comme une pose
-      figée pendant qu'on encaisse.
+      La saisie est la seule à tenir **la même** pose de bout en bout, et c'est
+      voulu : elle recule d'un pas, ouvre la main, et fond. Ce n'est pas une
+      frappe, c'est une prise — un geste continu, qu'une alternance aurait haché.
     */
-    return state.struck % 2 === 1 ? 'frappe' : 'armee'
+    if (!gesture.alternate) return gesture.hit
+    return state.struck % 2 === 1 ? gesture.hit : gesture.wind
   }
 
   return state.phase === 'goddess' ? 'vol' : 'garde'
