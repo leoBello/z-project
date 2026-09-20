@@ -240,13 +240,13 @@
       "meruem-garb": {
         "name": "The King's Carapace",
         "meta": "Found in one of the two chests in the Marsh, after Malenia falls",
-        "description": "This is not armour: it is a body. Violet chitin laid in overlapping plates, two shoulder guards filed to a point, a crest of bone fused to the skull, and a tail ending in a sting carried high over the shoulder. There is nothing for the hands to hold. Whoever wears it never had to learn to fight: he was born knowing, and it took him under a month to run out of people who could teach him anything.",
+        "description": "This is not armour: it is a body. Pale green chitin pigmented with dark green, a carapace helmet ridged like a blade, two horns sweeping back from the temples, and a ringed tail ending in a sting carried high over the shoulder. There is nothing for the hands to hold. Whoever wears it never had to learn to fight: he was born knowing, and it took him under a month to run out of people who could teach him anything.",
         "effect": "double damage, reach extended by half, the highest speed and jump in the game — but only +3 yellow hearts"
       },
       "kuroro-garb": {
         "name": "The Thief's Coat",
         "meta": "Found in the other Marsh chest, three paces from the first",
-        "description": "A black coat closed to the collar, pale fur doubling the width of the shoulders, and an upturned cross in the middle of the forehead. Whoever wore it had no power of his own: he took other people's and filed them away in a book. He was never known to carry a weapon, and those who saw him coming had no time to find that strange.",
+        "description": "A black coat strewn with white crosses, pale fur at the collar, the cuffs and the hem, and an upturned cross in the middle of the forehead. Whoever wore it had no power of his own: he took other people's and filed them away in a book. He was never known to carry a weapon, and those who saw him coming had no time to find that strange.",
         "effect": "+4 yellow hearts, one hit in three lands double, speed and jump just behind the Carapace"
       }
     },
