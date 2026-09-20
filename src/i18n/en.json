@@ -181,6 +181,12 @@
         "meta": "Found in the Island Ruins chest",
         "description": "A handful of pearlescent scales, each as wide as a palm, still supple and warm to the touch. Tied at the belt, the water stops holding you back — dry land, on the other hand, never promised you anything.",
         "effect": "full speed through open water, but 15% slower on land"
+      },
+      "demon-armor": {
+        "name": "Demon God's Armour",
+        "meta": "Found in the Causeway chest, on the Sky Island",
+        "description": "A pale cloth tunic strapped beneath a three-plate steel cuirass, a gold pauldron clasped with an amber gem, and seven turquoises knotted at the wrist. Whoever wore it had white hair under a drawn hood, dark marks across the brow, and wholly white eyes that settled on no one.",
+        "effect": "halves damage taken from the Lynel, but slower running and a lower jump"
       }
     },
     "language": {

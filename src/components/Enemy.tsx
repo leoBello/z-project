@@ -601,7 +601,7 @@ export function Enemy({ spawn }: EnemyProps) {
         shake(0.1, 140)
         playParrySuccess()
       } else {
-        useGameStore.getState().damagePlayer(stats.damage)
+        useGameStore.getState().damagePlayer(stats.damage, stats.kind)
       }
     }
 

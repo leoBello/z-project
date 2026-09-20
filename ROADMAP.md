@@ -180,6 +180,11 @@ de l'Île Céleste, et la parade qui va avec.
   plus bas pour grossir le boss, elle ne plongeait plus que de 6,6° et on voyait
   l'arène par la tranche — grossir le boss ne sert à rien si on ne voit plus où
   l'on met les pieds
+- **Le coffre de la Voie**, à 25 du centre dans l'axe exact de la rampe
+  d'arrivée, soit 4,5 après l'arche : le joueur le croise en montant vers
+  l'arène, et c'est la condition pour que l'armure qu'il contient serve à
+  quelque chose. Il est sur un couloir de rampe, où le semis de végétation
+  s'interdit déjà de pousser — la voie est donc nue par construction
 - **L'île rend trois cœurs à la première arrivée**, et le gardien laisse un
   réceptacle là où il tombe — pas dans un coffre : un coffre raconterait que la
   récompense était rangée là depuis toujours
@@ -235,7 +240,7 @@ de l'Île Céleste, et la parade qui va avec.
   d'emplacement) : on porte la tenue *et* l'arme. Un emplacement unique aurait
   été plus court à écrire et faux à jouer — la deuxième trouvaille serait
   devenue un renoncement à la première
-- **Quatre skins, un seul rig.** Le joueur démarre en Luffy — torse nu, gilet
+- **Cinq skins, un seul rig.** Le joueur démarre en Luffy — torse nu, gilet
   rouge, chapeau de paille, poings nus — et trouve les trois autres dans des
   coffres. Palette, pièce de tête, vêtement de buste, membres et visage
   changent ; le squelette, le cycle de marche et le coup porté sont partagés.
@@ -325,15 +330,43 @@ de l'Île Céleste, et la parade qui va avec.
   entre deux frappes sans que l'ennemi en soit averti. Les dégâts **reçus**
   suivent la même règle et la même forme (`damageTaken()`)
 - Le renvoi de projectile reste à 1 dégât : c'est une parade, pas une frappe
+- **Les dégâts reçus connaissent l'espèce qui frappe.** `damagePlayer(amount,
+  from)` prend un `EnemyKind` optionnel, et chaque objet déclare une table
+  `damageBy` par espèce, multipliée par-dessus son `damageMultiplier` général.
+  C'est ce qui permet une armure taillée contre **une** bête sans toucher au
+  reste du jeu, et c'est une table plutôt qu'un booléen anti-Lynel pour que le
+  prochain objet du genre s'écrive sans qu'une ligne du store bouge. Tous les
+  points d'entrée de dégâts qui ont une espèce la nomment — Lynel, contact
+  d'ennemi ordinaire, balle d'octorok — parce qu'un point d'entrée muet est un
+  trou que le prochain objet défensif découvrirait en silence
+- **L'Armure du Dieu Démon** (coffre de la Voie, Île Céleste) est le premier
+  objet dont l'effet dépende de qui frappe : les dégâts du Lynel sont divisés
+  par deux. Les cœurs étant des entiers, ses quatre attaques d'épée tombent de
+  2 à 1 et sa charge de 3 à 2 — à cinq cœurs, son épée met **cinq** coups à
+  tuer au lieu de trois. L'armure paie donc au corps à corps, là où tombent les
+  attaques d'épée : elle récompense qui reste à portée et pare. Elle ne donne
+  **aucun cœur jaune** et coûte 5 % de course et 10 % de détente, ce qui est
+  tout l'échange — c'est une tenue qu'on enfile pour un combat et qu'on retire
+  après, et le premier objet qui fasse exister pour de bon le système
+  d'emplacements
 - Réserve de cœurs jaunes mémorisée par objet (`bonusCarry`) : retirer puis
   remettre une tenue ne soigne pas gratuitement
 - Coffres décrits **dans le repère de leur monument** (`src/config/chests.ts`),
   jamais en coordonnées monde : un coffre posé en absolu se retrouve dans le
-  vide au premier réglage du monument. Le coffre de la rotonde fait exception —
-  la rotonde n'est pas un monument et ne doit pas en devenir un (voir
-  `HeartSourceId`) — d'où le champ `map` sur `Chest` : `Landmarks` ne pose que
-  les coffres du continent, `RotundaChest` monte celui de l'île et porte sa
-  propre détection de proximité, la boucle des monuments n'existant pas là-bas
+  vide au premier réglage du monument. Les deux coffres de l'Île Céleste font
+  exception — ni la rotonde ni la voie ne sont des monuments et ne doivent le
+  devenir (voir `HeartSourceId`) — d'où le champ `map` sur `Chest` : `Landmarks`
+  ne pose que les coffres du continent, et `SkyChest` monte ceux de l'île avec
+  leur détection de proximité, la boucle des monuments n'existant pas là-bas.
+  Cette détection vit dans **un seul composant** partagé par les deux coffres :
+  elle a trois précautions délicates — ne parler que de son propre coffre, se
+  nettoyer au démontage, n'écrire qu'aux transitions — et deux copies auraient
+  divergé à la première correction
+- Le coffre de la Voie n'a pas de monument dont hériter une altitude : il se
+  décrit en **polaire** (r = 25, θ = 0) et son altitude sort de `topHeight` et
+  `surfaceRelief`, les deux fonctions dont descendent aussi le maillage et le
+  collider de l'île. C'est la seule façon qu'il ne flotte pas au prochain
+  réglage du relief
 - Séquence d'ouverture chronométrée en **temps réel** et non sur l'horloge de
   jeu, qui est gelée dès l'appui — même contrainte que l'overlay de téléportation
 

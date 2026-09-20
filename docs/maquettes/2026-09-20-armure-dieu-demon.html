@@ -1,0 +1,2143 @@
+<meta charset="utf-8">
+<title>Armure du Dieu Démon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --ground: #f2ede1;
+    --surface: #ffffff;
+    --ink: #1d2018;
+    --ink-2: #565c4c;
+    --ink-3: #888f78;
+    --line: #d5cfbb;
+    --accent: #4a7a2e;
+    --violet: #6d2fd0;
+
+    --step--1: 0.8125rem;
+    --step-0: 0.9375rem;
+    --step-1: 1.125rem;
+    --step-2: 1.5rem;
+    --step-4: clamp(2.5rem, 6vw, 3.75rem);
+
+    --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+    --display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --ground: #0a1020;
+      --surface: #131c30;
+      --ink: #e8eede;
+      --ink-2: #aab59a;
+      --ink-3: #737f66;
+      --line: #27334a;
+      --accent: #a8cd7a;
+      --violet: #b083ff;
+    }
+  }
+
+  :root[data-theme='dark'] {
+    --ground: #0a1020;
+    --surface: #131c30;
+    --ink: #e8eede;
+    --ink-2: #aab59a;
+    --ink-3: #737f66;
+    --line: #27334a;
+    --accent: #a8cd7a;
+    --violet: #b083ff;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--step-0);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding-inline: 20px;
+    padding-block: 28px 64px;
+  }
+
+  .masthead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px 28px;
+    margin-bottom: 22px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 6px;
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: var(--step-4);
+    font-weight: 600;
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .standfirst {
+    max-width: 50ch;
+    color: var(--ink-2);
+    margin: 10px 0 0;
+  }
+
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 13px;
+    border: 1px solid var(--violet);
+    border-radius: 999px;
+    color: var(--violet);
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    white-space: nowrap;
+  }
+
+  .status::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: currentColor;
+  }
+
+  /* --- Visionneuse -------------------------------------------------------- */
+
+  .viewer {
+    position: relative;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #0b1230;
+    aspect-ratio: 16 / 9;
+    min-height: 340px;
+  }
+
+  .viewer canvas { display: block; width: 100%; height: 100%; }
+
+  .viewer__loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #9fb08c;
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    background: #0b1230;
+  }
+
+  .rail {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    right: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    pointer-events: none;
+  }
+
+  .rail > * { pointer-events: auto; }
+
+  .rail__group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 8px;
+    background: rgba(8, 14, 32, 0.8);
+    border: 1px solid rgba(170, 190, 150, 0.22);
+    backdrop-filter: blur(8px);
+  }
+
+  .rail button {
+    appearance: none;
+    border: 0;
+    border-radius: 5px;
+    padding: 6px 11px;
+    background: transparent;
+    color: #c6d2b6;
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .rail button:hover { background: rgba(170, 190, 150, 0.16); color: #fff; }
+  .rail button[aria-pressed='true'] { background: #4f7a33; color: #fff; }
+  .rail button[aria-pressed='true'][data-pose] { background: #5b34a8; }
+  .rail button:focus-visible { outline: 2px solid #a8cd7a; outline-offset: 1px; }
+
+  .readout {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(8, 14, 32, 0.82);
+    border: 1px solid rgba(170, 190, 150, 0.22);
+    color: #c6d2b6;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.55;
+    max-width: 62%;
+  }
+
+  .readout b { color: #fff; font-weight: 500; }
+  .readout .pose { color: #c7a8ff; display: block; margin-top: 4px; }
+
+  .hint {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin: 10px 0 0;
+    color: var(--ink-3);
+    font-family: var(--mono);
+    font-size: var(--step--1);
+  }
+
+  /* --- Sections ----------------------------------------------------------- */
+
+  section { margin-top: 52px; }
+
+  h2 {
+    font-family: var(--display);
+    font-size: var(--step-2);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 6px;
+  }
+
+  .section-note {
+    max-width: 64ch;
+    color: var(--ink-2);
+    margin: 0 0 22px;
+  }
+
+  .tiers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .tier {
+    background: var(--surface);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .tier__swatch { width: 26px; height: 4px; border-radius: 999px; }
+
+  .tier__name {
+    font-family: var(--display);
+    font-size: var(--step-1);
+    font-weight: 600;
+  }
+
+  .tier__cote {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tier p { margin: 0; color: var(--ink-2); font-size: var(--step--1); }
+
+  table { width: 100%; border-collapse: collapse; font-size: var(--step--1); }
+  .table-scroll { overflow-x: auto; }
+
+  th, td {
+    text-align: left;
+    padding: 9px 14px 9px 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: baseline;
+  }
+
+  th {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  td:first-child { color: var(--ink); white-space: nowrap; }
+  td.num {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--accent);
+  }
+  td.yes { font-family: var(--mono); color: var(--violet); white-space: nowrap; }
+  td.no { font-family: var(--mono); color: var(--ink-3); white-space: nowrap; }
+  td:last-child { color: var(--ink-2); }
+
+  .mono { font-family: var(--mono); }
+
+  /* --- Frise de la parade ------------------------------------------------- */
+
+  .timeline {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    padding: 22px 20px 16px;
+    overflow-x: auto;
+  }
+
+  .track {
+    position: relative;
+    min-width: 560px;
+    height: 34px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--line), var(--line));
+    margin-bottom: 8px;
+  }
+
+  .track + .track { margin-top: 22px; }
+
+  .band {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: 5px;
+    display: grid;
+    place-items: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .band--tell { background: #8a8f7c; }
+  .band--cue { background: #6d2fd0; }
+  .band--parry { background: #4a7a2e; }
+  .band--fail { background: #b4553f; }
+  .band--punish { background: #d9a441; color: #241a14; }
+
+  .mark {
+    position: absolute;
+    top: -20px;
+    bottom: -16px;
+    width: 2px;
+    background: var(--ink);
+  }
+
+  .mark span {
+    position: absolute;
+    top: -4px;
+    left: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  .track__label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 6px;
+  }
+
+  .asks { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
+
+  .asks li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    align-items: baseline;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .asks li:first-child { border-top: 1px solid var(--line); }
+
+  .asks .q {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--violet);
+    letter-spacing: 0.08em;
+  }
+
+  .asks strong { font-weight: 600; display: block; }
+  .asks span { color: var(--ink-2); font-size: var(--step--1); }
+
+  footer {
+    margin-top: 52px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-3);
+    font-family: var(--mono);
+    font-size: var(--step--1);
+  }
+
+  @media (max-width: 620px) {
+    .viewer { aspect-ratio: 4 / 5; }
+    .readout { max-width: calc(100% - 24px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+
+  /* --- Ajouts propres à cette maquette ------------------------------------ */
+
+  .swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .swatch {
+    background: var(--surface);
+    padding: 13px 15px;
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .swatch i {
+    display: block;
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    border: 1px solid rgba(0, 0, 0, 0.18);
+  }
+
+  .swatch b {
+    display: block;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  .swatch span {
+    display: block;
+    font-size: var(--step--1);
+    color: var(--ink-2);
+    line-height: 1.4;
+  }
+
+  .swatch em {
+    font-style: normal;
+    color: var(--violet);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+
+  .plan {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    padding: 16px;
+  }
+
+  .plan svg { display: block; width: 100%; height: auto; }
+  .plan text { font-family: var(--mono); }
+
+  .two {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 22px;
+    align-items: start;
+  }
+
+  .callout {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--violet);
+    border-radius: 0 10px 10px 0;
+    background: var(--surface);
+    padding: 16px 18px;
+    margin-top: 22px;
+  }
+
+  .callout p { margin: 0; color: var(--ink-2); font-size: var(--step--1); }
+  .callout p + p { margin-top: 9px; }
+  .callout strong { color: var(--ink); }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">z-project · maquette de skin et de coffre</p>
+      <h1>L'Armure du Dieu Démon</h1>
+      <p class="standfirst">
+        Une cinquième tenue, posée dans un coffre sur la voie qui monte du
+        portail à la rotonde — celle que le joueur emprunte pour aller se faire
+        tuer par le Lynel. C'est le seul objet du jeu dont l'effet ne vaut
+        <em>que</em> contre un ennemi, et le seul qu'on trouve en chemin vers
+        l'adversaire qu'il sert à combattre.
+      </p>
+    </div>
+    <span class="status">à valider</span>
+  </header>
+
+  <div class="viewer" id="viewer">
+    <div class="viewer__loading" id="loading">construction du modèle…</div>
+    <div class="readout" id="readout"></div>
+    <div class="rail">
+      <div class="rail__group" role="group" aria-label="Point de vue">
+        <button type="button" data-view="face" aria-pressed="true">face</button>
+        <button type="button" data-view="dos" aria-pressed="false">dos</button>
+        <button type="button" data-view="tete" aria-pressed="false">la tête</button>
+        <button type="button" data-view="brassard" aria-pressed="false">le brassard</button>
+        <button type="button" data-view="tour" aria-pressed="false">tour</button>
+        <button type="button" data-view="jeu" aria-pressed="false">caméra du jeu</button>
+        <button type="button" data-view="fratrie" aria-pressed="false">les cinq</button>
+      </div>
+      <div class="rail__group" role="group" aria-label="Pose">
+        <button type="button" data-pose="repos" aria-pressed="true">repos</button>
+        <button type="button" data-pose="marche" aria-pressed="false">marche</button>
+        <button type="button" data-pose="coup" aria-pressed="false">coup d'épée</button>
+        <button type="button" data-pose="garde" aria-pressed="false">parade</button>
+        <button type="button" data-pose="air" aria-pressed="false">en l'air</button>
+      </div>
+      <div class="rail__group" role="group" aria-label="Calques">
+        <button type="button" data-layer="hood" aria-pressed="true">capuche</button>
+        <button type="button" data-layer="plate" aria-pressed="true">plastron</button>
+        <button type="button" data-layer="gems" aria-pressed="true">turquoises</button>
+        <button type="button" data-layer="weapon" aria-pressed="true">épée</button>
+        <button type="button" data-layer="outline" aria-pressed="true">contour</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">
+    <span>glisser — orbiter</span>
+    <span>molette — zoomer</span>
+    <span>clic droit — déplacer</span>
+    <span id="tris">—</span>
+  </p>
+
+  <section>
+    <h2>L'anatomie</h2>
+    <p class="section-note">
+      Le rig ne change pas. Les skins sont des habillages d'un squelette unique
+      — hanches à <span class="mono">0,44</span>, épaules à
+      <span class="mono">0,90</span>, tête à <span class="mono">1,20</span> — et
+      ce qui distingue une tenue d'une autre tient dans cinq pièces : le
+      vêtement de buste, la pièce de tête, le visage, l'habillage des bras et
+      celui des jambes. Voilà les cinq, et la raison de chacune.
+    </p>
+    <div class="tiers">
+      <div class="tier">
+        <span class="tier__swatch" style="background:#b7dcd6"></span>
+        <span class="tier__name">La capuche</span>
+        <span class="tier__cote">calotte 0,30 · ouverture 1,9 rad</span>
+        <p>
+          La seule pièce de tête des cinq qui <em>couvre</em> au lieu de
+          dépasser. Le chapeau est un disque large, la coupe courte une calotte,
+          la crinière une masse qui descend aux reins ; une capuche rabattue
+          ferme la silhouette et donne au casting son premier contour arrondi.
+          Elle porte le même ressort à un pas de retard que les autres, réglé
+          sec — une étoffe tendue sur un crâne frémit, elle ne flotte pas.
+        </p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#5f6672"></span>
+        <span class="tier__name">Le plastron d'os</span>
+        <span class="tier__cote">3 plaques · débord z = 0,10</span>
+        <p>
+          Trois plaques bombées, séparées de deux rainures d'ombre, et
+          <strong>posées en avant du vêtement</strong> plutôt que centrées sur
+          lui : c'est l'erreur qu'avait faite le plastron du clan à sa première
+          version, où l'armure disparaissait entièrement dans le manteau. Il
+          faut sortir du volume qu'on habille. Trois rangs et pas cinq : à
+          21 unités de recul, c'est le bombé qu'on lit, jamais le compte.
+        </p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#cfa24a"></span>
+        <span class="tier__name">Gorgerin et épaulière</span>
+        <span class="tier__cote">un seul côté · x = −0,30</span>
+        <p>
+          L'or est du côté du bras armé, et il n'y en a qu'un.
+          <strong>C'est la seule silhouette asymétrique du jeu</strong> : les
+          quatre autres tenues sont rigoureusement symétriques, et une épaule
+          plus haute que l'autre se reconnaît de dos, de profil et en pleine
+          course — ce qu'aucune couleur ne fait. La gemme d'ambre qui la ferme
+          est la seule pièce chaude du haut du corps.
+        </p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#2fb3a4"></span>
+        <span class="tier__name">La grappe de turquoises</span>
+        <span class="tier__cote">7 perles · poignet +X</span>
+        <p>
+          Sept perles pendues à un anneau d'or, nouées <strong>au poignet</strong>
+          et non à la ceinture : c'est là que les deux captures la montrent, et
+          un premier jet qui l'avait pendue à la hanche la perdait sous la jupe.
+          Au bras, elle bouge avec le geste. Elle est au poignet opposé à
+          l'épaulière, ce qui rééquilibre l'asymétrie sans l'annuler — une masse
+          d'or en haut à gauche, une grappe froide en bas à droite.
+        </p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#3e4450"></span>
+        <span class="tier__name">Ardoise et cuir</span>
+        <span class="tier__cote">gantelets 0,24 · bottes 0,16</span>
+        <p>
+          Les avant-bras sont pris dans deux gantelets d'ardoise à deux viroles,
+          gant compris — la pièce qui élargit la silhouette vue de face, comme
+          les bandes de lin du clan, et la seule masse franchement sombre d'une
+          tenue pâle. Les bottes montent en cuir brun sur un revers tan : les
+          deux seules teintes chaudes du bas du corps, et ce qui empêche
+          l'ensemble de virer au monochrome froid.
+        </p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <p>
+        <strong>Le visage, et le signe qui décide de tout.</strong> Trois
+        pièces portent la reconnaissance : la flèche sombre qui descend du front
+        entre les sourcils, les deux masques d'orbite, et le <strong>regard
+        entièrement blanc, sans pupille</strong>. Mais c'est
+        <strong>l'inclinaison des masques</strong> qui décide de ce qu'on lit, et
+        la première version l'avait à l'envers — coin extérieur bas, c'est-à-dire
+        un sourcil tombant : le personnage avait l'air <em>terrifié</em> et non
+        terrifiant. Le masque descend vers le nez, l'œil suit la même pente, et
+        il est plus large que haut — une fente, pas une bille. Un grand œil rond
+        et blanc, c'est de l'effroi ; une fente blanche sous un masque noir,
+        c'est un regard qui vise. La capuche a été descendue de deux centimètres
+        pour la même raison : elle enfonce le regard dans son ombre, et un regard
+        en retrait regarde de dessous. Ce dernier est la seule pièce non éclairée du modèle,
+        exactement comme les yeux du Lynel : un blanc éclairé redescendrait
+        sous le blanc des cheveux dès que la lumière tourne, et le regard
+        s'éteindrait — alors que c'est lui qui dit ce qu'est ce personnage. Les
+        oreilles pointues sont la première chose qu'une tenue de ce jeu ajoute
+        au crâne : elles se posent <em>par-dessus</em> les oreilles rondes du
+        rig, elles ne les remplacent pas, pour qu'ôter la tenue rende le
+        personnage exactement tel qu'il était.
+      </p>
+      <p>
+        <strong>Ce que la maquette ne prend pas à la référence.</strong> Le
+        personnage mesure 1,6 unité et se regarde à 21 de recul : tout ce qui
+        est gravé, strié ou dégradé disparaît avant d'arriver à l'écran. On
+        abandonne donc les motifs du tissu, les fines nervures des gantelets et
+        la ciselure du gorgerin, et on garde les cinq masses qui survivent au
+        recul. Clique sur <span class="mono">caméra du jeu</span> : c'est le
+        cadre réel, aux cotes exactes, et c'est là que se juge un skin.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Cotes</h2>
+    <p class="section-note">
+      Les cotes ci-dessous sont <strong>mesurées sur le modèle affiché</strong>
+      à chaque chargement de la page, pas recopiées à la main : si la géométrie
+      change, le tableau change avec elle.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Cote</th><th>Mesure</th><th>Tenue la plus proche</th><th>Pourquoi ce nombre</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Hauteur hors-tout</td>
+            <td class="num" data-cote="height">—</td>
+            <td>toutes</td>
+            <td>Le squelette est partagé : aucune tenue ne change la taille du personnage.</td>
+          </tr>
+          <tr>
+            <td>Largeur aux épaules</td>
+            <td class="num" data-cote="width">—</td>
+            <td>le clan, 0,78</td>
+            <td>L'épaulière déborde d'un seul côté : la silhouette est large, et de travers.</td>
+          </tr>
+          <tr>
+            <td>Débord du plastron</td>
+            <td class="num" data-cote="chest">—</td>
+            <td>le clan, 0,27</td>
+            <td>Mesuré depuis l'axe. En deçà, l'armure s'enfouit dans le vêtement et la tenue se lit comme une robe.</td>
+          </tr>
+          <tr>
+            <td>Sommet de la capuche</td>
+            <td class="num" data-cote="hood">—</td>
+            <td>le chapeau, 1,50</td>
+            <td>Plus basse que le chapeau de paille, plus haute que la coupe courte : elle épouse le crâne au lieu de s'en détacher.</td>
+          </tr>
+          <tr>
+            <td>Grappe de turquoises</td>
+            <td class="num" data-cote="gems">—</td>
+            <td>les fourreaux, 0,30</td>
+            <td>Débord latéral depuis l'axe, poignet compris. Au-delà, la grappe bat contre la jupe à la course.</td>
+          </tr>
+          <tr>
+            <td>Primitives</td>
+            <td class="num" data-cote="parts">—</td>
+            <td>la tenue du clan, 61</td>
+            <td>Maillages du seul personnage, contours exclus. Même ordre de grandeur que les quatre autres.</td>
+          </tr>
+          <tr>
+            <td>Triangles</td>
+            <td class="num" data-cote="tris">—</td>
+            <td>—</td>
+            <td>Rendus une fois par image, sans instanciation. Le décor en compte cent fois plus.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>La palette</h2>
+    <p class="section-note">
+      Une tenue ne choisit pas librement ses couleurs : le rig impose
+      <strong>quinze champs fixes</strong>, les mêmes pour tout le monde, et une
+      pièce qui n'a pas de champ à elle en détourne un. Les trois détournements
+      sont marqués ci-dessous, et l'un des trois a une conséquence visible en
+      jeu — voir la note.
+    </p>
+    <div class="swatches">
+      <div class="swatch"><i style="background:#b7dcd6"></i><div><b>garment #b7dcd6</b><span>Céladon pâle : capuche, manches bouffantes, jupe.</span></div></div>
+      <div class="swatch"><i style="background:#5f6672"></i><div><b>belt #5f6672</b><span>Acier : les trois plaques du plastron, la ceinture, le coude.</span></div></div>
+      <div class="swatch"><i style="background:#1a1d28"></i><div><b>scar #1a1d28</b><span>Rainures des plaques, viroles, et les marques du visage. <em>détourné</em></span></div></div>
+      <div class="swatch"><i style="background:#3e4450"></i><div><b>grip #3e4450</b><span>L'ardoise des gantelets et des gants. <em>détourné</em></span></div></div>
+      <div class="swatch"><i style="background:#2fb3a4"></i><div><b>cord #2fb3a4</b><span>Les sept turquoises de la hanche. <em>détourné</em></span></div></div>
+      <div class="swatch"><i style="background:#cfa24a"></i><div><b>gear #cfa24a</b><span>Or : gorgerin, épaulière, anneau de la grappe.</span></div></div>
+      <div class="swatch"><i style="background:#f3d789"></i><div><b>gearTrim #f3d789</b><span>Or clair : liseré de l'épaulière, revers des bottes.</span></div></div>
+      <div class="swatch"><i style="background:#242b40"></i><div><b>trouser #242b40</b><span>Le collant d'encre : jambes et sous-manches.</span></div></div>
+      <div class="swatch"><i style="background:#eef1f4"></i><div><b>hair #eef1f4</b><span>Blanc : les mèches qui s'échappent de la capuche.</span></div></div>
+      <div class="swatch"><i style="background:#f0c7a2"></i><div><b>skin #f0c7a2</b><span>Peau pâle, un ton au-dessus des quatre autres tenues.</span></div></div>
+      <div class="swatch"><i style="background:#f2f6ff"></i><div><b>eye #f2f6ff</b><span>Blanc pur, sans pupille, et non éclairé. Ce qui dit « démon ».</span></div></div>
+      <div class="swatch"><i style="background:#7d5636"></i><div><b>boot #7d5636</b><span>Cuir brun : la botte elle-même.</span></div></div>
+      <div class="swatch"><i style="background:#cfa24a"></i><div><b>guard #cfa24a</b><span>La garde de l'épée reprend l'or du gorgerin.</span></div></div>
+      <div class="swatch"><i style="background:#dde6ef"></i><div><b>blade #dde6ef</b><span>L'acier, commun à toutes les tenues.</span></div></div>
+      <div class="swatch"><i style="background:#141a2a"></i><div><b>outline #141a2a</b><span>Contour bleu nuit : un cerne brun sur du céladon vire au kaki.</span></div></div>
+    </div>
+
+    <div class="callout">
+      <p>
+        <strong>Le prix d'un détournement.</strong>
+        <span class="mono">cord</span> est la ligature du katana. Une tenue qui
+        s'en sert pour ses gemmes donne donc à Kusanagi une poignée
+        <em>turquoise</em> tant qu'on porte les deux. C'est le prix d'une palette
+        à quinze champs ; il vaut mieux que d'ajouter un seizième champ que les
+        quatre autres tenues laisseraient vide.
+      </p>
+      <p>
+        <strong>L'accent, lui, n'est pas tranché</strong> — c'est la première
+        question en fin de page. L'accent est la teinte qui porte la carte
+        d'objet, la pastille d'inventaire et l'éclat du coffre. L'inventaire
+        compte déjà deux teintes froides : le jade de Kusanagi
+        <span class="mono">#4fc9a3</span> et la nacre des écailles
+        <span class="mono">#7fd4e8</span>. Un céladon en ferait une troisième.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ce que la tenue fait</h2>
+    <p class="section-note">
+      Un seul effet, et c'est le premier du jeu qui dépende de
+      <strong>qui frappe</strong> : les dégâts du Lynel sont divisés par deux.
+      Tout le reste du monde — octoroks, moblins, chutes — cogne au tarif plein.
+      C'est une armure taillée contre une bête précise, trouvée sur la route qui
+      mène à elle, et elle ne sert à rien ailleurs.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Attaque du Lynel</th><th>Dégâts</th><th>Avec l'armure</th><th>Coups avant la mort, à 5 cœurs</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Balayage</td><td class="num">2</td><td class="yes">1</td><td>3 → 5</td></tr>
+          <tr><td>Estoc</td><td class="num">2</td><td class="yes">1</td><td>3 → 5</td></tr>
+          <tr><td>Piétinement</td><td class="num">2</td><td class="yes">1</td><td>3 → 5</td></tr>
+          <tr><td>Souffle</td><td class="num">2</td><td class="yes">1</td><td>3 → 5</td></tr>
+          <tr><td>Charge</td><td class="num">3</td><td class="yes">2</td><td>2 → 3</td></tr>
+          <tr><td>Volée de flèches</td><td class="num">1</td><td class="no">1</td><td>5 → 5 <span class="mono">(plancher)</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <p>
+        <strong>Deux arrondis à valider, et ils changent le combat.</strong>
+        Les cœurs sont des entiers : <span class="mono">damageTaken</span>
+        arrondit, et plancher à 1. La charge à 3 devient donc
+        <span class="mono">Math.round(1,5) = 2</span>, soit un tiers de moins et
+        non la moitié — c'est la seule attaque que l'armure ne divise pas
+        vraiment, et c'est plutôt heureux : elle reste le coup qu'il faut
+        esquiver. La volée à 1 reste à 1, arrêtée par le plancher qui existe
+        déjà et qui empêche qu'un multiplicateur rende immortel.
+      </p>
+      <p>
+        Résultat net, à cinq cœurs : <strong>l'épée du Lynel met cinq coups à
+        tuer au lieu de trois</strong>, et sa charge trois au lieu de deux.
+        L'armure paie donc surtout au corps à corps, là où tombent les quatre
+        attaques d'épée — c'est-à-dire qu'elle récompense le joueur qui reste à
+        portée, celui qui apprend la parade, et pas celui qui tourne autour de
+        l'arène en attendant une ouverture.
+      </p>
+    </div>
+
+    <h3 style="font-family:var(--display);font-size:var(--step-1);margin:30px 0 6px">Ce qu'elle coûte</h3>
+    <p class="section-note">
+      Aucun objet du jeu n'est un gain sec ; celui-ci ne peut pas l'être non
+      plus. Proposition, et elle est discutable — c'est la deuxième question.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Champ</th><th>Valeur</th><th>Les autres tenues</th><th>Pourquoi</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Cœurs jaunes</td><td class="num">0</td><td class="mono">+1 · +2 · +3</td>
+            <td>La seule tenue du jeu qui n'en donne aucun. Elle ne protège pas : elle protège <em>du Lynel</em>.</td>
+          </tr>
+          <tr>
+            <td>Course</td><td class="num">×0,95</td><td class="mono">1 · 1,18 · 0,92 · 1,08</td>
+            <td>Des plaques et des gantelets de pierre. Moins lourde que la tenue du clan, qui rend trois cœurs pour ce prix.</td>
+          </tr>
+          <tr>
+            <td>Détente</td><td class="num">×0,90</td><td class="mono">1,2 · 1 · 0,95 · 1,30</td>
+            <td>La hauteur d'un saut varie comme le carré : ×0,90, c'est 19 % de franchissement en moins. Ça se sent hors de l'arène, et c'est le but.</td>
+          </tr>
+          <tr>
+            <td>Dégâts d'épée</td><td class="num">×1</td><td class="mono">×1</td>
+            <td>Une tenue ne touche pas à l'arme ; c'est l'emplacement <span class="mono">weapon</span> qui s'en charge.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="section-note" style="margin-top:18px">
+      Lue d'un coup, la table dit : <strong>c'est une tenue qu'on enfile pour un
+      combat et qu'on retire après.</strong> C'est le premier objet du jeu à
+      faire exister vraiment le système d'emplacements — jusqu'ici, la meilleure
+      tenue était la meilleure partout.
+    </p>
+  </section>
+
+  <section>
+    <h2>Où est le coffre</h2>
+    <p class="section-note">
+      Sur la voie, plein sud, <strong>4,5 unités après l'arche</strong> de
+      l'enceinte. Le joueur sort du portail en <span class="mono">z = 48</span>
+      face au nord, monte la rampe d'arrivée, franchit la porte — et le coffre
+      est là, dans l'axe, avant la traversée du jardin et la montée vers la
+      rotonde. Il n'y a pas un endroit de cette carte où l'on puisse moins le
+      manquer.
+    </p>
+
+    <div class="plan">
+        <svg viewBox="0 0 640 440" role="img" aria-label="Plan de l'Île Céleste vue du dessus : le portail au sud, la porte de l'enceinte, le coffre sur la voie, la rotonde au centre.">
+          <!-- Le bord de l'île -->
+          <circle cx="320" cy="200" r="181.5" fill="none" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="5 4"/>
+          <!-- Terrasse du jardin (r=32) et enceinte (r=29,5) -->
+          <circle cx="320" cy="200" r="105.6" fill="none" stroke="var(--line)" stroke-width="1"/>
+          <circle cx="320" cy="200" r="97.4" fill="none" stroke="var(--ink-3)" stroke-width="2"/>
+          <!-- Falaise du cœur (r=14) et rotonde (r=11,5) -->
+          <circle cx="320" cy="200" r="46.2" fill="none" stroke="var(--line)" stroke-width="1"/>
+          <circle cx="320" cy="200" r="38" fill="none" stroke="var(--violet)" stroke-width="2"/>
+          <text x="320" y="204" text-anchor="middle" font-size="11" fill="var(--violet)">rotonde</text>
+          <text x="320" y="218" text-anchor="middle" font-size="10" fill="var(--ink-3)">le Lynel</text>
+
+          <!-- La voie : l'axe sud -->
+          <line x1="320" y1="373" x2="320" y2="238" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- Les deux rampes intérieures, à ±60° de l'axe : aucune ne monte
+               plein sud, et c'est ce qui force le tiers de tour dans le jardin
+               avant d'atteindre l'arène. -->
+          <path d="M320 245 L394 243 L360 223" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 4"/>
+          <path d="M320 245 L246 243 L280 223" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 4"/>
+          <text x="404" y="252" font-size="10" fill="var(--ink-3)">les rampes — ±60°</text>
+
+          <!-- Le portail du retour -->
+          <circle cx="320" cy="373" r="6" fill="none" stroke="var(--violet)" stroke-width="2.5"/>
+          <text x="332" y="378" font-size="11" fill="var(--ink-2)">portail — z 52,5</text>
+
+          <!-- Point d'arrivée -->
+          <circle cx="320" cy="358" r="3.5" fill="var(--ink-3)"/>
+          <text x="332" y="356" font-size="10" fill="var(--ink-3)">arrivée — z 48</text>
+
+          <!-- La porte de l'enceinte -->
+          <rect x="310" y="292" width="20" height="10" fill="var(--ink-3)"/>
+          <text x="344" y="303" font-size="11" fill="var(--ink-2)">l'arche — r 29,5</text>
+
+          <!-- Le coffre -->
+          <rect x="313" y="277" width="14" height="10" rx="2" fill="var(--accent)"/>
+          <circle cx="320" cy="282" r="14" fill="none" stroke="var(--accent)" stroke-width="1" stroke-dasharray="3 3"/>
+          <text x="344" y="266" font-size="12" fill="var(--accent)" font-weight="600">le coffre</text>
+          <text x="344" y="279" font-size="10" fill="var(--ink-3)">(0 ; 3,61 ; 25)</text>
+
+          <!-- Cotes -->
+          <line x1="297" y1="282" x2="297" y2="297" stroke="var(--ink-3)" stroke-width="1"/>
+          <text x="268" y="294" font-size="10" fill="var(--ink-3)">4,5</text>
+          <line x1="297" y1="238" x2="297" y2="282" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="2 3"/>
+          <text x="186" y="262" font-size="10" fill="var(--ink-3)">13,5 jusqu'à l'arène</text>
+
+          <!-- L'arbre -->
+          <circle cx="272" cy="150" r="17.8" fill="var(--accent)" opacity="0.18"/>
+          <text x="248" y="128" font-size="10" fill="var(--ink-3)">l'arbre</text>
+
+          <!-- La salle à colonnes -->
+          <g opacity="0.5">
+            <circle cx="377" cy="169" r="3" fill="var(--ink-3)"/>
+            <circle cx="392" cy="180" r="3" fill="var(--ink-3)"/>
+            <circle cx="404" cy="193" r="3" fill="var(--ink-3)"/>
+          </g>
+          <text x="392" y="158" font-size="10" fill="var(--ink-3)">colonnade</text>
+
+          <text x="320" y="414" text-anchor="middle" font-size="11" fill="var(--ink-3)">SUD — la caméra du jeu regarde vers le haut de ce plan</text>
+        </svg>
+    </div>
+
+    <div class="two" style="margin-top:22px">
+      <div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Contrainte</th><th>Mesure</th><th>Seuil</th></tr></thead>
+            <tbody>
+              <tr><td>Sur la voie</td><td class="num">θ = 0</td><td>l'axe exact de la rampe d'arrivée et de l'arche</td></tr>
+              <tr><td>Sol plat</td><td class="num">pente 0,00</td><td>le point de crête du jardin, mesuré sur <span class="mono">topHeight</span></td></tr>
+              <tr><td>Hors de l'arche</td><td class="num">4,5</td><td>piédroits à ±2,25 en x, coffre large de 1,35</td></tr>
+              <tr><td>Loin de l'arène</td><td class="num">13,5</td><td>le Lynel ne quitte jamais son dallage (r 11,5)</td></tr>
+              <tr><td>Loin du portail</td><td class="num">27,5</td><td>zone du portail : 7. Aucune concurrence sur la touche <span class="mono">F</span></td></tr>
+              <tr><td>Hors végétation</td><td class="num">—</td><td>le semis s'interdit déjà les couloirs de rampe : la voie est nue par construction</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout" style="margin-top:0">
+          <p>
+            <strong>L'altitude n'est pas écrite, elle est calculée.</strong> Les
+            cinq coffres du continent se décrivent dans le repère de leur
+            monument ; celui-ci n'a pas de monument. Il se décrit en
+            <strong>polaire</strong> — un rayon, un cap — et son altitude sort de
+            <span class="mono">groundAt(r, θ)</span>, le même échantillonneur que
+            le maillage et le collider de l'île. C'est la seule façon qu'il ne
+            flotte ni ne s'enfonce au prochain réglage du relief.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ce que ça coûte à implémenter</h2>
+    <p class="section-note">
+      Deux choses, et la seconde est la vraie : la tenue est du dessin, le
+      coffre est de l'architecture. <strong>Il n'existe aujourd'hui aucun coffre
+      sur l'Île Céleste</strong> — les cinq coffres du jeu sont ancrés à un
+      monument du continent, et la boucle qui les met à portée vit dans le
+      composant des monuments, qui n'est pas monté sur la carte céleste.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Fichier</th><th>Ce qu'on y fait</th><th>Poids</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">models/HeroPlaceholder.tsx</td><td>La palette, les cinq pièces, l'entrée dans <span class="mono">SKINS</span>.</td><td class="num">≈ 300 l.</td></tr>
+          <tr><td class="mono">inventory/ItemIllustration.tsx</td><td>La carte de l'objet, en SVG, aux mêmes teintes.</td><td class="num">≈ 120 l.</td></tr>
+          <tr><td class="mono">inventory/ItemIcon.tsx</td><td>La pastille d'inventaire.</td><td class="num">≈ 20 l.</td></tr>
+          <tr><td class="mono">config/items.ts</td><td><span class="mono">OutfitId</span>, les aptitudes, l'objet, et le champ <span class="mono">damageBy</span>.</td><td class="num">≈ 60 l.</td></tr>
+          <tr><td class="mono">config/chests.ts</td><td>Un coffre ancré en polaire au lieu d'un monument.</td><td class="num">≈ 60 l.</td></tr>
+          <tr><td class="mono">store/useGameStore.ts</td><td><span class="mono">damagePlayer(amount, from)</span> et <span class="mono">damageTaken(amount, from)</span>.</td><td class="num">≈ 25 l.</td></tr>
+          <tr><td class="mono">components/Lynel.tsx</td><td>Cinq appels à <span class="mono">damagePlayer</span> qui disent désormais qui frappe.</td><td class="num">≈ 6 l.</td></tr>
+          <tr><td class="mono">skyisland/*.tsx</td><td>Monter le coffre et sa boucle de proximité sur la carte céleste.</td><td class="num">≈ 70 l.</td></tr>
+          <tr><td class="mono">i18n/fr.json · en.json</td><td>Nom, provenance, description, effet — dans les deux langues.</td><td class="num">≈ 16 l.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <p>
+        <strong>Trois pièges déjà repérés.</strong>
+        <em>Un</em> — la boucle de proximité des coffres compare des
+        <span class="mono">x</span> et des <span class="mono">z</span> sans
+        regarder la carte : un coffre céleste ajouté à la table commune
+        s'ouvrirait aussi depuis le continent, au même point du relief. Les
+        coffres doivent donc déclarer leur carte.
+        <em>Deux</em> — <span class="mono">hasEffect()</span> décide si la carte
+        d'objet affiche sa ligne d'effet ; un champ d'effet ajouté sans être
+        listé là donne un objet dont le texte est écrit, traduit, et jamais
+        montré. C'est écrit noir sur blanc dans le fichier, ça a failli coûter
+        cher une fois.
+        <em>Trois</em> — le Lynel inflige aussi des dégâts de contact hors table
+        d'attaques (le piétinement de course, 1 cœur) : il compte comme du
+        Lynel, ou l'armure aura un trou.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Une collision à arbitrer</h2>
+    <p class="section-note">
+      Un second chantier tournait en parallèle pendant que cette page s'écrivait,
+      sur la branche <span class="mono">feature/skin-pain-coffre-rotonde</span>,
+      et il a livré pendant ce temps : le <strong>manteau de l'Aube</strong> —
+      quatrième tenue — dans un <strong>coffre posé au pied d'une travée
+      écroulée de la rotonde</strong>. Je n'y ai pas touché, et cette maquette
+      est écrite depuis <span class="mono">main</span>, qui ne l'a pas encore.
+    </p>
+    <p class="section-note">
+      La bonne nouvelle est qu'il a écrit l'infrastructure : un coffre y déclare
+      désormais sa carte (<span class="mono">map: 'continent' | 'sky'</span>), et
+      la carte céleste sait poser un coffre et le mettre à portée. Mon coffre s'y
+      branche au lieu de l'inventer — <strong>à condition de partir de sa branche
+      une fois fusionnée</strong>, et non de refaire la même chose à côté. Je
+      rebase, je ne réécris pas.
+    </p>
+    <p class="section-note">
+      Il reste deux conséquences pour toi. La tenue devient la
+      <strong>cinquième</strong>, pas la quatrième — la vue
+      <span class="mono">les cinq</span> de la visionneuse la compare bien aux
+      quatre autres, manteau de l'Aube compris. Et l'île porte alors
+      <strong>deux coffres</strong> : le mien sur la voie, le sien dans l'arène.
+      C'est la dernière question de la page.
+    </p>
+  </section>
+
+  <section>
+    <h2>Ce que j'attends de toi</h2>
+    <p class="section-note">
+      Six décisions qui changent le travail. Le reste — la courbe exacte des
+      plaques, le nombre de perles, la teinte du céladon — je le tranche et tu
+      corriges après l'avoir vu bouger.
+    </p>
+    <ul class="asks">
+      <li>
+        <span class="q">01</span>
+        <div>
+          <strong>Le modèle : est-ce la bonne armure ?</strong>
+          <span>
+            C'est la seule question qui décide de tout le reste. Regarde-la en
+            <span class="mono">face</span>, puis en
+            <span class="mono">caméra du jeu</span> : ce que la référence a de
+            reconnaissable — la capuche céladon, le plastron d'acier, l'épaulière
+            d'or asymétrique et la grappe de turquoises au poignet — tient-il à 21 unités
+            recul ? Si l'une des quatre ne se lit pas, c'est elle qu'il faut
+            grossir, pas en ajouter une cinquième.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">02</span>
+        <div>
+          <strong>Ce qu'elle coûte : rien, ou du déplacement ?</strong>
+          <span>
+            J'ai pris zéro cœur jaune et −5 % de course, −10 % de détente : une
+            tenue de spécialiste, qu'on met pour l'arène et qu'on retire après.
+            L'alternative est de la faire neutre au déplacement et de lui donner
+            deux cœurs comme les autres — plus généreuse, mais alors elle est
+            meilleure que les quatre autres partout, et elle les retire du jeu le
+            jour où elle tombe. Je tiens à ma version, mais c'est ton
+            arbitrage.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">03</span>
+        <div>
+          <strong>L'effet est-il réservé au Lynel ?</strong>
+          <span>
+            Techniquement, le champ que j'ajoute est une table par espèce :
+            écrire <span class="mono">{ lynel: 0.5 }</span> ou
+            <span class="mono">{ lynel: 0.5, moblin: 0.75 }</span> coûte le même
+            travail. Réservé au Lynel, l'objet raconte quelque chose et ne
+            déséquilibre rien ; étendu, il devient une armure générique et le
+            reste du jeu devient plus facile d'un coup. Je réserve.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">04</span>
+        <div>
+          <strong>L'accent : céladon, ou autre chose ?</strong>
+          <span>
+            L'accent porte la carte, la pastille et l'éclat du coffre. Le
+            céladon <span class="mono">#b7dcd6</span> est juste — c'est la
+            couleur de la tenue — mais il ferait la troisième teinte froide de
+            l'inventaire, après le jade du katana et la nacre des écailles. Les
+            deux sorties possibles : l'assumer (le céladon est pâle et
+            désaturé, les deux autres sont francs), ou prendre l'or du gorgerin
+            — unique en valeur, mais l'or est déjà la couleur de « il y a
+            quelque chose à prendre » dans tout le jeu.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">05</span>
+        <div>
+          <strong>Le coffre dans l'axe, ou de côté ?</strong>
+          <span>
+            Tu as dit « sur la route, bien visible » : je l'ai mis dans l'axe
+            exact, à 4,5 de l'arche. Il a un collider, donc il se contourne — un
+            obstacle d'1,35 sur une terrasse de quinze, ce n'est rien, et c'est
+            la seule position qui le rende impossible à manquer. Si tu préfères
+            une voie dégagée, je le décale de deux unités sur la gauche : il
+            reste dans le cadre, il ne barre plus le passage.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">06</span>
+        <div>
+          <strong>Deux coffres sur l'île, ou un seul ?</strong>
+          <span>
+            Le chantier parallèle en pose un dans la rotonde, sur le cadavre du
+            Lynel. Avec le mien, l'île en compte deux : un avant le combat, un
+            après. Ça se défend très bien — on s'arme en montant, on est
+            récompensé en redescendant — mais ça fait deux ouvertures de coffre
+            en cinq minutes de jeu, et la séquence d'ouverture dure une seconde
+            et demie et gèle la partie. Dis-moi si je livre quand même, si
+            j'attends le sien, ou si l'un des deux doit devenir autre chose.
+          </span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <footer>
+    Maquette — géométrie procédurale, palette et cel-shading repris du jeu.
+    Rien de ce qui est ici n'est encore dans le dépôt : ni la tenue, ni le
+    coffre, ni le champ de dégâts par espèce. Les cotes du tableau sont mesurées
+    sur le modèle affiché à chaque chargement ; si la géométrie change, elles
+    changent avec elle.
+  </footer>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ------------------------------------------------------------------ cotes */
+
+/*
+  Les hauteurs de référence du squelette, en unités monde — littéralement les
+  constantes de `HeroPlaceholder`. Elles vivent ici et nulle part ailleurs :
+  une tenue est un habillage, elle ne déplace jamais une articulation, et
+  recopier ces trois nombres serait le plus sûr moyen de dessiner une armure
+  qui ne tombe pas sur le corps qu'elle habille.
+*/
+const HIP_Y = 0.44;
+const SHOULDER_Y = 0.90;
+const HEAD_Y = 1.20;
+const OUTLINE = 0.028;
+
+/** Demi-ouverture de la capuche, en radians. L'ouverture donne sur +Z. */
+const HOOD_OPEN = 1.02;
+
+/* --------------------------------------------------------------- palette */
+
+const C = {
+  garment: 0xb7dcd6,
+  belt: 0x5f6672,
+  scar: 0x1a1d28,
+  grip: 0x3e4450,
+  cord: 0x2fb3a4,
+  gear: 0xcfa24a,
+  gearTrim: 0xf3d789,
+  trouser: 0x242b40,
+  hair: 0xeef1f4,
+  skin: 0xf0c7a2,
+  eye: 0xf2f6ff,
+  boot: 0x7d5636,
+  guard: 0xcfa24a,
+  blade: 0xdde6ef,
+  outline: 0x141a2a,
+  // Le décor : la pierre de l'Île Céleste et son ciel, repris tels quels.
+  stone: 0xc2c1b2,
+  stoneMid: 0x9d9d8e,
+  lawn: 0x8fbf63,
+  zenith: 0x2f3f8f,
+  horizon: 0x7f9ad6,
+  glowSky: 0xbfd6f2,
+};
+
+/*
+  Les palettes des quatre tenues déjà dans le dépôt, à la valeur près.
+
+  Elles ne servent qu'à la vue « les cinq » : la question qu'un skin de plus
+  doit affronter n'est pas « est-il beau » mais « se distingue-t-il des autres
+  en un coup d'œil ». Les silhouettes de repère sont volontairement sommaires —
+  masses et teintes, pas les modèles du jeu.
+*/
+const SIBLINGS = [
+  {
+    name: 'le chapeau de paille',
+    garment: 0xd23a33, trouser: 0x2f62b5, belt: 0xe5b13c, skin: 0xf0bd88,
+    hair: 0x181520, boot: 0x8a5a2b, gear: 0xe8cf8a, gearTrim: 0xa8332c,
+    outline: 0x2a1720, kind: 'hat',
+  },
+  {
+    name: 'le bretteur',
+    garment: 0x1f6b3c, trouser: 0x2b2733, belt: 0x57a544, skin: 0xefbb86,
+    hair: 0x6fa83c, boot: 0x1d1a24, gear: 0x1b1822, gearTrim: 0xd8a93f,
+    outline: 0x171226, kind: 'crop',
+  },
+  {
+    name: 'le clan',
+    garment: 0x4b4062, trouser: 0xece4d4, belt: 0x7d1f22, skin: 0xf0c39c,
+    hair: 0x1a1723, boot: 0x2f2a3d, gear: 0xa8302f, gearTrim: 0xd8a93f,
+    outline: 0x161226, kind: 'mane',
+  },
+  {
+    // Livrée pendant que cette maquette s'écrivait, sur une autre branche :
+    // voir la section « une collision à arbitrer ».
+    name: 'le manteau de l’Aube',
+    garment: 0x171724, trouser: 0x2f3549, belt: 0x8d2029, skin: 0xf0cdad,
+    hair: 0xea7a24, boot: 0x3b4763, gear: 0xab2630, gearTrim: 0xf2ece1,
+    outline: 0x120e22, kind: 'crown',
+  },
+];
+
+/* ------------------------------------------------------------- matériaux */
+
+/*
+  La rampe de cel-shading du jeu : trois marches, échantillonnées au plus
+  proche. Sans NearestFilter le GPU interpole entre les bandes et il ne reste
+  qu'un dégradé lisse — c'est-à-dire plus aucun cel-shading.
+*/
+const gradient = new THREE.DataTexture(
+  new Uint8Array([88, 88, 88, 255, 176, 176, 176, 255, 255, 255, 255, 255]),
+  3, 1, THREE.RGBAFormat
+);
+gradient.minFilter = THREE.NearestFilter;
+gradient.magFilter = THREE.NearestFilter;
+gradient.needsUpdate = true;
+
+const toon = (options) => new THREE.MeshToonMaterial({ gradientMap: gradient, ...options });
+
+const MAT = {};
+for (const key of ['garment', 'belt', 'scar', 'grip', 'cord', 'gear', 'gearTrim',
+                   'trouser', 'hair', 'skin', 'eye', 'boot', 'blade', 'stone',
+                   'stoneMid', 'lawn']) {
+  MAT[key] = toon({ color: C[key] });
+}
+// L'or porte un émissif, la pierre non : dans un rendu à trois marches, c'est
+// le seul moyen de faire *briller* une pièce plutôt que de la peindre en jaune.
+MAT.gear = toon({ color: C.gear, emissive: C.gear, emissiveIntensity: 0.22 });
+MAT.gearTrim = toon({ color: C.gearTrim, emissive: C.gear, emissiveIntensity: 0.35 });
+// Les turquoises doivent se lire comme des pierres et non comme du tissu
+// peint, donc un émissif franc.
+MAT.cord = toon({ color: C.cord, emissive: C.cord, emissiveIntensity: 0.45 });
+/*
+  Le regard, en `MeshBasicMaterial` : non éclairé, donc toujours au-dessus du
+  seuil de bloom du jeu quelle que soit l'orientation de la tête. Un blanc
+  *éclairé* redescendrait sous le blanc des cheveux dès que la lumière tourne,
+  et le regard s'éteindrait — alors que c'est lui qui dit ce qu'est ce
+  personnage. C'est le même réglage que les yeux du Lynel.
+*/
+MAT.eye = new THREE.MeshBasicMaterial({ color: C.eye });
+/** La gemme de l'épaulière : le seul point chaud de la tenue. */
+MAT.amber = toon({ color: 0xc4602c, emissive: 0xc4602c, emissiveIntensity: 0.3 });
+// Doubles faces : la capuche et la jupe sont des cylindres ouverts. Sans
+// `DoubleSide`, on voit au travers dès que le personnage se présente de
+// trois-quarts arrière — le même piège que le gilet du premier skin.
+MAT.garmentOpen = toon({ color: C.garment, side: THREE.DoubleSide });
+MAT.beltOpen = toon({ color: C.belt, side: THREE.DoubleSide });
+
+/*
+  Le contour, exactement comme `<Outlines>` de drei : la même géométrie rendue
+  en face arrière, sommets poussés le long de leur normale.
+*/
+const OUTLINE_MAT = new THREE.ShaderMaterial({
+  side: THREE.BackSide,
+  uniforms: {
+    uThickness: { value: OUTLINE },
+    uColor: { value: new THREE.Color(C.outline) },
+  },
+  vertexShader: `
+    uniform float uThickness;
+    void main() {
+      vec3 shifted = position + normalize(normal) * uThickness;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(shifted, 1.0);
+    }`,
+  fragmentShader: `
+    uniform vec3 uColor;
+    void main() { gl_FragColor = vec4(uColor, 1.0); }`,
+});
+
+const OUTLINES = [];
+
+/** Ajoute le contour à un maillage, et le retient pour le calque. */
+function outline(mesh) {
+  const shell = new THREE.Mesh(mesh.geometry, OUTLINE_MAT);
+  shell.userData.outline = true;
+  mesh.add(shell);
+  OUTLINES.push(shell);
+  return mesh;
+}
+
+/** Pose une primitive. Le seul chemin par lequel une pièce entre dans la scène. */
+function part(parent, geometry, material, position, rotation, scale) {
+  const mesh = new THREE.Mesh(geometry, material);
+  if (position) mesh.position.set(position[0], position[1], position[2]);
+  if (rotation) mesh.rotation.set(rotation[0], rotation[1], rotation[2]);
+  if (scale) mesh.scale.set(scale[0], scale[1], scale[2]);
+  parent.add(mesh);
+  return mesh;
+}
+
+/* ----------------------------------------------------------------- scène */
+
+const viewer = document.getElementById('viewer');
+const readout = document.getElementById('readout');
+const loading = document.getElementById('loading');
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+viewer.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+
+/*
+  Le FOV du jeu, et pas un autre. 48° est le réglage qui fabrique le rendu
+  « diorama » ; une focale plus large redresserait les fuyantes et donnerait à
+  la tenue une perspective qu'elle n'aura jamais à l'écran.
+*/
+const camera = new THREE.PerspectiveCamera(48, 16 / 9, 0.05, 400);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 0.6;
+controls.maxDistance = 60;
+controls.autoRotateSpeed = 0.7;
+
+const sky = new THREE.Mesh(
+  new THREE.SphereGeometry(200, 32, 24),
+  new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    depthWrite: false,
+    uniforms: {
+      uZenith: { value: new THREE.Color(C.zenith) },
+      uHorizon: { value: new THREE.Color(C.horizon) },
+      uGlow: { value: new THREE.Color(C.glowSky) },
+    },
+    vertexShader: `
+      varying vec3 vPos;
+      void main() {
+        vPos = position;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: `
+      uniform vec3 uZenith; uniform vec3 uHorizon; uniform vec3 uGlow;
+      varying vec3 vPos;
+      void main() {
+        float h = normalize(vPos).y;
+        vec3 sky = mix(uHorizon, uZenith, smoothstep(-0.05, 0.62, h));
+        sky = mix(sky, uGlow, smoothstep(0.16, -0.30, h));
+        gl_FragColor = vec4(sky, 1.0);
+      }`,
+  })
+);
+scene.add(sky);
+
+/* --- Lumières : les trois sources du jeu ---------------------------------- */
+
+scene.add(new THREE.HemisphereLight(0xd2dcf4, 0x6a7a42, 0.7));
+scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+const sun = new THREE.DirectionalLight(0xffe3ad, 2.0);
+sun.position.set(6, 9, 7);
+scene.add(sun);
+const backLight = new THREE.DirectionalLight(0x9fb0e8, 0.6);
+backLight.position.set(-5, 2.5, -6);
+scene.add(backLight);
+
+/* --- Le sol : le dallage de la voie --------------------------------------- */
+
+const ground = new THREE.Group();
+scene.add(ground);
+part(ground, new THREE.CylinderGeometry(9, 9, 0.12, 40), MAT.lawn, [0, -0.06, 0]);
+part(ground, new THREE.CylinderGeometry(1.6, 1.6, 0.06, 28), MAT.stoneMid, [0, -0.004, 0]);
+part(ground, new THREE.TorusGeometry(1.6, 0.05, 4, 32), MAT.stone, [0, 0.01, 0], [Math.PI / 2, 0, 0]);
+
+/* ------------------------------------------------------------------ le rig */
+
+/*
+  Les articulations posables. Chacune retient sa rotation de construction ; une
+  pose n'exprime donc que des *écarts*, et « repos » est littéralement
+  l'ensemble vide. Sans ça, chaque pose devrait redonner les huit rotations, y
+  compris celles qu'elle ne change pas.
+*/
+const RIG = {};
+
+function rig(name, object) {
+  RIG[name] = { object, base: object.rotation.clone() };
+  return object;
+}
+
+/** Les calques : des listes d'objets, jamais des groupes — voir `setLayer`. */
+const LAYER = { hood: [], plate: [], gems: [], weapon: [] };
+
+function layer(name, object) {
+  LAYER[name].push(object);
+  return object;
+}
+
+const hero = new THREE.Group();
+scene.add(hero);
+rig('root', hero);
+
+/* --- Les jambes ----------------------------------------------------------- */
+
+/**
+ * Jambe : collant d'encre, genouillère de pierre, botte de cuir à revers pâle.
+ *
+ * Le pivot est à la hanche, comme dans le rig : c'est lui qui balance, et tout
+ * ce qui est dessous suit sans un calcul de plus.
+ */
+function buildLeg(parent, sign) {
+  const hip = new THREE.Group();
+  hip.position.set(0.12 * sign, HIP_Y, 0);
+  parent.add(hip);
+
+  outline(part(hip, new THREE.CapsuleGeometry(0.078, 0.30, 4, 10), MAT.trouser, [0, -0.20, 0]));
+  part(hip, new THREE.BoxGeometry(0.105, 0.075, 0.045), MAT.grip, [0, -0.215, 0.062]);
+  // Revers pâle : la seule respiration claire entre le collant sombre et le
+  // cuir sombre. Sans lui, la jambe est un tube d'une seule valeur.
+  part(hip, new THREE.CylinderGeometry(0.113, 0.106, 0.06, 12), MAT.gearTrim, [0, -0.335, 0]);
+  outline(part(hip, new THREE.CylinderGeometry(0.099, 0.108, 0.155, 12), MAT.boot, [0, -0.42, 0]));
+  outline(part(hip, new THREE.BoxGeometry(0.155, 0.075, 0.22), MAT.boot, [0, -0.46, 0.04]));
+  part(hip, new THREE.BoxGeometry(0.13, 0.055, 0.07), MAT.grip, [0, -0.465, 0.125]);
+
+  return hip;
+}
+
+rig('legL', buildLeg(hero, 1));
+rig('legR', buildLeg(hero, -1));
+
+/* --- Le buste ------------------------------------------------------------- */
+
+const torso = new THREE.Group();
+torso.position.set(0, HIP_Y, 0);
+hero.add(torso);
+rig('torso', torso);
+
+// La tunique : la masse de tissu sur laquelle tout le reste est posé.
+outline(part(torso, new THREE.CylinderGeometry(0.215, 0.295, 0.60, 16), MAT.garment, [0, 0.26, 0]));
+
+// La jupe, évasée, sous la ceinture. Elle donne à la silhouette sa seule forme
+// en cloche et cache le raccord des cuisses.
+outline(part(torso, new THREE.CylinderGeometry(0.315, 0.385, 0.22, 16), MAT.garment, [0, -0.01, 0]));
+part(torso, new THREE.TorusGeometry(0.382, 0.018, 4, 28), MAT.gear, [0, -0.11, 0], [Math.PI / 2, 0, 0]);
+// La fente avant, bordée d'or : c'est elle qui fait battre le vêtement à la
+// course et qui laisse voir le collant d'encre entre les pans.
+part(torso, new THREE.BoxGeometry(0.035, 0.215, 0.02), MAT.gear, [0, -0.012, 0.362]);
+
+// La ceinture, et son fermoir d'or dans l'axe.
+outline(part(torso, new THREE.CylinderGeometry(0.30, 0.315, 0.085, 16), MAT.belt, [0, 0.12, 0]));
+part(torso, new THREE.BoxGeometry(0.105, 0.08, 0.05), MAT.gear, [0, 0.12, 0.30]);
+
+/*
+  Le plastron : trois plaques bombées, deux rainures d'ombre.
+
+  Ce sont des *secteurs* de cylindre et non des boîtes : une plaque plate sur un
+  buste rond laisse voir deux fentes de tissu à ses angles dès qu'on tourne de
+  trente degrés. Le secteur épouse le corps par construction.
+
+  Le rayon croît avec le rang — 0,305 en haut, 0,335 en bas — parce que la
+  tunique s'évase : une plaque de rayon constant s'enfoncerait dans le tissu au
+  bas du buste et flotterait au haut.
+*/
+const PLATES = [
+  { y: 0.505, r: 0.272, h: 0.115, arc: 0.70 },
+  { y: 0.390, r: 0.288, h: 0.110, arc: 0.74 },
+  { y: 0.275, r: 0.304, h: 0.105, arc: 0.78 },
+];
+
+for (const plate of PLATES) {
+  layer('plate', outline(part(
+    torso,
+    new THREE.CylinderGeometry(plate.r, plate.r + 0.012, plate.h, 14, 1, true, -plate.arc, plate.arc * 2),
+    MAT.beltOpen,
+    [0, plate.y, 0],
+    null,
+    [1, 1, 1.08]
+  )));
+}
+
+for (const y of [0.4475, 0.3325]) {
+  layer('plate', part(
+    torso,
+    new THREE.CylinderGeometry(0.286, 0.286, 0.02, 14, 1, true, -0.76, 1.52),
+    new THREE.MeshBasicMaterial({ color: C.scar, side: THREE.DoubleSide }),
+    [0, y, 0],
+    null,
+    [1, 1, 1.08]
+  ));
+}
+
+// Le gorgerin : le col d'or qui ferme le plastron par le haut. C'est la pièce
+// qui empêche l'armure de se lire comme un tablier.
+layer('plate', outline(part(torso, new THREE.CylinderGeometry(0.222, 0.205, 0.055, 14), MAT.gear, [0, 0.558, 0])));
+part(torso, new THREE.TorusGeometry(0.221, 0.010, 4, 20), MAT.gearTrim, [0, 0.582, 0], [Math.PI / 2, 0, 0]);
+
+/*
+  L'emblème rond, sur le pectoral droit du personnage (−X).
+
+  C'est le seul disque d'un modèle fait de plaques rectangulaires : à
+  21 unités ce n'est plus un emblème mais une tache d'or, et c'est exactement
+  ce qu'on lui demande — un point brillant qui dit où regarder sur un buste
+  autrement gris.
+*/
+layer('plate', part(torso, new THREE.CylinderGeometry(0.040, 0.040, 0.022, 12), MAT.gear,
+  [-0.130, 0.472, 0.300], [Math.PI / 2, 0, 0]));
+layer('plate', part(torso, new THREE.TorusGeometry(0.053, 0.011, 4, 14), MAT.gearTrim,
+  [-0.130, 0.472, 0.300]));
+
+/* --- Les bras ------------------------------------------------------------- */
+
+/**
+ * Bras : sous-manche d'encre, gantelet de pierre à trois nervures, main nue.
+ *
+ * L'épaulière d'or est montée **ici** et non sur le buste, bien qu'elle
+ * appartienne visuellement à l'armure : elle doit suivre le bras quand il
+ * frappe. Posée sur le buste, elle resterait en l'air pendant que l'épaule
+ * passe dessous — c'est le même arbitrage que les lamelles d'épaule du clan.
+ */
+/** Les sept perles de la grappe, en coordonnées locales. Tailles inégales. */
+const BEADS = [
+  [0.000, -0.010, 0.012, 0.034],
+  [0.040, -0.036, -0.014, 0.030],
+  [-0.036, -0.040, 0.024, 0.028],
+  [0.010, -0.078, 0.026, 0.032],
+  [-0.026, -0.092, -0.010, 0.026],
+  [0.044, -0.096, 0.018, 0.025],
+  [0.002, -0.128, 0.008, 0.023],
+];
+
+/** La grappe entière, retenue pour le calque et pour la mesure. */
+let cluster = null;
+
+/**
+ * Bras : manche bouffante, gantelet d'ardoise, gant sombre.
+ *
+ * L'épaulière d'or est montée **ici** et non sur le buste, bien qu'elle
+ * appartienne visuellement à l'armure : elle doit suivre le bras quand il
+ * frappe. Posée sur le buste, elle resterait en l'air pendant que l'épaule
+ * passe dessous — c'est le même arbitrage que les lamelles d'épaule du clan.
+ */
+function buildArm(sign) {
+  const shoulder = new THREE.Group();
+  shoulder.position.set(0.24 * sign, SHOULDER_Y - HIP_Y, 0);
+  torso.add(shoulder);
+
+  /*
+    La manche bouffante, écartée de trois centimètres vers l'extérieur.
+
+    Le pivot d'épaule est à 0,24 de l'axe : il appartient au squelette partagé
+    et ne peut pas bouger pour une tenue. Or la tunique fait 0,26 de rayon à
+    cette hauteur — une manche centrée sur le pivot y est à moitié enfouie, et
+    l'épaule ronde du vêtement disparaît. C'est la pièce qui se décale, jamais
+    l'articulation.
+  */
+  outline(part(shoulder, new THREE.SphereGeometry(0.132, 12, 10), MAT.garment,
+    [0.03 * sign, 0.02, 0], null, [1, 0.84, 1.05]));
+  part(shoulder, new THREE.CapsuleGeometry(0.066, 0.12, 4, 10), MAT.trouser, [0, -0.12, 0]);
+
+  /*
+    Le gantelet d'ardoise : deux viroles, une plaque de coude.
+
+    C'est la pièce qui élargit la silhouette vue de face — le rôle que tenaient
+    les bandes de lin chez le clan — et la seule masse franchement sombre au
+    milieu d'une tenue pâle. Elle va jusqu'à la main : la référence n'a pas de
+    main nue, et une main couleur peau au bout d'un gantelet casse la pièce en
+    deux.
+  */
+  outline(part(shoulder, new THREE.CylinderGeometry(0.086, 0.099, 0.235, 12), MAT.grip, [0, -0.305, 0]));
+  for (const y of [-0.212, -0.398]) {
+    part(shoulder, new THREE.TorusGeometry(0.094, 0.015, 4, 16), MAT.scar, [0, y, 0], [Math.PI / 2, 0, 0]);
+  }
+  part(shoulder, new THREE.BoxGeometry(0.105, 0.085, 0.05), MAT.belt, [0, -0.252, 0.078]);
+  outline(part(shoulder, new THREE.SphereGeometry(0.064, 10, 9), MAT.grip, [0, -0.452, 0.005]));
+
+  if (sign < 0) {
+    /*
+      L'épaulière, du côté du bras armé, et il n'y en a qu'une.
+
+      Elle se décale comme la manche, et pour la même raison. La gemme d'ambre
+      qui la ferme est le seul point chaud de toute la tenue : le regard est
+      blanc, les perles sont froides, l'or est un métal — sans elle, la
+      silhouette n'a pas une seule teinte chaude au-dessus de la ceinture.
+    */
+    const pauldron = new THREE.Group();
+    pauldron.position.set(-0.05, 0.055, 0);
+    shoulder.add(pauldron);
+    layer('plate', pauldron);
+
+    outline(part(pauldron, new THREE.BoxGeometry(0.215, 0.075, 0.245), MAT.gear, [0, 0.04, 0], [0, 0, 0.2]));
+    part(pauldron, new THREE.BoxGeometry(0.225, 0.02, 0.255), MAT.gearTrim, [0.005, 0.088, 0], [0, 0, 0.2]);
+    part(pauldron, new THREE.BoxGeometry(0.19, 0.07, 0.21), MAT.belt, [0.01, -0.03, 0], [0, 0, 0.2]);
+    part(pauldron, new THREE.OctahedronGeometry(0.05, 0), MAT.amber, [0, 0.055, 0.128], null, [1, 1.25, 0.65]);
+  } else {
+    /*
+      La grappe de turquoises, nouée à l'avant-bras gauche.
+
+      C'est le détail que la référence rend reconnaissable, et il est **au
+      poignet**, pas à la hanche — un premier jet l'avait pendue à la
+      ceinture, où elle se perdait sous la jupe et où elle ne racontait plus
+      rien. Au bras, elle bouge avec le geste, et c'est le seul endroit où les
+      deux captures la montrent.
+
+      Sept perles de tailles inégales : sept perles identiques font un
+      chapelet, donc un objet fabriqué ; les écarts font une grappe. C'est le
+      même raisonnement que les pointes inégales de la coupe du bretteur.
+    */
+    cluster = new THREE.Group();
+    cluster.position.set(0.082, -0.295, 0.058);
+    shoulder.add(cluster);
+    layer('gems', cluster);
+
+    part(cluster, new THREE.TorusGeometry(0.028, 0.010, 4, 12), MAT.gear, [0, 0.075, 0], [Math.PI / 2, 0.3, 0]);
+    for (const [x, y, z, r] of BEADS) {
+      part(cluster, new THREE.SphereGeometry(r, 9, 8), MAT.cord, [x, y, z]);
+    }
+  }
+
+  return shoulder;
+}
+
+rig('armL', buildArm(1));
+const armR = rig('armR', buildArm(-1));
+
+/* --- L'épée, dans le repère du bras droit --------------------------------- */
+
+/*
+  Elle est là parce qu'une tenue se juge armée : c'est ainsi qu'on la verra
+  courir. Tenue en main droite, donc du côté −X — la convention du rig, où
+  l'avant du modèle est +Z.
+*/
+const sword = new THREE.Group();
+sword.position.set(-0.02, -0.28, 0.02);
+sword.rotation.set(0.24, 0, -0.34);
+armR.add(sword);
+layer('weapon', sword);
+
+part(sword, new THREE.CylinderGeometry(0.022, 0.026, 0.16, 8), MAT.scar, [0, 0.08, 0]);
+part(sword, new THREE.BoxGeometry(0.17, 0.03, 0.05), MAT.gear, [0, 0.165, 0]);
+outline(part(sword, new THREE.BoxGeometry(0.075, 0.62, 0.022), MAT.blade, [0, 0.49, 0]));
+part(sword, new THREE.ConeGeometry(0.052, 0.12, 4), MAT.blade, [0, 0.855, 0], [0, Math.PI / 4, 0], [1, 1, 0.42]);
+
+/* --- La tête -------------------------------------------------------------- */
+
+const head = new THREE.Group();
+head.position.set(0, HEAD_Y - HIP_Y, 0);
+torso.add(head);
+rig('head', head);
+
+outline(part(head, new THREE.SphereGeometry(0.26, 18, 16), MAT.skin, [0, 0, 0]));
+
+/*
+  Les oreilles, pointues, et c'est la première tenue qui y touche.
+
+  Le rig monte déjà deux oreilles rondes sur le crâne, comme pour les trois
+  autres skins ; celle-ci pose ses pointes **par-dessus**, elle ne les
+  remplace pas. La distinction compte : une tenue est un habillage, elle n'a
+  pas le droit de retirer une pièce du squelette partagé — le jour où on la
+  retire, il faut que le personnage redevienne exactement ce qu'il était.
+
+  Deux groupes emboîtés plutôt qu'un Euler calculé : le premier écarte, le
+  second relève. Trois lignes lisibles là où un Euler équivalent dépend de
+  l'ordre des rotations.
+*/
+for (const side of [1, -1]) {
+  const ear = new THREE.Group();
+  ear.position.set(0.225 * side, 0.02, -0.02);
+  ear.rotation.z = -0.85 * side;
+  ear.rotation.x = 0.35;
+  head.add(ear);
+  outline(part(ear, new THREE.ConeGeometry(0.062, 0.2, 4), MAT.skin, [0, 0.085, 0], null, [1, 1, 0.55]));
+}
+
+/*
+  Le visage : le regard clair, et les marques qui l'encadrent.
+
+  Trois pièces portent toute la reconnaissance, et dans cet ordre : la
+  **flèche sombre du front**, qui descend entre les sourcils ; les deux
+  **bandes** qui filent vers les tempes ; et le **regard blanc**, seul
+  élément non éclairé du modèle. Le reste — la bouche, l'ombre des orbites —
+  ne pèse rien au-delà de trois unités et n'est là que pour le coffre, dont la
+  séquence d'ouverture montre l'objet de près.
+
+  En vue de jeu il ne reste que deux points blancs sous une barre noire, et
+  c'est suffisant : la capuche et le plastron ont déjà dit le reste.
+*/
+/*
+  La flèche du front : un triangle sombre qui descend de la racine des cheveux
+  jusqu'entre les sourcils. C'est la marque la plus haute du visage, donc la
+  seule qui reste visible quand la tête s'incline à la course.
+*/
+part(head, new THREE.ConeGeometry(0.058, 0.16, 3), MAT.scar, [0, 0.095, 0.216], [1.52, 0, Math.PI], [1, 1, 0.24]);
+
+/*
+  Le masque et l'œil, une paire par côté.
+
+  **Tout tient dans le signe de l'inclinaison**, et la première version l'avait
+  à l'envers : coin extérieur bas, coin intérieur haut, c'est-à-dire un sourcil
+  tombant — le personnage avait l'air terrifié, pas terrifiant. Le masque doit
+  descendre **vers le nez** : coin intérieur bas, coin extérieur relevé. C'est
+  la seule chose qui sépare les deux lectures, et elle tient dans un signe.
+
+  L'œil suit exactement la même pente. Un œil horizontal dans un masque incliné
+  se lit comme un œil écarquillé sous un sourcil froncé, donc comme de la
+  surprise ; les deux doivent aller dans le même sens.
+
+  Il est aussi **plus large que haut** — une fente, pas une bille. Un grand œil
+  rond et blanc, c'est de l'effroi ; une fente blanche sous un masque noir,
+  c'est un regard qui vise.
+*/
+for (const x of [0.098, -0.098]) {
+  const slant = x > 0 ? 0.26 : -0.26;
+  part(head, new THREE.BoxGeometry(0.138, 0.078, 0.016), MAT.scar, [x, 0.042, 0.226], [0, 0, slant]);
+  part(head, new THREE.BoxGeometry(0.086, 0.032, 0.022), MAT.eye, [x * 0.97, 0.032, 0.237], [0, 0, slant]);
+}
+/*
+  La bouche : deux segments qui tombent aux commissures, jamais un trait droit.
+
+  Un trait horizontal est une bouche neutre, et une bouche neutre sous un regard
+  blanc donne un visage absent. Les deux pans inclinés suffisent — à cette
+  taille, on ne lit que la pente.
+*/
+for (const x of [0.023, -0.023]) {
+  part(head, new THREE.BoxGeometry(0.046, 0.012, 0.012), MAT.scar, [x, -0.112, 0.232], [0, 0, x > 0 ? 0.3 : -0.3]);
+}
+
+/* --- La capuche ----------------------------------------------------------- */
+
+const headwear = new THREE.Group();
+headwear.position.set(0, 0.16, 0);
+headwear.rotation.x = -0.04;
+head.add(headwear);
+rig('headwear', headwear);
+
+const hood = new THREE.Group();
+headwear.add(hood);
+layer('hood', hood);
+
+/*
+  La capuche est un cylindre ouvert, comme le gilet du premier skin, et pour la
+  même raison : `CylinderGeometry` sait déjà ne décrire qu'un secteur d'angle,
+  et deux plaques posées côte à côte laisseraient voir le crâne par la tranche
+  au premier pivot de la tête.
+*/
+part(hood, new THREE.CylinderGeometry(0.295, 0.335, 0.31, 18, 1, true, HOOD_OPEN, Math.PI * 2 - 2 * HOOD_OPEN),
+  MAT.garmentOpen, [0, -0.13, -0.015]);
+/*
+  La calotte descend de deux centimètres et avance d'autant.
+
+  C'est de la mise en scène, pas de la géométrie : une capuche qui surplombe le
+  front enfonce le regard dans son ombre, et un regard en retrait regarde *de
+  dessous*. Remontée, la même capuche dégage le front et rend le visage ouvert
+  — ce qui est exactement le contraire de ce qu'on cherche ici.
+*/
+outline(part(hood, new THREE.SphereGeometry(0.30, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.52),
+  MAT.garment, [0, -0.005, 0.005], null, [1.0, 0.90, 1.08]));
+
+// Les ourlets ferment la tranche du cylindre, qui est d'épaisseur nulle : sans
+// eux, le bord de la capuche disparaît sous tout angle rasant. Doublure sombre,
+// comme la référence.
+for (const a of [HOOD_OPEN, -HOOD_OPEN]) {
+  part(hood, new THREE.BoxGeometry(0.026, 0.30, 0.04), MAT.garment,
+    [Math.sin(a) * 0.307, -0.13, Math.cos(a) * 0.307], [0, a, 0]);
+}
+// La pointe rejetée en arrière : le détail qui dit « capuche » et non « casque ».
+outline(part(hood, new THREE.ConeGeometry(0.105, 0.26, 6), MAT.garment, [0, 0.02, -0.29], [2.55, 0, 0]));
+// La masse de nuque, qui comble l'écart entre la capuche et le dos.
+part(hood, new THREE.SphereGeometry(0.21, 12, 10), MAT.garment, [0, -0.22, -0.10], null, [1.0, 0.72, 0.86]);
+
+/*
+  Les mèches blanches, dessous.
+
+  Elles ne sont pas dans le calque de la capuche : capuche rabattue, on en voit
+  cinq dépasser au front ; capuche retirée, elles restent, et le personnage a
+  encore une coiffure. C'est ce qui permet de juger les deux états.
+*/
+part(headwear, new THREE.SphereGeometry(0.248, 14, 12), MAT.hair, [0, -0.15, -0.01], null, [1.0, 0.62, 1.0]);
+/*
+  Une frange et deux mèches de tempe, et rien de plus.
+
+  Le premier jet posait cinq pointes autour du crâne : sous la capuche, elles
+  sortaient *par les côtés* et se lisaient comme des piquants. Le blanc doit
+  apparaître là où la capuche s'ouvre — au front et le long des joues — sinon
+  il traverse l'étoffe.
+*/
+part(headwear, new THREE.SphereGeometry(0.205, 12, 9), MAT.hair, [0, 0.005, 0.118], [-0.22, 0, 0], [1.08, 0.32, 0.58]);
+for (const x of [0.175, -0.175]) {
+  part(headwear, new THREE.BoxGeometry(0.055, 0.19, 0.05), MAT.hair, [x, -0.16, 0.135], [0.12, 0, x * 0.9]);
+}
+
+/* ------------------------------------------------- les silhouettes de repère */
+
+/*
+  Les trois tenues du dépôt, en masses.
+
+  Elles partagent le squelette et rien d'autre : ce sont des repères de
+  lisibilité, pas des modèles. Leur seule raison d'être est la vue « les
+  cinq » — un skin qui ne se distingue pas des autres à 21 unités est un skin
+  raté, et c'est la seule image qui le dise.
+*/
+function sibling(spec, x) {
+  const group = new THREE.Group();
+  group.position.set(x, 0, 0);
+  scene.add(group);
+
+  const mat = {};
+  for (const key of ['garment', 'trouser', 'belt', 'skin', 'hair', 'boot', 'gear', 'gearTrim']) {
+    mat[key] = toon({ color: spec[key] });
+  }
+
+  for (const sign of [1, -1]) {
+    part(group, new THREE.CapsuleGeometry(0.075, 0.30, 4, 8), mat.trouser, [0.12 * sign, HIP_Y - 0.20, 0]);
+    part(group, new THREE.CylinderGeometry(0.098, 0.105, 0.15, 10), mat.boot, [0.12 * sign, HIP_Y - 0.42, 0]);
+    part(group, new THREE.CapsuleGeometry(0.062, 0.34, 4, 8), mat.skin, [0.24 * sign, SHOULDER_Y - 0.22, 0]);
+  }
+
+  const bell = spec.kind === 'mane' ? 0.36 : spec.kind === 'crop' ? 0.31 : 0.28;
+  part(group, new THREE.CylinderGeometry(0.21, bell, 0.58, 14), mat.garment, [0, HIP_Y + 0.26, 0]);
+  part(group, new THREE.CylinderGeometry(0.265, 0.275, 0.10, 14), mat.belt, [0, HIP_Y + 0.14, 0]);
+  part(group, new THREE.SphereGeometry(0.26, 14, 12), mat.skin, [0, HEAD_Y, 0]);
+  // Deux yeux, et c'est tout le visage : sans eux, les repères se lisent comme
+  // des mannequins de vitrine et on ne compare plus des personnages.
+  for (const x of [0.085, -0.085]) {
+    part(group, new THREE.BoxGeometry(0.05, 0.03, 0.02), toon({ color: 0x241d2c }), [x, HEAD_Y + 0.02, 0.246]);
+  }
+
+  if (spec.kind === 'hat') {
+    part(group, new THREE.CylinderGeometry(0.44, 0.46, 0.022, 20), mat.gear, [0, HEAD_Y + 0.22, -0.01]);
+    part(group, new THREE.CylinderGeometry(0.235, 0.255, 0.17, 14), mat.gear, [0, HEAD_Y + 0.31, -0.01]);
+    part(group, new THREE.TorusGeometry(0.248, 0.028, 5, 16), mat.gearTrim, [0, HEAD_Y + 0.25, -0.01], [Math.PI / 2, 0, 0]);
+  } else if (spec.kind === 'crop') {
+    part(group, new THREE.SphereGeometry(0.268, 14, 12), mat.hair, [0, HEAD_Y + 0.11, -0.02], null, [1.02, 0.86, 1.05]);
+  } else if (spec.kind === 'crown') {
+    part(group, new THREE.SphereGeometry(0.255, 14, 12), mat.hair, [0, HEAD_Y + 0.13, -0.01], null, [1, 0.62, 1.02]);
+    // La couronne de mèches dressées : c'est elle, et l'orange, qu'on reconnaît
+    // à distance de jeu — pas le manteau, qui est le seul noir du casting.
+    for (const a of [0, 0.55, -0.55, 1.45, -1.45, 2.4]) {
+      part(group, new THREE.ConeGeometry(0.14, 0.42, 4), mat.hair,
+        [Math.sin(a) * 0.14, HEAD_Y + 0.35, Math.cos(a) * 0.14], [0.5 * Math.cos(a), a, 0], [1.1, 1, 0.6]);
+    }
+    // Les nuages du manteau, réduits à deux pastilles : à cette taille, c'est
+    // tout ce qui en reste.
+    for (const x of [-0.13, 0.13]) {
+      part(group, new THREE.SphereGeometry(0.055, 8, 8), mat.gear, [x, HIP_Y + 0.40, 0.26], null, [1, 1, 0.4]);
+    }
+  } else {
+    part(group, new THREE.SphereGeometry(0.28, 14, 12), mat.hair, [0, HEAD_Y + 0.12, -0.02], null, [1.05, 0.9, 1.05]);
+    // La crinière jusqu'aux reins : c'est elle, et pas la couleur, qui fait
+    // reconnaître cette silhouette de dos.
+    part(group, new THREE.ConeGeometry(0.30, 0.95, 6), mat.hair, [0, HEAD_Y - 0.36, -0.20], [0.18, 0, 0], [1, 1, 0.55]);
+    for (let row = 0; row < 3; row++) {
+      part(group, new THREE.BoxGeometry(0.44, 0.08, 0.34), mat.belt, [0, HIP_Y + 0.42 - row * 0.088, 0.1]);
+    }
+  }
+
+  const label = spec.name;
+  group.userData.label = label;
+  return group;
+}
+
+const SIBLING_GROUPS = SIBLINGS.map((spec, i) => sibling(spec, 1.5 + i * 1.5));
+for (const group of SIBLING_GROUPS) group.visible = false;
+
+/* ------------------------------------------------------------- les mesures */
+
+/*
+  Les cotes du tableau sont mesurées ici, sur les objets réellement construits,
+  et jamais recopiées. Une cote écrite à la main est une cote fausse au premier
+  réglage de la géométrie.
+*/
+const box = new THREE.Box3();
+const size = new THREE.Vector3();
+
+function cote(name, value) {
+  const cell = document.querySelector(`[data-cote="${name}"]`);
+  if (cell) cell.textContent = value;
+}
+
+function measure() {
+  box.setFromObject(hero);
+  box.getSize(size);
+  cote('height', box.max.y.toFixed(2).replace('.', ',') + ' *');
+  cote('width', size.x.toFixed(2).replace('.', ',') + ' *');
+
+  const plates = new THREE.Box3();
+  for (const plate of LAYER.plate) plates.expandByObject(plate);
+  cote('chest', plates.max.z.toFixed(2).replace('.', ',') + ' *');
+
+  const hoodBox = new THREE.Box3().setFromObject(hood);
+  cote('hood', hoodBox.max.y.toFixed(2).replace('.', ',') + ' *');
+
+  const gemBox = new THREE.Box3().setFromObject(cluster);
+  cote('gems', gemBox.max.x.toFixed(2).replace('.', ',') + ' *');
+
+  let parts = 0;
+  hero.traverse((object) => { if (object.isMesh && !object.userData.outline) parts += 1; });
+  cote('parts', String(parts) + ' *');
+}
+
+/* --------------------------------------------------------------- les poses */
+
+/*
+  Les poses reprennent les clés d'animation du rig, aux valeurs du dépôt : le
+  coup d'épée est la clé de mi-course de `SWING_ARM` (−1,2 sur x, 0,45 en
+  torsion, −0,7 de buste), la parade la pose de garde de `HeroPlaceholder`.
+  Une maquette qui inventerait ses propres poses ne dirait rien de ce qu'on
+  verra en jeu.
+*/
+const POSES = {
+  repos: {
+    label: 'Repos — la pose d\'arrêt, respiration lente.',
+    rig: {},
+  },
+  marche: {
+    label: 'Marche — mi-course. Le balancier oppose chaque bras à la jambe du même côté.',
+    rig: {
+      legL: [0.62, 0, 0], legR: [-0.62, 0, 0],
+      armL: [-0.48, 0, 0], armR: [0.48, 0, 0],
+      torso: [0.14, 0, 0], head: [-0.10, 0, 0], headwear: [-0.14, 0, 0.06],
+    },
+  },
+  coup: {
+    label: 'Coup d\'épée — la clé de mi-course : bras à <b>−1,2</b>, torsion <b>0,45</b>, buste <b>−0,7</b>.',
+    rig: {
+      armR: [-1.2, 0, 0.45],
+      torso: [0.05, -0.7, 0],
+      legL: [0.25, 0, 0], legR: [-0.2, 0, 0],
+      headwear: [-0.1, 0, 0],
+    },
+  },
+  garde: {
+    label: 'Parade — lame en travers du torse, buste effacé de <b>0,35</b>. Fenêtre de <b>260 ms</b>.',
+    rig: {
+      armR: [-1.15, 0, 0.95],
+      torso: [0.06, -0.35, 0],
+      legL: [0.18, 0, 0], legR: [-0.14, 0, 0],
+      head: [0, 0.2, 0],
+    },
+  },
+  air: {
+    label: 'En l\'air — jambe avant repliée, jambe arrière tendue, capuche rejetée.',
+    lift: 0.35,
+    rig: {
+      legL: [-0.75, 0, 0], legR: [0.45, 0, 0],
+      armL: [0.70, 0, 0], armR: [0.70, 0, 0],
+      headwear: [-0.20, 0, 0],
+    },
+  },
+};
+
+let pose = POSES.repos;
+
+/* --------------------------------------------------------------- les vues */
+
+const VIEWS = {
+  face: {
+    label: 'Face — le cadre du coffre et de la carte d\'objet.<br>Capuche, plastron d\'acier, épaulière d\'or à gauche, grappe au poignet droit.',
+    position: new THREE.Vector3(0, 1.10, 4.6),
+    target: new THREE.Vector3(0, 0.95, 0),
+    fov: 32, spin: false,
+  },
+  dos: {
+    label: 'Dos — la pointe de capuche et la masse de nuque.<br>C\'est la vue qu\'on a du personnage 90 % du temps en jouant.',
+    position: new THREE.Vector3(0, 1.15, -4.5),
+    target: new THREE.Vector3(0, 0.95, 0),
+    fov: 32, spin: false,
+  },
+  tete: {
+    label: 'La tête — capuche ouverte à <b>2 rad</b>, oreilles pointues, frange blanche.<br>Le regard est <b>entièrement blanc, sans pupille</b>, et non éclairé : c\'est la seule<br>pièce du modèle qui ne s\'éteint jamais quand la lumière tourne.',
+    position: new THREE.Vector3(0.78, 1.60, 2.55),
+    target: new THREE.Vector3(0, 1.20, 0.02),
+    fov: 30, spin: false,
+  },
+  brassard: {
+    label: 'Le brassard — gantelet d\'ardoise à deux viroles, et les sept turquoises<br>nouées au poignet. Le seul point saturé de la tenue, et le détail<br>que la référence rend reconnaissable.',
+    position: new THREE.Vector3(1.55, 1.05, 1.75),
+    target: new THREE.Vector3(0.32, 0.62, 0.10),
+    fov: 30, spin: false,
+  },
+  tour: {
+    label: 'Tour — trois quarts, rotation lente.',
+    position: new THREE.Vector3(2.9, 1.9, 3.6),
+    target: new THREE.Vector3(0, 0.92, 0),
+    fov: 34, spin: true,
+  },
+  jeu: {
+    label: 'La caméra du jeu, à ses cotes exactes : FOV <b>48</b>, <b>11</b> de haut,<br><b>21</b> de recul, visée relevée à <b>4,5</b>. <b>C\'est ici que se juge un skin.</b>',
+    position: new THREE.Vector3(0, 11, 21),
+    target: new THREE.Vector3(0, 4.5, 0),
+    fov: 48, spin: false,
+  },
+  fratrie: {
+    label: 'Les cinq — à gauche la nouvelle, puis le chapeau de paille, le bretteur,<br>le clan et le manteau de l’Aube. Masses et teintes seulement : la question<br>est <b>se distingue-t-elle</b>, pas <b>est-elle belle</b>.',
+    position: new THREE.Vector3(3.0, 2.15, 9.0),
+    target: new THREE.Vector3(3.0, 0.85, 0),
+    fov: 40, spin: false,
+    siblings: true,
+  },
+};
+
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let currentView = VIEWS.face;
+
+function paint() {
+  readout.innerHTML = `${currentView.label}<span class="pose">${pose.label}</span>`;
+}
+
+function applyView(name) {
+  currentView = VIEWS[name];
+  camera.fov = currentView.fov;
+  camera.position.copy(currentView.position);
+  camera.updateProjectionMatrix();
+  controls.target.copy(currentView.target);
+  controls.autoRotate = !!currentView.spin && !reduceMotion;
+  controls.update();
+
+  // Les silhouettes de repère ne paraissent que dans leur vue : ailleurs, elles
+  // encombreraient le cadre de ce qu'on est venu regarder.
+  const show = !!currentView.siblings;
+  for (const group of SIBLING_GROUPS) group.visible = show;
+  ground.scale.setScalar(show ? 1.6 : 1);
+
+  for (const button of document.querySelectorAll('[data-view]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.view === name));
+  }
+  paint();
+}
+
+function applyPose(name) {
+  pose = POSES[name];
+  for (const button of document.querySelectorAll('[data-pose]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.pose === name));
+  }
+  paint();
+}
+
+for (const button of document.querySelectorAll('[data-view]')) {
+  button.addEventListener('click', () => applyView(button.dataset.view));
+}
+for (const button of document.querySelectorAll('[data-pose]')) {
+  button.addEventListener('click', () => applyPose(button.dataset.pose));
+}
+
+controls.addEventListener('start', () => { controls.autoRotate = false; });
+
+/* ------------------------------------------------------------- les calques */
+
+const LAYER_STATE = { hood: true, plate: true, gems: true, weapon: true, outline: true };
+
+function setLayer(name, value) {
+  LAYER_STATE[name] = value;
+  if (name === 'outline') {
+    for (const shell of OUTLINES) shell.visible = value;
+  } else {
+    for (const object of LAYER[name]) object.visible = value;
+  }
+  const button = document.querySelector(`[data-layer="${name}"]`);
+  if (button) button.setAttribute('aria-pressed', String(value));
+}
+
+for (const button of document.querySelectorAll('[data-layer]')) {
+  button.addEventListener('click', () => {
+    const name = button.dataset.layer;
+    setLayer(name, !LAYER_STATE[name]);
+  });
+}
+
+/* ------------------------------------------------------------------ boucle */
+
+function resize() {
+  const width = viewer.clientWidth;
+  const height = viewer.clientHeight;
+  if (!width || !height) return;
+  renderer.setSize(width, height, false);
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+}
+
+new ResizeObserver(resize).observe(viewer);
+resize();
+applyView('face');
+applyPose('repos');
+measure();
+loading.remove();
+
+let previous = performance.now();
+let counted = false;
+const ZERO = [0, 0, 0];
+
+function frame(now) {
+  const delta = Math.min((now - previous) / 1000, 0.05);
+  previous = now;
+
+  // Amortissement exponentiel : indépendant du framerate, contrairement à un
+  // facteur constant par frame — qui serait deux fois plus rapide à 120 Hz.
+  const k = reduceMotion ? 1 : 1 - Math.exp(-delta * 9);
+
+  for (const name in RIG) {
+    const entry = RIG[name];
+    const target = pose.rig[name] || ZERO;
+    const rotation = entry.object.rotation;
+    rotation.x += (entry.base.x + target[0] - rotation.x) * k;
+    rotation.y += (entry.base.y + target[1] - rotation.y) * k;
+    rotation.z += (entry.base.z + target[2] - rotation.z) * k;
+  }
+  hero.position.y += ((pose.lift || 0) - hero.position.y) * k;
+
+  controls.update();
+  sky.position.copy(camera.position);
+  renderer.render(scene, camera);
+
+  if (!counted) {
+    counted = true;
+    const tris = renderer.info.render.triangles;
+    cote('tris', tris.toLocaleString('fr-FR') + ' *');
+    const badge = document.getElementById('tris');
+    if (badge) badge.textContent = `${tris.toLocaleString('fr-FR')} triangles`;
+  }
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>

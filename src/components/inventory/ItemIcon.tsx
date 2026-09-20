@@ -151,6 +151,36 @@ const GLYPHS: Record<ItemId, React.JSX.Element> = {
       <path d="M12 6.6v6.4" stroke="#171226" strokeWidth="1.4" strokeLinecap="round" />
     </>
   ),
+  'demon-armor': (
+    <>
+      {/* La capuche, en fer à cheval : l'ouverture du visage est un creux et
+          non un trait. C'est la seule pièce de tête de tout le jeu de
+          vignettes, et donc la signature de cette case — les quatre autres
+          tenues se distinguent par la coupe du vêtement, celle-ci par le
+          couvre-chef. */}
+      <path
+        d="M12 2.8c3.5 0 5.9 2.5 5.9 6v2.4h-2.5V8.8c0-2.1-1.4-3.7-3.4-3.7S8.6 6.7 8.6 8.8v2.4H6.1V8.8c0-3.5 2.4-6 5.9-6z"
+        fill="currentColor"
+      />
+      {/* Trois plaques empilées : l'armure. Les largeurs décroissent vers le
+          bas, sinon les barres se lisent comme un gril. */}
+      {[0, 1, 2].map((row) => (
+        <rect
+          key={row}
+          x={7.2 + row * 0.5}
+          y={12.4 + row * 2.7}
+          width={9.6 - row}
+          height={2}
+          rx={0.9}
+          fill="#171226"
+          opacity="0.85"
+        />
+      ))}
+      {/* Le disque du pectoral, décentré : la seule asymétrie de la case, et
+          ce qui rappelle l'épaulière unique du modèle. */}
+      <circle cx="9.7" cy="13.4" r="0.95" fill="currentColor" />
+    </>
+  ),
 }
 
 export function ItemIcon({ id, accent }: { id: ItemId; accent: string }) {

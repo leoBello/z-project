@@ -193,6 +193,57 @@ const OUTFITS: Record<OutfitId, Palette> = {
     gear: '#ab2630',
     gearTrim: '#f2ece1',
   },
+  /*
+    La seule tenue **pâle** du casting, et c'est ce qui la sépare des quatre
+    autres avant toute autre considération : le premier est clair mais chaud sur
+    un buste nu, les trois suivants sont sombres. Celle-ci est froide et claire,
+    coupée d'une seule masse d'acier — à 21 unités, c'est ce contraste-là qu'on
+    lit, pas le détail des plaques.
+
+    Trois champs sont détournés, et c'est le maximum qu'une palette à quinze
+    entrées supporte : `scar` porte les rainures de l'armure *et* les marques du
+    visage, `grip` l'ardoise des gantelets, `cord` les turquoises du poignet.
+    Le dernier a une conséquence visible — un katana équipé par-dessus cette
+    tenue aura une ligature turquoise, exactement comme le manteau de l'Aube lui
+    en donne une violette. C'est le prix connu de quinze champs fixes, et il
+    vaut mieux qu'un seizième que quatre tenues sur cinq laisseraient vide.
+  */
+  demon: {
+    garment: '#b7dcd6',
+    trouser: '#242b40',
+    // L'acier du plastron, de la ceinture et de la plaque de coude. Un gris
+    // moyen et non un charbon : sous un tissu aussi pâle, une masse presque
+    // noire faisait un trou au milieu du personnage.
+    belt: '#5f6672',
+    skin: '#f0c7a2',
+    // Détourné : aucune cicatrice de peau ici. Ce sont les rainures d'ombre
+    // entre les plaques, les viroles des gantelets, et les marques du visage.
+    scar: '#1a1d28',
+    hair: '#eef1f4',
+    boot: '#7d5636',
+    blade: '#dde6ef',
+    guard: '#cfa24a',
+    // Détourné : l'ardoise des gantelets et des gants. Une épée équipée
+    // par-dessus cette tenue aura donc une poignée d'ardoise, ce qui lui va.
+    grip: '#3e4450',
+    // Détourné : les sept turquoises nouées au poignet. Voir la note ci-dessus.
+    cord: '#2fb3a4',
+    /*
+      Le regard, et c'est le seul blanc pur du jeu.
+
+      Il est rendu **non éclairé** (voir `DemonFace`), donc il ne descend jamais
+      dans l'ombre : un blanc éclairé repasserait sous le blanc des cheveux dès
+      que la lumière tourne, et le regard s'éteindrait. C'est la même règle que
+      les yeux du Lynel, pour la même raison — c'est la pièce qui dit ce qu'est
+      ce personnage.
+    */
+    eye: '#f2f6ff',
+    // Bleu nuit : un cerne brun sur du céladon vire au kaki, et un cerne noir
+    // sur une tenue pâle la découpe comme un autocollant.
+    outline: '#141a2a',
+    gear: '#cfa24a',
+    gearTrim: '#f3d789',
+  },
 }
 
 /**
@@ -266,6 +317,19 @@ const SKINS: Record<OutfitId, Skin> = {
     swing: 0.1,
     air: 0.22,
     roll: 0.04,
+  },
+  // Le ressort le plus sec des cinq, et de loin : c'est une étoffe **tendue sur
+  // un crâne**, pas une masse posée dessus. Une capuche qui rebondirait comme
+  // le chapeau de paille aurait l'air de ne pas être enfilée ; celle-ci frémit,
+  // et le roulis est presque nul pour la même raison.
+  demon: {
+    torso: DemonTorso,
+    face: DemonFace,
+    headwear: DemonHood,
+    rest: -0.04,
+    swing: 0.09,
+    air: 0.2,
+    roll: 0.03,
   },
 }
 
@@ -534,6 +598,49 @@ export function HeroPlaceholder({
  * bandé de lin sur une sandale plate.
  */
 function Leg({ palette, outfit }: { palette: Palette; outfit: OutfitId }) {
+  if (outfit === 'demon') {
+    return (
+      <group>
+        {/* Collant d'encre, genouillère d'ardoise. */}
+        <mesh castShadow position={[0, -0.2, 0]}>
+          <capsuleGeometry args={[0.078, 0.3, 4, 10]} />
+          <meshToonMaterial color={palette.trouser} gradientMap={toonGradient} />
+          <Outlines thickness={OUTLINE} color={palette.outline} />
+        </mesh>
+        <mesh castShadow position={[0, -0.215, 0.062]}>
+          <boxGeometry args={[0.105, 0.075, 0.045]} />
+          <meshToonMaterial color={palette.grip} gradientMap={toonGradient} />
+        </mesh>
+
+        {/*
+          Le revers de la botte, en or clair, et c'est la seule respiration
+          entre deux sombres : le collant et le cuir ont presque la même valeur,
+          et sans ce liseré la jambe entière se lisait comme un tube.
+        */}
+        <mesh castShadow position={[0, -0.335, 0]}>
+          <cylinderGeometry args={[0.113, 0.106, 0.06, 12]} />
+          <meshToonMaterial color={palette.gearTrim} gradientMap={toonGradient} />
+        </mesh>
+
+        <mesh castShadow position={[0, -0.42, 0]}>
+          <cylinderGeometry args={[0.099, 0.108, 0.155, 12]} />
+          <meshToonMaterial color={palette.boot} gradientMap={toonGradient} />
+          <Outlines thickness={OUTLINE} color={palette.outline} />
+        </mesh>
+        <mesh castShadow position={[0, -0.46, 0.04]}>
+          <boxGeometry args={[0.155, 0.075, 0.22]} />
+          <meshToonMaterial color={palette.boot} gradientMap={toonGradient} />
+          <Outlines thickness={OUTLINE} color={palette.outline} />
+        </mesh>
+        {/* Bout ferré : il ancre le pied au sol, que le cuir seul laissait mou. */}
+        <mesh castShadow position={[0, -0.465, 0.125]}>
+          <boxGeometry args={[0.13, 0.055, 0.07]} />
+          <meshToonMaterial color={palette.grip} gradientMap={toonGradient} />
+        </mesh>
+      </group>
+    )
+  }
+
   if (outfit === 'pain') {
     return (
       <group>
@@ -696,6 +803,7 @@ function Arm({
   // bras-là ne partage plus rien avec les trois autres — ni le rayon, ni la
   // position, ni la main au bout. Même discipline que `Leg`.
   if (outfit === 'pain') return <DawnArm palette={palette} fist={fist} side={side} />
+  if (outfit === 'demon') return <DemonArm palette={palette} fist={fist} side={side} />
 
   return (
     <group>
@@ -1878,6 +1986,471 @@ function SpikedCrown({ palette }: { palette: Palette }) {
             </mesh>
           </group>
         </group>
+      ))}
+    </>
+  )
+}
+
+
+/**
+ * L'ambre de l'épaulière.
+ *
+ * En dur, et non dans la palette : les quinze champs sont pris, trois sont déjà
+ * détournés, et cette gemme est la seule pièce chaude d'une tenue entièrement
+ * froide — lui donner un champ obligerait les quatre autres skins à déclarer
+ * une teinte qu'ils n'utiliseront jamais. Même arbitrage que l'acier de la lame
+ * maudite, qui vit lui aussi à côté de la table.
+ */
+const DEMON_AMBER = '#c4602c'
+
+/** Demi-ouverture de la capuche, en radians. L'ouverture donne sur +Z. */
+const HOOD_OPEN = 1.02
+
+/**
+ * Les sept turquoises du poignet, en coordonnées locales de la grappe.
+ *
+ * Tailles et écarts inégaux : sept perles identiques font un chapelet, donc un
+ * objet fabriqué ; les écarts font une grappe, donc quelque chose qui a poussé.
+ * C'est le même raisonnement que les pointes inégales de la coupe du bretteur.
+ */
+const DEMON_BEADS: ReadonlyArray<readonly [number, number, number, number]> = [
+  [0.0, -0.01, 0.012, 0.034],
+  [0.04, -0.036, -0.014, 0.03],
+  [-0.036, -0.04, 0.024, 0.028],
+  [0.01, -0.078, 0.026, 0.032],
+  [-0.026, -0.092, -0.01, 0.026],
+  [0.044, -0.096, 0.018, 0.025],
+  [0.002, -0.128, 0.008, 0.023],
+]
+
+/**
+ * Les trois plaques du plastron.
+ *
+ * Ce sont des **secteurs de cylindre** et non des boîtes : une plaque plate sur
+ * un buste rond laisse voir deux fentes de tissu à ses angles dès qu'on tourne
+ * de trente degrés. Le secteur épouse le corps par construction.
+ *
+ * Le rayon croît avec le rang — 0,272 en haut, 0,304 en bas — parce que la
+ * tunique s'évase : une plaque de rayon constant s'enfoncerait dans le tissu au
+ * bas du buste et flotterait au haut.
+ *
+ * Trois rangs et pas cinq : à 21 unités de recul, c'est le bombé qu'on lit,
+ * jamais le compte. C'est la leçon du plastron du clan, qui a le même nombre.
+ */
+const DEMON_PLATES = [
+  { y: 0.505, r: 0.272, h: 0.115, arc: 0.7 },
+  { y: 0.39, r: 0.288, h: 0.11, arc: 0.74 },
+  { y: 0.275, r: 0.304, h: 0.105, arc: 0.78 },
+] as const
+
+/**
+ * Buste du cinquième skin : tunique d'étoffe pâle, plastron d'acier, jupe fendue.
+ *
+ * C'est le second vêtement de buste fermé du jeu, après celui du clan, et pour
+ * la même raison : une armure ouverte sur la poitrine n'en est plus une. Il s'en
+ * distingue par la valeur — le clan est une masse sombre coupée de cramoisi,
+ * celui-ci est une masse claire coupée d'une seule bande d'acier.
+ */
+function DemonTorso({ palette }: { palette: Palette }) {
+  return (
+    <>
+      {/* La tunique : la masse de tissu sur laquelle tout le reste est posé. */}
+      <mesh castShadow position={[0, 0.26, 0]}>
+        <cylinderGeometry args={[0.215, 0.295, 0.6, 16]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      {/*
+        La jupe, et sa fente dorée dans l'axe.
+
+        Elle donne à la silhouette sa seule forme en cloche, et la fente est ce
+        qui la fait battre à la course en laissant voir le collant d'encre entre
+        les pans. Sans elle, le bas du personnage est une cloche unie.
+      */}
+      <mesh castShadow position={[0, -0.01, 0]}>
+        <cylinderGeometry args={[0.315, 0.385, 0.22, 16]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+      <mesh position={[0, -0.11, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.382, 0.018, 4, 28]} />
+        <meshToonMaterial color={palette.gear} gradientMap={toonGradient} />
+      </mesh>
+      <mesh position={[0, -0.012, 0.362]}>
+        <boxGeometry args={[0.035, 0.215, 0.02]} />
+        <meshToonMaterial color={palette.gear} gradientMap={toonGradient} />
+      </mesh>
+
+      {/* Ceinture d'acier, fermoir d'or dans l'axe. */}
+      <mesh castShadow position={[0, 0.12, 0]}>
+        <cylinderGeometry args={[0.3, 0.315, 0.085, 16]} />
+        <meshToonMaterial color={palette.belt} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+      <mesh position={[0, 0.12, 0.3]}>
+        <boxGeometry args={[0.105, 0.08, 0.05]} />
+        <meshToonMaterial color={palette.gear} gradientMap={toonGradient} />
+      </mesh>
+
+      <DemonPlastron palette={palette} />
+    </>
+  )
+}
+
+/**
+ * Plastron d'acier : trois plaques bombées, deux rainures, un gorgerin, un disque.
+ *
+ * Les plaques sont **posées en avant du vêtement** — `scale-z` à 1,08 — et non
+ * centrées sur lui. C'est l'erreur qu'avait faite le plastron du clan à sa
+ * première version, où l'armure disparaissait entièrement dans le manteau : il
+ * faut sortir du volume qu'on habille, pas s'y loger.
+ */
+function DemonPlastron({ palette }: { palette: Palette }) {
+  return (
+    <>
+      {DEMON_PLATES.map((plate) => (
+        <mesh key={plate.y} castShadow position={[0, plate.y, 0]} scale={[1, 1, 1.08]}>
+          <cylinderGeometry
+            args={[plate.r, plate.r + 0.012, plate.h, 14, 1, true, -plate.arc, plate.arc * 2]}
+          />
+          {/* Secteur ouvert : sans `DoubleSide`, la plaque disparaît dès qu'on
+              voit sa face interne, c'est-à-dire de trois-quarts. */}
+          <meshToonMaterial
+            color={palette.belt}
+            gradientMap={toonGradient}
+            side={DoubleSide}
+          />
+          <Outlines thickness={OUTLINE} color={palette.outline} />
+        </mesh>
+      ))}
+
+      {/* Les deux rainures d'ombre. Non éclairées : ce sont des interstices,
+          pas des pièces, et une rainure qui prend la lumière se lit comme une
+          moulure en relief — l'inverse de ce qu'on veut. */}
+      {[0.4475, 0.3325].map((y) => (
+        <mesh key={y} position={[0, y, 0]} scale={[1, 1, 1.08]}>
+          <cylinderGeometry args={[0.286, 0.286, 0.02, 14, 1, true, -0.76, 1.52]} />
+          <meshBasicMaterial color={palette.scar} side={DoubleSide} />
+        </mesh>
+      ))}
+
+      {/* Le gorgerin : le liseré d'or qui ferme le plastron par le haut. C'est
+          lui qui empêche l'armure de se lire comme un tablier. */}
+      <mesh castShadow position={[0, 0.558, 0]}>
+        <cylinderGeometry args={[0.222, 0.205, 0.055, 14]} />
+        <meshToonMaterial color={palette.gear} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+      <mesh position={[0, 0.582, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.221, 0.01, 4, 20]} />
+        <meshToonMaterial color={palette.gearTrim} gradientMap={toonGradient} />
+      </mesh>
+
+      {/*
+        L'emblème rond, sur le pectoral droit du personnage (−X).
+
+        C'est le seul disque d'une tenue faite de plaques rectangulaires : à
+        21 unités ce n'est plus un emblème mais une tache d'or, et c'est
+        exactement ce qu'on lui demande — un point brillant qui dit où regarder
+        sur un buste autrement gris.
+      */}
+      <mesh position={[-0.13, 0.472, 0.3]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.04, 0.04, 0.022, 12]} />
+        <meshToonMaterial color={palette.gear} gradientMap={toonGradient} />
+      </mesh>
+      <mesh position={[-0.13, 0.472, 0.3]}>
+        <torusGeometry args={[0.053, 0.011, 4, 14]} />
+        <meshToonMaterial color={palette.gearTrim} gradientMap={toonGradient} />
+      </mesh>
+    </>
+  )
+}
+
+/**
+ * Bras du cinquième skin : manche bouffante, gantelet d'ardoise, gant sombre.
+ *
+ * **L'épaulière et la grappe sont montées ici**, sur le bras, et non sur le
+ * buste bien qu'elles appartiennent visuellement à l'armure : elles doivent
+ * suivre le geste. Posées sur le buste, elles resteraient en l'air pendant que
+ * l'épaule passe dessous — c'est le même arbitrage que les lamelles d'épaule du
+ * clan.
+ *
+ * La manche est **écartée de trois centimètres vers l'extérieur**, et c'est la
+ * seule liberté que le rig laisse ici : le pivot d'épaule est à 0,24 de l'axe,
+ * il appartient au squelette partagé et ne peut pas bouger pour une tenue. Or
+ * la tunique fait 0,26 de rayon à cette hauteur — une manche centrée sur le
+ * pivot y est à moitié enfouie, et l'épaule ronde du vêtement disparaît. C'est
+ * la pièce qui se décale, jamais l'articulation.
+ */
+function DemonArm({ palette, fist, side }: { palette: Palette; fist: boolean; side: number }) {
+  return (
+    <group>
+      <mesh castShadow position={[0.03 * side, 0.02, 0]} scale={[1, 0.84, 1.05]}>
+        <sphereGeometry args={[0.132, 12, 10]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+      <mesh castShadow position={[0, -0.12, 0]}>
+        <capsuleGeometry args={[0.066, 0.12, 4, 10]} />
+        <meshToonMaterial color={palette.trouser} gradientMap={toonGradient} />
+      </mesh>
+
+      {/*
+        Le gantelet d'ardoise, deux viroles et une plaque de coude.
+
+        C'est la pièce qui élargit la silhouette vue de face — le rôle que
+        tenaient les bandes de lin chez le clan — et la seule masse franchement
+        sombre d'une tenue pâle. Il va jusqu'à la main : une main couleur peau
+        au bout d'un gantelet casse la pièce en deux.
+      */}
+      <mesh castShadow position={[0, -0.305, 0]}>
+        <cylinderGeometry args={[0.086, 0.099, 0.235, 12]} />
+        <meshToonMaterial color={palette.grip} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+      {[-0.212, -0.398].map((y) => (
+        <mesh key={y} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.094, 0.015, 4, 16]} />
+          <meshToonMaterial color={palette.scar} gradientMap={toonGradient} />
+        </mesh>
+      ))}
+      <mesh castShadow position={[0, -0.252, 0.078]}>
+        <boxGeometry args={[0.105, 0.085, 0.05]} />
+        <meshToonMaterial color={palette.belt} gradientMap={toonGradient} />
+      </mesh>
+
+      {/* Le gant. Il grossit à mains nues comme celui des autres skins, bien
+          que cette tenue dégaine une épée par défaut : le rig ne promet nulle
+          part qu'un skin garde son arme, et une main qui ignorerait `fist`
+          serait un piège pour le jour où l'on en changera. */}
+      <mesh castShadow position={[0, -0.452, 0.005]} scale={fist ? 1.3 : 1}>
+        <sphereGeometry args={[0.064, 10, 9]} />
+        <meshToonMaterial color={palette.grip} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      {side < 0 ? <DemonPauldron palette={palette} /> : <DemonBeads palette={palette} />}
+    </group>
+  )
+}
+
+/**
+ * L'épaulière d'or, du côté du bras armé, et il n'y en a qu'une.
+ *
+ * **C'est la seule silhouette asymétrique du jeu.** Les quatre autres tenues
+ * sont rigoureusement symétriques, et une épaule plus haute que l'autre se
+ * reconnaît de dos, de profil et en pleine course — ce qu'aucune couleur ne
+ * fait. La gemme d'ambre qui la ferme est la seule pièce chaude au-dessus de la
+ * ceinture : le regard est blanc, les perles sont froides, l'or est un métal.
+ */
+function DemonPauldron({ palette }: { palette: Palette }) {
+  return (
+    <group position={[-0.05, 0.055, 0]}>
+      <mesh castShadow position={[0, 0.04, 0]} rotation={[0, 0, 0.2]}>
+        <boxGeometry args={[0.215, 0.075, 0.245]} />
+        <meshToonMaterial color={palette.gear} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+      <mesh position={[0.005, 0.088, 0]} rotation={[0, 0, 0.2]}>
+        <boxGeometry args={[0.225, 0.02, 0.255]} />
+        <meshToonMaterial color={palette.gearTrim} gradientMap={toonGradient} />
+      </mesh>
+      {/* Le rang d'acier sous l'or : sans lui, l'épaulière est une plaque
+          posée en équilibre, et non une pièce qui prend l'épaule. */}
+      <mesh castShadow position={[0.01, -0.03, 0]} rotation={[0, 0, 0.2]}>
+        <boxGeometry args={[0.19, 0.07, 0.21]} />
+        <meshToonMaterial color={palette.belt} gradientMap={toonGradient} />
+      </mesh>
+      <mesh position={[0, 0.055, 0.128]} scale={[1, 1.25, 0.65]}>
+        <octahedronGeometry args={[0.05, 0]} />
+        <meshToonMaterial color={DEMON_AMBER} gradientMap={toonGradient} />
+      </mesh>
+    </group>
+  )
+}
+
+/**
+ * La grappe de turquoises, nouée à l'avant-bras gauche.
+ *
+ * C'est le détail que la référence rend reconnaissable, et il est **au
+ * poignet** : à la ceinture, il se perdait sous la jupe. Au bras, il bouge avec
+ * le geste, et il équilibre l'épaulière sans l'annuler — une masse d'or en haut
+ * d'un côté, une grappe froide en bas de l'autre.
+ */
+function DemonBeads({ palette }: { palette: Palette }) {
+  return (
+    <group position={[0.082, -0.295, 0.058]}>
+      <mesh position={[0, 0.075, 0]} rotation={[Math.PI / 2, 0.3, 0]}>
+        <torusGeometry args={[0.028, 0.01, 4, 12]} />
+        <meshToonMaterial color={palette.gear} gradientMap={toonGradient} />
+      </mesh>
+      {DEMON_BEADS.map(([x, y, z, r]) => (
+        <mesh key={`${x}:${y}`} castShadow position={[x, y, z]}>
+          <sphereGeometry args={[r, 9, 8]} />
+          <meshToonMaterial color={palette.cord} gradientMap={toonGradient} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+/**
+ * Visage du cinquième skin : le regard blanc, et les marques qui l'encadrent.
+ *
+ * **Tout tient dans le signe de l'inclinaison**, et la première version l'avait
+ * à l'envers : coin extérieur bas, coin intérieur haut, c'est-à-dire un sourcil
+ * tombant — le personnage avait l'air terrifié, pas terrifiant. Le masque
+ * descend **vers le nez**, l'œil suit exactement la même pente, et la bouche
+ * tombe aux commissures. C'est la seule chose qui sépare les deux lectures, et
+ * elle tient dans un signe.
+ *
+ * L'œil est **plus large que haut** — une fente, pas une bille. Un grand œil
+ * rond et blanc, c'est de l'effroi ; une fente blanche sous un masque noir,
+ * c'est un regard qui vise.
+ *
+ * Les oreilles pointues sont la première chose qu'une tenue de ce jeu ajoute au
+ * crâne. Elles se posent **par-dessus** les oreilles rondes du rig, elles ne les
+ * remplacent pas : une tenue est un habillage, elle n'a pas le droit de retirer
+ * une pièce du squelette partagé — le jour où on l'ôte, le personnage doit
+ * redevenir exactement ce qu'il était.
+ */
+function DemonFace({ palette }: { palette: Palette }) {
+  return (
+    <>
+      {[1, -1].map((side) => (
+        <group
+          key={side}
+          position={[0.225 * side, 0.02, -0.02]}
+          rotation={[0.35, 0, -0.85 * side]}
+        >
+          <mesh castShadow position={[0, 0.085, 0]} scale={[1, 1, 0.55]}>
+            <coneGeometry args={[0.062, 0.2, 4]} />
+            <meshToonMaterial color={palette.skin} gradientMap={toonGradient} />
+            <Outlines thickness={OUTLINE} color={palette.outline} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* La flèche du front, qui descend jusqu'entre les sourcils. C'est la
+          marque la plus haute du visage, donc la seule qui reste visible quand
+          la tête s'incline à la course. */}
+      <mesh position={[0, 0.095, 0.216]} rotation={[1.52, 0, Math.PI]} scale={[1, 1, 0.24]}>
+        <coneGeometry args={[0.058, 0.16, 3]} />
+        <meshToonMaterial color={palette.scar} gradientMap={toonGradient} />
+      </mesh>
+
+      {[0.098, -0.098].map((x) => (
+        <group key={x}>
+          <mesh position={[x, 0.042, 0.226]} rotation={[0, 0, x > 0 ? 0.26 : -0.26]}>
+            <boxGeometry args={[0.138, 0.078, 0.016]} />
+            <meshToonMaterial color={palette.scar} gradientMap={toonGradient} />
+          </mesh>
+          <mesh position={[x * 0.97, 0.032, 0.237]} rotation={[0, 0, x > 0 ? 0.26 : -0.26]}>
+            <boxGeometry args={[0.086, 0.032, 0.022]} />
+            {/* Non éclairé, comme les yeux du Lynel : c'est la seule pièce du
+                modèle qui ne doive jamais s'éteindre quand la lumière tourne. */}
+            <meshBasicMaterial color={palette.eye} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Deux segments qui tombent aux commissures, jamais un trait droit : une
+          bouche neutre sous un regard blanc donne un visage absent. À cette
+          taille, on ne lit que la pente. */}
+      {[0.023, -0.023].map((x) => (
+        <mesh key={x} position={[x, -0.112, 0.232]} rotation={[0, 0, x > 0 ? 0.3 : -0.3]}>
+          <boxGeometry args={[0.046, 0.012, 0.012]} />
+          <meshToonMaterial color={palette.scar} gradientMap={toonGradient} />
+        </mesh>
+      ))}
+    </>
+  )
+}
+
+/**
+ * Pièce de tête du cinquième skin : une capuche rabattue.
+ *
+ * La seule des cinq qui **couvre** au lieu de dépasser. Le chapeau est un
+ * disque large, la coupe courte une calotte, la crinière une masse qui descend
+ * aux reins, la couronne de l'Aube part vers le haut ; une capuche ferme la
+ * silhouette et donne au casting son premier contour arrondi.
+ *
+ * Elle est **descendue de deux centimètres sur le front** par rapport à un
+ * placement neutre, et c'est de la mise en scène, pas de la géométrie : une
+ * capuche qui surplombe le front enfonce le regard dans son ombre, et un regard
+ * en retrait regarde de dessous. Remontée, la même capuche dégage le front et
+ * rend le visage ouvert — exactement le contraire de ce qu'on cherche.
+ *
+ * Les cheveux, eux, **ne sont pas dans la capuche** : frange et mèches de tempe
+ * sont montées à côté d'elle. C'est ce qui fait qu'on les voit dépasser au front
+ * et le long des joues plutôt que traverser l'étoffe.
+ */
+function DemonHood({ palette }: { palette: Palette }) {
+  return (
+    <>
+      {/* La capuche est un cylindre ouvert, comme le gilet du premier skin, et
+          pour la même raison : `cylinderGeometry` sait ne décrire qu'un secteur
+          d'angle, et deux plaques côte à côte laisseraient voir le crâne par la
+          tranche au premier pivot de la tête. */}
+      <mesh castShadow position={[0, -0.13, -0.015]}>
+        <cylinderGeometry
+          args={[0.295, 0.335, 0.31, 18, 1, true, HOOD_OPEN, Math.PI * 2 - 2 * HOOD_OPEN]}
+        />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} side={DoubleSide} />
+      </mesh>
+      <mesh castShadow position={[0, -0.005, 0.005]} scale={[1, 0.9, 1.08]}>
+        <sphereGeometry args={[0.3, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.52]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+
+      {/* Les ourlets ferment la tranche du cylindre, qui est d'épaisseur nulle :
+          sans eux, le bord de la capuche disparaît sous tout angle rasant. */}
+      {[HOOD_OPEN, -HOOD_OPEN].map((a) => (
+        <mesh
+          key={a}
+          castShadow
+          position={[Math.sin(a) * 0.307, -0.13, Math.cos(a) * 0.307]}
+          rotation={[0, a, 0]}
+        >
+          <boxGeometry args={[0.026, 0.3, 0.04]} />
+          <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        </mesh>
+      ))}
+
+      {/* La pointe rejetée en arrière : le détail qui dit « capuche » et non
+          « casque ». */}
+      <mesh castShadow position={[0, 0.02, -0.29]} rotation={[2.55, 0, 0]}>
+        <coneGeometry args={[0.105, 0.26, 6]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+        <Outlines thickness={OUTLINE} color={palette.outline} />
+      </mesh>
+      {/* La masse de nuque, qui comble l'écart entre la capuche et le dos. */}
+      <mesh castShadow position={[0, -0.22, -0.1]} scale={[1, 0.72, 0.86]}>
+        <sphereGeometry args={[0.21, 12, 10]} />
+        <meshToonMaterial color={palette.garment} gradientMap={toonGradient} />
+      </mesh>
+
+      {/* Calotte de cheveux sous la capuche : sans elle, on voit le crâne nu
+          par l'ouverture dès que la tête se tourne. */}
+      <mesh position={[0, -0.15, -0.01]} scale={[1, 0.62, 1]}>
+        <sphereGeometry args={[0.248, 14, 12]} />
+        <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
+      </mesh>
+      {/* Frange, puis deux mèches de tempe. Un premier jet posait cinq pointes
+          autour du crâne : sous la capuche, elles sortaient par les côtés et se
+          lisaient comme des piquants. Le blanc doit apparaître là où l'étoffe
+          s'ouvre — au front et le long des joues. */}
+      <mesh position={[0, 0.005, 0.118]} rotation={[-0.22, 0, 0]} scale={[1.08, 0.32, 0.58]}>
+        <sphereGeometry args={[0.205, 12, 9]} />
+        <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
+      </mesh>
+      {[0.175, -0.175].map((x) => (
+        <mesh key={x} position={[x, -0.16, 0.135]} rotation={[0.12, 0, x * 0.9]}>
+          <boxGeometry args={[0.055, 0.19, 0.05]} />
+          <meshToonMaterial color={palette.hair} gradientMap={toonGradient} />
+        </mesh>
       ))}
     </>
   )

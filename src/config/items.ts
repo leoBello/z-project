@@ -1,4 +1,4 @@
-import type { ItemId } from '../types/game'
+import type { EnemyKind, ItemId } from '../types/game'
 
 /**
  * Objets ramassables et leurs effets.
@@ -31,7 +31,7 @@ export type ItemSlot = ItemKind
  * Le premier est celui du départ de partie : c'est lui que `outfitOf` renvoie
  * quand l'emplacement est vide, et il n'existe donc aucun objet qui le donne.
  */
-export type OutfitId = 'luffy' | 'zoro' | 'madara' | 'pain'
+export type OutfitId = 'luffy' | 'zoro' | 'madara' | 'pain' | 'demon'
 
 /**
  * Ce que le personnage tient en main droite. Voir `HeroPlaceholder`.
@@ -85,6 +85,16 @@ export interface SkinTraits {
  */
 export const NEUTRAL_TRAITS: SkinTraits = { speed: 1, jump: 1, water: 1 }
 
+/**
+ * Aucune espèce ne frappe à un tarif particulier.
+ *
+ * Portée par tout objet qui ne vise personne, et déclarée plutôt qu'omise —
+ * même règle que `NEUTRAL_TRAITS` et `attackMultiplier`, et pour la même
+ * raison : un champ absent oblige chaque lecteur à traiter le cas, et c'est
+ * toujours le lecteur ajouté plus tard qui oublie de le faire.
+ */
+export const EVERY_SPECIES_ALIKE: Readonly<Partial<Record<EnemyKind, number>>> = {}
+
 const SKIN_TRAITS: Record<OutfitId, SkinTraits> = {
   luffy: { speed: 1, jump: 1.2, water: 1 },
   zoro: { speed: 1.18, jump: 1, water: 1 },
@@ -106,6 +116,11 @@ const SKIN_TRAITS: Record<OutfitId, SkinTraits> = {
   // vient après lui qu'il pourrait déséquilibrer — il est la fin de la
   // progression, pas une étape dedans.
   pain: { speed: 1.18, jump: 1.3, water: 1 },
+  // En dessous du réglage de base sur les deux axes, comme la tenue du clan,
+  // mais sans les trois cœurs qui payaient ce poids-là : celle-ci ne rend rien
+  // du tout hors de l'arène. C'est voulu — tout ce qu'elle donne, elle le donne
+  // contre une seule bête. Voir `DEMON_ARMOR`.
+  demon: { speed: 0.95, jump: 0.9, water: 1 },
 }
 
 export interface Item {
@@ -148,6 +163,21 @@ export interface Item {
    * plutôt que d'être un gain sec.
    */
   damageMultiplier: number
+  /**
+   * Multiplicateurs de dégâts reçus, **par espèce d'agresseur**.
+   *
+   * `damageMultiplier` dit ce que coûte un coup ; celui-ci dit ce que coûte un
+   * coup *de quelqu'un en particulier*. Les deux se multiplient, et une espèce
+   * absente de la table vaut un — c'est ce que `EVERY_SPECIES_ALIKE` déclare
+   * pour tous les objets qui ne visent personne.
+   *
+   * Une table par espèce, et non un booléen « anti-Lynel » : le jour où une
+   * babiole protégera des flèches d'octorok, elle s'écrira ici sans qu'une
+   * ligne du store change. C'est aussi ce qui oblige l'agresseur à **se
+   * nommer** — voir `damagePlayer`, dont le second paramètre n'existe que pour
+   * ça.
+   */
+  damageBy: Readonly<Partial<Record<EnemyKind, number>>>
   /**
    * Ce que l'objet fait au déplacement, en multiplicateurs.
    *
@@ -197,6 +227,7 @@ export const ZORO_GARB: Item = {
   damageMultiplier: 1,
   // La vitesse de cette tenue n'est pas ici mais dans `SKIN_TRAITS` : elle
   // vient du skin qu'elle donne, pas du vêtement. Voir `SkinTraits`.
+  damageBy: EVERY_SPECIES_ALIKE,
   traits: NEUTRAL_TRAITS,
   outfit: 'zoro',
   accent: '#6fa83c',
@@ -233,6 +264,7 @@ export const MADARA_GARB: Item = {
   damageMultiplier: 1,
   // Comme pour la tenue du bretteur : le poids de cette armure n'est pas ici
   // mais dans `SKIN_TRAITS`, parce qu'il vient du skin, pas du vêtement.
+  damageBy: EVERY_SPECIES_ALIKE,
   traits: NEUTRAL_TRAITS,
   outfit: 'madara',
   accent: '#c8443f',
@@ -303,6 +335,7 @@ export const DAWN_CLOAK: Item = {
   damageMultiplier: 1,
   // Comme pour les deux autres tenues : ce que celle-ci fait au déplacement
   // vient du skin qu'elle donne, pas du vêtement. Voir `SKIN_TRAITS`.
+  damageBy: EVERY_SPECIES_ALIKE,
   traits: NEUTRAL_TRAITS,
   outfit: 'pain',
   accent: '#e0832e',
@@ -315,6 +348,7 @@ export const KUSANAGI: Item = {
   revives: 0,
   attackMultiplier: 2,
   damageMultiplier: 1,
+  damageBy: EVERY_SPECIES_ALIKE,
   traits: NEUTRAL_TRAITS,
   weapon: 'katana',
   accent: '#4fc9a3',
@@ -353,6 +387,7 @@ export const CURSED_BLADE: Item = {
   revives: 0,
   attackMultiplier: 3,
   damageMultiplier: 2,
+  damageBy: EVERY_SPECIES_ALIKE,
   traits: NEUTRAL_TRAITS,
   weapon: 'cursed',
   accent: '#b03a3a',
@@ -386,14 +421,63 @@ export const FISHMAN_SCALES: Item = {
   revives: 0,
   attackMultiplier: 1,
   damageMultiplier: 1,
+  damageBy: EVERY_SPECIES_ALIKE,
   traits: { speed: 0.85, jump: 1, water: 2 },
   accent: '#7fd4e8',
+}
+
+/**
+ * Armure du Dieu Démon — la cinquième tenue, et la seule qui vise quelqu'un.
+ *
+ * Tous les objets du jeu valent la même chose partout : deux cœurs valent deux
+ * cœurs, une lame qui frappe double frappe double sur un octorok comme sur un
+ * boss. Celui-ci est le premier dont l'effet dépende de **qui frappe** — les
+ * dégâts du Lynel sont divisés par deux, et rien d'autre au monde ne cogne
+ * moins fort.
+ *
+ * Les cœurs sont des entiers, et l'arrondi de `damageTaken` fait le reste :
+ * les quatre attaques d'épée du Lynel tombent de 2 à 1, sa charge de 3 à 2
+ * (`Math.round(1,5)`), sa volée reste à 1 par le plancher. Autrement dit, à
+ * cinq cœurs, **son épée met cinq coups à tuer au lieu de trois, et sa charge
+ * trois au lieu de deux**. L'armure paie donc surtout au corps à corps, là où
+ * tombent les quatre attaques d'épée : elle récompense le joueur qui reste à
+ * portée et qui pare, pas celui qui tourne autour de l'arène.
+ *
+ * **Zéro cœur jaune**, et les deux aptitudes de déplacement sous le réglage de
+ * base : c'est la seule tenue du jeu qui ne donne rien du tout à qui la porte
+ * ailleurs que dans l'arène. Une armure qui aurait divisé les dégâts du boss
+ * *et* rendu des cœurs *et* laissé courir aussi vite aurait retiré les quatre
+ * autres tenues du jeu le jour où elle tombe. Lue d'un coup, la table dit ce
+ * qu'il faut en faire : on l'enfile pour un combat, on la retire après. C'est
+ * le premier objet qui fasse exister pour de bon le système d'emplacements —
+ * jusqu'ici, la meilleure tenue était la meilleure partout.
+ *
+ * L'accent est un céladon pâle, repris de l'étoffe. Il voisine avec les deux
+ * autres teintes froides de l'inventaire et s'en sépare sur deux axes : le jade
+ * de Kusanagi est franc et saturé là où celui-ci est lavé, et la nacre des
+ * écailles tire sur le bleu là où celui-ci tire sur le vert. C'est la troisième
+ * teinte froide de la table, et c'est le point le plus discutable de cet objet.
+ */
+export const DEMON_ARMOR: Item = {
+  id: 'demon-armor',
+  kind: 'outfit',
+  bonusHearts: 0,
+  revives: 0,
+  attackMultiplier: 1,
+  damageMultiplier: 1,
+  damageBy: { lynel: 0.5 },
+  // Comme pour les autres tenues : le poids de cette armure n'est pas ici mais
+  // dans `SKIN_TRAITS`, parce qu'il vient du skin et non du vêtement.
+  traits: NEUTRAL_TRAITS,
+  outfit: 'demon',
+  accent: '#8fd0c4',
 }
 
 export const ITEMS: readonly Item[] = [
   ZORO_GARB,
   MADARA_GARB,
   DAWN_CLOAK,
+  DEMON_ARMOR,
   KUSANAGI,
   CURSED_BLADE,
   FISHMAN_SCALES,
@@ -425,7 +509,13 @@ export function hasEffect(item: Item): boolean {
     item.damageMultiplier !== 1 ||
     item.traits.speed !== 1 ||
     item.traits.jump !== 1 ||
-    item.traits.water !== 1
+    item.traits.water !== 1 ||
+    // Sans cette ligne, l'Armure du Dieu Démon s'afficherait **sans aucun
+    // effet visible** alors que son texte est écrit et traduit : c'est très
+    // exactement le piège que la note ci-dessus décrit, et il s'est présenté
+    // au premier objet qui ne touchait ni aux cœurs ni aux multiplicateurs
+    // généraux.
+    Object.keys(item.damageBy).length > 0
   )
 }
 
@@ -467,6 +557,9 @@ const DEFAULT_WEAPON: Record<OutfitId, WeaponId> = {
   // celui-là aurait de toute façon été une incohérence : il repousse, il ne
   // tranche pas.
   pain: 'fists',
+  // Une épée, comme le bretteur et le clan : c'est une tenue de plaques, et
+  // celui qui la porte n'a jamais rien eu d'un moine.
+  demon: 'sword',
 }
 
 /**

@@ -2,7 +2,9 @@ import { SKY_PORTAL } from '../../config/portal'
 import { Portal } from '../environment/Portal'
 import { Lynel } from '../Lynel'
 import { ArenaGate } from './ArenaGate'
+import { ROAD_CHEST } from '../../config/chests'
 import { RotundaChest } from './RotundaChest'
+import { SkyChest } from './SkyChest'
 import { RotundaReward } from './RotundaReward'
 import { Flora } from './Flora'
 import { Ruins } from './Ruins'
@@ -51,6 +53,10 @@ export default function SkyIsland() {
           ruine décrit une pierre, ceux-ci sont un état de partie. */}
       <RotundaReward />
       <RotundaChest />
+      {/* Le coffre de la Voie, lui, est là dès l'arrivée et ne dépend de rien :
+          c'est tout son intérêt, on s'arme **avant** le gardien. Voir
+          `ROAD_CHEST`. */}
+      <SkyChest chest={ROAD_CHEST} />
     </>
   )
 }

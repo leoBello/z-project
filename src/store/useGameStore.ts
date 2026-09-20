@@ -24,6 +24,7 @@ import { clearProjectiles } from '../state/projectiles'
 import type {
   Annihilation,
   ChestId,
+  EnemyKind,
   GamePhase,
   ItemId,
   HeartSourceId,
@@ -308,8 +309,17 @@ export interface GameState {
    */
   runId: number
 
-  /** Inflige des dégâts au joueur ; ignoré pendant l'invincibilité. */
-  damagePlayer: (amount?: number) => void
+  /**
+   * Inflige des dégâts au joueur ; ignoré pendant l'invincibilité.
+   *
+   * `from` nomme l'**espèce** qui frappe, et il est optionnel : une chute, un
+   * piège ou un projectile sans propriétaire n'ont personne à déclarer, et
+   * l'omettre revient à dire « le monde », c'est-à-dire le tarif plein. Il
+   * n'existe que pour `damageBy` — voir la table des objets — et c'est la
+   * raison pour laquelle il porte une espèce et non un identifiant d'ennemi :
+   * une armure se taille contre une engeance, jamais contre un individu.
+   */
+  damagePlayer: (amount?: number, from?: EnemyKind) => void
   /** Vrai tant que le joueur est en i-frames (clignotement + immunité). */
   isInvulnerable: () => boolean
   /** Rend des cœurs au joueur. Ignoré si la barre est déjà pleine. */
@@ -355,7 +365,7 @@ export interface GameState {
    * chers, pas gratuits. Sans lui, le premier multiplicateur sous 0,5 rendrait
    * le joueur immortel.
    */
-  damageTaken: (amount: number) => number
+  damageTaken: (amount: number, from?: EnemyKind) => number
   /** Ouvre l'inventaire et met la partie en pause. */
   openInventory: () => void
   /** Referme l'inventaire, et la carte d'objet avec lui. */
@@ -556,14 +566,15 @@ export const useGameStore = create<GameState>((set, get) => ({
   ...initialState,
   runId: 0,
 
-  damagePlayer: (amount = 1) => {
+  damagePlayer: (amount = 1, from) => {
     const state = get()
     const { phase, hearts, isInvulnerable, damageTaken } = state
     if (phase !== 'playing' || isInvulnerable()) return
 
-    // L'appelant dit ce qu'il inflige, l'équipement dit ce que ça coûte. Les
-    // ennemis n'ont donc pas à connaître la table des objets.
-    const next = Math.max(0, hearts - damageTaken(amount))
+    // L'appelant dit ce qu'il inflige **et qui il est**, l'équipement dit ce
+    // que ça coûte. Les ennemis n'ont toujours pas à connaître la table des
+    // objets : ils se nomment, ils ne se comparent pas.
+    const next = Math.max(0, hearts - damageTaken(amount, from))
 
     /*
       Le coup était fatal, et quelque chose de porté l'annule.
@@ -633,13 +644,25 @@ export const useGameStore = create<GameState>((set, get) => ({
     return Math.round(SWORD_DAMAGE * multiplier)
   },
 
-  damageTaken: (amount) => {
+  damageTaken: (amount, from) => {
     const worn = Object.values(get().equipped)
     // Produit sur tout l'équipement et non lecture d'un seul emplacement : rien
     // n'interdit qu'une tenue et une arme se paient toutes les deux.
     let multiplier = 1
     for (const id of worn) {
-      multiplier *= itemById(id)?.damageMultiplier ?? 1
+      const item = itemById(id)
+      if (!item) continue
+      multiplier *= item.damageMultiplier
+      /*
+        Le tarif propre à l'espèce, multiplié par-dessus le général.
+
+        Les deux se composent au lieu de s'exclure, et c'est ce qui fait tenir
+        la lame maudite avec l'armure : les dégâts reçus doublent, puis ceux du
+        Lynel sont divisés par deux — on se retrouve au tarif normal *contre
+        lui seul*, et double contre tout le reste du monde. Rien n'a été écrit
+        pour ça, c'est le produit qui le produit.
+      */
+      if (from) multiplier *= item.damageBy[from] ?? 1
     }
     return Math.max(1, Math.round(amount * multiplier))
   },
