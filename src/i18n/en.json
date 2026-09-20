@@ -155,6 +155,10 @@
         "lynel-trial": {
           "name": "Trial of the three Lynels",
           "goal": "With the guardian down, three beasts have taken the garden. Fell all three for one more heart."
+        },
+        "golden-lynel": {
+          "name": "The Golden Lynel",
+          "goal": "The portcullis is up. At the end of the western causeway stands a mountain, and on its summit a beast of gold. Fell it for one more heart."
         }
       }
     },

@@ -38,6 +38,33 @@ export const LYNEL_COLORS = {
   glowPale: 0xe6ccff,
 } as const
 
+/**
+ * La robe du Lynel doré, qui remplace l'argent dans `useEnemyMaterials`.
+ *
+ * Les trois seules valeurs de ce fichier qui **passent** par ce hook-là, et
+ * elles y sont quand même : c'est ici que vivent les couleurs du Lynel, et les
+ * séparer selon le hook qui les consomme aurait obligé à chercher sa teinte
+ * dans deux fichiers. Les mettre à côté de la table des espèces aurait été
+ * pire — le doré n'en est pas une.
+ *
+ * **Chaude là où l'argenté est froid**, et c'est le seul critère : les deux
+ * bêtes ont la même silhouette, la même armure, les mêmes six attaques. Ce qui
+ * doit dire au joueur qu'il n'a pas affaire au même adversaire, c'est la
+ * température de la couleur — lisible à vingt unités, et à travers le flash
+ * blanc du coup. L'argenté est décalé vers le bleu pour se détacher de la
+ * pierre grise de la rotonde ; le doré se détache de la roche brune de la
+ * montagne par l'écart inverse.
+ *
+ * C'est l'or des ruines et non un jaune : la même famille que les frises de
+ * l'enceinte et la coupole. Il appartient à la forteresse comme l'autre — il
+ * n'est pas venu d'ailleurs, il est ce qu'elle a produit de dernier.
+ */
+export const GOLDEN_LYNEL_PALETTE = {
+  body: '#e5c06a',
+  dark: '#7c5a22',
+  accent: '#fbedc4',
+} as const
+
 export interface LynelMaterials {
   furMid: MeshToonMaterial
   maneCool: MeshToonMaterial

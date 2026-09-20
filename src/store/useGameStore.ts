@@ -283,6 +283,21 @@ export interface GameState {
    * (voir `SkyIsland.tsx`), et un compteur ne saurait pas *laquelle* est morte.
    */
   trialSlain: string[]
+  /**
+   * Quand le Lynel doré est tombé, ou `null` s'il est encore debout.
+   *
+   * **Un instant et non un booléen**, exactement pour la raison qui vaut à
+   * `portalOpenedAt` le sien : sa chute ouvre un portail, et un portail doit
+   * pouvoir se *percer* devant le joueur plutôt que d'être déjà là. Avec un
+   * booléen, le fragment de l'île aurait dû retenir de son côté l'instant du
+   * basculement — donc tenir un second état, à côté du premier, qui dit la même
+   * chose en moins fiable : il serait reparti à zéro à chaque aller-retour, et
+   * l'anneau se serait rouvert à chaque visite.
+   *
+   * Une liste d'identifiants comme `trialSlain` n'avait pas de sens : il n'y en
+   * a qu'un, et la question « lequel est mort » ne se pose pas.
+   */
+  goldenSlainAt: number | null
   /** Le journal de quêtes est affiché. Implique `phase === 'paused'`. */
   questsOpen: boolean
   /**
@@ -467,6 +482,15 @@ export interface GameState {
    * de frame, et un appel de trop ne doit pas avancer l'épreuve.
    */
   registerTrialKill: (id: string) => void
+  /**
+   * Le Lynel doré tombe : la dernière quête s'achève, et le cœur est donné.
+   *
+   * Idempotent, comme `registerTrialKill` et pour la même raison : la mort
+   * d'une bête est résolue dans sa boucle de frame, et un appel de trop ne doit
+   * pas verser deux fois la récompense — `claimHeartContainer` refuserait la
+   * seconde, mais la mesure d'audience, elle, serait partie deux fois.
+   */
+  registerGoldenKill: () => void
   /** Ouvre le journal de quêtes, et met la partie en pause. */
   openQuests: () => void
   closeQuests: () => void
@@ -533,6 +557,7 @@ const initialState = {
   skyBoonTaken: false,
   skyVisited: false,
   trialSlain: [] as string[],
+  goldenSlainAt: null as number | null,
   questsOpen: false,
   bossFellAt: null as [number, number, number] | null,
   bossState: 'idle' as 'idle' | 'fighting' | 'defeated',
@@ -1091,6 +1116,16 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (get().claimHeartContainer('trial')) track('trial_cleared', { hearts: get().hearts })
   },
 
+  registerGoldenKill: () => {
+    if (get().goldenSlainAt !== null) return
+    set({ goldenSlainAt: gameNow() })
+    // Même ordre que l'épreuve : le réceptacle d'abord, la mesure ensuite et
+    // seulement s'il a été versé — une bête tombée pendant l'écran de fin ne
+    // clôt rien. Les cœurs sont relus après, sinon on rapporterait la barre
+    // d'avant la récompense.
+    if (get().claimHeartContainer('golden')) track('golden_slain', { hearts: get().hearts })
+  },
+
   startBossFight: () => {
     // Idempotent, et ce n'est pas de la prudence : le Lynel l'appelle depuis sa
     // boucle, donc potentiellement soixante fois par seconde tant que le joueur
@@ -1248,6 +1283,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       equipped: {},
       openedChests: [],
       trialSlain: [],
+      goldenSlainAt: null,
       bonusCarry: {},
       runId: state.runId + 1,
     }))

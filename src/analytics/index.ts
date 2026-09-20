@@ -102,11 +102,21 @@ interface Events {
   /**
    * Les trois Lynels de l'épreuve sont tombés, et le cœur est donné.
    *
-   * C'est le dernier écran du jeu : l'écart entre `boss_defeated` et celui-ci
-   * dit combien de joueurs, une fois le gardien vaincu, ont trouvé qu'il restait
-   * quelque chose à faire — c'est-à-dire si le journal de quêtes se lit.
+   * L'écart entre `boss_defeated` et celui-ci dit combien de joueurs, une fois
+   * le gardien vaincu, ont trouvé qu'il restait quelque chose à faire —
+   * c'est-à-dire si le journal de quêtes se lit.
    */
   trial_cleared: { hearts: number }
+  /**
+   * Le Lynel doré tombe au sommet de la montagne de l'ouest.
+   *
+   * C'est le dernier écran du jeu, et le seul chiffre qui dise si la montée
+   * valait le détour : l'écart avec `trial_cleared` mesure combien de joueurs,
+   * herse levée, sont allés voir ce qu'elle fermait. S'il est grand, c'est le
+   * chemin qui ne se voit pas — pas le combat qui décourage, puisqu'on ne peut
+   * pas décourager de ce qu'on n'a pas trouvé.
+   */
+  golden_slain: { hearts: number }
 }
 
 declare global {

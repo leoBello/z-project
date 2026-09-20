@@ -1,5 +1,6 @@
 import { TRIAL_COUNT } from './quests'
 import { CORE_Y, ROTUNDA_R, WALL_R, groundAt } from './skyIsland'
+import { MOUNT_WORLD, SUMMIT_CENTER, SUMMIT_R } from './skyMountain'
 import type { LynelAttackId, LynelPhase } from '../types/game'
 
 /**
@@ -161,6 +162,65 @@ export const TRIAL_POSTS: readonly TrialPost[] = Array.from(
   },
 )
 
+// --- Le Lynel doré ----------------------------------------------------------
+
+/** Son nom au registre des ennemis. Un seul : il n'y en a qu'un. */
+export const GOLDEN_ID = 'lynel-golden'
+
+/**
+ * Points de vie du Lynel doré.
+ *
+ * Une fois et demie le gardien. C'est beaucoup, et ce n'est pas la mesure de sa
+ * difficulté : le joueur qui monte jusqu'à lui a déjà tué quatre Lynels, il
+ * connaît la parade, les six attaques et la valeur d'une ouverture. Ce qui doit
+ * durer plus longtemps, c'est le combat — pas l'apprentissage, qui est fait.
+ *
+ * Et il n'a **pas** de premier tiers non plus : il ouvre en phase `arena`, avec
+ * la charge et la volée, puis bascule en `rage` à mi-vie. Trois cours d'épée de
+ * plus auraient repoussé le vrai combat de deux minutes.
+ */
+export const GOLDEN_HP = 54
+
+/**
+ * Seuils de phase du doré, en points de vie restants.
+ *
+ * `arena` vaut ses PV de départ, ce qui n'est pas un tour de passe-passe mais
+ * la lecture littérale de `phaseOf` : `hp > arena` est faux dès la première
+ * frame, donc il ne connaît jamais la phase `sword`. Écrire `Infinity` aurait
+ * dit la même chose en cachant d'où vient le nombre.
+ */
+export const GOLDEN_PHASES = { arena: GOLDEN_HP, rage: GOLDEN_HP / 2 } as const
+
+/**
+ * Cœurs ajoutés à chacune de ses attaques.
+ *
+ * **Un de plus, en dur, et non un multiplicateur.** Les cœurs sont entiers :
+ * un facteur 1,5 aurait donné 3 au balayage comme à l'estoc et au souffle —
+ * donc la même chose que +1 — mais **5** à la charge, soit la moitié d'une
+ * barre de vie complète en un coup qui ne se pare pas. Le multiplicateur aurait
+ * transformé une attaque en sentence, là où l'addition les renforce toutes de
+ * la même façon.
+ *
+ * La volée fait exception et garde son dégât : une flèche passe par le système
+ * commun de projectiles, qui ne sait pas qui l'a tirée. Corriger ça
+ * demanderait un dégât par projectile, ce qui est une autre tâche — et trois
+ * flèches à 1 restent trois flèches.
+ */
+export const GOLDEN_DAMAGE_BONUS = 1
+
+/**
+ * Son poste, et l'anneau dont il ne sort pas : le plateau du sommet.
+ *
+ * Une unité et demie en deçà de la lèvre, pour la même raison que la marge de
+ * la porte sud sur le jardin : une charge lancée vers le bord sortirait de la
+ * montagne, et une bête qui tombe de son arène ne meurt pas — elle disparaît du
+ * combat.
+ */
+export const GOLDEN_POST: readonly [number, number, number] = SUMMIT_CENTER
+export const GOLDEN_LEASH: readonly LynelLeash[] = [
+  { x: MOUNT_WORLD.x, z: MOUNT_WORLD.z, min: 0, max: SUMMIT_R - 1.5 },
+]
+
 /**
  * Seuils de phase, en points de vie restants.
  *
@@ -170,9 +230,26 @@ export const TRIAL_POSTS: readonly TrialPost[] = Array.from(
  */
 export const PHASE_THRESHOLDS = { arena: 24, rage: 12 } as const
 
-export function phaseOf(hp: number): LynelPhase {
-  if (hp > PHASE_THRESHOLDS.arena) return 'sword'
-  if (hp > PHASE_THRESHOLDS.rage) return 'arena'
+/** Les deux seuils d'une bête. Ceux du gardien, ou ceux du doré. */
+export interface LynelPhases {
+  arena: number
+  rage: number
+}
+
+/**
+ * La phase, déduite des PV restants et des seuils de la bête.
+ *
+ * Les seuils sont un **paramètre** et non une constante depuis que le doré
+ * existe : ses 54 PV lus contre la table du gardien l'auraient laissé trente
+ * points de vie durant en phase `sword`, c'est-à-dire à deux attaques, ce qui
+ * est le contraire de ce qu'on attend d'un dernier adversaire. Les passer en
+ * argument plutôt que d'en faire un ratio garde intact le cas des bêtes de
+ * l'épreuve, qui ouvrent à 18 PV en phase `arena` — un ratio les aurait toutes
+ * renvoyées au cours d'épée.
+ */
+export function phaseOf(hp: number, thresholds: LynelPhases = PHASE_THRESHOLDS): LynelPhase {
+  if (hp > thresholds.arena) return 'sword'
+  if (hp > thresholds.rage) return 'arena'
   return 'rage'
 }
 

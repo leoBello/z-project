@@ -27,8 +27,17 @@ export const ISLAND_R = 55
 export const ISLAND_DEPTH = 46
 /** La lèvre retombe un peu avant de basculer sous l'île. */
 export const RIM_DROP = -1.2
-/** Étendue du fond de minimap : l'île, plus une marge. */
-export const ISLAND_MAP_SIZE = 130
+/*
+  Le cadrage de la minimap **n'est plus ici**.
+
+  Il y était — « l'île, plus une marge », cent trente unités centrées sur zéro —
+  et c'était juste tant que l'île était tout ce qu'il y avait à montrer. Depuis
+  que la voie de l'ouest et sa montagne s'étendent jusqu'à cent douze unités du
+  centre, le cadre est décidé par elles : il vit dans `config/skyMountain.ts`,
+  sous `ISLAND_MAP_SIZE` et `ISLAND_MAP_CENTER_X`, et il en est **dérivé** au
+  lieu d'être écrit. Le laisser ici aurait demandé de recopier à la main deux
+  cotes de la montagne, et de les corriger le jour où elle bouge.
+*/
 
 /** Rayon de l'enceinte, et hauteur de son mur. */
 export const WALL_R = 29.5

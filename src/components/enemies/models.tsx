@@ -38,9 +38,21 @@ const PALETTES: Record<EnemyKind, { body: string; dark: string; accent: string }
   lynel: { body: '#dfe4ee', dark: '#5a6378', accent: '#f4f6fb' },
 }
 
-export function useEnemyMaterials(kind: EnemyKind): EnemyMaterials {
+/**
+ * Jeu de matériaux d'un ennemi, éventuellement repeint.
+ *
+ * L'`override` sert un seul cas et pourrait être une quatrième entrée de
+ * `PALETTES` : ce serait faux. La table dit les **espèces**, et le Lynel doré
+ * n'en est pas une — il partage le registre, les statistiques de base, le
+ * modèle et la couleur de minimap du Lynel. Lui donner une ligne à lui, c'est
+ * accepter qu'un réglage du Lynel cesse un jour de s'appliquer aux deux.
+ */
+export function useEnemyMaterials(
+  kind: EnemyKind,
+  override?: { body: string; dark: string; accent: string },
+): EnemyMaterials {
   return useMemo(() => {
-    const palette = PALETTES[kind]
+    const palette = override ?? PALETTES[kind]
     const make = (color: string) =>
       new MeshToonMaterial({ color: new Color(color), gradientMap: toonGradient })
 
@@ -54,7 +66,9 @@ export function useEnemyMaterials(kind: EnemyKind): EnemyMaterials {
         accent: new Color(palette.accent),
       },
     }
-  }, [kind])
+    // `override` est une constante de module chez son unique appelant, donc sa
+    // référence est stable : la dépendance ne provoque aucune reconstruction.
+  }, [kind, override])
 }
 
 const OUTLINE = 0.03

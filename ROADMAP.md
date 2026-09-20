@@ -4,8 +4,8 @@ Mini-jeu 3D navigateur inspiré de Zelda, pour portfolio front-end.
 Direction artistique : **diorama low-poly cozy** — cel-shading, FOV étroit,
 tilt-shift. La recette caméra + post-traitement du HD-2D, appliquée à de la 3D.
 
-Dernière mise à jour : 20 septembre 2026 — le journal de quêtes, et l'épreuve
-des trois Lynels qui ferme la partie.
+Dernière mise à jour : 20 septembre 2026 — la Montagne de l'Ouest : une voie
+gardée par une herse, une spire à gravir, et le Lynel doré au sommet.
 
 ---
 
@@ -281,6 +281,67 @@ des trois Lynels qui ferme la partie.
   l'état *vivant* du store l'aurait emporté à la frame de sa mort, sans
   écrasement, sans détente et sans fumée : les deux listes de bêtes sont donc des
   instantanés pris **au montage de l'île**
+
+### La Montagne de l'Ouest
+- Un **promontoire** hors de l'île : une voie de pierre de trente-deux unités
+  qui part de la prairie, franchit dix-neuf unités de vide, et aborde une
+  montagne de vingt-quatre de rayon et vingt de haut, socle inversé compris.
+  Au sommet, un plateau de neuf et demi qui est l'arène du Lynel doré
+- **La montagne est une surface à elle, polaire autour de son propre centre**, et
+  non une extension du relief de l'île. Ce n'est pas un choix d'écriture : dans
+  le repère de l'île, à cent unités du centre, un chemin de six unités de large
+  ne couvre que 0,07 radian — le maillage de collision de l'île en échantillonne
+  0,065 par secteur, le chemin n'aurait donc pas existé pour la physique
+- **La spire est une entaille dans le cône, pas une corniche rapportée** : trois
+  quarts de tour, pente mesurée de 0,27 au pied à 0,36 au plus raide (seuil de
+  praticabilité : 0,50), six unités de large sur toute la montée, mur d'un côté
+  et vide de l'autre. Les trois corrections qui la tiennent — protection du
+  plateau, raccord du pan sans rampe, arrivée du pont sans marche — sont
+  écrites dans `mountainHeight`, chacune à côté du défaut qu'elle répare
+- **Le cap du promontoire est dicté par la caméra, pas par le goût.** Plein
+  ouest — la lecture littérale de « à gauche » — le plan de la herse était
+  parallèle à l'axe de vue, donc invisible, et l'une des deux tours la masquait
+  entièrement : le joueur était bloqué par quelque chose qu'il ne voyait pas.
+  Trente degrés à l'ouest du nord rendent 87 % de sa largeur et rangent les
+  tours de part et d'autre
+- **La herse ferme un passage, pas seulement sa propre largeur.** Plantée sur
+  l'île, elle se contournait par l'herbe : le sol de l'île ne s'arrête pas aux
+  bords de la voie. Elle est donc six unités et demie **au-delà de la lèvre**,
+  au-dessus du vide, et pour la même raison la travée qui porte ses tours n'est
+  pas plus large que le pont — le personnage saute 1,33 unité, donc tout dallage
+  hors des parapets est un contournement
+- **Le collider de la montagne porte lui-même son cap.** Posé dans le groupe qui
+  porte l'image, il en prenait la translation et **pas la rotation** : le cône et
+  le plateau, de révolution, ne disaient rien, mais la spire était décalée de
+  soixante degrés et l'on tombait au travers. L'image, elle, était juste — aucune
+  capture ne pouvait le montrer
+
+### Le Lynel doré
+- 54 PV — une fois et demie le gardien — et **un cœur de plus à chaque coup**.
+  Un bonus fixe et non un multiplicateur : les cœurs sont entiers, et un facteur
+  1,5 aurait porté la charge à cinq, soit la moitié d'une barre de vie en un
+  coup qui ne se pare pas
+- **Le même composant, un rôle de plus.** `role="golden"` décide de ce que sa
+  mort déclenche, et en déduit ses trois réglages — robe, seuils de phase, bonus
+  de dégâts. Trois props de plus auraient permis de monter un doré argenté qui
+  frappe comme un gardien, c'est-à-dire un état que rien ne décrit
+- **Les seuils de phase sont devenus un paramètre.** Lus contre la table du
+  gardien, ses 54 PV l'auraient laissé trente points durant en phase `sword`,
+  à deux attaques. Un ratio aurait cassé les bêtes de l'épreuve, qui ouvrent à
+  18 PV en phase `arena` : c'est donc un argument, pas une fraction
+- **Elle est sur son plateau dès l'arrivée sur l'île**, et non à la fin de
+  l'épreuve : ce qui interdit le promontoire, c'est la herse, pas l'absence de
+  la bête. Elle s'inscrit donc au registre des ennemis dès la première seconde,
+  et son point paraît sur la minimap au sommet de la montagne — on sait qu'il y
+  a quelque chose là-haut avant de savoir comment y monter. Elle ne coûte rien à
+  laisser tourner : hors de son rayon de détection, elle reste au repos, et le
+  calque de combat ne montre de barre que pour une bête engagée ou blessée
+- Sa chute donne **un cœur maximal** et ouvre un **troisième portail** sur le
+  plateau, qui ramène au continent sans une ligne de code de plus — la règle
+  d'interaction envoie déjà vers l'autre carte que la carte courante
+- La volée garde son dégât : une flèche passe par le système commun de
+  projectiles, qui ne sait pas qui l'a tirée. Un dégât par projectile est une
+  autre tâche
 
 ### Objets et inventaire
 - Table déclarative dans `src/config/items.ts` : un objet y déclare ce qu'il
@@ -926,5 +987,11 @@ codé.
 | Ce qui accomplit une quête | `questBoard` dans `src/config/quests.ts` |
 | Mise en page du journal, bulle de première quête | `src/components/quests/` + `.quests*` et `.touch-hint--quest` dans `src/index.css` |
 | Postes, points de vie et laisse des Lynels de l'épreuve | `TRIAL_*` dans `src/config/lynel.ts` |
+| Cap, longueur et largeur de la voie de l'ouest | `SPUR_THETA`, `DECK_*` dans `src/config/skyMountain.ts` |
+| Où la herse se dresse, et de combien elle se lève | `GATE_*`, `GRILLE_*` dans `src/config/skyMountain.ts` |
+| Forme de la montagne et pente de la spire | `mountainHeight` dans `src/config/skyMountain.ts` |
+| Cadrage du fond de minimap céleste | `ISLAND_MAP_*` dans `src/config/skyMountain.ts` |
+| Points de vie, dégâts et phases du Lynel doré | `GOLDEN_*` dans `src/config/lynel.ts` |
+| Robe du Lynel doré | `GOLDEN_LYNEL_PALETTE` dans `src/components/enemies/lynelMaterials.ts` |
 | Ce que la mort d'un Lynel déclenche | `damage()` dans `src/components/Lynel.tsx` |
 | Découpage du bundle | `advancedChunks` dans `vite.config.ts` |
