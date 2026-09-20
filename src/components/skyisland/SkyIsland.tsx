@@ -8,7 +8,6 @@ import {
   TRIAL_POSTS,
 } from '../../config/lynel'
 import { SKY_PORTAL } from '../../config/portal'
-import { TRIAL_COUNT } from '../../config/quests'
 import { SUMMIT_PORTAL } from '../../config/skyMountain'
 import { useGameStore } from '../../store/useGameStore'
 import { Portal } from '../environment/Portal'
@@ -43,13 +42,6 @@ import { SkyWater } from './Water'
  */
 export default function SkyIsland() {
   const defeated = useGameStore((state) => state.bossState === 'defeated')
-  /*
-    L'épreuve accomplie ouvre deux choses d'un coup : la herse de la voie, et la
-    bête qui attend au bout. C'est **la même lecture** qui pilote les deux, pas
-    deux drapeaux à tenir d'accord — une herse levée sur une montagne vide, ou
-    l'inverse, sont des états que rien ne peut produire ici.
-  */
-  const trialDone = useGameStore((state) => state.trialSlain.length >= TRIAL_COUNT)
   /*
     Quand le doré est tombé, ou `null` s'il tient encore : c'est directement la
     prop d'ouverture du portail du sommet.
@@ -138,13 +130,27 @@ export default function SkyIsland() {
       {/*
         Le Lynel doré, sur le plateau du sommet.
 
-        Le même composant que les quatre autres — son rôle suffit à en faire ce
-        qu'il est. Il n'engage pas de combat d'arène et n'a pas de barrières :
-        son arène, c'est le plateau, et la seule fuite est une spire de
-        quatre-vingts unités que la bête ne descendra pas. Le lieu enferme
+        **Il est là dès l'arrivée sur l'île, et non à l'accomplissement de
+        l'épreuve.** C'est la herse qui interdit le promontoire, pas l'absence
+        de la bête : elle n'a donc aucune raison d'attendre dans les coulisses.
+        Ce qu'on y gagne est concret — elle s'inscrit au registre des ennemis,
+        donc son point paraît sur la minimap au sommet de la montagne dès la
+        première seconde. Le joueur sait qu'il y a quelque chose là-haut avant
+        de savoir comment y monter, et c'est exactement ce que doit faire une
+        porte fermée.
+
+        Elle ne coûte rien à laisser tourner : à cent trente unités du point
+        d'arrivée, elle est hors de son rayon de détection (14), donc au repos
+        à son poste. Et le calque de combat ne montre une barre de vie que pour
+        une bête engagée ou blessée récemment — celle-ci n'affiche rien.
+
+        Le même composant que les quatre autres, du reste : son rôle suffit à en
+        faire ce qu'elle est. Elle n'engage pas de combat d'arène et n'a pas de
+        barrières ; son arène, c'est le plateau, et la seule fuite est une spire
+        de quatre-vingts unités que la bête ne descendra pas. Le lieu enferme
         mieux qu'un voile.
       */}
-      {trialDone && goldenStanding && (
+      {goldenStanding && (
         <Lynel
           id={GOLDEN_ID}
           home={GOLDEN_POST}

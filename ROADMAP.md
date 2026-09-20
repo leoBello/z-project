@@ -329,6 +329,13 @@ gardée par une herse, une spire à gravir, et le Lynel doré au sommet.
   gardien, ses 54 PV l'auraient laissé trente points durant en phase `sword`,
   à deux attaques. Un ratio aurait cassé les bêtes de l'épreuve, qui ouvrent à
   18 PV en phase `arena` : c'est donc un argument, pas une fraction
+- **Elle est sur son plateau dès l'arrivée sur l'île**, et non à la fin de
+  l'épreuve : ce qui interdit le promontoire, c'est la herse, pas l'absence de
+  la bête. Elle s'inscrit donc au registre des ennemis dès la première seconde,
+  et son point paraît sur la minimap au sommet de la montagne — on sait qu'il y
+  a quelque chose là-haut avant de savoir comment y monter. Elle ne coûte rien à
+  laisser tourner : hors de son rayon de détection, elle reste au repos, et le
+  calque de combat ne montre de barre que pour une bête engagée ou blessée
 - Sa chute donne **un cœur maximal** et ouvre un **troisième portail** sur le
   plateau, qui ramène au continent sans une ligne de code de plus — la règle
   d'interaction envoie déjà vers l'autre carte que la carte courante
