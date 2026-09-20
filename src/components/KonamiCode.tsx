@@ -19,6 +19,16 @@ import { useGameStore } from '../store/useGameStore'
  * tel quel — c'est le comportement de tous les jeux qui portent ce code, et
  * neutraliser les touches pendant la saisie obligerait à deviner *avant* le
  * premier appui qu'un code est en train d'être tapé.
+ *
+ * **Il vide les trois cartes, et pas seulement le continent.** Rien n'a changé
+ * ici pour ça : le code déclenche la même frappe qu'avant, et ce sont les bêtes
+ * qui ont appris à en mourir (voir l'onde d'annihilation dans `Lynel.tsx`).
+ * Comme chacune meurt par son chemin normal, l'aiguillage sur le rôle fait le
+ * reste — les barrières de la rotonde s'ouvrent, l'épreuve s'achève, le portail
+ * du sommet se perce. La triche débouche sur le même état de partie qu'une
+ * victoire, ce qui est la seule façon d'en faire un outil de test fiable.
+ *
+ * Malenia, elle, y survit : la tuer d'un code annulerait le service rendu.
  */
 
 /**

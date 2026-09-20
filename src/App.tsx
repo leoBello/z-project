@@ -79,16 +79,10 @@ export default function App() {
         // sinon le ciel est entièrement clippé par le frustum.
         camera={{ fov: CAMERA.fov, near: 0.1, far: 2000, position: CAMERA.offset }}
       >
-        {/* Brume assortie au ciel : donne la profondeur et masque les bords de map. */}
-        {/* La brume commence au-delà du joueur et sature avant le bord de la
-            carte : elle masque les limites du terrain et donne la profondeur. */}
-        {/*
-          La couleur de brume est accordée à celle du ciel juste au-dessus de
-          l'horizon (mélange de `horizon` et `glow` dans StarrySky). Sans cet
-          accord, le terrain lointain s'estompe vers une teinte différente de
-          celle du ciel et l'image se coupe en deux sur la ligne d'horizon.
-        */}
-        <fog attach="fog" args={['#6b7cba', 60, 200]} />
+        {/* La brume n'est plus ici : elle dépend de la carte, et elle est donc
+            montée par `<Environment>` à partir de `config/atmosphere.ts`, avec
+            les quatre lumières. Une carte qui a son propre ciel a forcément sa
+            propre brume — voir l'en-tête de cette table. */}
 
         {/* Avant <Physics> et avec une priorité de useFrame négative : tout ce
             qui lit un délai de gameplay doit trouver l'horloge déjà avancée. */}

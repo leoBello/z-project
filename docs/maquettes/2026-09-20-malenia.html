@@ -1,0 +1,2826 @@
+<meta charset="utf-8">
+<title>Malenia, Lame de Miquella</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --ground: #f2ede1;
+    --surface: #ffffff;
+    --ink: #1d2018;
+    --ink-2: #565c4c;
+    --ink-3: #888f78;
+    --line: #d5cfbb;
+    --accent: #a32b33;
+    --violet: #6d2fd0;
+
+    --step--1: 0.8125rem;
+    --step-0: 0.9375rem;
+    --step-1: 1.125rem;
+    --step-2: 1.5rem;
+    --step-4: clamp(2.5rem, 6vw, 3.75rem);
+
+    --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+    --display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --ground: #140a10;
+      --surface: #1f1218;
+      --ink: #efe4d8;
+      --ink-2: #bba392;
+      --ink-3: #856f66;
+      --line: #3a222a;
+      --accent: #e8776f;
+      --violet: #b083ff;
+    }
+  }
+
+  :root[data-theme='dark'] {
+    --ground: #140a10;
+    --surface: #1f1218;
+    --ink: #efe4d8;
+    --ink-2: #bba392;
+    --ink-3: #856f66;
+    --line: #3a222a;
+    --accent: #e8776f;
+    --violet: #b083ff;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--step-0);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding-inline: 20px;
+    padding-block: 28px 64px;
+  }
+
+  .masthead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px 28px;
+    margin-bottom: 22px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 6px;
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: var(--step-4);
+    font-weight: 600;
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .standfirst {
+    max-width: 50ch;
+    color: var(--ink-2);
+    margin: 10px 0 0;
+  }
+
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 13px;
+    border: 1px solid var(--violet);
+    border-radius: 999px;
+    color: var(--violet);
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    white-space: nowrap;
+  }
+
+  .status::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: currentColor;
+  }
+
+  /* --- Visionneuse -------------------------------------------------------- */
+
+  .viewer {
+    position: relative;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #0d0508;
+    aspect-ratio: 16 / 9;
+    min-height: 340px;
+  }
+
+  .viewer canvas { display: block; width: 100%; height: 100%; }
+
+  .viewer__loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #b08a80;
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    background: #0d0508;
+  }
+
+  .rail {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    right: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    pointer-events: none;
+  }
+
+  .rail > * { pointer-events: auto; }
+
+  .rail__group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 8px;
+    background: rgba(16, 6, 10, 0.82);
+    border: 1px solid rgba(200, 120, 110, 0.24);
+    backdrop-filter: blur(8px);
+  }
+
+  .rail button {
+    appearance: none;
+    border: 0;
+    border-radius: 5px;
+    padding: 6px 11px;
+    background: transparent;
+    color: #dcc0b4;
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .rail button:hover { background: rgba(200, 120, 110, 0.18); color: #fff; }
+  .rail button[aria-pressed='true'] { background: #a32b33; color: #fff; }
+  .rail button[aria-pressed='true'][data-pose] { background: #5b34a8; }
+  .rail button:focus-visible { outline: 2px solid #e8776f; outline-offset: 1px; }
+
+  .readout {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(16, 6, 10, 0.85);
+    border: 1px solid rgba(200, 120, 110, 0.24);
+    color: #dcc0b4;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.55;
+    max-width: 62%;
+  }
+
+  .readout b { color: #fff; font-weight: 500; }
+  .readout .pose { color: #c7a8ff; display: block; margin-top: 4px; }
+
+  .hint {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin: 10px 0 0;
+    color: var(--ink-3);
+    font-family: var(--mono);
+    font-size: var(--step--1);
+  }
+
+  /* --- Sections ----------------------------------------------------------- */
+
+  section { margin-top: 52px; }
+
+  h2 {
+    font-family: var(--display);
+    font-size: var(--step-2);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 6px;
+  }
+
+  h3 {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 28px 0 10px;
+  }
+
+  .section-note {
+    max-width: 64ch;
+    color: var(--ink-2);
+    margin: 0 0 22px;
+  }
+
+  .tiers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .tier {
+    background: var(--surface);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .tier__swatch { width: 26px; height: 4px; border-radius: 999px; }
+
+  .tier__name {
+    font-family: var(--display);
+    font-size: var(--step-1);
+    font-weight: 600;
+  }
+
+  .tier__cote {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tier p { margin: 0; color: var(--ink-2); font-size: var(--step--1); }
+
+  table { width: 100%; border-collapse: collapse; font-size: var(--step--1); }
+  .table-scroll { overflow-x: auto; }
+
+  th, td {
+    text-align: left;
+    padding: 9px 14px 9px 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: baseline;
+  }
+
+  th {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  td:first-child { color: var(--ink); white-space: nowrap; }
+  td.num {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--accent);
+  }
+  td.yes { font-family: var(--mono); color: var(--violet); white-space: nowrap; }
+  td.no { font-family: var(--mono); color: var(--ink-3); white-space: nowrap; }
+  td:last-child { color: var(--ink-2); }
+
+  .mono { font-family: var(--mono); }
+
+  /* --- Frises ------------------------------------------------------------- */
+
+  .timeline {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    padding: 22px 20px 16px;
+    overflow-x: auto;
+  }
+
+  .track {
+    position: relative;
+    min-width: 560px;
+    height: 34px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--line), var(--line));
+    margin-bottom: 8px;
+  }
+
+  .track + .track { margin-top: 22px; }
+
+  .band {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: 5px;
+    display: grid;
+    place-items: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .band--tell { background: #8a8f7c; }
+  .band--cue { background: #6d2fd0; }
+  .band--parry { background: #4a7a2e; }
+  .band--fail { background: #b4553f; }
+  .band--rot { background: #a32b33; }
+  .band--punish { background: #d9a441; color: #241a14; }
+
+  .mark {
+    position: absolute;
+    top: -20px;
+    bottom: -16px;
+    width: 2px;
+    background: var(--ink);
+  }
+
+  .mark span {
+    position: absolute;
+    top: -4px;
+    left: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  .track__label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 6px;
+  }
+
+  .asks { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
+
+  .asks li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    align-items: baseline;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .asks li:first-child { border-top: 1px solid var(--line); }
+
+  .asks .q {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--violet);
+    letter-spacing: 0.08em;
+  }
+
+  .asks strong { font-weight: 600; display: block; }
+  .asks span { color: var(--ink-2); font-size: var(--step--1); }
+
+  .callout {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 10px 10px 0;
+    background: var(--surface);
+    padding: 16px 20px;
+    margin: 22px 0 0;
+    color: var(--ink-2);
+    font-size: var(--step--1);
+  }
+
+  .callout strong { color: var(--ink); }
+
+  footer {
+    margin-top: 52px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-3);
+    font-family: var(--mono);
+    font-size: var(--step--1);
+  }
+
+  @media (max-width: 620px) {
+    .viewer { aspect-ratio: 4 / 5; }
+    .readout { max-width: calc(100% - 24px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">z-project · maquette de boss et de carte</p>
+      <h1>Malenia, Lame de Miquella</h1>
+      <p class="standfirst">
+        Derrière le portail du sommet, une troisième carte : un marais de
+        pourriture écarlate sous un arbre mort. On le traverse sur des racines,
+        et au bout il y a elle — deux formes, deux barres de vie, et une seule
+        chose à comprendre : <em>elle se soigne de chaque coup qu'elle porte.</em>
+      </p>
+    </div>
+    <span class="status">à valider</span>
+  </header>
+
+  <div class="viewer" id="viewer">
+    <div class="viewer__loading" id="loading">construction du modèle…</div>
+    <div class="readout" id="readout"></div>
+    <div class="rail">
+      <div class="rail__group">
+        <button type="button" data-view="duel" aria-pressed="true">face à face</button>
+        <button type="button" data-view="profil" aria-pressed="false">profil</button>
+        <button type="button" data-view="tete" aria-pressed="false">le heaume</button>
+        <button type="button" data-view="bras" aria-pressed="false">les prothèses</button>
+        <button type="button" data-view="ailes" aria-pressed="false">phase II</button>
+        <button type="button" data-view="fleur" aria-pressed="false">Aeonia</button>
+        <button type="button" data-view="marais" aria-pressed="false">le marais</button>
+        <button type="button" data-view="tour" aria-pressed="false">tour</button>
+      </div>
+      <div class="rail__group">
+        <button type="button" data-pose="garde" aria-pressed="true">garde</button>
+        <button type="button" data-pose="estoc" aria-pressed="false">estoc</button>
+        <button type="button" data-pose="sarcelle" aria-pressed="false">vol de sarcelle</button>
+        <button type="button" data-pose="aeonia" aria-pressed="false">Aeonia</button>
+      </div>
+      <div class="rail__group">
+        <button type="button" data-layer="echelle" aria-pressed="true">échelle</button>
+        <button type="button" data-layer="marais" aria-pressed="false">décor</button>
+      </div>
+    </div>
+  </div>
+  <p class="hint">
+    <span>glisser — orbiter</span>
+    <span>molette — zoom</span>
+    <span>clic droit — déplacer</span>
+    <span id="metrics"></span>
+  </p>
+
+  <section>
+    <h2>Le monde — la troisième carte</h2>
+    <p class="section-note">
+      Le jeu a deux cartes, et <span class="mono">MapId</span> est un type fermé
+      à deux valeurs. En ajouter une troisième n'est pas une ligne de
+      configuration : c'est un module, un terrain, un fond de minimap, un ciel et
+      un éclairage. Voilà ce qu'il y a derrière l'anneau du sommet.
+    </p>
+
+    <div class="tiers">
+      <div class="tier">
+        <span class="tier__swatch" style="background:#8e1f2a"></span>
+        <span class="tier__name">Le marais</span>
+        <span class="tier__cote">rayon 95 · à hauteur de cheville</span>
+        <p>
+          Une nappe de pourriture écarlate, opaque, qui couvre tout le sol
+          visible. Elle n'est pas décorative : y marcher fait monter la jauge de
+          pourriture. C'est ce qui interdit de couper au plus court, donc ce qui
+          fait exister les racines.
+        </p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#b8a878"></span>
+        <span class="tier__name">Les racines</span>
+        <span class="tier__cote">3 arches · 130 unités de marche</span>
+        <p>
+          Le seul sol sec. Trois racines de l'arbre sortent du marais et
+          s'enchaînent jusqu'au pied du tronc : c'est la traversée, et c'est
+          exactement la géométrie de la Voie de l'île — une poutre, une rambarde,
+          un collider de boîte. Rien de neuf à écrire.
+        </p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#6e6a4e"></span>
+        <span class="tier__name">L'Arbre blafard</span>
+        <span class="tier__cote">hauteur 120 · visible de partout</span>
+        <p>
+          Mort, pâle, sans une feuille. Il tient lieu de boussole : on le voit du
+          portail d'arrivée, et l'arène est à son pied. Aucune flèche, aucun
+          marqueur — le joueur sait où aller parce qu'il n'y a qu'une seule chose
+          verticale dans le paysage.
+        </p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#c9304a"></span>
+        <span class="tier__name">L'arène</span>
+        <span class="tier__cote">rayon 12 · bassin de contreforts</span>
+        <p>
+          Un bassin de racines au pied du tronc, sec au centre, avec un anneau
+          d'eau pourrie à la lèvre. Les contreforts ferment le cercle : il n'y a
+          pas de herse à écrire, le lieu enferme — comme le plateau du Lynel
+          doré.
+        </p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Le ciel et l'éclairage ne sont plus partageables.</strong>
+      Aujourd'hui <span class="mono">StarrySky</span>, les trois lumières de
+      <span class="mono">Environment.tsx</span> et la brume de
+      <span class="mono">App.tsx</span> sont <em>hors du branchement de carte</em> :
+      l'île flotte dans le ciel du continent, et c'est délibéré. Ce monde-ci n'est
+      pas dans ce ciel. Il faut donc sortir ces trois choses du tronc commun et
+      les indexer par carte. C'est le seul endroit où la structure existante ne
+      tient plus — tout le reste s'ajoute.
+    </div>
+  </section>
+
+  <section>
+    <h2>L'anatomie — phase I</h2>
+    <p class="section-note">
+      Deux mètres trente-sept, soit une fois et demie le héros. Elle n'est pas
+      massive, elle est <em>haute et mince</em> : c'est un escrimeur, pas un
+      monstre. Toute la masse est dans l'or, et l'or est aux endroits qui
+      manquent.
+    </p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">Pièce</th><th scope="col">Cote</th><th scope="col">Ce qu'elle dit</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Le heaume ailé</td>
+            <td class="num">envergure 0,78</td>
+            <td>D'or pur, deux ailes de quatre lames balayées vers l'arrière. Le visage est découvert sous le front : c'est la seule chair visible de la phase I, et c'est là que le joueur cherchera les yeux — qui sont clos. Elle est aveugle.</td>
+          </tr>
+          <tr>
+            <td>Le bras droit</td>
+            <td class="num">prothèse, 0,62</td>
+            <td>Entièrement d'or, segmenté, articulations à nu. C'est lui qui tient la lame, donc c'est lui qu'il faut regarder : dans ce jeu la parade se lit sur l'arme, et l'arme ne bouge jamais sans lui.</td>
+          </tr>
+          <tr>
+            <td>La jambe gauche, le pied droit</td>
+            <td class="num">prothèses</td>
+            <td>Or, tibia à claire-voie, deux montants et un pivot visible au genou. Fidèle au personnage — il lui manque un bras, une jambe et un pied — et c'est aussi ce qui explique sa démarche : elle ne marche pas, elle glisse et elle bondit.</td>
+          </tr>
+          <tr>
+            <td>La cuirasse</td>
+            <td class="num">or sur bronze sombre</td>
+            <td>Plastron d'or, spallières à deux lames, tassettes. Le sombre en dessous n'est pas du noir : c'est un bronze très désaturé, qui garde les ombres lisibles sur une carte où il n'y a pas de soleil.</td>
+          </tr>
+          <tr>
+            <td>Le pan écarlate</td>
+            <td class="num">de la taille à 0,3</td>
+            <td>Le seul rouge de la phase I avec les cheveux, et il est là pour une raison de lecture : c'est ce qui bouge quand elle bouge. Sur un modèle d'or, à quatorze unités de recul, le tissu est le seul indicateur de vitesse.</td>
+          </tr>
+          <tr>
+            <td>La Main de Malenia</td>
+            <td class="num">lame 1,45</td>
+            <td>Un katana — même famille que celui du joueur, ce qui n'est pas un hasard : le jeu en a déjà un dans l'inventaire, qui fait <span class="mono">1,06</span> poignée comprise. La sienne fait 1,45 de lame seule. L'écart se voit en une image, et il ne ment qu'à moitié : à l'arrêt leurs allonges se valent (voir les cotes), l'avantage est dans ce qu'elle fait avec.</td>
+          </tr>
+          <tr>
+            <td>La chevelure</td>
+            <td class="num">9 mèches · nuque → 0,96</td>
+            <td>Rouge sombre, <strong>lâchée, et identique dans les deux phases</strong> — elle n'est pas tressée, ni sous le heaume ni sans lui. C'est la seule chose du personnage que la métamorphose ne touche pas, et c'est ce qui la rend utile : les ailes de la phase II sont des papillons cousus par ces cheveux-là, donc elles étaient déjà sur sa nuque pendant tout le premier combat.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>La métamorphose — phase II</h2>
+    <p class="section-note">
+      Quand la première barre tombe, elle ne meurt pas : elle se relève sans
+      armure. Le heaume, le plastron, les spallières et les tassettes tombent au
+      sol — et y restent pendant tout le reste du combat, en tas, à l'endroit
+      exact où elle est tombée. C'est la seule chose du jeu qui dise au joueur
+      qu'il a déjà gagné une fois.
+    </p>
+
+    <div class="tiers">
+      <div class="tier">
+        <span class="tier__swatch" style="background:#c9304a"></span>
+        <span class="tier__name">Les ailes</span>
+        <span class="tier__cote">envergure 6,4 · hauteur totale 4,5</span>
+        <p>
+          Deux éventails de papillons cousus par ses propres cheveux : cinq
+          nervures de cheveu par aile, huit à douze papillons par nervure. Chacun
+          est deux quadrilatères en dièdre — pas un modèle, une paire de plans.
+          Ils battent, et ce battement remplace le télégraphe de crinière du
+          Lynel.
+        </p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#e8776f"></span>
+        <span class="tier__name">La pourriture</span>
+        <span class="tier__cote">émissif 0,9 sur la peau</span>
+        <p>
+          Des veines écarlates courent sur le torse et le bras de chair, et elles
+          <em>brûlent</em> — un émissif au-dessus du seuil de bloom du jeu (0,82),
+          pas une peinture rouge. Même technique que la crinière du Lynel en
+          phase III, et elle a déjà fait ses preuves.
+        </p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#d9a441"></span>
+        <span class="tier__name">Ce qui reste d'or</span>
+        <span class="tier__cote">les trois prothèses</span>
+        <p>
+          Elles ne tombent pas — ce sont ses membres. Sur un corps nu et rouge,
+          les trois pièces d'or deviennent d'un coup les plus lisibles de la
+          silhouette : le bras qui tient la lame se repère mieux en phase II
+          qu'en phase I. Ce qui tombe bien, parce qu'il va aller beaucoup plus
+          vite.
+        </p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#8e1f2a"></span>
+        <span class="tier__name">Le vol</span>
+        <span class="tier__cote">0,55 au-dessus du sol</span>
+        <p>
+          Elle ne repose plus. Les jambes pendent, le corps flotte, et sa hauteur
+          d'attaque monte d'autant : c'est ce qui rend le saut du joueur inutile
+          contre elle, alors qu'il passait l'onde de choc du Lynel. Une réponse
+          apprise qui cesse de marcher.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Cotes</h2>
+    <p class="section-note">
+      Mesurées sur le modèle affiché, à chaque chargement — si la géométrie
+      change, ce tableau change avec elle. Le héros du jeu mesure 1,60 ; le Lynel
+      doré 4,30. Elle se range entre les deux, et c'est le point délicat : c'est
+      le seul boss du jeu qui ne gagne pas par la masse.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">Cote</th><th scope="col">Valeur</th><th scope="col">Pourquoi celle-là</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Hauteur, phase I</td>
+            <td class="num" id="m-h1">—</td>
+            <td>1,48 fois le héros. Assez pour dominer sans devenir un décor ; c'est la caméra d'arène (12 de haut, 14 de recul) qui fait le reste du travail.</td>
+          </tr>
+          <tr>
+            <td>Hauteur, phase II</td>
+            <td class="num" id="m-h2">—</td>
+            <td>Le corps ne grandit pas, il décolle de 0,55 et les ailes montent au-dessus. La silhouette double sans qu'un seul os change.</td>
+          </tr>
+          <tr>
+            <td>Envergure des ailes</td>
+            <td class="num" id="m-w2">—</td>
+            <td>Plus large que le Lynel doré n'est long. C'est là qu'est l'intimidation de la phase II, et elle ne coûte rien en portée d'attaque.</td>
+          </tr>
+          <tr>
+            <td>Portée de la lame</td>
+            <td class="num" id="m-blade">—</td>
+            <td>Mesurée dans la pose d'estoc, épaule comprise. Le joueur, lui, frappe à <span class="mono">1,4 + 0,9</span> de rayon, soit <strong>2,30</strong> : leurs allonges sont les mêmes à deux centimètres près, et ça mérite d'être dit parce que c'est contre-intuitif. Tout l'écart des portées du tableau d'attaques — 3,4 à la tranche, 5,4 à l'estoc — est du <em>déplacement</em>, pas de la lame. C'est ce qui rend l'estoc dangereux et ce qui fait qu'on ne peut pas le juger à l'œil sur ce modèle immobile.</td>
+          </tr>
+          <tr>
+            <td>Largeur d'épaules</td>
+            <td class="num" id="m-sh">—</td>
+            <td>Étroite, volontairement. Une silhouette large lirait comme un chevalier ; celle-ci doit lire comme une lame.</td>
+          </tr>
+          <tr>
+            <td>Envergure du heaume</td>
+            <td class="num" id="m-helm">—</td>
+            <td>Les ailes d'or sont plus larges que les épaules. À quatorze unités, c'est ce détail-là qui la rend reconnaissable de dos.</td>
+          </tr>
+          <tr>
+            <td>Rayon de l'arène</td>
+            <td class="num">12,0</td>
+            <td>Un demi de plus que la rotonde du Lynel (11,5). La différence est faible et voulue : le joueur connaît déjà cette distance, on ne la lui réapprend pas — on la remplit autrement.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>La palette</h2>
+    <p class="section-note">
+      Deux familles, et rien entre les deux : l'<strong>or</strong>, qui est le
+      sien, et l'<strong>écarlate</strong>, qui est ce qui la mange. Le décor est
+      dans la seconde ; c'est donc l'or qui la détache du marais, exactement
+      comme le pelage bleuté du Lynel argenté le détachait de la pierre grise.
+    </p>
+    <div class="tiers">
+      <div class="tier">
+        <span class="tier__swatch" style="background:#d9a441"></span>
+        <span class="tier__name">Or pur</span>
+        <span class="tier__cote">#d9a441 · #f3d789 · #8a6c33</span>
+        <p>Exactement l'or du jeu — celui des ruines de l'île, du Lynel doré et des frises. Émissif à 0,32, parce que dans un rendu à trois marches c'est le seul moyen de faire <em>briller</em> au lieu de peindre en jaune.</p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#4a4038"></span>
+        <span class="tier__name">Bronze sombre</span>
+        <span class="tier__cote">#4a4038 · #2e2823</span>
+        <p>L'armure sous l'or, et les sangles. Pas du noir : sur une carte sans soleil, le noir mange ses propres ombres et la pièce devient un trou.</p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#8e1f2a"></span>
+        <span class="tier__name">Écarlate</span>
+        <span class="tier__cote">#8e1f2a · #c9304a · #e8776f</span>
+        <p>Les cheveux, le pan de tissu, les ailes, l'eau du marais et la fleur. Une seule teinte pour le danger et pour le lieu — c'est ce qui fait que la pourriture <em>appartient</em> au monde au lieu d'y être posée.</p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#b8a878"></span>
+        <span class="tier__name">Racine et os</span>
+        <span class="tier__cote">#b8a878 · #8a7a52 · #6e6a4e</span>
+        <p>L'arbre, les racines, le sol sec. Un or éteint, désaturé : le même ton que l'armure, mais mort. L'arbre est ce qu'elle deviendra.</p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#e8c3a2"></span>
+        <span class="tier__name">Chair</span>
+        <span class="tier__cote">#e8c3a2 · #c98d7a</span>
+        <p>Le visage en phase I, tout le corps en phase II. Volontairement pâle et froide, pour que les veines écarlates s'y lisent sans avoir à crier.</p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#5c1a22"></span>
+        <span class="tier__name">Le ciel</span>
+        <span class="tier__cote">#140a18 · #5c1a22 · #a83a30</span>
+        <p>Zénith presque noir, horizon sang, lueur de braise au ras du sol. Aucune étoile : ce n'est pas la nuit du jeu, c'est un ciel malade. La brume passe de #6b7cba à #3a1418.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Les mécaniques de combat</h2>
+    <p class="section-note">
+      Une règle de lecture unique, comme le Lynel en avait une :
+      <strong>ce qui vient de la lame se pare, ce qui vient du corps ou des ailes
+      s'esquive.</strong> Le joueur n'a donc pas dix animations à mémoriser — il
+      regarde d'où part le mouvement. Toute attaque ajoutée plus tard doit tenir
+      cette règle, sinon l'ensemble redevient dix cas particuliers.
+    </p>
+
+    <h3>Phase I — la Lame</h3>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Attaque</th><th scope="col">Télégr.</th><th scope="col">Portée</th>
+            <th scope="col">Arc</th><th scope="col">Dégât</th><th scope="col">Parable</th>
+            <th scope="col">Ce qu'elle punit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Tranche</td><td class="num">460 ms</td><td class="num">3,4</td>
+            <td class="num">1,30</td><td class="num">2</td><td class="yes">oui</td>
+            <td>Le coup de base, et le cours de parade. Elle enchaîne jusqu'à trois fois.</td>
+          </tr>
+          <tr>
+            <td>Quatre tranches</td><td class="num">520 ms</td><td class="num">3,6</td>
+            <td class="num">0,80</td><td class="num">1 × 4</td><td class="yes">oui</td>
+            <td>Trois coups rapides, puis un quatrième <em>après un temps mort</em>. C'est la feinte du jeu : celui qui relâche la parade au troisième mange le quatrième.</td>
+          </tr>
+          <tr>
+            <td>Estoc bondi</td><td class="num">380 ms</td><td class="num">5,4</td>
+            <td class="num">0,22</td><td class="num">2</td><td class="yes">oui</td>
+            <td>Le pas en arrière. Le plus rapide et le plus long : reculer pour souffler cesse d'être gratuit.</td>
+          </tr>
+          <tr>
+            <td>Coup de pied tournant</td><td class="num">420 ms</td><td class="num">2,6</td>
+            <td class="num">π</td><td class="num">2</td><td class="no">non</td>
+            <td>Le contournement. Elle tourne sur elle-même : on ne passe pas derrière.</td>
+          </tr>
+          <tr>
+            <td>Saisie</td><td class="num">700 ms</td><td class="num">2,4</td>
+            <td class="num">0,35</td><td class="num">3</td><td class="no">non</td>
+            <td>La cupidité. Elle recule d'un pas, ouvre la main de chair, et fond. Le seul coup qui lui rend <em>six</em> points de vie : c'est celui qui coûte le plus cher à encaisser.</td>
+          </tr>
+          <tr>
+            <td>Vol de sarcelle</td><td class="num">900 ms</td><td class="num">7,0</td>
+            <td class="num">0,90</td><td class="num">1 par touche</td><td class="yes">oui</td>
+            <td>Tout. Voir la frise plus bas — c'est l'attaque autour de laquelle le combat est construit.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Phase II — la Déesse</h3>
+    <p class="section-note">
+      Elle garde les six, et en ajoute quatre. Aucune n'est parable sauf les
+      fantômes : la règle tient, parce que les quatre nouvelles viennent des
+      ailes et de la pourriture, pas de la lame.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Attaque</th><th scope="col">Télégr.</th><th scope="col">Portée</th>
+            <th scope="col">Arc</th><th scope="col">Dégât</th><th scope="col">Parable</th>
+            <th scope="col">Ce qu'elle punit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Aeonia écarlate</td><td class="num">1600 ms</td><td class="num">12,0</td>
+            <td class="num">π</td><td class="num">4 + pourriture</td><td class="no">non</td>
+            <td>Le premier geste de la phase II, puis une fois par tiers de barre. Elle monte, plonge, et une fleur de sept unités éclôt là où elle touche. Toute l'arène est dedans : la seule réponse est d'être en train de courir quand elle monte. Sa récupération — 1,8 s — est la plus grande ouverture du combat.</td>
+          </tr>
+          <tr>
+            <td>Plongeon pourri</td><td class="num">800 ms</td><td class="num">4,5</td>
+            <td class="num">π</td><td class="num">3</td><td class="no">non</td>
+            <td>La distance courte. Elle plante la lame et laisse une flaque qui pourrit le sol dix secondes. C'est ce qui rétrécit l'arène sans y poser un obstacle — exactement ce que faisait le souffle du Lynel.</td>
+          </tr>
+          <tr>
+            <td>Fauche ailée</td><td class="num">700 ms</td><td class="num">7,0</td>
+            <td class="num">0,50</td><td class="num">3</td><td class="no">non</td>
+            <td>La fuite. Un vol rasant suivi d'un estoc : la première portée du jeu qui rattrape un joueur à pleine course.</td>
+          </tr>
+          <tr>
+            <td>Fantômes écarlates</td><td class="num">1100 ms</td><td class="num">4,0</td>
+            <td class="num">1 × 3</td><td class="num">1 × 3</td><td class="yes">oui</td>
+            <td>La panique. Trois spectres d'elle frappent l'un après l'autre, le troisième plus vite que les deux premiers. Parer un fantôme le <em>dissipe</em> — c'est la seule attaque du jeu qu'on annule au lieu de l'encaisser.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <strong>Elle se soigne de chaque coup qu'elle porte.</strong>
+      Deux points de vie par touche sur quarante-quatre, six sur la saisie. C'est
+      <em>la</em> mécanique du personnage, et elle transforme le combat : encaisser
+      n'est plus « perdre un cœur », c'est « rendre dix secondes de travail ». Le
+      joueur qui joue mal ne perd pas lentement — il n'avance pas du tout. La
+      parade, elle, ne lui rend rien : c'est ce qui fait passer la parade de bonne
+      idée à obligation.
+    </div>
+  </section>
+
+  <section>
+    <h2>Le vol de sarcelle</h2>
+    <p class="section-note">
+      Quatre secondes, trois rafales, et une réponse différente pour chacune.
+      C'est la pièce la plus chère de la maquette et la plus importante : c'est
+      elle qui fait de ce combat autre chose qu'un Lynel qui frappe plus fort.
+      Les nombres ci-dessous sont un premier jet à jouer, pas des tables de loi.
+    </p>
+    <div class="timeline">
+      <p class="track__label">Ce qu'elle fait</p>
+      <div class="track">
+        <div class="band band--tell" style="left:0%;width:20%">saut et suspension · 900</div>
+        <div class="band band--fail" style="left:20%;width:17%">rafale I — 4 coups</div>
+        <div class="band band--cue" style="left:37%;width:12%">pause · 550</div>
+        <div class="band band--fail" style="left:49%;width:9%">rafale II — 2</div>
+        <div class="band band--cue" style="left:58%;width:15%">pause · 700</div>
+        <div class="band band--fail" style="left:73%;width:17%">rafale III — 4, sur vous</div>
+        <div class="band band--punish" style="left:90%;width:10%">1,2 s</div>
+      </div>
+      <p class="track__label">Ce que le joueur doit faire</p>
+      <div class="track">
+        <div class="band band--parry" style="left:0%;width:20%">partir — tout de suite</div>
+        <div class="band band--parry" style="left:20%;width:38%">courir · rester au-delà de 7</div>
+        <div class="band band--cue" style="left:58%;width:15%">se retourner</div>
+        <div class="band band--parry" style="left:73%;width:17%">parer — elle vient à vous</div>
+        <div class="band band--punish" style="left:90%;width:10%">frapper</div>
+        <div class="mark" style="left:73%"><span>elle se replace sur le joueur</span></div>
+      </div>
+    </div>
+    <div class="callout">
+      <strong>Pourquoi la troisième rafale se pare et pas les deux premières.</strong>
+      Les deux premières balaient devant elle : elles se fuient, et le jeu a une
+      course à 7 unités par seconde pour une portée de 7 — la fuite marche, tout
+      juste. La troisième, elle, <em>se replace sur le joueur</em> : aucune
+      distance n'en sort. Fuir les deux premières puis revenir parer la troisième
+      est la traduction exacte de la réponse du jeu d'origine, et elle n'a demandé
+      aucune mécanique nouvelle — la parade existe depuis le Lynel.
+    </div>
+  </section>
+
+  <section>
+    <h2>La pourriture écarlate</h2>
+    <p class="section-note">
+      Une jauge, pas un dégât. Elle monte quand on marche dans le marais, quand
+      une flaque s'ouvre sous soi, et à chaque touche de la phase II. Elle ne fait
+      rien tant qu'elle n'est pas pleine — et quand elle l'est, elle ne se
+      négocie plus.
+    </p>
+    <div class="timeline">
+      <p class="track__label">La jauge, sur 100</p>
+      <div class="track">
+        <div class="band band--tell" style="left:0%;width:52%">montée — +8/s dans l'eau, +12 par touche</div>
+        <div class="band band--cue" style="left:52%;width:18%">seuil · le bandeau clignote</div>
+        <div class="band band--rot" style="left:70%;width:30%">contamination — 1 cœur, puis 1 toutes les 2,5 s pendant 10 s</div>
+        <div class="mark" style="left:52%"><span>90</span></div>
+        <div class="mark" style="left:70%"><span>100</span></div>
+      </div>
+      <p class="track__label">Ce qui la fait redescendre</p>
+      <div class="track">
+        <div class="band band--parry" style="left:0%;width:40%">sortir de l'eau · −6/s après 3 s</div>
+        <div class="band band--punish" style="left:40%;width:26%">un cœur ramassé purge tout</div>
+        <div class="band band--tell" style="left:66%;width:34%">rien d'autre</div>
+      </div>
+    </div>
+    <p class="section-note" style="margin-top:22px">
+      Le cœur qui purge est le seul objet de soin du jeu, et il tombe déjà des
+      ennemis : la phase II en lâche donc quelques-uns, et c'est la seule raison
+      pour laquelle il y a des ennemis dans la traversée. Ils ne sont pas là pour
+      être un défi — ils sont là pour que le joueur arrive avec une réserve.
+    </p>
+  </section>
+
+  <section>
+    <h2>Les deux phases</h2>
+    <div class="tiers">
+      <div class="tier">
+        <span class="tier__swatch" style="background:#d9a441"></span>
+        <span class="tier__name">I · la Lame</span>
+        <span class="tier__cote">44 PV · six attaques</span>
+        <p>
+          Au sol, armée, casquée. Elle enseigne trois choses : que sa portée
+          dépasse la vôtre, que la parade ne la soigne pas, et que le vol de
+          sarcelle existe. Un joueur qui a compris les trois passe la phase I
+          sans perdre un cœur.
+        </p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#c9304a"></span>
+        <span class="tier__name">II · la Déesse</span>
+        <span class="tier__cote">44 PV · dix attaques</span>
+        <p>
+          Elle se relève avec une barre pleine, et c'est le moment le plus dur du
+          jeu. Aeonia ouvre, les flaques ferment le sol, les fantômes cassent la
+          lecture. Le saut ne sert plus. La parade, elle, sert encore — c'est la
+          seule chose qui survit d'une phase à l'autre.
+        </p>
+      </div>
+    </div>
+    <div class="callout">
+      <strong>Quatre-vingt-huit points de vie, et il faut le dire franchement.</strong>
+      C'est une fois et demie le Lynel doré, sur un adversaire qui se soigne. À
+      la manette, un combat raté peut durer six ou sept minutes, et la deuxième
+      barre pleine après une première déjà gagnée est exactement le geste qui
+      fait reposer la manette. C'est fidèle, et c'est discutable : voir la
+      question 01.
+    </div>
+  </section>
+
+  <section>
+    <h2>Ce que ça coûte à implémenter</h2>
+    <p class="section-note">
+      Découpage honnête, pour que la validation porte aussi sur le prix. Le
+      modèle et les attaques sont la partie connue — c'est la <em>troisième
+      carte</em> qui touche au tronc commun, et elle le touche à cinq endroits.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">Chantier</th><th scope="col">Où</th><th scope="col">Ce qu'il faut</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Les deux modèles</td><td class="num">nouveau</td>
+            <td><span class="mono">components/enemies/maleniaGeometry.ts</span>, <span class="mono">maleniaMaterials.ts</span>, <span class="mono">MaleniaModel.tsx</span> — le même découpage que le Lynel, qui a fait ses preuves. La géométrie de cette page, transposée en JSX. Aucune dépendance nouvelle.</td>
+          </tr>
+          <tr>
+            <td>La troisième carte</td><td class="num">tronc commun</td>
+            <td><span class="mono">MapId</span> ouvert à <span class="mono">'rot'</span>, et le compilateur montrera lui-même les sept endroits à traiter : <span class="mono">spawnFor</span>, <span class="mono">arrivalFor</span>, <span class="mono">arrivalYaw</span>, le fond de minimap, le branchement d'<span class="mono">Environment</span>, le préchargement du fragment, le menu de téléportation. Le type fermé était fait pour ça.</td>
+          </tr>
+          <tr>
+            <td>Ciel, lumière, brume</td><td class="num">tronc commun</td>
+            <td>Les trois sont aujourd'hui hors du branchement de carte, volontairement. Il faut les en sortir et les indexer par carte. C'est un petit travail mais il touche le rendu des deux cartes existantes : à faire en premier, et à vérifier qu'on n'a rien changé aux deux autres.</td>
+          </tr>
+          <tr>
+            <td>Le marais et la traversée</td><td class="num">nouveau</td>
+            <td>Un fragment <span class="mono">components/rot/</span> sur le modèle de <span class="mono">skyisland/</span>. Le terrain est <em>plat</em> — c'est le seul de la maquette qui ne demande ni champ de hauteurs ni surface radiale, et ça économise l'essentiel du travail. Les racines sont la géométrie de la Voie.</td>
+          </tr>
+          <tr>
+            <td>La pourriture</td><td class="num">tronc commun</td>
+            <td>Une jauge dans le store, un bandeau au HUD à côté des cœurs, la lecture du sol sous le joueur, et la purge au ramassage d'un cœur. C'est la partie qui se voit partout, y compris sur les deux autres cartes où la jauge restera à zéro.</td>
+          </tr>
+          <tr>
+            <td>La machine à états</td><td class="num">nouveau</td>
+            <td><span class="mono">Malenia.tsx</span>. <span class="mono">Lynel.tsx</span> ne sait pas enchaîner une séquence à rafales ni téléporter la bête en cours d'attaque : le vol de sarcelle est une machine à lui tout seul. Le registre d'ennemis, les projectiles et la parade se réutilisent tels quels.</td>
+          </tr>
+          <tr>
+            <td>La régénération</td><td class="num">extension</td>
+            <td>Le registre sait déjà blesser une bête ; il ne sait pas la soigner. Un chemin de plus, et la barre du calque de combat qui remonte — ce qui se voit, et c'est le but.</td>
+          </tr>
+          <tr>
+            <td>Deux barres de vie</td><td class="num">extension</td>
+            <td><span class="mono">CombatOverlay</span> dessine une barre par ennemi. Il en faut une seconde, vide, sous la première — sinon la phase II est une surprise au lieu d'une menace annoncée.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ce que j'attends de toi</h2>
+    <p class="section-note">
+      Huit décisions qui changent le travail. Le reste — la géométrie exacte, les
+      valeurs de dégâts, la teinte des ailes — je le tranche et tu corriges après
+      l'avoir vu bouger.
+    </p>
+    <ul class="asks">
+      <li>
+        <span class="q">01</span>
+        <div>
+          <strong>Deux barres pleines, ou une phase II à mi-vie ?</strong>
+          <span>
+            Quatre-vingt-huit points de vie contre un adversaire qui se soigne,
+            c'est fidèle au personnage et c'est long. L'alternative est
+            44 PV au total avec la métamorphose à 22 : le combat garde ses deux
+            formes, ses dix attaques et sa chute d'armure, mais dure moitié moins.
+            Je pencherais pour <strong>60 PV, métamorphose à 30</strong> — un
+            compromis qui garde la surprise de la seconde barre sans la faire
+            payer deux minutes.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">02</span>
+        <div>
+          <strong>Deux mètres trente-sept, c'est trop peu — qu'est-ce qu'on fait ?</strong>
+          <span>
+            Clique sur « face à face » : c'est le cadre exact du combat, et le
+            chiffre affiché est mesuré, pas estimé. Le Lynel occupait un quart de
+            la hauteur de l'image ; elle en occupe environ la moitié moins, parce
+            qu'un humanoïde fidèle au personnage <em>est</em> petit. C'est le seul
+            boss du jeu qui ne gagne pas par la masse, et c'est le risque de toute
+            la proposition. Trois sorties : la grandir à <strong>3,0</strong> (elle
+            reste humanoïde, elle devient une Empyréenne de deux têtes de plus —
+            mon choix), rapprocher encore la caméra dans <em>cette</em> arène
+            seulement (un quatrième réglage dans <span class="mono">CAMERA</span>,
+            et l'arène se lit moins bien), ou garder 2,37 et accepter que sa
+            présence vienne entièrement de la phase II, où les ailes font 6,4 de
+            large. La maquette est à 2,37 pour que tu voies le problème tel qu'il
+            est.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">03</span>
+        <div>
+          <strong>La parade annule-t-elle sa régénération ?</strong>
+          <span>
+            Dans le jeu d'origine, non : même bloqué, le coup la soigne, et c'est
+            célèbre pour être injuste. Ici la parade est la mécanique maison, et
+            lui refuser le soin est ce qui la rend indispensable. Je la refuse —
+            mais c'est le seul écart de fidélité que je propose volontairement, et
+            il t'appartient.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">04</span>
+        <div>
+          <strong>La pourriture : vraie jauge, ou dégât sur la durée ?</strong>
+          <span>
+            La jauge est le personnage — c'est ce qui fait qu'on redoute l'eau
+            plus que la lame. Elle coûte un bandeau de HUD, un état de store, une
+            lecture du sol et une règle de purge. La version pauvre (un cœur toutes
+            les trois secondes tant qu'on a les pieds dedans) coûte presque rien
+            et supprime toute la tension d'accumulation. Je fais la jauge.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">05</span>
+        <div>
+          <strong>Le vol de sarcelle complet, ou à deux rafales ?</strong>
+          <span>
+            Trois rafales et quatre secondes, c'est le geste signature et c'est
+            aussi la moitié du travail de comportement. Une version à deux rafales
+            se code en un tiers du temps et reste lisible. Mais c'est l'attaque
+            pour laquelle on met ce personnage dans un jeu : je ferais la
+            complète, quitte à livrer le reste plus tard.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">06</span>
+        <div>
+          <strong>Que rencontre-t-on dans la traversée ?</strong>
+          <span>
+            Cent trente unités de racines. Vides, c'est un couloir et la mise en
+            scène retombe. Je mettrais <strong>six créatures de pourriture</strong>
+            — un ennemi nouveau, petit, lent, qui meurt en deux coups et lâche un
+            cœur : elles ne sont pas là pour le défi mais pour que le joueur
+            arrive avec une réserve, ce dont il aura besoin (voir la purge). Un
+            septième modèle à faire, mais simple. Alternative : aucun ennemi, et
+            la traversée devient purement un décor à regarder.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">07</span>
+        <div>
+          <strong>Que donne la victoire ?</strong>
+          <span>
+            C'est le dernier combat du jeu : ce qu'il donne clôt la partie. Trois
+            options — un réceptacle de cœur (cohérent, tiède pour une fin), la
+            <em>Main de Malenia</em> comme arme jouable (la première arme du jeu
+            qui change la portée, donc un chantier repéré dans la feuille de route
+            et repoussé faute de justification — en voilà une), ou une tenue de
+            plus. Je prendrais la lame, et je ferais le chantier de portée avec.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">08</span>
+        <div>
+          <strong>Le retour se fait-il par où l'on est venu ?</strong>
+          <span>
+            Le portail du sommet est un aller. Au retour, la règle d'interaction
+            actuelle renvoie « vers l'autre carte que la carte courante » — avec
+            trois cartes, cette règle ne veut plus rien dire et il faut lui donner
+            une destination explicite. Je ferais revenir le portail du marais
+            <em>au sommet</em>, d'où l'on vient : c'est la seule destination qui ne
+            demande au joueur aucune explication.
+          </span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <footer>
+    Maquette — géométrie procédurale, palette et cel-shading repris du jeu.
+    Rien de ce qui est ici n'est encore dans le dépôt. Les cotes du tableau sont
+    mesurées sur le modèle affiché à chaque chargement : si la géométrie change,
+    le tableau change avec elle.
+  </footer>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ------------------------------------------------------------------ cotes */
+
+/*
+  Toutes les cotes de Malenia, en unités monde — les mêmes que le jeu, où le
+  héros mesure 1,60 et le Lynel doré 4,30. Elles vivent ici et nulle part
+  ailleurs : le squelette, les poses et les portées en descendent, et le tableau
+  de la page les relit à l'exécution plutôt que de les recopier.
+
+  Elle est haute et mince. C'est un choix, et c'est le plus risqué de la
+  maquette : le seul boss du jeu qui ne gagne pas par la masse. Tout repose donc
+  sur la caméra d'arène (12 de haut, 14 de recul) et sur la lisibilité des
+  télégraphes.
+*/
+const HIP_Y = 1.18;        // hauteur des hanches
+const KNEE_Y = 0.66;       // genou
+const ANKLE_Y = 0.13;      // cheville
+const CHEST_Y = 1.62;      // centre de la cage
+const SHOULDER_Y = 1.82;   // axe des épaules
+const SHOULDER_X = 0.245;  // demi-écartement des épaules
+const HIP_X = 0.115;       // demi-écartement des hanches
+const NECK_Y = 1.93;
+const HEAD_Y = 2.09;       // centre de la tête
+const UPPER_ARM = 0.32;
+const FOREARM = 0.30;
+const BLADE_L = 1.45;      // la Main de Malenia, lame seule
+const WING_SPAN = 2.8;     // demi-envergure, phase II
+const HOVER = 0.55;        // hauteur de vol, phase II
+
+/*
+  Sa droite est en -X : elle regarde +Z, donc le joueur qui lui fait face voit
+  son bras d'or à sa propre gauche. Nommé plutôt que recopié, parce que ce signe
+  se glisse dans une trentaine de positions et qu'une erreur de signe donne une
+  gauchère armée d'une prothèse de droite.
+*/
+const R = -1;  // son côté droit — la prothèse, la lame
+const L = 1;   // son côté gauche — la chair, la jambe d'or
+
+const C = {
+  // L'or du jeu : celui des ruines de l'île, du Lynel doré et des frises.
+  gold: 0xd9a441,
+  goldBright: 0xf3d789,
+  goldDim: 0x8a6c33,
+  goldDeep: 0x6a5220,
+  // L'armure sous l'or. Pas du noir : sur une carte sans soleil, le noir mange
+  // ses propres ombres et la pièce devient un trou dans la silhouette.
+  bronze: 0x4a4038,
+  bronzeDark: 0x2e2823,
+  leather: 0x6b5340,
+  // La chair, volontairement pâle et froide : c'est ce qui laisse les veines
+  // écarlates se lire sans avoir à crier.
+  skin: 0xe8c3a2,
+  skinShade: 0xc98d7a,
+  // L'écarlate — les cheveux, le tissu, les ailes, l'eau, la fleur. Une seule
+  // famille pour le danger et pour le lieu.
+  rotDeep: 0x8e1f2a,
+  rot: 0xc9304a,
+  rotBright: 0xe8776f,
+  rotPale: 0xf2a9a0,
+  hair: 0x9e2b2b,
+  hairDark: 0x6b1c1e,
+  // L'acier de la lame.
+  steel: 0xcfd8e8,
+  steelDark: 0x76809a,
+  // Racine et os : l'or de l'armure, mais mort.
+  root: 0xb8a878,
+  rootDark: 0x8a7a52,
+  bark: 0x6e6a4e,
+  barkDark: 0x4c4835,
+  mud: 0x4a3b2e,
+  // Les deux figurines d'échelle.
+  tunic: 0x1f6b3c,
+  heroSkin: 0xe8b98f,
+  boot: 0x5b3b25,
+  // Le ciel malade. Aucune étoile : ce n'est pas la nuit du jeu.
+  zenith: 0x140a18,
+  horizon: 0x5c1a22,
+  glowSky: 0xa83a30,
+};
+
+/* --------------------------------------------------------------- matériaux */
+
+/*
+  La rampe de cel-shading du jeu : trois marches, échantillonnées au plus
+  proche. Sans NearestFilter le GPU interpole entre les bandes et il ne reste
+  qu'un dégradé lisse — c'est-à-dire plus aucun cel-shading.
+*/
+const gradient = new THREE.DataTexture(
+  new Uint8Array([88, 88, 88, 255, 176, 176, 176, 255, 255, 255, 255, 255]),
+  3, 1, THREE.RGBAFormat
+);
+gradient.minFilter = THREE.NearestFilter;
+gradient.magFilter = THREE.NearestFilter;
+gradient.needsUpdate = true;
+
+const toon = (options) => new THREE.MeshToonMaterial({ gradientMap: gradient, ...options });
+
+const MAT = {
+  // L'or porte un émissif, le bronze non : dans un rendu à trois marches, c'est
+  // le seul moyen de faire *briller* quelque chose plutôt que de le peindre en
+  // jaune. Même réglage que les ruines de l'île.
+  gold: toon({ color: C.gold, emissive: C.gold, emissiveIntensity: 0.32 }),
+  goldBright: toon({ color: C.goldBright, emissive: C.gold, emissiveIntensity: 0.55 }),
+  goldDim: toon({ color: C.goldDim }),
+  goldDeep: toon({ color: C.goldDeep }),
+  bronze: toon({ color: C.bronze }),
+  bronzeDark: toon({ color: C.bronzeDark }),
+  leather: toon({ color: C.leather }),
+  skin: toon({ color: C.skin }),
+  skinShade: toon({ color: C.skinShade }),
+  hair: toon({ color: C.hair }),
+  hairDark: toon({ color: C.hairDark }),
+  cloth: toon({ color: C.rotDeep }),
+  clothDark: toon({ color: 0x5e1219 }),
+  rot: toon({ color: C.rot }),
+  rotDeep: toon({ color: C.rotDeep }),
+  steel: toon({ color: C.steel }),
+  steelDark: toon({ color: C.steelDark }),
+  root: toon({ color: C.root }),
+  rootDark: toon({ color: C.rootDark }),
+  bark: toon({ color: C.bark }),
+  barkDark: toon({ color: C.barkDark }),
+  mud: toon({ color: C.mud }),
+  tunic: toon({ color: C.tunic }),
+  heroSkin: toon({ color: C.heroSkin }),
+  boot: toon({ color: C.boot }),
+};
+
+/*
+  Les papillons et les veines : deux matériaux à part, parce qu'ils sont les
+  seuls à devoir franchir le seuil de bloom du jeu (0,82). Un émissif fort sur
+  un toon, et non une couleur vive — une aile repeinte en rouge serait rouge ;
+  celle-ci *brûle*.
+*/
+const MAT_WING = toon({
+  color: C.rot, emissive: C.rot, emissiveIntensity: 0.62,
+  transparent: true, opacity: 0.93, side: THREE.DoubleSide, depthWrite: true,
+});
+const MAT_WING_PALE = toon({
+  color: C.rotBright, emissive: C.rotBright, emissiveIntensity: 0.78,
+  transparent: true, opacity: 0.88, side: THREE.DoubleSide, depthWrite: true,
+});
+const MAT_VEIN = new THREE.MeshBasicMaterial({ color: C.rotBright });
+const MAT_HALO = new THREE.MeshBasicMaterial({
+  color: C.rot, transparent: true, opacity: 0.32, depthWrite: false, side: THREE.DoubleSide,
+});
+/** L'eau du marais : non éclairée, pour qu'elle luise sous un ciel sans soleil. */
+const MAT_WATER = new THREE.MeshBasicMaterial({ color: 0x7d1b26 });
+
+/*
+  Le contour, exactement comme `<Outlines>` de drei : la même géométrie rendue
+  en face arrière, sommets poussés le long de leur normale. C'est l'épaisseur —
+  0,038 contre 0,03 sur les ennemis ordinaires — qui distingue le boss.
+
+  Plus fin que celui du Lynel (0,045), et il faut le dire : sur un modèle mince,
+  un contour de boss épaissit les membres au point de lui faire perdre
+  exactement la qualité qu'on cherche. C'est le seul réglage de rendu où elle
+  déroge au gabarit du Lynel.
+*/
+function outlineMaterial(thickness) {
+  return new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    uniforms: { uThickness: { value: thickness }, uColor: { value: new THREE.Color(0x1a0c10) } },
+    vertexShader: `
+      uniform float uThickness;
+      void main() {
+        vec3 p = position + normal * uThickness;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+      }`,
+    fragmentShader: `
+      uniform vec3 uColor;
+      void main() { gl_FragColor = vec4(uColor, 1.0); }`,
+  });
+}
+
+const OUTLINE = outlineMaterial(0.038);
+const OUTLINE_THIN = outlineMaterial(0.016);
+
+function faceted(geometry) {
+  const flat = geometry.index ? geometry.toNonIndexed() : geometry;
+  flat.computeVertexNormals();
+  return flat;
+}
+
+/** Une pièce : géométrie, matériau, pose. Rend le maillage pour l'enchaîner. */
+function part(parent, geometry, material, position, rotation, scale) {
+  const mesh = new THREE.Mesh(geometry, material);
+  if (position) mesh.position.set(position[0], position[1], position[2]);
+  if (rotation) mesh.rotation.set(rotation[0], rotation[1], rotation[2]);
+  if (scale !== undefined) {
+    if (Array.isArray(scale)) mesh.scale.set(scale[0], scale[1], scale[2]);
+    else mesh.scale.setScalar(scale);
+  }
+  parent.add(mesh);
+  return mesh;
+}
+
+/** Ajoute le contour à une pièce, en enfant : il suit toutes ses transformations. */
+function outline(mesh, material) {
+  mesh.add(new THREE.Mesh(mesh.geometry, material || OUTLINE));
+  return mesh;
+}
+
+/** Un groupe posé, pour les articulations. */
+function joint(parent, position, rotation) {
+  const group = new THREE.Group();
+  if (position) group.position.set(position[0], position[1], position[2]);
+  if (rotation) group.rotation.set(rotation[0], rotation[1], rotation[2]);
+  parent.add(group);
+  return group;
+}
+
+/* ----------------------------------------------------------------- scène */
+
+const viewer = document.getElementById('viewer');
+const readout = document.getElementById('readout');
+const loading = document.getElementById('loading');
+const metrics = document.getElementById('metrics');
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+viewer.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+
+/*
+  Le FOV du jeu, et pas un autre. 48° est le réglage qui fabrique le rendu
+  « diorama » : une focale plus large redresserait les fuyantes et donnerait au
+  modèle une perspective qu'il n'aura jamais à l'écran.
+*/
+const camera = new THREE.PerspectiveCamera(48, 16 / 9, 0.1, 900);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 1.2;
+controls.maxDistance = 320;
+controls.autoRotateSpeed = 0.6;
+
+/* --- Ciel ----------------------------------------------------------------- */
+
+/*
+  Le ciel du marais. Trois teintes, comme celui du jeu — mais la lueur est au
+  ras du sol et non au-dessus de l'horizon : ce qui éclaire ce monde monte de
+  la pourriture, pas du soleil. Il n'y a pas de soleil.
+*/
+const sky = new THREE.Mesh(
+  new THREE.SphereGeometry(600, 32, 24),
+  new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    depthWrite: false,
+    uniforms: {
+      uZenith: { value: new THREE.Color(C.zenith) },
+      uHorizon: { value: new THREE.Color(C.horizon) },
+      uGlow: { value: new THREE.Color(C.glowSky) },
+    },
+    vertexShader: `
+      varying vec3 vPos;
+      void main() {
+        vPos = position;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: `
+      uniform vec3 uZenith; uniform vec3 uHorizon; uniform vec3 uGlow;
+      varying vec3 vPos;
+      void main() {
+        float h = normalize(vPos).y;
+        vec3 c = mix(uHorizon, uZenith, smoothstep(-0.02, 0.48, h));
+        c = mix(c, uGlow, smoothstep(0.10, -0.16, h));
+        gl_FragColor = vec4(c, 1.0);
+      }`,
+  })
+);
+scene.add(sky);
+
+scene.fog = new THREE.Fog(0x3a1418, 40, 260);
+
+/* --- Lumières -------------------------------------------------------------- */
+
+/*
+  Les trois sources du jeu, mais retournées.
+
+  Sur le continent et sur l'île, la clé est un soleil chaud qui sculpte, le
+  rebond vient du ciel froid, et un contre-jour parme détoure. Ici il n'y a pas
+  de soleil : la clé est rasante et rouge, le rebond *monte du sol* — c'est
+  l'hémisphérique, dont la couleur basse est l'écarlate de l'eau — et le
+  contre-jour est resté violet, parce que c'est la seule teinte de la scène
+  qu'aucune pourriture ne porte, donc la seule qui détache vraiment.
+*/
+scene.add(new THREE.HemisphereLight(0x53303a, 0x7d1b26, 0.85));
+scene.add(new THREE.AmbientLight(0xffffff, 0.22));
+const key = new THREE.DirectionalLight(0xffb190, 1.55);
+key.position.set(40, 26, 58);
+scene.add(key);
+const backLight = new THREE.DirectionalLight(0x9a7fe0, 0.75);
+backLight.position.set(-46, 30, -52);
+scene.add(backLight);
+
+/* ----------------------------------------------------------------- le rig */
+
+/*
+  Les articulations posables. Chacune retient sa rotation de construction ; une
+  pose n'exprime donc que des *écarts*, et la pose « garde » est littéralement
+  l'ensemble vide. Sans ça, chaque pose devrait redonner les vingt rotations, y
+  compris celles qu'elle ne change pas — et la première correction de la
+  géométrie les rendrait toutes fausses.
+*/
+const RIG = {};
+
+function rig(name, object) {
+  RIG[name] = { object, base: object.rotation.clone() };
+  return object;
+}
+
+/*
+  Les calques sont des *listes*, pas des groupes.
+
+  La tentation est de mettre l'armure dans un `Group` qu'on éteint d'un coup —
+  mais la spallière doit rester fille de l'épaule et la tassette fille des
+  hanches. Les regrouper par thème les détacherait du squelette, et la spallière
+  resterait en l'air pendant que le bras balaie. On éteint donc des objets un par
+  un, là où ils sont.
+
+  C'est aussi littéralement la métamorphose : passer en phase II, c'est éteindre
+  `armor` et allumer `wings`. Le corps ne change pas — et c'est le propos.
+*/
+const LAYER = { armor: [], wings: [], blade: [], rot: [] };
+
+function layer(name, object) {
+  LAYER[name].push(object);
+  return object;
+}
+
+/* ------------------------------------------------------------- le modèle */
+
+const malenia = new THREE.Group();
+scene.add(malenia);
+rig('root', malenia);
+
+/** Le groupe qui décolle en phase II. Tout le corps est dedans. */
+const body = joint(malenia, [0, 0, 0]);
+rig('body', body);
+
+/* --- Les jambes ----------------------------------------------------------- */
+
+/*
+  Elles ne sont pas la même jambe, et c'est le premier trait du personnage
+  qu'on voit avant même le heaume : la gauche est une prothèse entière, le pied
+  droit en est une aussi. Il lui manque un bras, une jambe et un pied — c'est la
+  raison pour laquelle elle ne marche pas dans ce jeu : elle glisse, et elle
+  bondit.
+
+  La prothèse est à claire-voie : deux montants d'or et un pivot visible au
+  genou, sans mollet. C'est ce vide-là qui la fait lire comme une pièce
+  mécanique à quatorze unités de recul, et non comme une botte dorée.
+*/
+function buildLeg(side, prosthetic) {
+  const hip = joint(body, [side * HIP_X, HIP_Y, 0]);
+  rig(side === L ? 'hipL' : 'hipR', hip);
+
+  const thighLen = HIP_Y - KNEE_Y;      // 0,52
+  const shinLen = KNEE_Y - ANKLE_Y;     // 0,53
+
+  if (prosthetic) {
+    // La cuisse reste de chair jusqu'à mi-hauteur : l'amputation est au-dessus
+    // du genou, pas à la hanche, et le raccord doit se voir.
+    outline(part(hip, new THREE.CapsuleGeometry(0.098, thighLen * 0.42, 4, 10), MAT.skin,
+      [0, -thighLen * 0.26, 0]));
+    // L'emboîture — la seule pièce de cuir du bas du corps.
+    outline(part(hip, new THREE.CylinderGeometry(0.105, 0.088, 0.14, 10), MAT.leather,
+      [0, -thighLen * 0.58, 0]));
+    outline(part(hip, new THREE.CylinderGeometry(0.082, 0.07, thighLen * 0.34, 8), MAT.gold,
+      [0, -thighLen * 0.82, 0]));
+  } else {
+    outline(part(hip, new THREE.CapsuleGeometry(0.098, thighLen * 0.72, 4, 10), MAT.skin,
+      [0, -thighLen * 0.5, 0]));
+  }
+
+  const knee = joint(hip, [0, -thighLen, 0]);
+  rig(side === L ? 'kneeL' : 'kneeR', knee);
+
+  if (prosthetic) {
+    // Le pivot à nu : un tore, et c'est lui qui dit « mécanique ».
+    outline(part(knee, new THREE.TorusGeometry(0.068, 0.026, 8, 14), MAT.goldBright,
+      [0, 0, 0], [0, Math.PI / 2, 0]));
+    // Deux montants, et rien entre eux.
+    for (const s of [-1, 1]) {
+      outline(part(knee, new THREE.CylinderGeometry(0.021, 0.026, shinLen * 0.88, 6), MAT.gold,
+        [0, -shinLen * 0.46, s * 0.045]));
+    }
+    outline(part(knee, new THREE.CylinderGeometry(0.034, 0.028, 0.07, 8), MAT.goldDim,
+      [0, -shinLen * 0.9, 0]));
+  } else {
+    outline(part(knee, new THREE.SphereGeometry(0.072, 9, 7), MAT.skin));
+    outline(part(knee, new THREE.CapsuleGeometry(0.072, shinLen * 0.6, 4, 9), MAT.skin,
+      [0, -shinLen * 0.48, 0]));
+    // La grève d'or sur le tibia de chair : elle est en armure, après tout.
+    outline(part(knee, new THREE.CylinderGeometry(0.082, 0.062, shinLen * 0.55, 8), MAT.gold,
+      [0, -shinLen * 0.42, 0.006], null, [1, 1, 0.78]));
+  }
+
+  const ankle = joint(knee, [0, -shinLen, 0]);
+  // Le pied droit est d'or, le gauche est celui de la prothèse : les deux sont
+  // donc dorés, mais pour deux raisons différentes. Le seul pied de chair du
+  // personnage n'existe pas.
+  const footMat = MAT.gold;
+  outline(part(ankle, faceted(new THREE.BoxGeometry(0.115, 0.075, 0.27)), footMat,
+    [0, 0.038, 0.055]));
+  outline(part(ankle, new THREE.ConeGeometry(0.052, 0.12, 6), MAT.goldBright,
+    [0, 0.03, 0.2], [Math.PI / 2, 0, 0]));
+  return hip;
+}
+
+buildLeg(L, true);
+buildLeg(R, false);
+
+/* --- Le bassin, les tassettes, le pan ------------------------------------- */
+
+const hips = joint(body, [0, HIP_Y, 0]);
+rig('hips', hips);
+
+outline(part(hips, new THREE.CapsuleGeometry(0.155, 0.14, 4, 10), MAT.bronze,
+  [0, 0.02, 0], [Math.PI / 2, 0, 0], [1, 1, 0.82]));
+outline(part(hips, new THREE.CylinderGeometry(0.162, 0.148, 0.1, 12), MAT.gold, [0, 0.09, 0]));
+
+/*
+  Les tassettes : six lames d'or autour des hanches, un peu évasées.
+
+  Elles appartiennent au calque `armor` — elles tombent à la métamorphose. Ce
+  sont elles, avec les spallières, qui font la différence de silhouette entre
+  les deux phases : sans elles, la taille paraît d'un coup deux fois plus fine.
+*/
+for (let i = 0; i < 6; i++) {
+  const a = (i / 6) * Math.PI * 2 + Math.PI / 6;
+  const faulds = part(hips, faceted(new THREE.BoxGeometry(0.13, 0.2, 0.05)), MAT.gold,
+    [Math.sin(a) * 0.155, -0.08, Math.cos(a) * 0.13], [0.12, a, 0]);
+  outline(faulds, OUTLINE_THIN);
+  layer('armor', faulds);
+}
+
+/*
+  Le pan écarlate — le seul rouge de la phase I avec les cheveux.
+
+  Il est là pour une raison de lecture, pas d'ornement : sur un modèle d'or, à
+  quatorze unités de recul, le tissu est la seule chose qui dise la *vitesse*.
+  Une esquive sans tissu se lit comme une téléportation.
+*/
+const sash = joint(hips, [0, -0.02, -0.02]);
+rig('sash', sash);
+for (let i = 0; i < 5; i++) {
+  const x = (i - 2) * 0.072;
+  const len = 0.62 + Math.cos(i - 2) * 0.16;
+  part(sash, faceted(new THREE.BoxGeometry(0.082, len, 0.022)), i % 2 ? MAT.cloth : MAT.clothDark,
+    [x, -len / 2 - 0.06, -0.13], [0.06, 0, (i - 2) * 0.05]);
+}
+
+/* --- Le torse ------------------------------------------------------------- */
+
+const torso = joint(body, [0, HIP_Y + 0.02, 0]);
+rig('torso', torso);
+
+// La taille, puis la cage — aplatie en Z. Un torse de révolution est un tube ;
+// c'est l'écrasement avant-arrière qui fait une cage thoracique.
+outline(part(torso, new THREE.CapsuleGeometry(0.135, 0.16, 4, 10), MAT.skin,
+  [0, 0.16, 0], null, [1, 1, 0.8]));
+outline(part(torso, new THREE.CapsuleGeometry(0.2, 0.2, 5, 12), MAT.skin,
+  [0, CHEST_Y - HIP_Y - 0.02, 0], [Math.PI / 2, 0, 0], [1, 1, 0.74]));
+outline(part(torso, new THREE.SphereGeometry(0.2, 12, 9), MAT.skin,
+  [0, SHOULDER_Y - HIP_Y - 0.09, 0], null, [1.12, 0.86, 0.78]));
+
+/*
+  Les veines de pourriture : elles ne s'allument qu'en phase II.
+
+  Des sphères très aplaties, non éclairées, posées sur la peau — la même
+  technique que la gouttière du Lynel. Elles partent du flanc droit, là où la
+  prothèse s'ancre, et remontent vers le cou : la pourriture vient de la
+  blessure, pas de partout à la fois.
+*/
+const VEIN_PATH = [
+  [R * 0.16, 0.30, 0.10], [R * 0.13, 0.42, 0.14], [R * 0.08, 0.52, 0.15],
+  [R * 0.03, 0.60, 0.15], [R * 0.09, 0.62, 0.12], [L * 0.06, 0.66, 0.14],
+  [R * 0.19, 0.20, 0.04], [L * 0.14, 0.34, 0.12], [L * 0.10, 0.48, 0.14],
+];
+for (const [x, y, z] of VEIN_PATH) {
+  const vein = part(torso, new THREE.SphereGeometry(0.055, 7, 6), MAT_VEIN,
+    [x, y, z], [0, 0, x * 2], [0.34, 1.35, 0.3]);
+  layer('rot', vein);
+}
+
+/*
+  La cuirasse : plastron d'or, collier, et la crête sternale.
+
+  Elle est *sur* le torse et non à sa place — c'est ce qui permet de l'éteindre
+  d'un coup à la métamorphose sans laisser un trou dans le corps. La règle vaut
+  pour toute l'armure du modèle.
+*/
+const cuirass = part(torso, new THREE.SphereGeometry(0.225, 14, 10), MAT.gold,
+  [0, CHEST_Y - HIP_Y - 0.04, 0.012], null, [1.06, 1.18, 0.84]);
+outline(cuirass);
+layer('armor', cuirass);
+const gorget = part(torso, new THREE.CylinderGeometry(0.135, 0.165, 0.1, 12), MAT.goldBright,
+  [0, NECK_Y - HIP_Y - 0.13, 0], null, [1, 1, 0.86]);
+outline(gorget, OUTLINE_THIN);
+layer('armor', gorget);
+const sternum = part(torso, faceted(new THREE.BoxGeometry(0.05, 0.42, 0.05)), MAT.goldBright,
+  [0, CHEST_Y - HIP_Y - 0.06, 0.185], [0.06, 0, 0]);
+layer('armor', sternum);
+// La ceinture de cuir, sous le plastron : elle reste, elle n'est pas de l'armure.
+outline(part(torso, new THREE.CylinderGeometry(0.15, 0.152, 0.07, 12), MAT.leather,
+  [0, 0.06, 0], null, [1, 1, 0.84]));
+
+/* --- Les bras ------------------------------------------------------------- */
+
+/*
+  Deux bras qui n'ont rien en commun.
+
+  Le droit est une prothèse entière : segmenté, articulations à nu, une carène
+  à l'avant-bras. C'est lui qui tient la lame, donc c'est lui que le joueur doit
+  apprendre à regarder — dans ce jeu, la parade se lit sur l'arme, et l'arme ne
+  bouge jamais sans lui. Le rendre franchement mécanique n'est pas un caprice de
+  fidélité : c'est le télégraphe.
+
+  Le gauche est de chair, en manche sombre, avec un simple brassard. Il ne sert
+  qu'à une chose — la saisie — et il doit donc être *calme* : tout ce qu'il fait
+  compte.
+*/
+function buildArm(side, prosthetic) {
+  const shoulder = joint(torso, [side * SHOULDER_X, SHOULDER_Y - HIP_Y - 0.02, 0]);
+  rig(side === R ? 'shoulderR' : 'shoulderL', shoulder);
+
+  if (prosthetic) {
+    // L'emboîture d'épaule : la prothèse ne commence pas au bras mais à la
+    // clavicule, et ce raccord d'or sur la peau est le premier signe.
+    outline(part(shoulder, new THREE.SphereGeometry(0.115, 11, 9), MAT.goldDim, [0, 0, 0]));
+    outline(part(shoulder, new THREE.CylinderGeometry(0.075, 0.062, UPPER_ARM * 0.44, 8), MAT.gold,
+      [0, -UPPER_ARM * 0.28, 0]));
+    outline(part(shoulder, new THREE.TorusGeometry(0.052, 0.018, 7, 12), MAT.goldBright,
+      [0, -UPPER_ARM * 0.58, 0], [Math.PI / 2, 0, 0]));
+    outline(part(shoulder, new THREE.CylinderGeometry(0.058, 0.052, UPPER_ARM * 0.34, 8), MAT.gold,
+      [0, -UPPER_ARM * 0.8, 0]));
+  } else {
+    outline(part(shoulder, new THREE.SphereGeometry(0.105, 10, 8), MAT.bronze));
+    outline(part(shoulder, new THREE.CapsuleGeometry(0.068, UPPER_ARM * 0.66, 4, 9), MAT.bronze,
+      [0, -UPPER_ARM * 0.5, 0]));
+  }
+
+  // La spallière : deux lames superposées, plus grande du côté de la lame.
+  const pauldron = joint(shoulder, [0, 0.03, 0]);
+  const width = prosthetic ? 1.18 : 1.0;
+  for (let i = 0; i < 2; i++) {
+    const lame = part(pauldron, faceted(new THREE.SphereGeometry(0.155, 10, 7)), i ? MAT.goldDim : MAT.gold,
+      [side * 0.02, -i * 0.085, 0], [0, 0, side * -0.18],
+      [width * (1 - i * 0.12), 0.58 - i * 0.06, (1 - i * 0.1)]);
+    outline(lame, OUTLINE_THIN);
+    layer('armor', lame);
+  }
+
+  const elbow = joint(shoulder, [0, -UPPER_ARM, 0]);
+  rig(side === R ? 'elbowR' : 'elbowL', elbow);
+
+  if (prosthetic) {
+    outline(part(elbow, new THREE.SphereGeometry(0.062, 9, 7), MAT.goldBright));
+    outline(part(elbow, new THREE.CylinderGeometry(0.05, 0.044, FOREARM * 0.86, 8), MAT.gold,
+      [0, -FOREARM * 0.45, 0]));
+    // La carène : la lame d'avant-bras, purement silhouette. C'est ce qui rend
+    // le bras reconnaissable de dos, quand la lame est masquée par le corps.
+    outline(part(elbow, faceted(new THREE.BoxGeometry(0.022, FOREARM * 0.8, 0.09)), MAT.goldBright,
+      [0, -FOREARM * 0.46, -0.058], [0.1, 0, 0]));
+  } else {
+    outline(part(elbow, new THREE.CapsuleGeometry(0.056, FOREARM * 0.64, 4, 9), MAT.bronze,
+      [0, -FOREARM * 0.46, 0]));
+    const vambrace = part(elbow, new THREE.CylinderGeometry(0.07, 0.058, FOREARM * 0.5, 8), MAT.gold,
+      [0, -FOREARM * 0.3, 0]);
+    outline(vambrace, OUTLINE_THIN);
+    layer('armor', vambrace);
+  }
+
+  const wrist = joint(elbow, [0, -FOREARM, 0]);
+  rig(side === R ? 'wristR' : 'wristL', wrist);
+  outline(part(wrist, faceted(new THREE.BoxGeometry(0.075, 0.13, 0.055)), prosthetic ? MAT.goldDim : MAT.skin,
+    [0, -0.055, 0]));
+  // Les doigts, en bloc : à cette échelle, cinq cylindres ne se distinguent pas
+  // d'un seul — et ils coûtent cinq fois plus cher.
+  outline(part(wrist, faceted(new THREE.BoxGeometry(0.07, 0.085, 0.048)), prosthetic ? MAT.gold : MAT.skinShade,
+    [0, -0.14, 0.012], [0.35, 0, 0]));
+  return wrist;
+}
+
+const handR = buildArm(R, true);
+const handL = buildArm(L, false);
+
+/* --- La tête et le heaume -------------------------------------------------- */
+
+const neck = joint(torso, [0, NECK_Y - HIP_Y - 0.02, 0]);
+outline(part(neck, new THREE.CylinderGeometry(0.058, 0.07, 0.1, 9), MAT.skin, [0, 0.03, 0]));
+
+const head = joint(neck, [0, HEAD_Y - NECK_Y + 0.02, 0]);
+rig('head', head);
+
+// Le crâne, légèrement allongé : une sphère parfaite donne un visage d'enfant.
+outline(part(head, new THREE.SphereGeometry(0.132, 14, 11), MAT.skin, [0, 0, 0], null, [0.92, 1.06, 1]));
+// La mâchoire et le menton — la seule chair visible sous le heaume.
+outline(part(head, faceted(new THREE.SphereGeometry(0.105, 10, 8)), MAT.skin,
+  [0, -0.045, 0.04], null, [0.86, 0.8, 1.0]));
+
+/*
+  Les yeux clos.
+
+  Deux paupières sombres et pas une lueur : c'est le seul boss du jeu dont les
+  yeux ne brillent pas, et c'est délibéré. Le Lynel annonce ses attaques par le
+  regard ; elle est aveugle, elle ne regarde rien, et le joueur ne trouvera
+  jamais sur son visage l'information qu'il a appris à y chercher. Il devra la
+  prendre sur la lame.
+*/
+for (const s of [-1, 1]) {
+  part(head, faceted(new THREE.BoxGeometry(0.042, 0.011, 0.02)), MAT.skinShade,
+    [s * 0.055, 0.008, 0.118], [0, 0, s * 0.08]);
+}
+// La pourriture au coin des yeux : éteinte en phase I, allumée en phase II.
+for (const s of [-1, 1]) {
+  const mark = part(head, new THREE.SphereGeometry(0.03, 7, 6), MAT_VEIN,
+    [s * 0.082, -0.005, 0.1], [0, 0, s * 0.5], [0.9, 0.5, 0.5]);
+  layer('rot', mark);
+}
+
+/*
+  Le heaume ailé, d'or pur.
+
+  La calotte couvre le crâne du front à la nuque ; les ailes partent des tempes
+  et balaient vers l'arrière et vers le haut. Quatre lames par aile, de plus en
+  plus courtes — c'est cet étagement, pas la taille, qui les fait lire comme des
+  plumes plutôt que comme des cornes.
+
+  L'envergure dépasse celle des épaules. C'est le détail par lequel on la
+  reconnaît de dos, à quatorze unités, et c'est la raison pour laquelle il n'y a
+  aucune autre pièce d'or au-dessus de la ceinture qui soit aussi large.
+*/
+const helm = joint(head, [0, 0.012, 0]);
+const helmShell = part(helm, new THREE.SphereGeometry(0.146, 14, 11), MAT.gold,
+  [0, 0.016, -0.008], null, [0.98, 1.04, 1.02]);
+outline(helmShell);
+layer('armor', helmShell);
+// La visière : une arête qui descend sur le front, et s'arrête au-dessus des
+// yeux. Elle ne les couvre pas — c'est ce qui laisse voir qu'ils sont clos.
+const visor = part(helm, faceted(new THREE.BoxGeometry(0.055, 0.115, 0.075)), MAT.goldBright,
+  [0, 0.045, 0.108], [0.28, 0, 0]);
+layer('armor', visor);
+const brow = part(helm, new THREE.TorusGeometry(0.128, 0.017, 7, 16, Math.PI), MAT.goldDim,
+  [0, 0.042, 0.012], [1.45, 0, 0]);
+layer('armor', brow);
+
+/*
+  L'écartement des ailes est un nombre mesuré, pas un angle choisi à l'œil.
+
+  Premier jet : une inclinaison de 0,3 rad, qui donnait une envergure de 0,41 —
+  soit **plus étroit que les épaules** (0,70), c'est-à-dire l'inverse exact de
+  ce que le heaume est censé faire. Une aile qui ne dépasse pas l'épaule n'est
+  pas une aile, c'est une crête, et elle ne se voit plus dès qu'on met le
+  personnage à quatorze unités.
+
+  À 0,95 rad d'inclinaison pour une lame maîtresse de 0,38, la pointe se pose à
+  0,10 + 0,38 · sin(0,95) · cos(0,32) ≈ 0,39 du milieu, donc une envergure de
+  près de 0,80. C'est le tableau des cotes qui tranche, pas ce commentaire :
+  s'il affiche autre chose que ce qui est écrit ici, c'est ce commentaire qui a
+  tort.
+*/
+for (const s of [-1, 1]) {
+  const wingRoot = joint(helm, [s * 0.1, 0.03, -0.01], [0, s * -0.32, s * -0.95]);
+  for (let i = 0; i < 4; i++) {
+    const len = 0.38 - i * 0.06;
+    const feather = part(wingRoot, faceted(new THREE.BoxGeometry(0.03, len, 0.016)), i % 2 ? MAT.goldDim : MAT.goldBright,
+      [0, len / 2 - 0.02, -i * 0.036], [-i * 0.13, 0, s * i * 0.07]);
+    outline(feather, OUTLINE_THIN);
+    layer('armor', feather);
+  }
+}
+
+/**
+ * Une mèche : un tube le long d'une courbe, **effilé** vers la pointe.
+ *
+ * `TubeGeometry` a un rayon constant, et un cheveu de rayon constant est une
+ * corde. Le fuselage se fait donc après coup, en rapprochant chaque anneau de
+ * son centre : `getPointAt` redonne exactement le point que `TubeGeometry` a
+ * utilisé pour construire l'anneau — même paramétrage par longueur d'arc — donc
+ * le centre est le bon, et non une approximation qui tordrait la mèche.
+ *
+ * Sert aussi aux nervures des ailes, qui sont les mêmes cheveux.
+ */
+function strandGeometry(curve, radius, taper, tubular = 14, radial = 6) {
+  const geometry = new THREE.TubeGeometry(curve, tubular, radius, radial, false);
+  const position = geometry.attributes.position;
+  const ring = radial + 1;
+  const center = new THREE.Vector3();
+  for (let j = 0; j <= tubular; j++) {
+    curve.getPointAt(j / tubular, center);
+    const k = 1 - taper * (j / tubular);
+    for (let r = 0; r < ring; r++) {
+      const index = j * ring + r;
+      position.setXYZ(
+        index,
+        center.x + (position.getX(index) - center.x) * k,
+        center.y + (position.getY(index) - center.y) * k,
+        center.z + (position.getZ(index) - center.z) * k
+      );
+    }
+  }
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+/*
+  Les cheveux — **lâchés, et dans les deux phases.**
+
+  Neuf mèches libres qui sortent de la nuque, s'écartent vers l'arrière et
+  retombent. Pas de tresse : elle n'en porte pas, ni casquée ni découverte, et
+  c'est une correction sur le premier jet de cette maquette.
+
+  Ce n'est pas un détail d'exactitude. La chevelure libre est ce qui *relie* les
+  deux phases : le heaume tombe, l'armure tombe, mais les cheveux ne changent
+  pas — et comme les ailes sont des papillons cousus par ces cheveux-là, la
+  phase II ne sort pas de nulle part. Elle était déjà sur sa nuque en phase I.
+
+  Les mèches du milieu sont les plus longues et les plus épaisses ; celles des
+  bords s'écartent et s'écourtent. Une chevelure de mèches égales fait une
+  perruque — c'est l'inégalité qui fait la masse.
+*/
+const hair = joint(head, [0, -0.02, -0.105]);
+rig('hair', hair);
+for (let i = 0; i < 9; i++) {
+  const t = i / 8 - 0.5;                       // -0,5 (une oreille) à +0,5 (l'autre)
+  const len = 0.96 - Math.abs(t) * 0.46;
+  const out = t * 0.36;
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(t * 0.12, 0, -0.01),
+    new THREE.Vector3(t * 0.21, -len * 0.3, -0.075 - Math.abs(t) * 0.03),
+    new THREE.Vector3(out, -len * 0.67, -0.055),
+    new THREE.Vector3(out * 1.3, -len, 0.03 + t * 0.04),
+  ]);
+  outline(
+    part(hair, strandGeometry(curve, 0.05 - Math.abs(t) * 0.022, 0.72), i % 2 ? MAT.hair : MAT.hairDark),
+    OUTLINE_THIN
+  );
+}
+// La calotte de cheveux sur le crâne, d'où partent les mèches. Sous le heaume en
+// phase I, à nu en phase II — elle ne bouge pas plus que les mèches.
+outline(part(head, faceted(new THREE.SphereGeometry(0.129, 11, 9)), MAT.hair,
+  [0, -0.008, -0.048], null, [0.97, 0.94, 0.92]));
+
+/* --- La Main de Malenia ---------------------------------------------------- */
+
+/*
+  Un katana, et c'est le seul point du modèle où la fidélité au personnage et la
+  cohérence du jeu tombent d'accord sans arbitrage : le joueur a déjà un katana
+  dans son inventaire. Le sien fait 1,20 ; celui-ci fait 1,45. La portée est la
+  première chose que le combat doit dire, et elle se dit avant le premier coup,
+  rien qu'en regardant les deux lames côte à côte.
+
+  La courbure (le *sori*) est construite plutôt que dessinée : la ligne de dos
+  s'écarte en t², la tranche suit à distance constante, et la largeur s'annule
+  sur les douze derniers centimètres. Une lame droite avec un bout pointu n'est
+  pas un katana, c'est une épée — et la silhouette est tout ce qu'on en verra.
+*/
+function bladeShape(length, width) {
+  const shape = new THREE.Shape();
+  const N = 20;
+  const bend = (t) => -0.085 * t * t;
+  const halfWidth = (t) => width * Math.min(1, (1 - t) / 0.085);
+  shape.moveTo(bend(0), 0);
+  for (let i = 1; i <= N; i++) {
+    const t = i / N;
+    shape.lineTo(bend(t), t * length);
+  }
+  for (let i = N; i >= 0; i--) {
+    const t = i / N;
+    shape.lineTo(bend(t) + halfWidth(t), t * length);
+  }
+  shape.lineTo(bend(0), 0);
+  return shape;
+}
+
+function buildSword() {
+  const sword = new THREE.Group();
+
+  const blade = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(bladeShape(BLADE_L, 0.058), {
+      depth: 0.016, bevelEnabled: true, bevelSize: 0.004, bevelThickness: 0.003, bevelSegments: 1,
+    }),
+    MAT.steel
+  );
+  blade.position.set(0, 0.16, -0.008);
+  outline(blade, OUTLINE_THIN);
+  sword.add(blade);
+
+  // La ligne de trempe (*hamon*), en acier clair, posée sur la tranche : une
+  // seconde lame plus étroite, décalée d'un demi-millimètre vers l'avant. Elle
+  // ne coûte qu'une géométrie et c'est ce qui empêche la lame de lire comme une
+  // planche grise.
+  const hamon = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(bladeShape(BLADE_L * 0.97, 0.021), { depth: 0.004, bevelEnabled: false }),
+    MAT.steelDark
+  );
+  hamon.position.set(0.032, 0.17, 0.0125);
+  sword.add(hamon);
+
+  // La garde, la poignée, le pommeau.
+  outline(part(sword, new THREE.CylinderGeometry(0.076, 0.076, 0.016, 12), MAT.gold, [0, 0.155, 0]),
+    OUTLINE_THIN);
+  outline(part(sword, new THREE.CylinderGeometry(0.031, 0.034, 0.27, 9), MAT.clothDark, [0, 0.02, 0]));
+  for (let i = 0; i < 5; i++) {
+    part(sword, faceted(new THREE.BoxGeometry(0.072, 0.022, 0.072)), MAT.goldDim,
+      [0, -0.085 + i * 0.05, 0], [0, Math.PI / 4, 0.3]);
+  }
+  outline(part(sword, new THREE.CylinderGeometry(0.038, 0.032, 0.03, 9), MAT.gold, [0, -0.128, 0]),
+    OUTLINE_THIN);
+
+  // Le gland écarlate : trois segments effilés. Même rôle que le pan de tissu —
+  // c'est ce qui dit la vitesse d'un geste, sur une arme qui ne se déforme pas.
+  let tasselAt = joint(sword, [0, -0.142, 0]);
+  for (let i = 0; i < 3; i++) {
+    const seg = joint(tasselAt, [0, -0.06, -0.012], [0.22, 0, 0]);
+    part(seg, new THREE.CapsuleGeometry(0.018 - i * 0.004, 0.06, 3, 6), i % 2 ? MAT.cloth : MAT.clothDark,
+      [0, -0.03, 0]);
+    tasselAt = seg;
+  }
+
+  return sword;
+}
+
+/*
+  Elle est fille du poignet droit, et c'est toute la question du télégraphe :
+  la lame ne peut pas bouger sans que la prothèse ait bougé d'abord. Le joueur
+  qui apprend à lire le bras lit la lame avec une frame d'avance — c'est ce qui
+  rend la parade jouable à 380 ms sur l'estoc.
+*/
+const sword = buildSword();
+sword.position.set(0, -0.135, 0.015);
+sword.rotation.set(0.1, 0, 0);
+handR.add(sword);
+layer('blade', sword);
+
+/* --- Les ailes de la phase II ---------------------------------------------- */
+
+/*
+  Des papillons cousus par ses propres cheveux.
+
+  La structure est littérale : cinq nervures de cheveu par aile, et des papillons
+  enfilés dessus. Chaque papillon est *deux plans* — une paire de demi-ailes en
+  dièdre — et non un modèle : à quarante par aile, tout ce qui coûte plus cher
+  qu'un plan se paye quatre-vingts fois.
+
+  Le dièdre n'est pas de la coquetterie. Deux plans coplanaires disparaissent
+  quand on les regarde par la tranche, et une aile qui s'évanouit à certains
+  angles de caméra est pire que pas d'aile. À ±0,35 rad, il y en a toujours un
+  des deux qui prend la lumière.
+
+  Pour le jeu : quatre-vingts papillons font cent soixante maillages, ce qui est
+  trop pour un modèle qu'on monte et démonte. La version du dépôt les passera en
+  `InstancedMesh` — une seule géométrie, une matrice par papillon, un seul appel
+  de dessin. C'est déjà ce que fait la végétation du continent.
+*/
+const BUTTERFLY = (() => {
+  const halfWing = (s) => {
+    const shape = new THREE.Shape();
+    shape.moveTo(0, 0);
+    shape.bezierCurveTo(s * 0.04, 0.085, s * 0.15, 0.105, s * 0.155, 0.022);
+    shape.bezierCurveTo(s * 0.168, -0.042, s * 0.088, -0.078, s * 0.024, -0.03);
+    shape.lineTo(0, 0);
+    return new THREE.ShapeGeometry(shape, 6);
+  };
+  return { left: halfWing(1), right: halfWing(-1) };
+})();
+
+function butterfly(parent, position, rotation, scale, pale) {
+  const group = joint(parent, position, rotation);
+  group.scale.setScalar(scale);
+  const material = pale ? MAT_WING_PALE : MAT_WING;
+  part(group, BUTTERFLY.left, material, null, [0, -0.35, 0]);
+  part(group, BUTTERFLY.right, material, null, [0, 0.35, 0]);
+  return group;
+}
+
+/*
+  Une aile : cinq nervures en éventail, du haut (longue, tendue vers l'arrière
+  et le haut) vers le bas (courte, retombante).
+
+  Chaque nervure est une courbe et non un segment — c'est la courbure qui fait
+  la différence entre une aile et un râteau. Le tube qui la matérialise est le
+  cheveu ; les papillons sont enfilés le long de la même courbe, avec une taille
+  qui décroît vers la pointe.
+*/
+function buildWing(side) {
+  const wing = joint(body, [side * 0.16, SHOULDER_Y - 0.06, -0.14], [0, side * -0.3, 0]);
+  rig(side === L ? 'wingL' : 'wingR', wing);
+
+  for (let n = 0; n < 5; n++) {
+    const t = n / 4;                            // 0 = nervure haute, 1 = basse
+    const len = WING_SPAN * (1 - t * 0.38);
+    const rise = 1.5 - t * 1.9;                 // la plus haute monte, la plus basse tombe
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(side * len * 0.3, rise * 0.34 + 0.24, -len * 0.16),
+      new THREE.Vector3(side * len * 0.66, rise * 0.72 + 0.18, -len * 0.3),
+      new THREE.Vector3(side * len, rise, -len * 0.42),
+    ]);
+
+    const strand = part(wing, strandGeometry(curve, 0.016, 0.55, 16, 5), MAT.hairDark);
+    layer('wings', strand);
+
+    const count = 11 - n;
+    for (let i = 1; i <= count; i++) {
+      const u = i / (count + 1);
+      const at = curve.getPointAt(u);
+      const scale = 1.25 - u * 0.55;
+      const b = butterfly(
+        wing,
+        [at.x, at.y, at.z],
+        [(i % 3) * 0.3 - 0.3, side * (0.4 + u * 0.7), side * (u * 0.5 - 0.25)],
+        scale,
+        i % 3 === 0
+      );
+      layer('wings', b);
+    }
+  }
+
+  // Le halo : un disque non éclairé derrière l'éventail. Il ne se voit pas
+  // franchement, et c'est le but — il empêche l'aile de se découper en confettis
+  // sur un ciel sombre en lui donnant un fond.
+  const halo = part(wing, new THREE.CircleGeometry(WING_SPAN * 0.62, 20), MAT_HALO,
+    [side * WING_SPAN * 0.45, 0.45, -WING_SPAN * 0.3], [0, side * 0.9, 0]);
+  layer('wings', halo);
+  return wing;
+}
+
+buildWing(L);
+buildWing(R);
+
+/* --- Aeonia écarlate -------------------------------------------------------- */
+
+/*
+  La fleur — sept unités d'envergure, trois et demie de haut.
+
+  Elle n'est pas un décor mais une *attaque* : elle éclôt là où elle plonge, et
+  toute l'arène (rayon 12) est dans son souffle. La montrer à cette page compte
+  autant que le modèle, parce que c'est elle qui décide si la phase II est
+  lisible — si le joueur ne comprend pas en la voyant monter qu'il doit être
+  déjà en train de courir, l'attaque est injuste au lieu d'être dure.
+
+  Les pétales sont des plans courbés par déplacement de sommets, et non des
+  volumes : à cette taille un pétale plein coûterait plus que le reste du modèle,
+  pour une silhouette identique de dessus — qui est le seul angle depuis lequel
+  le joueur la verra, puisqu'il sera dedans.
+*/
+function petalGeometry(length, width, curl) {
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0);
+  shape.bezierCurveTo(width, length * 0.3, width * 0.72, length * 0.82, 0, length);
+  shape.bezierCurveTo(-width * 0.72, length * 0.82, -width, length * 0.3, 0, 0);
+  const geometry = new THREE.ShapeGeometry(shape, 14);
+  const position = geometry.attributes.position;
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i);
+    const y = position.getY(i);
+    // Creusé en gouttière le long de l'axe, et recourbé vers l'arrière au bout.
+    position.setZ(i, -(x * x) / (width * 1.4) - curl * Math.pow(y / length, 2.4) * length * 0.55);
+  }
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+const aeonia = new THREE.Group();
+aeonia.visible = false;
+scene.add(aeonia);
+
+{
+  const outerPetal = petalGeometry(3.4, 0.85, 1.0);
+  const innerPetal = petalGeometry(2.1, 0.62, 1.35);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    const stem = joint(aeonia, [0, 0.55, 0], [0, a, 0]);
+    part(stem, outerPetal, MAT.rotDeep, [0, 0, 0.42], [-1.02, 0, 0]);
+  }
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + Math.PI / 6;
+    const stem = joint(aeonia, [0, 0.85, 0], [0, a, 0]);
+    part(stem, innerPetal, MAT.rot, [0, 0, 0.26], [-0.62, 0, 0]);
+  }
+  // Le cœur : une masse de graines, non éclairée, franchement au-dessus du
+  // seuil de bloom. C'est le seul point vraiment lumineux de toute la carte.
+  outline(part(aeonia, faceted(new THREE.SphereGeometry(0.62, 12, 9)), MAT.rotDeep,
+    [0, 0.72, 0], null, [1, 0.62, 1]));
+  for (let i = 0; i < 26; i++) {
+    const a = (i / 26) * Math.PI * 2 * 3.9;
+    const r = 0.1 + (i / 26) * 0.46;
+    part(aeonia, new THREE.SphereGeometry(0.062, 6, 5), MAT_VEIN,
+      [Math.sin(a) * r, 0.86 + Math.cos(i) * 0.03, Math.cos(a) * r]);
+  }
+  // Les vrilles qui la portent : cinq racines de pourriture sorties du sol.
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2 + 0.4;
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(Math.sin(a) * 1.5, 0, Math.cos(a) * 1.5),
+      new THREE.Vector3(Math.sin(a) * 1.0, 0.36, Math.cos(a) * 1.0),
+      new THREE.Vector3(Math.sin(a) * 0.32, 0.66, Math.cos(a) * 0.32),
+    ]);
+    part(aeonia, new THREE.TubeGeometry(curve, 12, 0.085, 6, false), MAT.rotDeep);
+  }
+}
+
+/* --------------------------------------------------------- la pose de base */
+
+/*
+  La garde est écrite dans les rotations de *construction*, pas dans une pose.
+
+  C'est la différence entre « la pose repos est l'ensemble vide » et « la pose
+  repos redonne les vingt rotations ». En rebasant ici, chaque pose ci-dessous
+  n'a plus à exprimer que ce qu'elle change — et la prochaine correction de la
+  garde ne rendra pas les quatre autres poses fausses.
+*/
+function rebase(name, x, y, z) {
+  const entry = RIG[name];
+  entry.object.rotation.set(x, y, z);
+  entry.base.copy(entry.object.rotation);
+}
+
+// Le buste tourné vers le joueur, la lame basse et en arrière — sa garde.
+rebase('torso', 0, 0.14, 0);
+rebase('shoulderR', -0.2, 0, 0.17);
+rebase('elbowR', -0.28, 0, 0);
+rebase('shoulderL', -0.12, 0, -0.2);
+rebase('elbowL', -0.5, 0, 0);
+rebase('hipL', 0.06, 0, 0.07);
+rebase('kneeL', 0.02, 0, 0);
+rebase('hipR', -0.08, 0, -0.06);
+rebase('kneeR', 0.14, 0, 0);
+rebase('head', 0.04, -0.08, 0);
+
+/*
+  La lame pend sous le poing, pas au-dessus.
+
+  Une épée tenue bras ballant pointe vers le sol — l'évidence, sauf que la
+  géométrie de la lame est bâtie vers +Y depuis la soie. Sans ce demi-tour, elle
+  se tiendrait la pointe en l'air en permanence, ce qui est la posture d'une
+  statue et pas d'un escrimeur.
+*/
+sword.position.set(0, -0.17, 0.02);
+sword.rotation.set(Math.PI * 0.95, 0, 0);
+
+/* ----------------------------------------------------------- les figurines */
+
+/*
+  Le héros du jeu, à sa cote exacte : 1,60.
+
+  Il n'est pas là pour être beau, il est là pour être une règle graduée. C'est
+  la seule pièce de la page qui décide si le modèle est à la bonne taille, et
+  c'est aussi le seul endroit où l'on voit d'un coup d'œil le vrai sujet du
+  combat : sa lame fait 1,20, celle qu'il a en face en fait 1,45.
+*/
+const HERO_AT = { x: 0.9, y: 0, z: 5.2 };
+
+function buildHero() {
+  const hero = new THREE.Group();
+  hero.position.set(HERO_AT.x, HERO_AT.y, HERO_AT.z);
+  hero.rotation.y = Math.PI;
+
+  outline(part(hero, new THREE.CapsuleGeometry(0.2, 0.34, 4, 10), MAT.tunic, [0, 0.98, 0]),
+    OUTLINE_THIN);
+  outline(part(hero, new THREE.SphereGeometry(0.19, 12, 9), MAT.heroSkin, [0, 1.42, 0]),
+    OUTLINE_THIN);
+  outline(part(hero, faceted(new THREE.ConeGeometry(0.2, 0.34, 7)), MAT.tunic,
+    [0, 1.56, -0.08], [-0.5, 0, 0]), OUTLINE_THIN);
+  for (const s of [-1, 1]) {
+    outline(part(hero, new THREE.CapsuleGeometry(0.062, 0.3, 4, 8), MAT.heroSkin,
+      [s * 0.24, 0.94, 0], [0, 0, s * 0.1]), OUTLINE_THIN);
+    outline(part(hero, new THREE.CapsuleGeometry(0.075, 0.36, 4, 8), MAT.boot,
+      [s * 0.11, 0.42, 0]), OUTLINE_THIN);
+  }
+  // Son katana : 0,82 de lame pour 1,06 hors tout, la cote du jeu. La
+  // comparaison est tout l'intérêt de la figurine.
+  const blade = part(hero, new THREE.ExtrudeGeometry(bladeShape(0.82, 0.05), {
+    depth: 0.014, bevelEnabled: false,
+  }), MAT.steel, [0.32, 0.9, 0.18], [0.5, 0, -0.35]);
+  outline(blade, OUTLINE_THIN);
+  return hero;
+}
+
+const hero = buildHero();
+scene.add(hero);
+
+/* ------------------------------------------------------------- le décor */
+
+/*
+  Le marais, l'arbre, les racines et l'arène.
+
+  Tout est dans un seul groupe qu'on éteint : sur les vues rapprochées, un décor
+  qui s'impose masque ce qu'on est venu regarder. Il s'allume de lui-même sur la
+  vue « le marais », et reste au choix du calque partout ailleurs.
+
+  Le terrain est **plat**, et c'est la seule bonne nouvelle du chantier : ni
+  champ de hauteurs comme le continent, ni surface radiale avec un dessous comme
+  l'île. Un disque, une nappe d'eau, et des objets posés dessus.
+*/
+const marsh = new THREE.Group();
+marsh.visible = false;
+scene.add(marsh);
+
+{
+  // La nappe de pourriture. Non éclairée : sous un ciel sans soleil, une eau
+  // qui dépend des lumières devient noire, et une eau noire n'a pas l'air
+  // dangereuse — elle a l'air profonde.
+  part(marsh, new THREE.CircleGeometry(160, 48), MAT_WATER, [0, 0.05, 0], [-Math.PI / 2, 0, 0]);
+
+  // Les bancs de vase qui en sortent.
+  for (let i = 0; i < 22; i++) {
+    const a = (i / 22) * Math.PI * 2 * 2.6 + 0.7;
+    const r = 18 + ((i * 37) % 62);
+    part(marsh, faceted(new THREE.SphereGeometry(2.4 + (i % 5), 9, 6)), MAT.mud,
+      [Math.sin(a) * r, -0.6 - (i % 3) * 0.2, Math.cos(a) * r], [0, a, 0],
+      [1 + (i % 4) * 0.3, 0.3, 1 + (i % 3) * 0.4]);
+  }
+
+  /*
+    L'Arbre blafard.
+
+    Cent vingt unités, posé à trente-quatre derrière l'arène. Il tient lieu de
+    boussole : c'est la seule chose verticale du paysage, on le voit du portail
+    d'arrivée, et l'arène est à son pied. Aucune flèche, aucun marqueur — le
+    joueur sait où aller parce qu'il n'y a rien d'autre à regarder.
+  */
+  const tree = joint(marsh, [0, 0, -34]);
+  outline(part(tree, faceted(new THREE.CylinderGeometry(3.4, 9.5, 120, 12, 1, true)), MAT.bark,
+    [0, 60, 0]));
+  for (let i = 0; i < 9; i++) {
+    const a = (i / 9) * Math.PI * 2;
+    // Les contreforts du pied : ce sont eux qui font tenir un tronc de neuf
+    // unités de rayon sur un sol plat sans qu'il ait l'air planté dedans.
+    part(tree, faceted(new THREE.CylinderGeometry(1.5, 4.2, 22, 7)), MAT.barkDark,
+      [Math.sin(a) * 7, 7, Math.cos(a) * 7], [Math.cos(a) * 0.3, 0, -Math.sin(a) * 0.3]);
+    // Les branches mortes, retombantes. Aucune feuille.
+    const h = 62 + (i % 4) * 13;
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(Math.sin(a) * 3.6, h, Math.cos(a) * 3.6),
+      new THREE.Vector3(Math.sin(a) * 15, h + 7, Math.cos(a) * 15),
+      new THREE.Vector3(Math.sin(a) * 26, h + 3, Math.cos(a) * 26),
+      new THREE.Vector3(Math.sin(a) * 33, h - 9, Math.cos(a) * 33),
+    ]);
+    part(tree, new THREE.TubeGeometry(curve, 14, 0.9, 6, false), MAT.bark);
+  }
+
+  /*
+    L'arène : un bassin de racines au pied du tronc, rayon 12.
+
+    Un demi de plus que la rotonde du Lynel (11,5), et c'est voulu : le joueur
+    connaît déjà cette distance, on ne la lui réapprend pas. Les contreforts
+    ferment le cercle — il n'y a pas de herse à écrire, le lieu enferme, comme le
+    plateau du sommet.
+  */
+  const arena = joint(marsh, [0, 0, 0]);
+  outline(part(arena, new THREE.CylinderGeometry(12, 12.6, 0.7, 40), MAT.root, [0, 0.1, 0]));
+  part(arena, new THREE.TorusGeometry(12, 0.5, 6, 44), MAT.rootDark, [0, 0.4, 0], [Math.PI / 2, 0, 0]);
+  // L'anneau d'eau pourrie à la lèvre : c'est la règle graduée du combat, comme
+  // les trois anneaux d'or du dallage de la rotonde — sauf que celui-ci pique.
+  part(arena, new THREE.RingGeometry(9.6, 11.6, 44), MAT_WATER, [0, 0.47, 0], [-Math.PI / 2, 0, 0]);
+  for (let i = 0; i < 11; i++) {
+    const a = (i / 11) * Math.PI * 2 + 0.28;
+    const h = 7 + (i % 3) * 2.2;
+    outline(part(arena, faceted(new THREE.CylinderGeometry(0.5, 1.5, h, 7)), MAT.rootDark,
+      [Math.sin(a) * 12.8, h / 2, Math.cos(a) * 12.8],
+      [Math.cos(a) * -0.22, 0, Math.sin(a) * 0.22]));
+  }
+
+  /*
+    La traversée : trois racines qui sortent du marais et montent jusqu'au
+    bassin. Cent trente unités de marche, et c'est exactement la géométrie de la
+    Voie de l'île — une poutre, une rambarde, un collider de boîte. Rien de neuf
+    à écrire, ce qui est l'essentiel de l'économie de ce chantier.
+  */
+  const SPANS = [
+    [[2, 0.4, 118], [6, 3.2, 96], [4, 2.4, 74], [1, 1.4, 58]],
+    [[1, 1.4, 58], [-7, 3.6, 46], [-9, 2.8, 32], [-4, 1.2, 22]],
+    [[-4, 1.2, 22], [1, 2.6, 18], [4, 1.8, 15], [0, 0.6, 12.2]],
+  ];
+  for (const span of SPANS) {
+    const curve = new THREE.CatmullRomCurve3(span.map(([x, y, z]) => new THREE.Vector3(x, y, z)));
+    outline(part(marsh, new THREE.TubeGeometry(curve, 26, 1.15, 7, false), MAT.root));
+    // Les radicelles qui la lestent : sans elles la racine flotte au-dessus de
+    // l'eau comme une passerelle, et ce n'est pas une passerelle.
+    for (let i = 1; i < 5; i++) {
+      const at = curve.getPointAt(i / 5);
+      part(marsh, faceted(new THREE.CylinderGeometry(0.35, 0.8, at.y + 1.4, 6)), MAT.rootDark,
+        [at.x, (at.y - 0.7) / 2, at.z]);
+    }
+  }
+
+  // Les arbres morts du marais, et les fleurs de pourriture.
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2 * 1.7 + 1.2;
+    const r = 24 + ((i * 29) % 58);
+    const h = 5 + (i % 4) * 2.5;
+    const dead = joint(marsh, [Math.sin(a) * r, 0, Math.cos(a) * r], [0, a * 2, 0]);
+    part(dead, faceted(new THREE.CylinderGeometry(0.22, 0.6, h, 6)), MAT.barkDark, [0, h / 2, 0]);
+    for (let b = 0; b < 3; b++) {
+      part(dead, faceted(new THREE.CylinderGeometry(0.06, 0.18, h * 0.5, 5)), MAT.barkDark,
+        [0, h * 0.82, 0], [0.7, (b / 3) * Math.PI * 2, 0]);
+    }
+  }
+  for (let i = 0; i < 26; i++) {
+    const a = (i / 26) * Math.PI * 2 * 3.3;
+    const r = 14 + ((i * 17) % 64);
+    const bloom = joint(marsh, [Math.sin(a) * r, 0, Math.cos(a) * r]);
+    part(bloom, faceted(new THREE.ConeGeometry(0.55, 0.9, 6)), MAT.rotDeep, [0, 0.45, 0]);
+    part(bloom, new THREE.SphereGeometry(0.28, 7, 6), MAT_VEIN, [0, 0.95, 0], null, [1, 0.6, 1]);
+  }
+
+  /*
+    Le portail d'arrivée, à cent vingt unités : celui du sommet, de l'autre côté.
+
+    Il est ici pour une raison de validation et pas de décor — c'est lui qui
+    donne l'échelle de la traversée. Deux minutes de marche jusqu'à l'arbre, et
+    on le voit encore en se retournant.
+  */
+  const gate = joint(marsh, [2, 0.4, 121]);
+  part(gate, new THREE.TorusGeometry(2.1, 0.28, 8, 28), new THREE.MeshBasicMaterial({ color: 0x8b3ff0 }),
+    [0, 2.3, 0]);
+  part(gate, new THREE.CircleGeometry(1.95, 24), new THREE.MeshBasicMaterial({
+    color: 0x6d2fd0, transparent: true, opacity: 0.45, side: THREE.DoubleSide,
+  }), [0, 2.3, 0]);
+}
+
+/* ------------------------------------------------------------- les phases */
+
+/*
+  La métamorphose, en trois lignes : on éteint l'armure, on allume les ailes et
+  la pourriture, et le corps décolle.
+
+  C'est exactement ce que dit la maquette, et c'est aussi exactement ce que
+  fera le composant du dépôt : le squelette ne change pas. Un second modèle
+  aurait doublé la géométrie pour un personnage qui est le même — et aurait
+  rendu impossible la chute d'armure, qui n'est lisible que parce que c'est le
+  même corps en dessous.
+*/
+let phase = 1;
+
+function setPhase(n) {
+  phase = n;
+  const two = n === 2;
+  for (const object of LAYER.armor) object.visible = !two;
+  for (const object of LAYER.wings) object.visible = two;
+  for (const object of LAYER.rot) object.visible = two;
+}
+
+/* -------------------------------------------------------------- les poses */
+
+const POSES = {
+  garde: {
+    label: 'Garde — lame basse, en arrière. Elle ne se met pas en garde : elle attend.',
+    rig: {},
+  },
+  estoc: {
+    label: 'Estoc bondi — 380 ms de télégraphe, 5,4 de portée. Le coup qui punit le pas en arrière.',
+    rig: {
+      torso: [0.2, -0.3, 0],
+      shoulderR: [-1.45, 0, -0.3],
+      elbowR: [-0.5, 0, 0],
+      wristR: [1.0, 0, 0],
+      shoulderL: [0.5, 0, 0.5],
+      elbowL: [-0.3, 0, 0],
+      hipR: [-0.55, 0, 0],
+      kneeR: [0.6, 0, 0],
+      hipL: [0.42, 0, 0],
+      kneeL: [-0.25, 0, 0],
+      head: [0.1, -0.2, 0],
+      sash: [-0.35, 0, 0],
+    },
+  },
+  sarcelle: {
+    label: 'Vol de sarcelle — la suspension. 900 ms en l\'air avant la première rafale : c\'est tout le temps que le joueur a pour partir.',
+    lift: 1.55,
+    rig: {
+      root: [-0.14, 0, 0],
+      torso: [-0.12, 0.34, 0],
+      shoulderR: [-2.55, 0, -0.5],
+      elbowR: [-0.35, 0, 0],
+      wristR: [-0.2, 0, 0],
+      shoulderL: [-0.9, 0, 0.8],
+      elbowL: [-1.1, 0, 0],
+      hipL: [-0.95, 0, 0.15],
+      kneeL: [1.35, 0, 0],
+      hipR: [-0.7, 0, -0.1],
+      kneeR: [1.15, 0, 0],
+      head: [-0.25, -0.1, 0],
+      sash: [-1.0, 0, 0],
+      hair: [-0.8, 0, 0],
+    },
+  },
+  aeonia: {
+    label: 'Aeonia écarlate — elle monte, les ailes s\'ouvrent, et la fleur éclôt là où elle retombe. 1600 ms, puis toute l\'arène.',
+    lift: 2.5,
+    phase: 2,
+    rig: {
+      root: [-0.1, 0, 0],
+      torso: [-0.28, 0, 0],
+      shoulderR: [-1.0, 0, -1.25],
+      elbowR: [-0.25, 0, 0],
+      shoulderL: [-1.0, 0, 1.25],
+      elbowL: [-0.25, 0, 0],
+      hipL: [0.55, 0, 0.12],
+      kneeL: [0.4, 0, 0],
+      hipR: [0.48, 0, -0.1],
+      kneeR: [0.35, 0, 0],
+      head: [-0.42, 0, 0],
+      wingL: [0, 0, 0.3],
+      wingR: [0, 0, -0.3],
+      sash: [-0.5, 0, 0],
+      hair: [-0.5, 0, 0],
+    },
+  },
+};
+
+let pose = POSES.garde;
+
+/* -------------------------------------------------------------- les vues */
+
+const VIEWS = {
+  duel: {
+    // La caméra d'arène de `config/gameplay.ts`, à ses cotes : offset [0, 12, 14]
+    // sur le joueur, visée relevée de 5. Rien d'arrangé pour la photo — c'est
+    // littéralement le cadre du combat, et c'est la vue qui décide si elle est à
+    // la bonne taille. Voir la question 02 : la réponse est probablement non.
+    label: 'Face à face — la caméra d\'arène du jeu, à ses cotes exactes : FOV <b>48</b>,<br><b>12</b> de haut, <b>14</b> de recul, visée à <b>5</b>. Le héros fait 1,60.',
+    position: new THREE.Vector3(HERO_AT.x, HERO_AT.y + 12, HERO_AT.z + 14),
+    target: new THREE.Vector3(HERO_AT.x, HERO_AT.y + 5, HERO_AT.z),
+    fov: 48, phase: 1, measure: true,
+  },
+  profil: {
+    label: 'Profil — c\'est ici que se juge le rapport des masses.<br>Haute et mince : un escrimeur, pas un monstre.',
+    position: new THREE.Vector3(7.2, 1.55, 0.5),
+    target: new THREE.Vector3(0, 1.25, 0),
+    fov: 34, phase: 1,
+  },
+  tete: {
+    label: 'Le heaume — quatre lames d\'or par aile, envergure plus large que les épaules.<br>Le visage est découvert, et <b>les yeux sont clos</b> : elle est aveugle.',
+    position: new THREE.Vector3(1.15, 2.4, 1.4),
+    target: new THREE.Vector3(0, 2.06, 0.02),
+    fov: 30, phase: 1,
+  },
+  bras: {
+    label: 'Les prothèses — bras droit d\'or segmenté, jambe gauche à claire-voie.<br>La Main de Malenia : <b>1,45</b> de lame, contre 1,06 hors tout au joueur.',
+    position: new THREE.Vector3(-2.0, 1.4, 1.75),
+    target: new THREE.Vector3(-0.45, 1.0, 0.12),
+    fov: 34, phase: 1,
+  },
+  ailes: {
+    label: 'Phase II — l\'armure est tombée, les ailes sont des papillons cousus par ses cheveux.<br>Le corps est le même : seuls les calques changent.',
+    position: new THREE.Vector3(0.6, 2.3, 8.6),
+    target: new THREE.Vector3(0, 2.0, 0),
+    fov: 44, phase: 2, pose: 'garde',
+  },
+  fleur: {
+    label: 'Aeonia écarlate — <b>7</b> unités de fleur, toute l\'arène dans son souffle.<br>La seule réponse est d\'être déjà en train de courir quand elle monte.',
+    position: new THREE.Vector3(8.2, 5.4, 10.2),
+    target: new THREE.Vector3(0, 1.7, 0),
+    fov: 46, phase: 2, pose: 'aeonia', spin: true,
+  },
+  marais: {
+    label: 'Le marais — l\'Arbre blafard (<b>120</b>), le bassin (<b>12</b> de rayon),<br>et les trois racines : <b>130</b> unités de marche depuis le portail.',
+    position: new THREE.Vector3(46, 32, 76),
+    target: new THREE.Vector3(0, 8, 8),
+    fov: 50, phase: 1, decor: true,
+  },
+  tour: {
+    label: 'Tour — trois quarts, rotation lente.',
+    position: new THREE.Vector3(4.8, 2.2, 5.1),
+    target: new THREE.Vector3(0, 1.3, 0),
+    fov: 40, spin: true,
+  },
+};
+
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let currentView = VIEWS.duel;
+
+function paint(extra) {
+  readout.innerHTML = `${currentView.label}${extra || ''}<span class="pose">${pose.label}</span>`;
+}
+
+/* -------------------------------------------------------------- la mesure */
+
+/*
+  Les cotes du tableau sont mesurées sur le modèle affiché, pas recopiées.
+
+  `Box3.setFromObject` ne sait pas sauter ce qui est éteint, et la moitié du
+  modèle l'est toujours — mesurer la phase I avec cette fonction-là rendrait
+  l'envergure des ailes dans la hauteur du personnage. D'où ce parcours à la
+  main, qui remonte la chaîne des parents pour ne retenir que le visible.
+*/
+const tmpBox = new THREE.Box3();
+
+function measure(root) {
+  const box = new THREE.Box3().makeEmpty();
+  root.updateWorldMatrix(true, true);
+  root.traverse((object) => {
+    if (!object.isMesh || !object.geometry) return;
+    let node = object;
+    while (node && node !== root.parent) {
+      if (!node.visible) return;
+      node = node.parent;
+    }
+    if (!object.geometry.boundingBox) object.geometry.computeBoundingBox();
+    tmpBox.copy(object.geometry.boundingBox).applyMatrix4(object.matrixWorld);
+    box.union(tmpBox);
+  });
+  return box;
+}
+
+const fmt = (value) => value.toFixed(2).replace('.', ',');
+
+function write(id, text) {
+  const cell = document.getElementById(id);
+  if (cell) cell.textContent = text;
+}
+
+/**
+ * La part de la hauteur de l'image qu'occupe une boîte, dans la caméra courante.
+ *
+ * Projetée sommet par sommet et non déduite d'une distance : c'est la seule
+ * façon d'obtenir le nombre *vrai*, celui que le joueur verra. Une estimation
+ * par la distance au centre se trompe d'autant que la plongée est forte — et
+ * elle l'est, 26,6° dans l'arène.
+ */
+function screenFraction(box) {
+  let min = Infinity;
+  let max = -Infinity;
+  const point = new THREE.Vector3();
+  for (let i = 0; i < 8; i++) {
+    point.set(
+      i & 1 ? box.max.x : box.min.x,
+      i & 2 ? box.max.y : box.min.y,
+      i & 4 ? box.max.z : box.min.z
+    ).project(camera);
+    min = Math.min(min, point.y);
+    max = Math.max(max, point.y);
+  }
+  return (max - min) / 2;
+}
+
+/* ------------------------------------------------------- vues et calques */
+
+const LAYER_STATE = { echelle: true, marais: false };
+
+function setLayer(name, value) {
+  LAYER_STATE[name] = value;
+  if (name === 'echelle') hero.visible = value;
+  else if (name === 'marais') marsh.visible = value;
+  const button = document.querySelector(`[data-layer="${name}"]`);
+  if (button) button.setAttribute('aria-pressed', String(value));
+}
+
+function applyPose(name) {
+  pose = POSES[name];
+  if (pose.phase) setPhase(pose.phase);
+  aeonia.visible = pose === POSES.aeonia;
+  for (const button of document.querySelectorAll('[data-pose]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.pose === name));
+  }
+  paint();
+}
+
+function applyView(name) {
+  currentView = VIEWS[name];
+  if (currentView.pose) applyPose(currentView.pose);
+  /*
+    Une pose peut imposer une phase — Aeonia est de la phase II et de nulle part
+    ailleurs. Passer de « Aeonia » à « face à face » sans cette garde laissait la
+    fleur allumée, le corps à deux unités et demie du sol et l'armure rendue par
+    dessus des ailes éteintes : trois états incompatibles à l'écran en même
+    temps. Une vue qui demande une phase que la pose courante contredit reprend
+    donc la garde, qui n'appartient à aucune des deux.
+  */
+  else if (currentView.phase && pose.phase && pose.phase !== currentView.phase) {
+    applyPose('garde');
+  }
+  if (currentView.phase) setPhase(currentView.phase);
+  // La vue du marais allume le décor ; les autres le laissent dans l'état choisi
+  // au calque. Un décor qui s'impose masquerait ce qu'on est venu regarder.
+  if (currentView.decor) setLayer('marais', true);
+
+  camera.fov = currentView.fov;
+  camera.position.copy(currentView.position);
+  camera.updateProjectionMatrix();
+  controls.target.copy(currentView.target);
+  controls.autoRotate = !!currentView.spin && !reduceMotion;
+  controls.update();
+
+  for (const button of document.querySelectorAll('[data-view]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.view === name));
+  }
+
+  /*
+    La vue « face à face » dit tout haut ce qu'elle mesure.
+
+    C'est la seule information de la page qui puisse contredire la proposition,
+    et c'est pour ça qu'elle est calculée plutôt qu'affirmée : à 2,37 dans la
+    caméra d'arène, elle occupe une fraction de l'image bien plus faible que le
+    Lynel, qui en prenait un quart. Voir la question 02.
+  */
+  if (currentView.measure) {
+    camera.updateMatrixWorld();
+    const her = screenFraction(measure(malenia));
+    const him = screenFraction(measure(hero));
+    paint(`<br>Elle occupe <b>${Math.round(her * 100)} %</b> de la hauteur de l'image, le héros <b>${Math.round(him * 100)} %</b>.`);
+  } else {
+    paint();
+  }
+}
+
+for (const button of document.querySelectorAll('[data-view]')) {
+  button.addEventListener('click', () => applyView(button.dataset.view));
+}
+for (const button of document.querySelectorAll('[data-pose]')) {
+  button.addEventListener('click', () => applyPose(button.dataset.pose));
+}
+for (const button of document.querySelectorAll('[data-layer]')) {
+  button.addEventListener('click', () => setLayer(button.dataset.layer, !LAYER_STATE[button.dataset.layer]));
+}
+
+controls.addEventListener('start', () => { controls.autoRotate = false; });
+
+/* ------------------------------------------------------------------ boucle */
+
+function resize() {
+  const width = viewer.clientWidth;
+  const height = viewer.clientHeight;
+  if (!width || !height) return;
+  renderer.setSize(width, height, false);
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+}
+
+new ResizeObserver(resize).observe(viewer);
+resize();
+
+/* --- Le relevé des cotes, une fois, sur le modèle construit ---------------- */
+
+{
+  setPhase(1);
+  malenia.updateWorldMatrix(true, true);
+  const one = measure(malenia);
+  write('m-h1', `${fmt(one.max.y)} u`);
+
+  const helmBox = measure(helm);
+  write('m-helm', `${fmt(helmBox.max.x - helmBox.min.x)} u`);
+  write('m-sh', `${fmt(SHOULDER_X * 2 + 0.21)} u`);
+
+  // La portée est mesurée dans la pose d'estoc, parce que c'est la seule qui
+  // ait un sens : la portée d'une lame au repos ne dit rien de ce qui touche.
+  for (const name in RIG) {
+    const entry = RIG[name];
+    const delta = POSES.estoc.rig[name] || [0, 0, 0];
+    entry.object.rotation.set(
+      entry.base.x + delta[0], entry.base.y + delta[1], entry.base.z + delta[2]
+    );
+  }
+  malenia.updateWorldMatrix(true, true);
+  const bladeBox = measure(sword);
+  write('m-blade', `${fmt(Math.max(bladeBox.max.z, Math.abs(bladeBox.min.z)))} u`);
+
+  // Puis la phase II, ailes déployées.
+  for (const name in RIG) {
+    RIG[name].object.rotation.copy(RIG[name].base);
+  }
+  setPhase(2);
+  body.position.y = HOVER;
+  malenia.updateWorldMatrix(true, true);
+  const two = measure(malenia);
+  write('m-h2', `${fmt(two.max.y)} u`);
+  write('m-w2', `${fmt(two.max.x - two.min.x)} u`);
+
+  body.position.y = 0;
+  setPhase(1);
+  metrics.textContent = 'cotes du tableau — mesurées sur ce modèle';
+}
+
+applyPose('garde');
+applyView('duel');
+loading.remove();
+
+let previous = performance.now();
+let elapsed = 0;
+const ZERO = [0, 0, 0];
+
+function frame(now) {
+  const delta = Math.min((now - previous) / 1000, 0.05);
+  previous = now;
+  elapsed += delta;
+
+  // Amortissement exponentiel : indépendant du framerate, contrairement à un
+  // facteur constant par frame — qui serait deux fois plus rapide à 120 Hz.
+  const k = reduceMotion ? 1 : 1 - Math.exp(-delta * 9);
+
+  for (const name in RIG) {
+    const entry = RIG[name];
+    const target = pose.rig[name] || ZERO;
+    const rotation = entry.object.rotation;
+    rotation.x += (entry.base.x + target[0] - rotation.x) * k;
+    rotation.y += (entry.base.y + target[1] - rotation.y) * k;
+    rotation.z += (entry.base.z + target[2] - rotation.z) * k;
+  }
+
+  /*
+    Le vol de la phase II : une flottaison lente, et le battement des ailes.
+
+    Le battement est **écrit** et non ajouté, et la nuance compte. Un `+=` après
+    la boucle d'amortissement se cumule avec elle : l'amortissement de la frame
+    suivante repart d'une valeur qui contient déjà le battement précédent, le
+    tire vers la cible, et le nouveau battement s'empile dessus. L'aile dérive
+    et l'amplitude ne vaut plus ce qu'on a écrit. En posant la rotation à
+    `base + pose + battement`, elle vaut exactement ça, à toutes les fréquences
+    d'affichage.
+  */
+  const floating = phase === 2 && !reduceMotion;
+  const lift = (phase === 2 ? HOVER : 0) + (pose.lift || 0)
+    + (floating ? Math.sin(elapsed * 1.1) * 0.07 : 0);
+  body.position.y += (lift - body.position.y) * k;
+
+  if (floating) {
+    const beat = Math.sin(elapsed * 1.6) * 0.16;
+    for (const [name, sign] of [['wingL', 1], ['wingR', -1]]) {
+      const entry = RIG[name];
+      const target = pose.rig[name] || ZERO;
+      entry.object.rotation.y = entry.base.y + target[1] + sign * beat * 0.4;
+      entry.object.rotation.z = entry.base.z + target[2] + sign * beat;
+    }
+  }
+
+  controls.update();
+  sky.position.copy(camera.position);
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>

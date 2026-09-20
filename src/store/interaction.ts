@@ -1,6 +1,6 @@
 import { landmarkById } from '../config/landmarks'
 import type { Dictionary } from '../i18n'
-import type { ChestId, GamePhase, LandmarkId } from '../types/game'
+import type { ChestId, GamePhase, LandmarkId, MapId } from '../types/game'
 import { useGameStore } from './useGameStore'
 
 /**
@@ -17,7 +17,7 @@ import { useGameStore } from './useGameStore'
 export type Interaction =
   | { kind: 'landmark'; id: LandmarkId }
   | { kind: 'chest'; id: ChestId }
-  | { kind: 'portal' }
+  | { kind: 'portal'; to: MapId }
   | null
 
 /**
@@ -35,10 +35,10 @@ function pick(
   phase: GamePhase,
   nearbyChest: ChestId | null,
   nearbyLandmark: LandmarkId | null,
-  nearbyPortal: boolean,
+  nearbyPortal: MapId | null,
 ): Interaction {
   if (phase !== 'playing') return null
-  if (nearbyPortal) return { kind: 'portal' }
+  if (nearbyPortal) return { kind: 'portal', to: nearbyPortal }
   if (nearbyChest) return { kind: 'chest', id: nearbyChest }
   if (nearbyLandmark) return { kind: 'landmark', id: nearbyLandmark }
   return null
@@ -82,12 +82,18 @@ export function useInteraction(): Interaction {
 export function interactionLabel(target: Interaction, dict: Dictionary): string {
   if (!target) return ''
   if (target.kind === 'portal') {
-    // Le libellé dit la **destination**, pas le geste : « franchir le portail »
-    // des deux côtés serait exact et inutile, puisque le joueur sait déjà qu'il
-    // est devant un portail. Ce qu'il ignore, c'est où celui-ci mène.
-    return useGameStore.getState().location === 'continent'
-      ? dict.ui.portal.action
-      : dict.ui.portal.back
+    /*
+      Le libellé dit la **destination**, pas le geste : « franchir le portail »
+      des deux côtés serait exact et inutile, puisque le joueur sait déjà qu'il
+      est devant un portail. Ce qu'il ignore, c'est où celui-ci mène.
+
+      Il se lisait sur la carte *courante* — « si je suis sur le continent, je
+      pars vers le ciel ». Avec trois cartes cette déduction est fausse : depuis
+      l'île on peut partir vers le continent ou vers le Marais, et la carte de
+      départ ne permet plus de dire lequel. C'est donc le portail qui porte sa
+      destination, et le libellé la lit.
+    */
+    return dict.ui.portal.toward[target.to]
   }
   if (target.kind === 'chest') return dict.ui.chest.action
   const section = landmarkById(target.id)?.section
@@ -106,7 +112,7 @@ export function triggerInteraction() {
   if (!target) return
   const store = useGameStore.getState()
   if (target.kind === 'portal') {
-    store.enterMap(store.location === 'continent' ? 'sky' : 'continent')
+    store.enterMap(target.to)
   } else if (target.kind === 'chest') {
     store.openChest(target.id)
   } else {

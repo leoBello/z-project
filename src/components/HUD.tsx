@@ -1,5 +1,6 @@
 import { getControlHints } from '../config/controls'
 import { format } from '../i18n'
+import { RotMeter } from './RotMeter'
 import { useI18n } from '../i18n/useI18n'
 import { clearPickups } from '../state/pickups'
 import { clearProjectiles } from '../state/projectiles'
@@ -124,6 +125,11 @@ export function HUD() {
             <Heart key={index} filled={index < hearts} bonus={index >= maxHearts} />
           ))}
         </div>
+        {/* La pourriture, **sous** les cœurs et jamais à côté : ce n'est pas une
+            seconde barre de vie, c'est ce qui va en manger. La mettre dans la
+            même rangée l'aurait fait lire comme une ressource de plus. Elle ne
+            paraît que sur le Marais, faute d'y monter ailleurs. */}
+        <RotMeter />
       </div>
 
       {/* Même astuce de `key` que le flash de dégâts : changer la clé recrée

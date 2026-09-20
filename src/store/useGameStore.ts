@@ -11,8 +11,10 @@ import {
   playRevive,
   playTreasure,
 } from '../audio/sfx'
-import { preloadSkyIsland } from '../components/skyisland/preload'
-import { BLAST_FORWARD } from '../config/annihilation'
+import { preloadMap } from '../components/mapFragments'
+import { purgeRot, resetRot } from '../state/rot'
+import { BLAST_FORWARD_BY_MAP } from '../config/annihilation'
+import { PLAYER } from '../config/gameplay'
 import { chestById } from '../config/chests'
 import { enemyTotal } from '../config/enemies'
 import { itemById, type Equipment, type ItemSlot } from '../config/items'
@@ -298,6 +300,28 @@ export interface GameState {
    * a qu'un, et la question « lequel est mort » ne se pose pas.
    */
   goldenSlainAt: number | null
+  /**
+   * Instant de la chute de Malenia, ou `null` tant qu'elle tient.
+   *
+   * Un champ à elle, exactement comme `goldenSlainAt` en a un : `bossState` ne
+   * décrit **que** le gardien de la rotonde, et il vaut déjà `defeated` quand on
+   * arrive dans le Marais — le joueur a dû tuer le gardien, l'épreuve et le
+   * Lynel doré pour y accéder. S'en servir pour elle l'aurait fait naître morte.
+   */
+  maleniaSlainAt: number | null
+  /**
+   * Quel combat de boss est engagé, ou `null`.
+   *
+   * **Générique, là où `bossState` est celui de la rotonde.** La distinction a
+   * été forcée par Malenia : `bossState === 'fighting'` pilotait à la fois la
+   * caméra d'arène (qui vaut pour tous les boss) et les barrières de la rotonde
+   * (qui ne valent que pour elle). Les deux ne pouvaient pas rester le même
+   * champ le jour où un second boss a eu besoin de la caméra sans avoir de
+   * barrières.
+   *
+   * Le gardien écrit les deux ; Malenia n'écrit que celui-ci.
+   */
+  arenaFight: 'guardian' | 'malenia' | null
   /** Le journal de quêtes est affiché. Implique `phase === 'paused'`. */
   questsOpen: boolean
   /**
@@ -332,13 +356,19 @@ export interface GameState {
    */
   transitLandmark: LandmarkId | null
   /**
-   * Un portail est à portée. Même rôle que `nearbyChest`, et même discipline :
-   * écrit uniquement sur transition, jamais à chaque frame.
+   * La **destination** du portail à portée, ou `null` s'il n'y en a pas.
    *
-   * Un booléen et non un identifiant : il n'y a jamais qu'un portail par carte,
-   * et celle-ci est déjà connue.
+   * Même rôle que `nearbyChest`, et même discipline : écrit uniquement sur
+   * transition, jamais à chaque frame.
+   *
+   * C'était un booléen — « il y a un portail à côté » — et la destination se
+   * déduisait de la carte courante : depuis le continent on part vers le ciel,
+   * sinon on rentre. Avec une troisième carte la déduction est fausse, parce que
+   * l'île a maintenant **deux** portails qui ne mènent pas au même endroit :
+   * celui de la prairie ramène au continent, celui du sommet mène au Marais.
+   * C'est donc le portail qui dit où il va.
    */
-  nearbyPortal: boolean
+  nearbyPortal: MapId | null
   /**
    * Identifiant de la partie. Sert de `key` React sur le joueur et les ennemis :
    * l'incrémenter démonte et remonte tout le monde, ce qui remet positions,
@@ -474,7 +504,7 @@ export interface GameState {
   finishAnnihilation: () => void
 
   /** Signale qu'un portail est à portée, ou qu'il ne l'est plus. */
-  setNearbyPortal: (near: boolean) => void
+  setNearbyPortal: (to: MapId | null) => void
   /**
    * Compte une bête de l'épreuve, et donne le cœur si c'était la dernière.
    *
@@ -496,6 +526,14 @@ export interface GameState {
   closeQuests: () => void
   /** Le joueur entre dans l'arène : le combat commence. Idempotent. */
   startBossFight: () => void
+  /**
+   * Malenia se lève. Idempotent, pour la même raison que `startBossFight` :
+   * elle l'appelle depuis sa boucle, donc potentiellement soixante fois par
+   * seconde tant que le joueur est dans le bassin.
+   */
+  startMaleniaFight: () => void
+  /** Elle tombe, ou le joueur quitte le bassin. */
+  endMaleniaFight: (defeated: boolean) => void
   /**
    * Le combat s'arrête, vaincu ou non.
    *
@@ -558,12 +596,14 @@ const initialState = {
   skyVisited: false,
   trialSlain: [] as string[],
   goldenSlainAt: null as number | null,
+  maleniaSlainAt: null as number | null,
+  arenaFight: null as 'guardian' | 'malenia' | null,
   questsOpen: false,
   bossFellAt: null as [number, number, number] | null,
   bossState: 'idle' as 'idle' | 'fighting' | 'defeated',
   transit: null as MapId | null,
   transitLandmark: null as LandmarkId | null,
-  nearbyPortal: false,
+  nearbyPortal: null as MapId | null,
 }
 
 /** Secousse du relèvement : plus ample que celle d'une mort d'ennemi. */
@@ -739,6 +779,19 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (phase !== 'playing' || hearts >= capacity) return false
     playPickup()
     set({ hearts: Math.min(capacity, hearts + amount) })
+    /*
+      Un cœur ramassé purge la pourriture, contamination en cours comprise.
+
+      C'est la **seule** sortie de la jauge en dehors du reflux, et c'est ce qui
+      donne aux créatures du Marais leur raison d'exister : elles ne sont pas là
+      pour le défi, elles sont là pour que le joueur arrive avec une réserve.
+
+      L'enchaînement tombe juste tout seul, et c'est ce qui le rend bon : la
+      contamination retire des cœurs, donc elle fait de la place, donc le cœur
+      ramassé passe. Un joueur à pleine vie ne peut pas se purger — mais un
+      joueur à pleine vie n'est pas contaminé depuis longtemps.
+    */
+    purgeRot()
     return true
   },
 
@@ -993,7 +1046,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         // L'invite disparaît avec le départ, comme dans `enterMap` : on peut
         // très bien lancer la téléportation en se tenant devant le portail de
         // l'île, et son invite resterait affichée sous le voile.
-        nearbyPortal: false,
+        nearbyPortal: null,
       })
       return
     }
@@ -1068,18 +1121,34 @@ export const useGameStore = create<GameState>((set, get) => ({
     // champignon dressé à la verticale du joueur serait hors champ. Le nord est
     // le haut de l'écran, la caméra étant fixe. Voir la note de `BLAST_FORWARD`.
     const { position } = playerTransform
+    const map = get().location
     const x = position.x
-    const z = position.z - BLAST_FORWARD
+    const z = position.z - BLAST_FORWARD_BY_MAP[map]
+
+    /*
+      L'altitude du sol, et elle dépend de la carte.
+
+      `sampleHeight` est l'échantillonneur du **continent** : l'interroger depuis
+      l'Île Céleste ou le Marais rendait l'altitude du relief continental sous
+      des coordonnées qui n'y désignent rien, donc une boule de feu enterrée ou
+      suspendue. Ailleurs, on prend les pieds du joueur — les deux autres cartes
+      sont plates ou quasi, et c'est par construction le sol qu'il regarde.
+    */
+    const ground =
+      map === 'continent'
+        ? // Le plancher au niveau de la mer couvre les frappes tombées au
+          // large : sous l'eau, la boule de feu serait un halo sourd sorti de
+          // nulle part.
+          Math.max(sampleHeight(x, z), WORLD.waterLevel)
+        : position.y - (PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius)
 
     set({
       annihilation: {
         at: gameNow(),
         x,
         // Le **sol**, et pas le centre de la capsule du joueur : c'est là que la
-        // boule de feu naît et que l'anneau de souffle se pose. Le plancher au
-        // niveau de la mer couvre les frappes tombées au large — sous l'eau, la
-        // boule de feu serait un halo sourd sorti de nulle part.
-        y: Math.max(sampleHeight(x, z), WORLD.waterLevel),
+        // boule de feu naît et que l'anneau de souffle se pose.
+        y: ground,
         z,
       },
     })
@@ -1091,7 +1160,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   // --- Voyage entre les cartes ----------------------------------------------
 
   /** Même discipline que les monuments et les coffres : écriture sur transition. */
-  setNearbyPortal: (near) => set({ nearbyPortal: near }),
+  setNearbyPortal: (to) => set({ nearbyPortal: to }),
 
   /**
    * Une bête de l'épreuve tombe.
@@ -1132,25 +1201,68 @@ export const useGameStore = create<GameState>((set, get) => ({
     // est dans l'arène. Sans cette garde, chaque frame écrirait dans le store et
     // re-rendrait tout ce qui s'y abonne.
     if (get().bossState !== 'idle') return
-    set({ bossState: 'fighting' })
+    set({ bossState: 'fighting', arenaFight: 'guardian' })
     track('boss_engaged', { phase: 'sword' })
+  },
+
+  startMaleniaFight: () => {
+    if (get().arenaFight !== null) return
+    set({ arenaFight: 'malenia' })
+  },
+
+  /**
+   * Les deux sorties ne sont pas symétriques, comme pour le gardien.
+   *
+   * Vaincue, elle ne se relève pas : `maleniaSlainAt` est écrit une fois pour
+   * toute la partie, et c'est lui qui empêche le Marais de la remonter à la
+   * visite suivante. Le joueur mort, ou simplement sorti du bassin, le combat
+   * redevient disponible — elle remonte avec ses soixante points de vie, et sa
+   * phase repart de la lame.
+   */
+  endMaleniaFight: (defeated) => {
+    if (get().arenaFight !== 'malenia') return
+    set({
+      arenaFight: null,
+      maleniaSlainAt: defeated ? gameNow() : get().maleniaSlainAt,
+    })
   },
 
   endBossFight: (defeated, fellAt) => {
     /*
-      Les deux sorties ne sont pas symétriques.
+      Les deux sorties ne sont pas symétriques, et leurs **gardes** ne le sont
+      pas non plus.
 
       Vaincu, le combat ne peut plus reprendre : l'état reste `defeated` pour
       toute la partie, les barrières s'ouvrent et la caméra se rouvre. Mort, le
       joueur repart du continent et le Lynel remonte avec ses 36 points de vie —
       d'où le retour à `idle`, qui autorise un second engagement.
+
+      **Une victoire s'enregistre même si le combat n'avait pas été engagé**, et
+      c'est la correction d'un défaut réel. La garde unique d'avant —
+      `if (bossState !== 'fighting') return` — protégeait les deux sorties
+      ensemble, ce qui était juste tant que la seule façon de tuer le gardien
+      était de l'affronter. L'onde d'annihilation en a ouvert une seconde : la
+      bête mourait sans avoir jamais été engagée, l'appel sortait ici sans rien
+      faire, et **trois choses en dépendaient** — le coffre et le réceptacle de
+      la rotonde, qui lisent `defeated` ; les trois bêtes de l'épreuve, qui ne se
+      montent qu'à cette condition, donc ne pouvaient plus mourir, donc ne
+      levaient jamais la herse ; et le journal de quêtes.
+
+      Un boss mort est mort, quelle que soit la façon dont il l'est devenu. La
+      garde de `fighting` ne vaut donc que pour l'abandon, où elle a un sens :
+      on ne peut pas renoncer à un combat qu'on n'a pas commencé.
     */
-    if (get().bossState !== 'fighting') return
-    set({
-      bossState: defeated ? 'defeated' : 'idle',
-      bossFellAt: defeated ? (fellAt ?? null) : null,
-    })
-    if (defeated) track('boss_defeated', { hearts: get().hearts })
+    const { bossState } = get()
+
+    if (defeated) {
+      if (bossState === 'defeated') return
+      set({ bossState: 'defeated', bossFellAt: fellAt ?? null, arenaFight: null })
+      track('boss_defeated', { hearts: get().hearts })
+      return
+    }
+
+    if (bossState !== 'fighting') return
+    set({ bossState: 'idle', bossFellAt: null, arenaFight: null })
   },
 
   /**
@@ -1166,7 +1278,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { phase, transit, location } = get()
     if (phase !== 'playing' || transit !== null || location === to) return false
 
-    if (to === 'sky') void preloadSkyIsland()
+    // Le téléchargement commence **ici**, au lever du voile, et pas au palier
+    // opaque : voir l'en-tête de cette méthode. La table dit quel fragment, et
+    // le continent y répond « aucun » sans que l'appelant ait à le savoir.
+    void preloadMap(to)
     playPortal()
     set({
       phase: 'paused',
@@ -1177,7 +1292,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       transitLandmark: null,
       // L'invite disparaît avec le départ, sinon elle resterait affichée sous
       // le voile le temps que le joueur s'éloigne du portail à l'arrivée.
-      nearbyPortal: false,
+      nearbyPortal: null,
     })
     return true
   },
@@ -1211,6 +1326,17 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     // Marqué à l'arrivée et jamais effacé : c'est ce qui accomplit la quête du
     // portail, et elle ne se rouvre pas parce qu'on est rentré.
+    /*
+      La pourriture ne quitte pas le Marais.
+
+      Elle est remise à zéro à **chaque** bascule de carte, y compris à
+      l'arrivée : la jauge est une propriété du lieu, pas du personnage. La
+      laisser courir aurait fait mourir sur le continent un joueur contaminé qui
+      vient de franchir le portail pour s'échapper — c'est-à-dire punir la seule
+      réaction sensée qu'il pouvait avoir.
+    */
+    resetRot()
+
     if (transit === 'sky') set({ skyVisited: true })
 
     /*
@@ -1284,6 +1410,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       openedChests: [],
       trialSlain: [],
       goldenSlainAt: null,
+      maleniaSlainAt: null,
+      arenaFight: null,
       bonusCarry: {},
       runId: state.runId + 1,
     }))

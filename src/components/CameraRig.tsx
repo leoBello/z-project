@@ -62,7 +62,13 @@ export function CameraRig() {
       existant fait le mouvement, et l'entrée dans l'arène ne se distingue pas
       d'un pas de côté un peu ample.
     */
-    const arena = useGameStore.getState().bossState === 'fighting'
+    /*
+      `arenaFight` et non `bossState`, et la nuance a été forcée par Malenia :
+      la caméra d'arène vaut pour **tous** les boss, alors que `bossState`
+      ne décrit que le gardien de la rotonde — et il vaut déjà `defeated` quand
+      on arrive dans le Marais, puisqu'il a fallu le tuer pour y accéder.
+    */
+    const arena = useGameStore.getState().arenaFight !== null
     offset.lerp(arena ? ARENA_OFFSET : FREE_OFFSET, t)
 
     desiredPosition.copy(playerTransform.position).add(offset)

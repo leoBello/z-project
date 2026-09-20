@@ -90,7 +90,7 @@ export default function SkyIsland() {
       {/* Le jumeau de celui de Nakano, au point d'arrivée. Le même composant :
           deux portails qui divergeraient au premier réglage de l'anneau
           seraient un défaut qu'on ne verrait qu'en faisant l'aller-retour. */}
-      <Portal at={SKY_PORTAL} openedAt={ALREADY_OPEN} />
+      <Portal at={SKY_PORTAL} openedAt={ALREADY_OPEN} to="continent" />
 
       {/* Le gardien de la rotonde. Il s'inscrit lui-même au registre des
           ennemis, donc à la minimap et au calque de combat : rien à lui passer. */}
@@ -164,14 +164,18 @@ export default function SkyIsland() {
       {/*
         Le troisième portail, au sommet, une fois la bête tombée.
 
-        Le même composant que les deux autres, et il ramène au continent sans
-        une ligne de code de plus : `triggerInteraction` envoie vers l'autre
-        carte que la carte courante, quelle que soit celle des trois portes
-        qu'on franchit. C'est ce qui évite de redescendre quatre-vingts unités
-        de spire, un pont et la moitié d'une île pour rentrer — et une
-        récompense qui fait gagner du temps se sent autant qu'un cœur.
+        **Il ne ramène plus au continent : il mène au Marais d'Aeonia.** C'était
+        un raccourci de retour tant qu'il n'y avait rien derrière lui, et la
+        règle d'alors — « vers l'autre carte que la carte courante » — suffisait.
+        Elle ne veut plus rien dire à trois cartes, et l'île en est la preuve :
+        elle a deux anneaux, l'un rentre et l'autre part. Chacun déclare donc sa
+        destination.
+
+        Ce qui est perdu au passage est réel : on ne rentre plus du sommet en un
+        pas. Mais le Marais a son propre anneau de retour, qui ramène ici — donc
+        le raccourci existe toujours, il fait juste un détour par un monde.
       */}
-      <Portal at={SUMMIT_PORTAL} openedAt={summitOpenedAt} />
+      <Portal at={SUMMIT_PORTAL} openedAt={summitOpenedAt} to="rot" />
 
       {/*
         Les deux coffres du sommet, qui paraissent avec ce portail-là et pour la

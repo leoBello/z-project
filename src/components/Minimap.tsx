@@ -16,11 +16,22 @@ import {
   mountainSlope,
   nearCauseway,
 } from '../config/skyMountain'
+import {
+  ARENA_R,
+  MARSH_MAP_CENTER_X,
+  MARSH_MAP_CENTER_Z,
+  MARSH_MAP_SIZE,
+  MARSH_PORTAL,
+  CAUSEWAY,
+  DECK_HALF,
+  TREE,
+} from '../config/rotMarsh'
+import { ROT_COLORS } from '../config/rotPalette'
 import { WORLD, classifyBiome, sampleHeight } from '../config/world'
 import { enemyRegistry } from '../state/enemyRegistry'
 import { playerTransform } from '../state/playerTransform'
 import { useGameStore } from '../store/useGameStore'
-import type { BiomeId } from '../types/game'
+import type { BiomeId, MapId } from '../types/game'
 
 /** Résolution du fond de carte, en pixels. Indépendante de la taille affichée. */
 const MAP_RESOLUTION = 220
@@ -34,6 +45,91 @@ const MAP_RESOLUTION = 220
  * c'est ce qui compte.
  */
 const PORTAL_MINIMAP_COLOR = '#c79bff'
+
+/**
+ * Le fond de carte du Marais d'Aeonia.
+ *
+ * **Dessiné, et non échantillonné.** Les deux autres fonds interrogent un relief
+ * pixel par pixel — quarante-huit mille appels, une cinquantaine de
+ * millisecondes — parce qu'ils ont un relief à montrer. Le Marais n'en a pas :
+ * c'est une nappe plate, et tout ce qu'on y voit est un petit nombre d'objets
+ * posés dessus. Le décrire avec cinq primitives de canvas coûte une fraction de
+ * milliseconde et donne une image plus lisible qu'un champ de hauteurs qui
+ * serait uniforme partout.
+ *
+ * Ce que la carte doit dire, et rien d'autre : où est le chemin, où est l'arbre,
+ * et où est la porte. Un joueur qui regarde cette vignette cherche à savoir s'il
+ * est encore sur les racines.
+ */
+function renderMarshMap() {
+  const canvas = document.createElement('canvas')
+  canvas.width = MAP_RESOLUTION
+  canvas.height = MAP_RESOLUTION
+
+  const context = canvas.getContext('2d')
+  if (!context) return canvas
+
+  const scale = MAP_RESOLUTION / MARSH_MAP_SIZE
+  const px = (x: number) => (x - MARSH_MAP_CENTER_X + MARSH_MAP_SIZE / 2) * scale
+  const py = (z: number) => (z - MARSH_MAP_CENTER_Z + MARSH_MAP_SIZE / 2) * scale
+
+  // L'eau, partout. Elle n'a pas de bord visible sur cette carte, et c'est
+  // exact : le marais déborde du cadre de tous les côtés.
+  context.fillStyle = ROT_COLORS.minimapWater
+  context.fillRect(0, 0, MAP_RESOLUTION, MAP_RESOLUTION)
+
+  // La chaussée, d'un seul trait : elle est continue, et la dessiner en
+  // morceaux aurait laissé paraître des coupures là où le joueur marche sans
+  // s'arrêter. Sa largeur est la vraie, à l'échelle de la vignette.
+  context.strokeStyle = ROT_COLORS.minimapStone
+  context.lineWidth = DECK_HALF * 2 * scale
+  context.lineCap = 'round'
+  context.lineJoin = 'round'
+  context.beginPath()
+  CAUSEWAY.forEach(([x, z], i) => {
+    if (i === 0) context.moveTo(px(x), py(z))
+    else context.lineTo(px(x), py(z))
+  })
+  context.stroke()
+
+  // Le bassin, puis le tronc par-dessus : l'arène est au pied de l'arbre, donc
+  // l'arbre la recouvre en partie, et c'est ce recouvrement qui fait comprendre
+  // d'un coup d'oeil que le combat se livre contre le tronc.
+  context.fillStyle = ROT_COLORS.minimapRoot
+  context.beginPath()
+  context.arc(px(0), py(0), ARENA_R * scale, 0, Math.PI * 2)
+  context.fill()
+
+  context.fillStyle = ROT_COLORS.minimapBark
+  context.beginPath()
+  context.arc(px(TREE.x), py(TREE.z), TREE.baseRadius * scale, 0, Math.PI * 2)
+  context.fill()
+
+  // La porte, du même violet que le portail du continent : c'est le seul repère
+  // de la carte qui ne soit pas de ce monde, et il garde donc sa couleur.
+  context.fillStyle = PORTAL_MINIMAP_COLOR
+  context.beginPath()
+  context.arc(px(MARSH_PORTAL.x), py(MARSH_PORTAL.z), 3.4, 0, Math.PI * 2)
+  context.fill()
+
+  return canvas
+}
+
+/**
+ * Le cadrage de chaque carte : son étendue, et le point sur lequel elle est
+ * centrée.
+ *
+ * Une table indexée par `MapId`, et pas trois ternaires `sky ? … : …` comme
+ * auparavant. Ces ternaires étaient trois occasions distinctes d'oublier une
+ * carte, et ils auraient donné au Marais le cadrage du continent — deux cents
+ * unités centrées sur l'origine pour un monde qui en fait cent soixante-dix,
+ * décalé de quarante.
+ */
+const FRAME: Record<MapId, { extent: number; x: number; z: number }> = {
+  continent: { extent: WORLD.size, x: 0, z: 0 },
+  sky: { extent: ISLAND_MAP_SIZE, x: ISLAND_MAP_CENTER_X, z: ISLAND_MAP_CENTER_Z },
+  rot: { extent: MARSH_MAP_SIZE, x: MARSH_MAP_CENTER_X, z: MARSH_MAP_CENTER_Z },
+}
 
 /**
  * Marqueur affichable sur la minimap.
@@ -264,6 +360,10 @@ export function Minimap({ markers = [] }: MinimapProps) {
     () => (location === 'sky' ? renderIslandMap() : null),
     [location],
   )
+  const marshMap = useMemo(
+    () => (location === 'rot' ? renderMarshMap() : null),
+    [location],
+  )
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const markersRef = useRef(markers)
   markersRef.current = markers
@@ -286,19 +386,21 @@ export function Minimap({ markers = [] }: MinimapProps) {
     let frame = 0
     let lastBiome: BiomeId | null = null
 
-    const sky = location === 'sky'
-    // Le cadrage suit la carte : la carte céleste tient dans un cadre dérivé de
-    // son propre contenu (voir `ISLAND_MAP_SIZE`), le continent dans 200. Une
-    // seule échelle pour les deux rendrait l'île minuscule au milieu d'un vide,
-    // ce qui est exact et illisible.
-    const extent = sky ? ISLAND_MAP_SIZE : WORLD.size
-    // Le cadre céleste n'est pas centré sur l'origine : il l'est sur le milieu
-    // de ce qu'il doit montrer, île **et** promontoire du nord-ouest — donc
-    // décalé sur les deux axes. Le décalage est appliqué ici et dans le fond de
-    // carte, et il n'existe qu'à ces deux endroits — un troisième aurait un
-    // jour dessiné les repères à côté du relief qu'ils désignent.
-    const centerX = sky ? ISLAND_MAP_CENTER_X : 0
-    const centerZ = sky ? ISLAND_MAP_CENTER_Z : 0
+    /*
+      Le cadrage suit la carte, et il vient d'une table (voir `FRAME`) : chaque
+      carte tient dans un cadre dérivé de son propre contenu. Une seule échelle
+      pour toutes rendrait l'île minuscule au milieu d'un vide, ce qui est exact
+      et illisible.
+
+      Seul le cadre du continent est centré sur l'origine. Celui de l'île l'est
+      sur le milieu de ce qu'elle doit montrer, île **et** promontoire du
+      nord-ouest ; celui du Marais sur le milieu du chemin, qui va du portail à
+      l'arbre. Le décalage est appliqué ici et dans le fond de carte, et il
+      n'existe qu'à ces deux endroits — un troisième aurait un jour dessiné les
+      repères à côté du relief qu'ils désignent.
+    */
+    const onContinent = location === 'continent'
+    const { extent, x: centerX, z: centerZ } = FRAME[location]
     const toPixels = (x: number, z: number) => ({
       px: ((x - centerX + extent / 2) / extent) * size,
       py: ((z - centerZ + extent / 2) / extent) * size,
@@ -308,7 +410,7 @@ export function Minimap({ markers = [] }: MinimapProps) {
       const { position, yaw } = playerTransform
 
       context.clearRect(0, 0, size, size)
-      context.drawImage(islandMap ?? worldMap, 0, 0, size, size)
+      context.drawImage(marshMap ?? islandMap ?? worldMap, 0, 0, size, size)
 
       /*
         Les ennemis se dessinent sur les **deux** cartes, et le registre suffit.
@@ -332,7 +434,7 @@ export function Minimap({ markers = [] }: MinimapProps) {
         parle d'une autre carte, et dessiner ses losanges sur l'île reviendrait à
         poser le Temple du Sommet au milieu du ciel.
       */
-      if (!sky) {
+      if (onContinent) {
         // Monuments : un losange, pas un point. La forme suffit à les distinguer
         // des ennemis sans avoir à mémoriser un code couleur — et ils restent
         // affichés avant d'être découverts, parce que c'est ce qui donne au
@@ -410,9 +512,9 @@ export function Minimap({ markers = [] }: MinimapProps) {
       context.restore()
 
       // Le libellé sous la carte nomme le biome sur le continent, et la carte
-      // elle-même dans le ciel : l'île n'a pas de biomes, et « Prairie » y
-      // serait à la fois vrai et hors sujet.
-      if (!sky) {
+      // elle-même ailleurs : ni l'île ni le Marais n'ont de biomes, et
+      // « Prairie » y serait à la fois vrai et hors sujet.
+      if (onContinent) {
         const current = classifyBiome(
           position.x,
           position.z,
@@ -429,14 +531,14 @@ export function Minimap({ markers = [] }: MinimapProps) {
 
     frame = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(frame)
-  }, [worldMap, islandMap, location])
+  }, [worldMap, islandMap, marshMap, location])
 
   return (
     <div className="minimap">
       <canvas ref={canvasRef} className="minimap__canvas" />
       <span className="minimap__north">{dict.ui.minimap.north}</span>
       <span className="minimap__label">
-        {location === 'sky' ? dict.ui.maps.sky : dict.ui.biomes[biome]}
+        {location === 'continent' ? dict.ui.biomes[biome] : dict.ui.maps[location]}
       </span>
     </div>
   )

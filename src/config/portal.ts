@@ -1,6 +1,7 @@
 import type { MapId } from '../types/game'
 import { PLAYER } from './gameplay'
 import { NAKANO } from './landmarks'
+import { MARSH_ARRIVAL_YAW, MARSH_SPAWN } from './rotMarsh'
 import { sampleHeight } from './world'
 
 /**
@@ -112,9 +113,20 @@ export const SKY_PORTAL = {
  * carte ? » — et la laisser se recopier garantirait qu'un jour l'un d'eux
  * dépose le joueur au spawn du continent alors qu'il est dans le ciel.
  */
+const CONTINENT_SPAWN = {
+  x: PLAYER.spawn[0],
+  y: PLAYER.spawn[1],
+  z: PLAYER.spawn[2],
+}
+
+const SPAWNS: Record<MapId, { x: number; y: number; z: number }> = {
+  continent: CONTINENT_SPAWN,
+  sky: SKY_SPAWN,
+  rot: MARSH_SPAWN,
+}
+
 export function spawnFor(map: MapId) {
-  if (map === 'sky') return SKY_SPAWN
-  return { x: PLAYER.spawn[0], y: PLAYER.spawn[1], z: PLAYER.spawn[2] }
+  return SPAWNS[map]
 }
 
 /**
@@ -150,8 +162,19 @@ const CONTINENT_RETURN = (() => {
  * de franchir. Une porte ramène là d'où l'on est parti ; c'est même à peu près
  * la seule chose qu'on attende d'une porte.
  */
+const ARRIVALS: Record<MapId, { x: number; y: number; z: number }> = {
+  continent: CONTINENT_RETURN,
+  sky: SKY_SPAWN,
+  // Le Marais n'a qu'une porte : on y arrive et on en repart par le même
+  // anneau. Son point d'arrivée est donc aussi son point d'apparition, et les
+  // deux tables pointent volontairement sur le même objet — il n'y a pas ici la
+  // distinction « voyage » / « chute » qui a coûté un bug sur le continent,
+  // parce qu'il n'y a qu'un seul endroit où remettre le joueur.
+  rot: MARSH_SPAWN,
+}
+
 export function arrivalFor(map: MapId) {
-  return map === 'sky' ? SKY_SPAWN : CONTINENT_RETURN
+  return ARRIVALS[map]
 }
 
 /**
@@ -161,6 +184,15 @@ export function arrivalFor(map: MapId) {
  * c'est-à-dire l'île. À Nakano, l'anneau regarde le sud-ouest et l'on en sort de
  * ce côté : on garde le cap du monument, et l'on fait face au pont.
  */
+const ARRIVAL_YAWS: Record<MapId, number> = {
+  continent: NAKANO.yaw,
+  sky: Math.PI,
+  // Face au sud, c'est-à-dire face à l'Arbre blafard. Toute la mise en scène de
+  // cette carte tient dans ce cap : on arrive, et la seule chose verticale du
+  // paysage est déjà dans l'axe du regard.
+  rot: MARSH_ARRIVAL_YAW,
+}
+
 export function arrivalYaw(map: MapId) {
-  return map === 'sky' ? Math.PI : NAKANO.yaw
+  return ARRIVAL_YAWS[map]
 }

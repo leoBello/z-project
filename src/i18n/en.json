@@ -6,7 +6,8 @@
       "attack": "attack",
       "parry": "parry",
       "interact": "interact",
-      "heartsLabel": "{current} of {total} hearts"
+      "heartsLabel": "{current} of {total} hearts",
+      "rotLabel": "Scarlet rot"
     },
     "touch": {
       "move": "move",
@@ -38,12 +39,16 @@
       "kicker": "The map is clear",
       "name": "A portal opens at Nakano Temple",
       "hint": "A violet glow, turned towards a sky island",
-      "action": "Step through the portal",
-      "back": "Return to the mainland"
+      "toward": {
+        "continent": "Return to the mainland",
+        "sky": "Cross to the Sky Island",
+        "rot": "Step through the portal"
+      }
     },
     "maps": {
       "continent": "Mainland",
-      "sky": "Sky Island"
+      "sky": "Sky Island",
+      "rot": "Aeonia Marsh"
     },
     "quality": {
       "label": "Graphics quality",

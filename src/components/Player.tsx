@@ -15,7 +15,9 @@ import { isTouchDevice } from '../config/device'
 import { ATTACK, PLAYER } from '../config/gameplay'
 import { outfitOf, traitsOf } from '../config/items'
 import { spawnFor } from '../config/portal'
+import { MARSH_LEASH_R } from '../config/rotMarsh'
 import { WORLD } from '../config/world'
+import type { MapId } from '../types/game'
 import { enemyRegistry } from '../state/enemyRegistry'
 import { isHitStopped, now as gameNow } from '../state/gameClock'
 import { pressParry } from '../state/parry'
@@ -23,6 +25,30 @@ import { playerBody } from '../state/playerBody'
 import { playerTransform } from '../state/playerTransform'
 import { touchInput, resetTouchMove } from '../state/touchInput'
 import { useGameStore } from '../store/useGameStore'
+
+/**
+ * Altitude sous laquelle le joueur est remis à son point d'apparition.
+ *
+ * Une table indexée par carte, et pas un ternaire : c'est la règle posée en
+ * tête de `MapId`, et elle vient précisément de ce genre de ligne. La version
+ * précédente s'écrivait `sky ? -20 : WORLD.maxDepth - 20`, ce qui aurait donné
+ * au Marais le plancher du continent — soit une centaine d'unités de chute
+ * avant que le filet ne se déclenche.
+ *
+ *  - **continent** : très bas. Le terrain est fermé par des murs invisibles, il
+ *    faudrait traverser le sol pour l'atteindre, et ça n'arrive jamais ;
+ *  - **sky** : sous la lèvre de l'île (−1,2) et bien au-dessus de son cristal
+ *    (−34). On tombe assez longtemps pour comprendre qu'on est tombé, jamais
+ *    assez pour traverser le socle et le voir de l'intérieur ;
+ *  - **rot** : le marais est une nappe plate, on n'y tombe de nulle part. Ce
+ *    plancher ne sert donc qu'à rattraper une chute impossible — il existe pour
+ *    que la table soit complète, pas parce qu'on l'attend.
+ */
+const FALL_FLOOR: Record<MapId, number> = {
+  continent: WORLD.maxDepth - 20,
+  sky: -20,
+  rot: -20,
+}
 import { HeroModel } from './models/HeroModel'
 
 // Vecteurs de travail alloués une seule fois : `useFrame` tourne ~60x/s,
@@ -413,15 +439,34 @@ export function Player() {
     // Lecture non réactive : ce composant ne doit pas se re-rendre au voyage,
     // c'est `WorldTransition` qui le repose.
     const location = useGameStore.getState().location
-    const sky = location === 'sky'
-    // Sous la lèvre de l'île (−1,2) et bien au-dessus de son cristal (−34) : on
-    // tombe assez longtemps pour comprendre qu'on est tombé, jamais assez pour
-    // traverser le socle et le voir de l'intérieur.
-    const floor = sky ? -20 : WORLD.maxDepth - 20
-    if (position.y < floor) {
+    if (position.y < FALL_FLOOR[location]) {
       const spawn = spawnFor(location)
       rb.setTranslation(spawn, true)
       rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
+      return
+    }
+
+    /*
+      La laisse horizontale du Marais.
+
+      Elle est ici et non dans le module du Marais, pour exactement la raison
+      donnée plus haut à propos du filet de chute : deux gestionnaires qui
+      remettent le joueur en place et qui s'ignorent finiront par se contredire.
+      C'est la même question — « le joueur est-il sorti de la carte ? » — et elle
+      a donc le même endroit.
+
+      Elle est horizontale parce que le Marais n'a pas de vide : le sol y est une
+      nappe plate qui déborde de partout. Un mur invisible aurait démenti
+      l'image d'un marais sans fin ; une laisse silencieuse à cent quarante-huit
+      unités ne se rencontre qu'en la cherchant, et la brume sature bien avant.
+    */
+    if (location === 'rot') {
+      const drift = Math.hypot(position.x, position.z)
+      if (drift > MARSH_LEASH_R) {
+        const spawn = spawnFor(location)
+        rb.setTranslation(spawn, true)
+        rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
+      }
     }
   })
 

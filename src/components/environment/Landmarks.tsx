@@ -103,7 +103,7 @@ function LandmarkProximity() {
  */
 function ContinentPortal() {
   const openedAt = useGameStore((state) => state.portalOpenedAt)
-  return <Portal at={PORTAL} openedAt={openedAt} />
+  return <Portal at={PORTAL} openedAt={openedAt} to="sky" />
 }
 
 /** Tous les monuments de la carte, leurs coffres, et la logique de proximité. */
