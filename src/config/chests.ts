@@ -1,6 +1,12 @@
 import type { ChestId, ItemId, MapId } from '../types/game'
 import { NAKANO, PYRAMID, RUINS, STELE, TEMPLE, type Landmark } from './landmarks'
-import { CORE_Y, ROTUNDA_RUINED_BAYS, rotundaPierAngle } from './skyIsland'
+import {
+  CORE_Y,
+  ROTUNDA_RUINED_BAYS,
+  rotundaPierAngle,
+  surfaceRelief,
+  topHeight,
+} from './skyIsland'
 
 /**
  * Coffres au trésor de la carte.
@@ -326,6 +332,10 @@ export const RUINS_CHEST = define({
  * monte qu'une fois le gardien vaincu. La table décrit où sont les choses, pas
  * quand elles existent.
  */
+/** Où le coffre de la Voie se pose, en polaire. Voir `ROAD_CHEST`. */
+const ROAD_R = 25
+const ROAD_THETA = 0
+
 const ROTUNDA_BAY = (rotundaPierAngle(ROTUNDA_RUINED_BAYS[1]) + rotundaPierAngle(ROTUNDA_RUINED_BAYS[1] + 1)) / 2
 
 export const ROTUNDA_CHEST: Chest = {
@@ -341,6 +351,55 @@ export const ROTUNDA_CHEST: Chest = {
   interactRadius: 2.6,
 }
 
+/**
+ * Coffre de la Voie — l'Armure du Dieu Démon.
+ *
+ * Posé **dans l'axe exact de la rampe d'arrivée**, à 25 unités du centre de
+ * l'île, c'est-à-dire 4,5 après l'arche de l'enceinte. C'est le seul coffre du
+ * jeu qu'on ne puisse pas manquer, et c'est la raison d'être de sa position :
+ * il faut que le joueur trouve l'armure **avant** le Lynel, pas après, sinon
+ * elle ne sert plus à rien.
+ *
+ * Les trois nombres sont mesurés, pas choisis à l'œil :
+ *
+ *  - **θ = 0**, plein sud. C'est à la fois le cap du portail d'arrivée
+ *    (`SKY_SPAWN` est en `z = 48`), celui de la porte de l'enceinte, et un
+ *    couloir de rampe extérieure (`RAMPS_OUTER` commence à zéro). Ce dernier
+ *    point n'est pas un détail : le semis de végétation s'interdit les couloirs
+ *    de rampe, **la voie est donc nue par construction** et aucune touffe ne
+ *    poussera jamais au travers du coffre ;
+ *  - **r = 25** parce que le jardin y est plat *à la valeur près* — c'est le
+ *    point de crête du relief de surface sur cet axe, pente mesurée nulle. Un
+ *    coffre à cheval sur une bosse flotterait d'un côté et s'enfoncerait de
+ *    l'autre. Il est aussi à 4,5 de l'arche, dont les piédroits sont en
+ *    `x = ±2,25` : le coffre, large de 1,35, passe au large ;
+ *  - **13,5 le séparent du dallage de l'arène** (rayon 11,5), que le Lynel ne
+ *    quitte jamais. On s'équipe donc en paix, et la seule autre zone
+ *    d'interaction de la carte — le portail du retour, rayon 7 — est à 27,5.
+ *    Aucune concurrence possible sur la touche d'action.
+ *
+ * L'altitude n'est pas écrite mais **échantillonnée sur le relief**, par les
+ * deux mêmes fonctions que le maillage et le collider de l'île. C'est la seule
+ * façon qu'elle ne mente pas au prochain réglage du terrain — et le seul
+ * moyen, ici, puisque ce coffre n'a pas de monument dont hériter une terrasse.
+ *
+ * Le cap est de biais d'un cinquième de radian : d'équerre avec la voie, le
+ * coffre se lisait comme une borne du dallage plutôt que comme un objet posé
+ * là. C'est la même correction que pour les cinq coffres du continent.
+ */
+export const ROAD_CHEST: Chest = {
+  id: 'road-chest',
+  map: 'sky',
+  item: 'demon-armor',
+  world: {
+    x: Math.sin(ROAD_THETA) * ROAD_R,
+    y: topHeight(ROAD_R, ROAD_THETA) + surfaceRelief(ROAD_R, ROAD_THETA),
+    z: Math.cos(ROAD_THETA) * ROAD_R,
+  },
+  worldYaw: ROAD_THETA + 0.2,
+  interactRadius: 2.6,
+}
+
 export const CHESTS: readonly Chest[] = [
   TEMPLE_CHEST,
   PYRAMID_CHEST,
@@ -352,6 +411,7 @@ export const CHESTS: readonly Chest[] = [
   // d'ouvrir, et il lit cette table. Le champ `map` suffit à ce que personne ne
   // le pose au mauvais endroit.
   ROTUNDA_CHEST,
+  ROAD_CHEST,
 ]
 
 /** Retrouve un coffre par son identifiant. */

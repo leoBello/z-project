@@ -181,6 +181,12 @@
         "meta": "Trouvées dans le coffre des Ruines de l'Île",
         "description": "Une poignée d'écailles nacrées, larges comme la paume, encore souples et tièdes au toucher. Nouées à la ceinture, l'eau cesse de vous retenir — mais la terre ferme, elle, ne vous a jamais rien promis.",
         "effect": "la mer se traverse à pleine vitesse, mais la course au sol perd 15 %"
+      },
+      "demon-armor": {
+        "name": "Armure du Dieu Démon",
+        "meta": "Trouvée dans le coffre de la Voie, sur l'Île Céleste",
+        "description": "Une tunique d'étoffe pâle sanglée sous un plastron d'acier à trois plaques, une épaulière d'or fermée d'une gemme d'ambre, et sept turquoises nouées au poignet. Celui qui la portait avait les cheveux blancs sous une capuche rabattue, des marques sombres en travers du front, et des yeux entièrement blancs qui ne se posaient sur personne.",
+        "effect": "les dégâts du Lynel sont divisés par deux, mais course et détente réduites"
       }
     },
     "language": {

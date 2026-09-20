@@ -756,6 +756,196 @@ function FishmanScales() {
   )
 }
 
+
+/** Teintes partagées avec la silhouette 3D. Voir `OUTFITS.demon`. */
+const DEMON = {
+  cloth: '#b7dcd6',
+  clothShade: '#93bdb6',
+  steel: '#5f6672',
+  steelShade: '#454b57',
+  groove: '#1a1d28',
+  slate: '#3e4450',
+  gold: '#cfa24a',
+  goldBright: '#f3d789',
+  amber: '#c4602c',
+  bead: '#2fb3a4',
+  hair: '#eef1f4',
+  skin: '#f0c7a2',
+  eye: '#f2f6ff',
+  trouser: '#242b40',
+  boot: '#7d5636',
+} as const
+
+/**
+ * Armure du Dieu Démon.
+ *
+ * Le fond est le seul de la série qui ne soit pas violacé : c'est le bleu de
+ * l'Île Céleste, d'où la tenue vient, et c'est aussi ce qu'il fallait pour
+ * détacher une silhouette pâle — sur le parme des autres cartes, le céladon
+ * s'y serait fondu.
+ *
+ * Quatre choses portent la reconnaissance, et elles sont dessinées dans cet
+ * ordre de priorité : la **capuche** qui ferme la tête, le **plastron** d'acier
+ * qui coupe l'étoffe claire, l'**épaulière** d'or d'un seul côté, et la
+ * **grappe de turquoises** au poignet. Le visage vient après, mais il vient :
+ * c'est la seule carte de l'inventaire où le regard est lisible à 320 pixels,
+ * parce que deux fentes blanches sur un masque noir survivent à n'importe
+ * quelle réduction.
+ */
+function DemonArmour() {
+  return (
+    <svg viewBox="0 0 320 300" role="img" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="demon-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#1e2a52" />
+          <stop offset="100%" stopColor="#4d6096" />
+        </linearGradient>
+        <radialGradient id="demon-halo" cx="0.5" cy="0.34" r="0.55">
+          <stop offset="0%" stopColor="#bfe4dc" stopOpacity="0.42" />
+          <stop offset="100%" stopColor="#bfe4dc" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <rect width="320" height="300" fill="url(#demon-sky)" />
+      <circle cx="160" cy="104" r="140" fill="url(#demon-halo)" />
+
+      {/* Crête sous les pieds : ancre la silhouette au sol plutôt que de la
+          laisser flotter au milieu du cadre. */}
+      <path d="M0 280 L84 266 L160 274 L238 262 L320 278 L320 300 L0 300 Z" fill="#1b2340" />
+
+      {/*
+        La capuche, dessinée avant tout le reste : elle passe derrière la tête.
+
+        Son ouverture est **étroite** — 48 pixels pour une capuche large de 96 —
+        et c'est tout le sujet de cette pièce. Le premier jet l'ouvrait à 76 :
+        le visage y flottait au milieu d'un ovale pâle, et la capuche cessait
+        d'être portée pour devenir un décor posé derrière la tête.
+      */}
+      <path
+        d="M160 22 C128 22 116 46 116 78 L116 130 L138 130 L138 82
+           C138 62 147 48 160 48 C173 48 182 62 182 82 L182 130 L204 130 L204 78
+           C204 46 192 22 160 22 Z"
+        fill={DEMON.cloth}
+      />
+      <path
+        d="M182 82 L182 130 L204 130 L204 78 C204 54 198 36 188 28 C196 42 182 58 182 82 Z"
+        fill={DEMON.clothShade}
+      />
+
+      {/* Visage et frange blanche. */}
+      <path d="M137 52 h46 v38 a23 23 0 0 1 -46 0 Z" fill={DEMON.skin} />
+      <path d="M135 48 h50 v14 l-14 -6 l-11 7 l-11 -7 l-14 6 Z" fill={DEMON.hair} />
+
+      {/* La flèche du front, qui descend jusqu'entre les sourcils : la marque
+          la plus haute du visage, donc la dernière à disparaître à la
+          réduction. */}
+      <path d="M160 64 l6 10 l-6 5 l-6 -5 Z" fill={DEMON.groove} />
+
+      {/*
+        Masques et fentes, **séparés par l'arête du nez**.
+
+        Le premier jet les joignait au milieu : les deux taches n'en faisaient
+        plus qu'une, et le visage portait un bandeau de sommeil. Il faut les
+        huit pixels de peau du centre pour qu'on lise deux yeux.
+
+        L'inclinaison descend vers le nez — coin intérieur bas, coin extérieur
+        relevé. C'est le seul signe qui sépare un regard qui vise d'un regard
+        effrayé, et l'avoir à l'envers suffit à rendre le personnage terrifié
+        plutôt que terrifiant.
+      */}
+      <path d="M139 86 l17 -6 l2.5 9 l-19.5 6 Z" fill={DEMON.groove} />
+      <path d="M181 86 l-17 -6 l-2.5 9 l19.5 6 Z" fill={DEMON.groove} />
+      <path d="M142 87 l12 -4 l1.2 4 l-13 4 Z" fill={DEMON.eye} />
+      <path d="M178 87 l-12 -4 l-1.2 4 l13 4 Z" fill={DEMON.eye} />
+
+      {/* Bouche : deux segments qui tombent aux commissures. Un trait droit
+          sous un regard blanc donne un visage absent. */}
+      <path d="M153 103 l7 2.5 l7 -2.5" stroke={DEMON.groove} strokeWidth="2.5" fill="none" strokeLinecap="round" />
+
+      {/* Bras : manche d'étoffe, puis gantelet d'ardoise à deux viroles. Ils
+          sont posés **en dehors** de l'emprise du buste — sinon la tunique les
+          recouvre et la tenue perd la pièce qui l'élargit. */}
+      {[
+        [98, 1],
+        [194, -1],
+      ].map(([x]) => (
+        <g key={x}>
+          <path d={`M${x} 130 h28 v26 h-28 Z`} fill={DEMON.clothShade} />
+          <rect x={x} y={154} width={28} height={54} rx={7} fill={DEMON.slate} />
+          <rect x={x} y={164} width={28} height={4} fill={DEMON.groove} />
+          <rect x={x} y={194} width={28} height={4} fill={DEMON.groove} />
+        </g>
+      ))}
+
+      {/* La grappe, au poignet droit : sept perles de tailles inégales pendues
+          à un anneau d'or. Sept perles identiques feraient un chapelet. */}
+      <circle cx="208" cy="210" r="4.5" fill="none" stroke={DEMON.gold} strokeWidth="2" />
+      {[
+        [206, 218, 6],
+        [217, 224, 5],
+        [198, 226, 4.5],
+        [209, 234, 5.5],
+        [220, 238, 4],
+        [200, 241, 4],
+        [211, 248, 3.5],
+      ].map(([cx, cy, r]) => (
+        <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={r} fill={DEMON.bead} />
+      ))}
+
+      {/* Tunique, gorgerin, plastron. */}
+      <path d="M128 126 h64 l10 78 h-84 Z" fill={DEMON.cloth} />
+      <path d="M160 126 h32 l10 78 h-42 Z" fill={DEMON.clothShade} />
+      <path d="M141 127 L160 119 L179 127 L176 136 L160 130 L144 136 Z" fill={DEMON.gold} />
+      <path d="M143 124 L160 117 L177 124" stroke={DEMON.goldBright} strokeWidth="2.5" fill="none" />
+
+      {/* Trois plaques bombées, et pas cinq : à cette taille, c'est le bombé
+          qu'on lit, jamais le compte. C'est la leçon du plastron du clan. */}
+      {[0, 1, 2].map((row) => (
+        <path
+          key={row}
+          d={`M${132 + row * 2} ${142 + row * 19} q28 -9 ${56 - row * 4} 0 l0 14 q-28 -8 -${56 - row * 4} 0 Z`}
+          fill={row === 1 ? DEMON.steelShade : DEMON.steel}
+        />
+      ))}
+      {/* Le disque du pectoral, décentré : la seule asymétrie du buste, et le
+          seul rond d'une tenue faite de plaques. */}
+      <circle cx="145" cy="152" r="7" fill={DEMON.gold} />
+      <circle cx="145" cy="152" r="7" fill="none" stroke={DEMON.goldBright} strokeWidth="2" />
+
+      {/*
+        L'épaulière d'or, d'un seul côté, fermée d'une gemme d'ambre.
+
+        C'est la seule silhouette asymétrique du jeu, et sur la carte elle doit
+        se lire **sur l'épaule** et non sur la poitrine : elle chevauche donc la
+        jonction du bras et du buste, à cheval sur les deux, plutôt que posée en
+        travers du plastron comme au premier jet.
+      */}
+      <path d="M96 122 h46 l3 10 h-52 Z" fill={DEMON.goldBright} />
+      <path d="M94 132 h52 l3 16 h-57 Z" fill={DEMON.gold} />
+      <path d="M97 148 h46 l2 10 h-50 Z" fill={DEMON.steel} />
+      <path d="M120 134 l8 8 l-8 8 l-8 -8 Z" fill={DEMON.amber} />
+
+      {/* Ceinture, jupe et sa fente dorée. */}
+      <rect x="118" y="202" width="84" height="13" rx="2" fill={DEMON.steel} />
+      <rect x="151" y="203" width="18" height="11" rx="2" fill={DEMON.gold} />
+      <path d="M118 215 h84 l10 42 h-104 Z" fill={DEMON.cloth} />
+      <path d="M160 215 h42 l10 42 h-52 Z" fill={DEMON.clothShade} />
+      <rect x="155" y="215" width="9" height="42" fill={DEMON.gold} />
+      <path d="M108 253 h104 v5 h-104 Z" fill={DEMON.gold} />
+
+      {/* Jambes d'encre, bottes de cuir à revers clair : les deux seules
+          teintes chaudes du bas de la silhouette. */}
+      {[134, 164].map((x) => (
+        <g key={x}>
+          <rect x={x} y={253} width={22} height={24} fill={DEMON.trouser} />
+          <rect x={x - 2} y={261} width={26} height={8} fill={DEMON.goldBright} />
+          <path d={`M${x - 2} 269 h26 v10 h-30 Z`} fill={DEMON.boot} />
+        </g>
+      ))}
+    </svg>
+  )
+}
+
 const ILLUSTRATIONS: Record<ItemId, () => React.JSX.Element> = {
   'zoro-garb': ZoroGarb,
   'madara-garb': MadaraGarb,
@@ -763,6 +953,7 @@ const ILLUSTRATIONS: Record<ItemId, () => React.JSX.Element> = {
   kusanagi: KusanagiKatana,
   'cursed-blade': KitetsuBlade,
   'fishman-scales': FishmanScales,
+  'demon-armor': DemonArmour,
 }
 
 export function ItemIllustration({ id }: { id: ItemId }) {

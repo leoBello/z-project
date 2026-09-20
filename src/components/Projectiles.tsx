@@ -161,7 +161,11 @@ export function Projectiles() {
           projectile.position.distanceTo(scratch) < PROJECTILE_HIT_RADIUS
         ) {
           projectile.active = false
-          store.damagePlayer()
+          // L'espèce est nommée bien qu'aucun objet ne s'en serve aujourd'hui :
+          // le pool n'appartient qu'aux octoroks, et un point d'entrée de
+          // dégâts qui ne dit pas qui frappe est un trou que le prochain objet
+          // défensif découvrirait en silence.
+          store.damagePlayer(1, 'octorok')
         } else if (now - projectile.bornAt > PROJECTILE_LIFETIME_MS) {
           projectile.active = false
         } else if (

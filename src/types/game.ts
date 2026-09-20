@@ -97,6 +97,7 @@ export type ItemId =
   | 'cursed-blade'
   | 'fishman-scales'
   | 'dawn-cloak'
+  | 'demon-armor'
 
 /** Identifiant de coffre au trésor. La table vit dans `config/chests.ts`. */
 export type ChestId =
@@ -106,6 +107,7 @@ export type ChestId =
   | 'stele-chest'
   | 'ruins-chest'
   | 'rotunda-chest'
+  | 'road-chest'
 
 /** Identifiant de biome. Pilote le sol, la végétation et la minimap. */
 export type BiomeId =

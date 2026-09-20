@@ -607,7 +607,7 @@ export function Lynel() {
       // reprendrait des dégâts à chaque frame dès la fin de ses i-frames.
       if (!state.chargeHit && distance < stats.radius + 0.9) {
         state.chargeHit = true
-        store.damagePlayer(LYNEL_ATTACKS.charge.damage)
+        store.damagePlayer(LYNEL_ATTACKS.charge.damage, 'lynel')
         playImpact()
       }
 
@@ -796,14 +796,14 @@ export function Lynel() {
           s'esquiver. Le jeu avait un saut qui ne servait qu'à grimper.
         */
         if (playerTransform.grounded && attackHits(attack, position, state.yaw)) {
-          store.damagePlayer(attack.damage)
+          store.damagePlayer(attack.damage, 'lynel')
         }
         spawnDeathRing(position.x, ARENA_CENTER[1], position.z, SHOCK_COLOR, attack.reach)
         shake(0.14, 200)
         playImpact()
         state.pose = 'cabre'
       } else if (attack.id === 'breath') {
-        if (attackHits(attack, position, state.yaw)) store.damagePlayer(attack.damage)
+        if (attackHits(attack, position, state.yaw)) store.damagePlayer(attack.damage, 'lynel')
         // Les flaques sont semées le long du cône, du plus près au plus loin :
         // c'est le souffle qui se pose, pas une couronne autour de la bête.
         for (let i = 0; i < PUDDLES; i++) {
@@ -841,7 +841,7 @@ export function Lynel() {
         }
         state.pose = 'balayage'
       } else if (attackHits(attack, position, state.yaw)) {
-        useGameStore.getState().damagePlayer(attack.damage)
+        useGameStore.getState().damagePlayer(attack.damage, 'lynel')
         // La charge et le triple tir sont traités au-dessus : ne restent ici que
         // les coups d'épée, qui partagent tous le même geste de suite.
         state.pose = 'balayage'
@@ -900,7 +900,7 @@ export function Lynel() {
           ) < PUDDLE_R
         if (inside) {
           state.lastBurnAt = now
-          store.damagePlayer(1)
+          store.damagePlayer(1, 'lynel')
           break
         }
       }
