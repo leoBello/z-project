@@ -76,6 +76,16 @@ function Transit({ to }: { to: MapId }) {
     après qu'il a fini. Il ne change jamais pendant la vie de l'instance.
   */
   const landmark = useGameStore((state) => state.transitLandmark)
+  /*
+    D'où l'on part, lu une fois pour toutes comme le lieu ci-dessus : il est
+    écrit dans le même `set` que `transit`, donc avant que ce composant n'existe.
+
+    Il sert à une seule chose, et elle vaut le champ : le Marais a deux portes
+    depuis qu'il mène à l'Outremonde, et on doit ressortir par celle qu'on a
+    prise. Il ne peut pas être lu dans `location`, qui vaut déjà la carte
+    d'arrivée au moment où l'on dépose le joueur.
+  */
+  const from = useGameStore((state) => state.transitFrom)
   const [phase, setPhase] = useState<'covering' | 'revealing'>('covering')
   const transit = to
 
@@ -152,8 +162,9 @@ function Transit({ to }: { to: MapId }) {
         const arrival = landmarkArrival(destination)
         placePlayer(arrival, arrival.yaw)
       } else {
-        // Dos au portail, dans les deux sens — voir `arrivalYaw`.
-        placePlayer(arrivalFor(transit), arrivalYaw(transit))
+        // Dos au portail, dans les deux sens — voir `arrivalYaw`. L'origine
+        // décide par quelle porte on ressort quand la carte en a deux.
+        placePlayer(arrivalFor(transit, from ?? undefined), arrivalYaw(transit, from ?? undefined))
       }
 
       // Une seconde image, pour que la caméra ait rattrapé le joueur avant
@@ -171,7 +182,7 @@ function Transit({ to }: { to: MapId }) {
       cancelled = true
       clearTimeout(endTimer)
     }
-  }, [transit, landmark, arriveOnMap, finishTransit, abortTransit])
+  }, [transit, from, landmark, arriveOnMap, finishTransit, abortTransit])
 
   return <EmberVeil phase={phase} durationMs={phase === 'covering' ? COVER_MS : REVEAL_MS} />
 }

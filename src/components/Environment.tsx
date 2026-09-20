@@ -13,6 +13,7 @@ import { Terrain } from './environment/Terrain'
 import { Vegetation } from './environment/Vegetation'
 import { StarrySky } from './environment/StarrySky'
 import { RotSky } from './rot/RotSky'
+import { BeyondSky } from './beyond/BeyondSky'
 import { Water } from './environment/Water'
 
 /**
@@ -155,6 +156,17 @@ const SkyIsland = lazy(() => import('./skyisland/SkyIsland'))
 const RotMarsh = lazy(() => import('./rot/RotMarsh'))
 
 /**
+ * L'Outremonde, chargé à la demande — mêmes règles que les deux autres.
+ *
+ * C'est le plus lourd des trois fragments : il porte un champ de hauteurs
+ * complet, son semis, cinq Lynels et une Malenia. Raison de plus pour qu'il ne
+ * soit jamais dans le bundle d'accueil — et il ne peut pas y être, puisque rien
+ * du tronc commun ne l'importe autrement que par ce `lazy` et par son
+ * `preload.ts`.
+ */
+const Beyond = lazy(() => import('./beyond/Beyond'))
+
+/**
  * Décor complet de la carte courante.
  *
  * Le **ciel étoilé** reste hors du branchement, et lui seul : le continent et
@@ -191,10 +203,29 @@ export function Environment() {
         un ciel est ce qu'on doit voir en premier, y compris pendant que le reste
         de la carte arrive.
       */}
-      {location === 'rot' ? <RotSky /> : <StarrySky />}
+      {/*
+        Le firmament, et il y en a maintenant trois pour quatre cartes.
+
+        Le continent et l'île partagent le même — l'île flotte dans le ciel du
+        continent, pas dans un autre. Le Marais a le sien, et l'Outremonde le
+        sien : un monde qui ne se trouve pas dans ce monde ne peut pas en
+        emprunter les étoiles, ce serait dire le contraire de tout le reste.
+
+        Le branchement est resté un enchaînement de ternaires plutôt que de
+        devenir un `Record<MapId, …>`, et c'est le seul endroit du projet où
+        cette entorse se défend : trois valeurs pour quatre cartes, dont deux
+        partagent la même. Une table aurait demandé d'écrire deux fois
+        `StarrySky` — donc de laisser croire qu'il s'agit de deux ciels, ce qui
+        est exactement l'erreur qu'on veut éviter ici.
+      */}
+      {location === 'rot' ? <RotSky /> : location === 'beyond' ? <BeyondSky /> : <StarrySky />}
       <MapFog map={location} />
       <Lighting map={location} />
-      {location === 'rot' ? (
+      {location === 'beyond' ? (
+        <Suspense fallback={null}>
+          <Beyond />
+        </Suspense>
+      ) : location === 'rot' ? (
         <Suspense fallback={null}>
           <RotMarsh />
         </Suspense>

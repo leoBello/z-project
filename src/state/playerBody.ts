@@ -31,6 +31,44 @@ export function placePlayer(at: { x: number; y: number; z: number }, yaw: number
   playerTransform.yaw = yaw
 }
 
+/**
+ * Un déplacement **demandé**, que `Player.tsx` appliquera dans sa propre boucle.
+ *
+ * `placePlayer` ci-dessus écrit directement dans le corps physique, et c'est
+ * correct pour ses trois appelants — la téléportation entre monuments, le voyage
+ * entre cartes, et la remise en place après une chute — parce que tous les trois
+ * s'exécutent **partie en pause**, donc monde de Rapier arrêté (voir
+ * `PhysicsGate`, qui gèle `<Physics>` hors de la phase `playing`).
+ *
+ * La résurrection au Sanctuaire de l'Outremonde n'a pas ce luxe : elle part de
+ * `damagePlayer`, qui est appelé depuis la boucle d'un ennemi, monde en marche.
+ * Écrire la translation là a produit une erreur de wasm — *« recursive use of an
+ * object detected which would lead to unsafe aliasing »* — c'est-à-dire un
+ * emprunt réentrant de l'objet Rust du corps rigide. Le symptôme est une
+ * exception en pleine frame, et le joueur reste où il est mort.
+ *
+ * La demande est donc mise en file, et `Player.tsx` l'applique en tête de sa
+ * propre `useFrame` — l'endroit d'où il écrit déjà `setTranslation` pour son
+ * filet de chute, et qui est par construction hors de tout appel de Rapier.
+ *
+ * Le `playerTransform`, lui, est écrit **tout de suite** : ce n'est qu'un objet
+ * JavaScript, rien ne peut s'y casser, et c'est lui que la caméra suit. Sans
+ * cette écriture immédiate, le cadrage resterait sur le lieu de la mort jusqu'à
+ * la frame suivante.
+ */
+export const pendingPlacement: {
+  at: { x: number; y: number; z: number } | null
+  yaw: number
+} = { at: null, yaw: 0 }
+
+/** Demande un déplacement du joueur, appliqué à la frame suivante. */
+export function requestPlacement(at: { x: number; y: number; z: number }, yaw: number) {
+  pendingPlacement.at = at
+  pendingPlacement.yaw = yaw
+  playerTransform.position.set(at.x, at.y, at.z)
+  playerTransform.yaw = yaw
+}
+
 // Exposé en développement pour pouvoir *déplacer* le joueur depuis un test
 // navigateur. Les autres crochets de diagnostic ne font que lire l'état ;
 // celui-ci écrit, et c'est le seul moyen d'aller vérifier un point précis de la

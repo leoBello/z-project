@@ -18,6 +18,14 @@ export type Interaction =
   | { kind: 'landmark'; id: LandmarkId }
   | { kind: 'chest'; id: ChestId }
   | { kind: 'portal'; to: MapId }
+  /**
+   * Le maître du Sanctuaire, sur l'Outremonde.
+   *
+   * Sans identifiant, comme le portail et pour la même raison : il n'y en a
+   * qu'un, et il n'y en aura jamais qu'un. Le jour où une seconde figure
+   * proposerait quelque chose, c'est ce type-là qui obligera à la nommer.
+   */
+  | { kind: 'sensei' }
   | null
 
 /**
@@ -36,9 +44,21 @@ function pick(
   nearbyChest: ChestId | null,
   nearbyLandmark: LandmarkId | null,
   nearbyPortal: MapId | null,
+  nearbySensei: boolean,
 ): Interaction {
   if (phase !== 'playing') return null
   if (nearbyPortal) return { kind: 'portal', to: nearbyPortal }
+  /*
+    Le maître passe **après** le portail et avant tout le reste.
+
+    Les deux zones ne se recouvrent pas — treize unités les séparent pour onze de
+    portée cumulée, voir la note de cote dans `config/beyond.ts` — donc ce
+    départage ne devrait jamais servir. Il a un ordre quand même, et la même
+    raison que les autres : en cas d'égalité, ce qui emmène ailleurs l'emporte
+    sur ce qui reste ici. Les coffres et les monuments, eux, n'existent pas sur
+    sa carte : la comparaison est théorique dans les deux sens.
+  */
+  if (nearbySensei) return { kind: 'sensei' }
   if (nearbyChest) return { kind: 'chest', id: nearbyChest }
   if (nearbyLandmark) return { kind: 'landmark', id: nearbyLandmark }
   return null
@@ -51,8 +71,9 @@ function pick(
  * du clic et n'ont rien à re-rendre.
  */
 export function currentInteraction(): Interaction {
-  const { phase, nearbyChest, nearbyLandmark, nearbyPortal } = useGameStore.getState()
-  return pick(phase, nearbyChest, nearbyLandmark, nearbyPortal)
+  const { phase, nearbyChest, nearbyLandmark, nearbyPortal, nearbySensei } =
+    useGameStore.getState()
+  return pick(phase, nearbyChest, nearbyLandmark, nearbyPortal, nearbySensei)
 }
 
 /**
@@ -67,7 +88,8 @@ export function useInteraction(): Interaction {
   const nearbyChest = useGameStore((state) => state.nearbyChest)
   const nearbyLandmark = useGameStore((state) => state.nearbyLandmark)
   const nearbyPortal = useGameStore((state) => state.nearbyPortal)
-  return pick(phase, nearbyChest, nearbyLandmark, nearbyPortal)
+  const nearbySensei = useGameStore((state) => state.nearbySensei)
+  return pick(phase, nearbyChest, nearbyLandmark, nearbyPortal, nearbySensei)
 }
 
 /**
@@ -95,6 +117,10 @@ export function interactionLabel(target: Interaction, dict: Dictionary): string 
     */
     return dict.ui.portal.toward[target.to]
   }
+  // « Parler au maître », et non « Relever le défi » : l'invite annonce le
+  // geste, pas ce qu'il déclenche. Le défi se refuse, et une invite qui
+  // promettrait de le lancer mentirait à qui veut seulement écouter.
+  if (target.kind === 'sensei') return dict.ui.challenge.talk
   if (target.kind === 'chest') return dict.ui.chest.action
   const section = landmarkById(target.id)?.section
   return section ? dict.ui.sectionActions[section] : ''
@@ -113,6 +139,8 @@ export function triggerInteraction() {
   const store = useGameStore.getState()
   if (target.kind === 'portal') {
     store.enterMap(target.to)
+  } else if (target.kind === 'sensei') {
+    store.openSenseiOffer()
   } else if (target.kind === 'chest') {
     store.openChest(target.id)
   } else {

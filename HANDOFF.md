@@ -28,8 +28,10 @@ La roadmap est la source de vérité. Tiens-la à jour à chaque étape terminé
 Vite 8 + React 19 + TypeScript 6, three 0.185, @react-three/fiber 9, drei 10,
 @react-three/rapier 2, @react-three/postprocessing 3, zustand 5.
 
-Ce qui tourne : monde procédural de 200×200 avec relief, sept biomes, mer
-guéable et île atteignable à pied ; personnage articulé animé à la main ;
+Ce qui tourne : **quatre cartes** — le continent (monde procédural de 200×200
+avec relief, sept biomes, mer guéable et île atteignable à pied), l'Île Céleste,
+le Marais d'Aeonia et l'Outremonde, la carte d'après-partie et son défi
+chronométré ; personnage articulé animé à la main ;
 combat complet et lisible (deux espèces d'ennemis, IA à états avec temps de
 préparation avant chaque attaque, épée avec traînée qui dit si le coup a porté,
 projectiles dispersés, barres de vie, chevrons d'alerte pour les tirs hors
@@ -52,10 +54,14 @@ le propriétaire du projet le demande.
 - **Rien de réactif à 60 fps.** Tout ce qui est lu ou écrit chaque frame vit
   hors de React : `src/state/playerTransform.ts`, `src/state/enemyRegistry.ts`,
   `src/state/projectiles.ts`. Le store zustand ne porte que ce que l'UI affiche.
-- **Le monde dérive d'une seule fonction pure**, `sampleWorld(x, z)` dans
-  `world.ts`. Le mesh du terrain, le collider physique, le semis de végétation
-  et la minimap l'interrogent tous. N'introduis jamais une seconde source de
-  vérité pour le relief.
+- **Un monde dérive d'une seule fonction pure** : `sampleWorld(x, z)` dans
+  `world.ts` pour le continent, `beyondHeight` dans `beyond.ts` pour
+  l'Outremonde. Le mesh du terrain, le collider physique, le semis de végétation,
+  l'écume de rivage et la minimap l'interrogent tous — et ils y accèdent par une
+  `WorldShape` (`config/worldShape.ts`), qui est l'interface commune des deux
+  champs de hauteurs. N'introduis jamais une seconde source de vérité pour un
+  relief : un troisième monde s'écrit en implémentant cette interface, pas en
+  recopiant `Terrain.tsx`.
 - **Tout aléatoire de génération est initialisé par une graine fixe**
   (`seededRandom`). Sans ça la carte se redessine à chaque rechargement.
 - Le typage est strict et `verbatimModuleSyntax` est actif : utilise

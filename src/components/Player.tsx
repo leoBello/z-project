@@ -14,6 +14,7 @@ import type { Control } from '../config/controls'
 import { isTouchDevice } from '../config/device'
 import { ATTACK, PLAYER } from '../config/gameplay'
 import { outfitOf, traitsOf } from '../config/items'
+import { BEYOND } from '../config/beyond'
 import { spawnFor } from '../config/portal'
 import { MARSH_LEASH_R } from '../config/rotMarsh'
 import { WORLD } from '../config/world'
@@ -21,7 +22,7 @@ import type { MapId } from '../types/game'
 import { enemyRegistry } from '../state/enemyRegistry'
 import { isHitStopped, now as gameNow } from '../state/gameClock'
 import { pressParry } from '../state/parry'
-import { playerBody } from '../state/playerBody'
+import { pendingPlacement, playerBody } from '../state/playerBody'
 import { playerTransform } from '../state/playerTransform'
 import { touchInput, resetTouchMove } from '../state/touchInput'
 import { useGameStore } from '../store/useGameStore'
@@ -42,12 +43,17 @@ import { useGameStore } from '../store/useGameStore'
  *    assez pour traverser le socle et le voir de l'intérieur ;
  *  - **rot** : le marais est une nappe plate, on n'y tombe de nulle part. Ce
  *    plancher ne sert donc qu'à rattraper une chute impossible — il existe pour
- *    que la table soit complète, pas parce qu'on l'attend.
+ *    que la table soit complète, pas parce qu'on l'attend ;
+ *  - **beyond** : un champ de hauteurs fermé par des murs, comme le continent,
+ *    et le même plancher pour la même raison. Sa mer a la même profondeur
+ *    maximale, donc la même cote convient — mais elle est lue dans **sa** table
+ *    plutôt que recopiée du continent, parce qu'un jour l'une des deux bougera.
  */
 const FALL_FLOOR: Record<MapId, number> = {
   continent: WORLD.maxDepth - 20,
   sky: -20,
   rot: -20,
+  beyond: BEYOND.maxDepth - 20,
 }
 import { HeroModel } from './models/HeroModel'
 
@@ -214,6 +220,28 @@ export function Player() {
     // pas consommées ici — elles restent levées et se consommeront à la
     // reprise, elles ne sont pas perdues dans le gel.
     if (isHitStopped()) return
+
+    /*
+      Un déplacement demandé depuis ailleurs — aujourd'hui, la résurrection au
+      Sanctuaire de l'Outremonde.
+
+      Il est appliqué **ici et pas chez le demandeur**, parce que `damagePlayer`
+      tourne depuis la boucle d'un ennemi, c'est-à-dire pendant que le monde de
+      Rapier est en marche : y écrire une translation lève une erreur de wasm sur
+      un emprunt réentrant. Voir l'en-tête de `pendingPlacement`.
+
+      Avant la garde de phase, et c'est nécessaire : la mort pendant un défi
+      ouvre un panneau de résultat, donc met la partie en pause dans le même
+      souffle. Posée plus bas, la demande resterait en file jusqu'à ce que le
+      joueur referme le panneau — et le corps attendrait tout ce temps à
+      l'endroit où il est tombé, au milieu des bêtes qui l'ont eu.
+    */
+    const placement = pendingPlacement.at
+    if (placement) {
+      pendingPlacement.at = null
+      rb.setTranslation(placement, true)
+      rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
+    }
 
     if (useGameStore.getState().phase !== 'playing') {
       // Les demandes en attente sont consommées, pas conservées : sinon la

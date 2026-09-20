@@ -1,7 +1,13 @@
 import type { MapId } from '../types/game'
+import { BEYOND_ARRIVAL_YAW, BEYOND_SPAWN } from './beyond'
 import { PLAYER } from './gameplay'
 import { NAKANO } from './landmarks'
-import { MARSH_ARRIVAL_YAW, MARSH_SPAWN } from './rotMarsh'
+import {
+  MARSH_ARRIVAL_YAW,
+  MARSH_BEYOND_ARRIVAL_YAW,
+  MARSH_BEYOND_SPAWN,
+  MARSH_SPAWN,
+} from './rotMarsh'
 import { sampleHeight } from './world'
 
 /**
@@ -123,6 +129,11 @@ const SPAWNS: Record<MapId, { x: number; y: number; z: number }> = {
   continent: CONTINENT_SPAWN,
   sky: SKY_SPAWN,
   rot: MARSH_SPAWN,
+  // L'Outremonde ne remet nulle part ailleurs qu'au Sanctuaire, et il n'y a
+  // aucune exception à prévoir : c'est la seule zone franche de la carte, donc
+  // le seul endroit où reposer quelqu'un ait un sens — qu'il soit tombé du
+  // monde, ou tombé tout court. Voir `damagePlayer` dans le store.
+  beyond: BEYOND_SPAWN,
 }
 
 export function spawnFor(map: MapId) {
@@ -165,6 +176,10 @@ const CONTINENT_RETURN = (() => {
 const ARRIVALS: Record<MapId, { x: number; y: number; z: number }> = {
   continent: CONTINENT_RETURN,
   sky: SKY_SPAWN,
+  // Comme le Marais, l'Outremonde n'a qu'une porte : on y arrive et on en repart
+  // par le même anneau. Arrivée et apparition pointent donc volontairement sur
+  // le même objet.
+  beyond: BEYOND_SPAWN,
   // Le Marais n'a qu'une porte : on y arrive et on en repart par le même
   // anneau. Son point d'arrivée est donc aussi son point d'apparition, et les
   // deux tables pointent volontairement sur le même objet — il n'y a pas ici la
@@ -173,7 +188,23 @@ const ARRIVALS: Record<MapId, { x: number; y: number; z: number }> = {
   rot: MARSH_SPAWN,
 }
 
-export function arrivalFor(map: MapId) {
+/**
+ * Le Marais a **deux** portes depuis qu'il en a une vers l'Outremonde, et c'est
+ * la seule carte du jeu dans ce cas.
+ *
+ * D'où le second paramètre : la destination ne suffit plus à dire où déposer,
+ * il faut savoir d'où l'on vient. Une table `Record<MapId, …>` par carte
+ * d'origine aurait été seize entrées pour une seule exception ; un paramètre
+ * facultatif dit exactement ce qui est vrai — « en général la carte suffit,
+ * sauf ici ».
+ *
+ * Sans cette exception, revenir de l'Outremonde déposait au portail de la
+ * chaussée, à cent trente unités de l'anneau franchi, avec tout le marais à
+ * retraverser. C'est le défaut qu'avait connu le retour de l'Île Céleste au
+ * début, et il se corrige de la même façon.
+ */
+export function arrivalFor(map: MapId, from?: MapId) {
+  if (map === 'rot' && from === 'beyond') return MARSH_BEYOND_SPAWN
   return ARRIVALS[map]
 }
 
@@ -187,12 +218,19 @@ export function arrivalFor(map: MapId) {
 const ARRIVAL_YAWS: Record<MapId, number> = {
   continent: NAKANO.yaw,
   sky: Math.PI,
+  // Plein nord, dos à l'anneau : le monde entier est devant. Même valeur et
+  // même raison que l'île — la caméra est fixe et regarde le nord.
+  beyond: BEYOND_ARRIVAL_YAW,
   // Face au sud, c'est-à-dire face à l'Arbre blafard. Toute la mise en scène de
   // cette carte tient dans ce cap : on arrive, et la seule chose verticale du
   // paysage est déjà dans l'axe du regard.
   rot: MARSH_ARRIVAL_YAW,
 }
 
-export function arrivalYaw(map: MapId) {
+export function arrivalYaw(map: MapId, from?: MapId) {
+  // Même exception, et elle doit être ici aussi : déposer au bon endroit avec
+  // le cap de l'autre porte ferait sortir le joueur face à l'Arbre, c'est-à-dire
+  // dans le dos du chemin qu'il doit reprendre.
+  if (map === 'rot' && from === 'beyond') return MARSH_BEYOND_ARRIVAL_YAW
   return ARRIVAL_YAWS[map]
 }

@@ -2903,6 +2903,375 @@ body:has(.lightbox) .teleport-menu {
   }
 }
 
+/* --- Le défi du maître ------------------------------------------------------ */
+
+/*
+  Le bandeau de chronomètre, en haut au centre.
+
+  Il n'est pas dans `.hud` — il est monté par `App.tsx`, au rang des panneaux —
+  donc il doit refuser les clics explicitement : posé plein largeur en haut de
+  l'écran, il recouvrirait sinon la rangée de réglages et la pastille de quêtes.
+
+  Sa place est **au centre et non dans un coin**, contrairement à tous les autres
+  affichages du jeu. C'est délibéré : pendant deux minutes, c'est la seule chose
+  que le joueur doit pouvoir lire sans quitter des yeux ce qu'il est en train de
+  frapper. Les cœurs sont en haut à gauche parce qu'on les consulte ; le
+  chronomètre est au centre parce qu'on le surveille.
+*/
+.challenge {
+  position: fixed;
+  /*
+    Sous la barre de cœurs et non à sa place.
+
+    Les deux sont centrés en haut, et c'est voulu — ce sont les deux seules
+    informations que le joueur surveille pendant un défi. Mais la rangée de
+    cœurs occupe les cinquante-cinq premiers pixels : posé à quatorze, le
+    bandeau la recouvrait entièrement, c'est-à-dire qu'il cachait la vie pendant
+    les deux seules minutes du jeu où l'on prend des risques.
+  */
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  gap: 26px;
+  padding: 8px 22px;
+  border-radius: 14px;
+  border: 1px solid rgba(199, 155, 255, 0.4);
+  background: rgba(24, 18, 38, 0.66);
+  backdrop-filter: blur(6px);
+  color: var(--hud-fg);
+  pointer-events: none;
+  animation: prompt-in 220ms ease-out;
+}
+
+.challenge__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 78px;
+}
+
+.challenge__label {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.challenge__time,
+.challenge__kills {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.05;
+  /* Chiffres à chasse fixe : sans ça, le bandeau se dilate et se contracte à
+     chaque seconde qui passe, et l'œil suit le mouvement au lieu du nombre. */
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
+}
+
+.challenge__time {
+  color: #d7c6ff;
+}
+
+.challenge__kills {
+  color: #f5dc95;
+}
+
+/* Les cinq dernières secondes. La bordure rougit et le nombre bat : deux
+   signaux pour un seul événement, parce que celui-là ne doit pas se rater. */
+.challenge[data-state='urgent'] {
+  border-color: rgba(232, 68, 60, 0.75);
+  background: rgba(46, 16, 20, 0.72);
+}
+
+.challenge[data-state='urgent'] .challenge__time {
+  color: #ff8d84;
+  animation: challenge-tick 1000ms steps(1, end) infinite;
+}
+
+@keyframes challenge-tick {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.45; }
+}
+
+/*
+  Le décompte, au tiers supérieur de l'écran.
+
+  À la même hauteur que le bandeau de découverte, et pour la même raison : le
+  personnage se pose aux trois quarts de la hauteur du cadre, et un chiffre de
+  cent pixels planté au centre le recouvrirait entièrement — or on court déjà
+  pendant le décompte.
+*/
+.challenge__cue {
+  position: fixed;
+  top: 26%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  pointer-events: none;
+  font-size: 88px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #f5dc95;
+  text-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.6),
+    0 0 40px rgba(245, 220, 149, 0.45);
+}
+
+/*
+  Le battement, relancé à la main par la boucle du chronomètre.
+
+  Chaque chiffre naît grand et transparent, puis se pose : c'est ce qui donne
+  au décompte sa pulsation sans qu'aucun état React ne change.
+*/
+.challenge__cue--beat {
+  animation: challenge-beat 900ms cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+}
+
+@keyframes challenge-beat {
+  0% { opacity: 0; transform: translateX(-50%) scale(1.5); }
+  22% { opacity: 1; transform: translateX(-50%) scale(1); }
+  70% { opacity: 1; transform: translateX(-50%) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) scale(0.92); }
+}
+
+/*
+  Les deux panneaux du défi.
+
+  Ils empruntent `.gameover` et `.gameover__panel` — voile sombre, carte centrée,
+  mêmes animations — parce que les écrans modaux du jeu doivent se reconnaître
+  avant d'être lus. Ce que cette classe ajoute est une teinte : le violet de
+  l'Outremonde à la place du vert du continent.
+*/
+.challenge-modal {
+  background: radial-gradient(
+    120% 90% at 50% 45%,
+    rgba(28, 18, 46, 0.55) 0%,
+    rgba(10, 6, 18, 0.82) 100%
+  );
+}
+
+.challenge-modal__panel {
+  max-width: 420px;
+  border-color: rgba(199, 155, 255, 0.28);
+  background: linear-gradient(158deg, rgba(44, 34, 66, 0.96) 0%, rgba(20, 14, 32, 0.97) 55%);
+}
+
+.challenge-modal__who {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #c79bff;
+  opacity: 0.85;
+}
+
+.challenge-modal__body {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  opacity: 0.85;
+}
+
+/* Le score, en très grand : c'est la seule chose que le joueur est venu lire. */
+.challenge-modal__score {
+  margin: 2px 0 0;
+  font-size: 68px;
+  line-height: 1;
+  color: #f5dc95;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 34px rgba(245, 220, 149, 0.4);
+}
+
+.challenge-modal__rank {
+  margin: 6px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #c79bff;
+}
+
+.challenge-modal__best {
+  margin: 14px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+}
+
+.challenge-modal__best--new {
+  opacity: 1;
+  color: #f5dc95;
+  font-weight: 600;
+}
+
+.challenge-modal__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+/*
+  Le refus : même forme, sans le fond. Dire non doit être possible sans être
+  proposé au même niveau que dire oui.
+
+  Le sélecteur descend du panneau, et il le faut : `.gameover__panel button`
+  compte une classe **et** un élément, donc il l'emportait sur une classe seule
+  et le bouton restait vert. Deux boutons verts côte à côte, c'est deux fois la
+  même proposition.
+*/
+.challenge-modal__panel .challenge-modal__ghost {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.18);
+  color: rgba(246, 242, 228, 0.7);
+}
+
+.challenge-modal__panel .challenge-modal__ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* --- Arrivée sur l'Outremonde ---------------------------------------------- */
+
+/*
+  L'embrasement d'arrivée.
+
+  Doré et jamais blanc pur, comme l'éclair de la frappe d'annihilation : un jeu
+  de navigateur n'a pas le droit de faire clignoter un plein écran. Une seule
+  montée, un seul effacement, et il commence déjà à 78 % — il prend le relais du
+  voile de braises qui achève de se lever.
+*/
+.beyond-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: radial-gradient(
+    130% 100% at 50% 55%,
+    rgba(255, 248, 230, 0.95) 0%,
+    rgba(226, 200, 255, 0.85) 45%,
+    rgba(150, 120, 230, 0.7) 100%
+  );
+  opacity: 0;
+  animation: beyond-flash 1600ms ease-out forwards;
+}
+
+@keyframes beyond-flash {
+  0% { opacity: 0.78; }
+  100% { opacity: 0; }
+}
+
+/*
+  Le titre. Plus haut que les bandeaux de découverte (22 %) parce qu'il est plus
+  grand, et centré sur trois lignes plutôt que deux.
+*/
+.beyond-title {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 44px;
+  pointer-events: none;
+  text-align: center;
+  color: var(--hud-fg);
+  /*
+    Le titre part **après** l'embrasement, pas avec lui.
+
+    Mesuré sur la première version, les deux commençaient ensemble : le texte
+    blanc naissait sur un fond lavande à 78 % d'opacité, c'est-à-dire sur
+    lui-même, et les quatre premiers dixièmes étaient illisibles. Le retard le
+    fait monter pendant que la lumière redescend, et le contraste se creuse au
+    lieu de se combler. `both` et non `forwards` : sans le mode d'entrée, le
+    titre resterait affiché en pleine opacité pendant son propre délai.
+  */
+  animation: beyond-title 5200ms ease-out 380ms both;
+}
+
+.beyond-title__kicker {
+  font-size: 11px;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.beyond-title__name {
+  font-size: 46px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #f2e6ff;
+  /* Le halo violet : la même signature que le bandeau du portail, en plus large.
+     C'est la seule chose qui relie visuellement cet écran à l'anneau qu'on vient
+     de franchir. */
+  text-shadow:
+    0 3px 14px rgba(0, 0, 0, 0.6),
+    0 0 42px rgba(139, 63, 240, 0.7);
+}
+
+.beyond-title__hint {
+  margin-top: 6px;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  opacity: 0.8;
+}
+
+@keyframes beyond-title {
+  0% { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.96); }
+  12% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  78% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(1); }
+}
+
+/* Écran étroit : le bandeau de chronomètre passe sous les cœurs, et le titre
+   d'arrivée doit tenir sur la largeur d'un téléphone. */
+@media (max-width: 560px) {
+  .challenge {
+    top: auto;
+    bottom: 104px;
+    gap: 18px;
+    padding: 6px 16px;
+  }
+
+  .challenge__time,
+  .challenge__kills {
+    font-size: 21px;
+  }
+
+  .challenge__cue {
+    font-size: 62px;
+  }
+
+  .beyond-title {
+    padding: 14px 20px;
+  }
+
+  .beyond-title__name {
+    font-size: 30px;
+  }
+
+  .beyond-title__hint {
+    font-size: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Le battement du décompte et celui du chronomètre sont des décorations : le
+     chiffre reste lisible sans eux. L'embrasement, lui, est réduit à un fondu
+     court — il ne disparaît pas, parce qu'il masque la frame la plus lourde de
+     la partie. */
+  .challenge__cue--beat,
+  .challenge[data-state='urgent'] .challenge__time {
+    animation: none;
+    opacity: 1;
+  }
+
+  .beyond-flash { animation-duration: 600ms; }
+  .beyond-title { animation-duration: 3600ms; animation-delay: 200ms; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .inventory,
   .inventory__panel,

@@ -72,6 +72,10 @@ export const BLAST_FORWARD_BY_MAP: Record<MapId, number> = {
   continent: BLAST_FORWARD,
   sky: 20,
   rot: 20,
+  // L'Outremonde est un continent, et sa brume est repoussée à trois cents : la
+  // frappe peut y tomber aussi loin que sur le premier, et elle doit — c'est la
+  // seule carte où l'on voit vraiment jusque-là.
+  beyond: BLAST_FORWARD,
 }
 
 // --- Chronologie ------------------------------------------------------------

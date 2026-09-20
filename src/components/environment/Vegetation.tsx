@@ -17,16 +17,9 @@ import {
 } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { BIOMES } from '../../config/biomes'
-import { underBridge } from '../../config/bridge'
-import { LANDMARKS } from '../../config/landmarks'
-import { PLAYER } from '../../config/gameplay'
-import {
-  WORLD,
-  classifyBiome,
-  sampleHeight,
-  sampleSlope,
-  seededRandom,
-} from '../../config/world'
+import { CONTINENT_SHAPE } from '../../config/continentShape'
+import { seededRandom } from '../../config/world'
+import type { WorldShape } from '../../config/worldShape'
 import { useQualityStore } from '../../store/useQualityStore'
 import { toonGradient } from '../models/toonGradient'
 import { faceted } from './faceted'
@@ -55,8 +48,6 @@ type PropKind =
 
 /** Points candidats tirés sur la carte. Beaucoup sont rejetés (mer, falaises). */
 const SAMPLE_COUNT = 14000
-/** Rayon dégagé de gros props autour du point d'apparition. */
-const SPAWN_CLEARANCE = 7
 /** Pente au-delà de laquelle plus rien ne pousse : c'est une falaise. */
 const MAX_SLOPE = 0.85
 /** Au-delà de cette échelle, un rocher devient un obstacle physique. */
@@ -175,7 +166,7 @@ type Buckets = Record<PropKind, ScatterItem[]>
  * décide de ce qui pousse. Le générateur est initialisé par une graine fixe —
  * sans ça la carte se redessinerait à chaque rechargement.
  */
-function generateScatter(density: number): Buckets {
+function generateScatter(shape: WorldShape, density: number): Buckets {
   const buckets: Buckets = {
     trunk: [],
     canopy: [],
@@ -188,9 +179,9 @@ function generateScatter(density: number): Buckets {
     deadTrunk: [],
   }
 
-  const random = seededRandom(0x5eed)
+  const random = seededRandom(shape.scatterSeed)
   const pick = (list: string[]) => list[Math.floor(random() * list.length)]
-  const margin = WORLD.half - 3
+  const margin = shape.half - 3
 
   // La densité rogne le **nombre de tirages**, pas le résultat d'un tirage
   // complet : la graine étant fixe, les points conservés en qualité réduite
@@ -204,28 +195,26 @@ function generateScatter(density: number): Buckets {
     const spin = random() * Math.PI * 2
     const size = 0.75 + random() * 0.6
 
-    const height = sampleHeight(x, z)
+    const height = shape.height(x, z)
     // Rien ne pousse dans l'eau ni sur une paroi.
-    if (height < WORLD.waterLevel + 0.05) continue
-    if (sampleSlope(x, z) > MAX_SLOPE) continue
-    // Le parvis d'un monument est dégagé. Le test de pente ne l'aurait jamais
-    // rejeté — une terrasse est plate par construction — et des buissons
-    // auraient poussé jusque sous les colonnes.
-    if (
-      LANDMARKS.some(
-        (landmark) => Math.hypot(x - landmark.x, z - landmark.z) < landmark.clearRadius,
-      )
-    )
-      continue
-    // Le pont touche le sable à ses deux extrémités : un palmier planté là
-    // aurait poussé au travers du tablier.
-    if (underBridge(x, z)) continue
+    if (height < shape.waterLevel + 0.05) continue
+    if (shape.slope(x, z) > MAX_SLOPE) continue
+    /*
+      Les zones dallées du monde : parvis de monuments et dessous de pont sur le
+      continent, sanctuaire et arène sur l'Outremonde.
 
-    const biome = classifyBiome(x, z, height)
+      Le test de pente ne les aurait jamais rejetées — une terrasse est plate par
+      construction — et des buissons auraient poussé jusque sous les colonnes. Le
+      semis, lui, n'a pas à savoir ce qu'il évite : il demande « puis-je planter
+      ici ? », et le monde répond.
+    */
+    if (shape.blocked(x, z)) continue
+
+    const biome = shape.biome(x, z, height)
     const style = BIOMES[biome]
     const tilt = (random() - 0.5) * 0.12
     const allowLarge =
-      Math.hypot(x - PLAYER.spawn[0], z - PLAYER.spawn[2]) > SPAWN_CLEARANCE
+      Math.hypot(x - shape.clearing.x, z - shape.clearing.z) > shape.clearing.radius
 
     const at = (lift = 0): [number, number, number] => [x, height + lift, z]
 
@@ -337,14 +326,14 @@ function generateScatter(density: number): Buckets {
       case 'mountain':
         // Montagne : de la roche, et plus rien qui pousse au-dessus de la neige.
         if (roll < 0.4) addRock(1.1 + random() * 1.1)
-        else if (roll < 0.48 && height < WORLD.snowLevel - 2)
+        else if (roll < 0.48 && height < shape.snowLevel - 2)
           buckets.deadTrunk.push({
             position: at(),
             rotation: [tilt * 2, spin, tilt * 2],
             scale: [size, size, size],
             color: style.trunk,
           })
-        else if (roll < 0.6 && height < WORLD.snowLevel - 2) addGrass(0.8)
+        else if (roll < 0.6 && height < shape.snowLevel - 2) addGrass(0.8)
         break
 
       default:
@@ -469,12 +458,20 @@ function Obstacles({ buckets }: { buckets: Buckets }) {
   )
 }
 
-export function Vegetation() {
+/**
+ * Le semis d'un monde — le continent par défaut, l'Outremonde sur demande.
+ *
+ * Même raisonnement que `Terrain` : les règles de semis (ce qui pousse dans
+ * quel biome, à quelle densité, avec quels colliders) n'ont aucune raison de
+ * changer d'un monde à l'autre. Ce qui change, c'est le sol, et il arrive en
+ * prop.
+ */
+export function Vegetation({ shape = CONTINENT_SHAPE }: { shape?: WorldShape } = {}) {
   const density = useQualityStore((state) => state.settings.vegetationDensity)
   // Le semis est refait quand la densité change — c'est le seul moment où il
   // l'est. Un changement de réglage coûte donc une seconde de génération, ce
   // qui est le prix normal d'un changement de qualité graphique.
-  const buckets = useMemo(() => generateScatter(density), [density])
+  const buckets = useMemo(() => generateScatter(shape, density), [shape, density])
 
   if (import.meta.env.DEV) {
     // Compteur d'instances : le poste de coût dominant du décor, et le premier

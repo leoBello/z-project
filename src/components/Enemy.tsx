@@ -29,6 +29,7 @@ import { playerTransform } from '../state/playerTransform'
 import { shake } from '../state/cameraShake'
 import { spawnDeathPuff, spawnDeathRing } from '../state/deathPuffs'
 import { enemyRegistry, updateEnemyMarker } from '../state/enemyRegistry'
+import { sanctuary } from '../state/sanctuary'
 import { hitStop, isHitStopped, now as gameNow } from '../state/gameClock'
 import { dropPickup } from '../state/pickups'
 import {
@@ -492,7 +493,26 @@ export function Enemy({ spawn }: EnemyProps) {
     materials.dark.color.copy(flashing ? WHITE : materials.base.dark)
 
     // --- Machine à états ----------------------------------------------------
-    const frozen = store.phase !== 'playing'
+    /*
+      « Gelé » vaut désormais pour deux raisons, et la seconde est la trêve.
+
+      La première est la pause : panneau ouvert, écran de fin, voyage en cours.
+      La seconde est le Sanctuaire de l'Outremonde — tant que le joueur est sur
+      son dallage, aucune bête ne le poursuit ni ne le frappe.
+
+      Les deux passent par **la même variable**, et ce n'est pas une économie de
+      lignes : `frozen` est lu à trois endroits de cette boucle — la machine à
+      états, l'armement d'une attaque, et l'annulation d'un coup déjà en
+      préparation — et la trêve doit valoir pour les trois. Un test ajouté au
+      seul premier aurait laissé partir le coup d'un Moblin qui se ramassait
+      déjà quand le joueur a passé la lisière : le pire cas possible, puisque
+      c'est exactement la situation où l'on court se mettre à l'abri.
+
+      `sanctuary.safe` vaut `false` partout ailleurs que sur l'Outremonde — il
+      n'y a que là que quelqu'un l'écrit — donc les trois autres cartes ne
+      changent pas d'un iota.
+    */
+    const frozen = store.phase !== 'playing' || sanctuary.safe
     let desired: EnemyState = 'idle'
 
     if (frozen) {

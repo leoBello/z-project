@@ -42,13 +42,47 @@
       "toward": {
         "continent": "Return to the mainland",
         "sky": "Cross to the Sky Island",
-        "rot": "Step through the portal"
+        "rot": "Step through the portal",
+        "beyond": "Step into the Beyond"
       }
     },
     "maps": {
       "continent": "Mainland",
       "sky": "Sky Island",
-      "rot": "Aeonia Marsh"
+      "rot": "Aeonia Marsh",
+      "beyond": "Beyond"
+    },
+    "beyond": {
+      "kicker": "Beyond",
+      "name": "The Beyond",
+      "hint": "The Sanctuary keeps you safe. Past the flagstones, nothing will."
+    },
+    "challenge": {
+      "talk": "Talk to the master",
+      "senseiName": "Goku",
+      "offerTitle": "The master's challenge",
+      "offerBody": "Hey there! You look strong, I can tell by the way you walk. But are you fast? Two minutes, this whole world, and we count the ones you put down. So, shall we?",
+      "offerBest": "Your best score: {count}",
+      "accept": "Take the challenge",
+      "decline": "Another time",
+      "ready": "Ready?",
+      "go": "GO!",
+      "killsLabel": "Downed",
+      "timeLabel": "Time left",
+      "resultTitle": "Challenge over",
+      "resultFailed": "You went down",
+      "resultNone": "No enemy downed.",
+      "resultScoreOne": "{count} enemy downed.",
+      "resultScoreMany": "{count} enemies downed.",
+      "resultBest": "Best this run: {count}",
+      "resultNewBest": "New record!",
+      "close": "Back to the Sanctuary",
+      "ranks": {
+        "novice": "Beginner",
+        "warrior": "Fighter",
+        "master": "Weapon master",
+        "legend": "Legend of the Beyond"
+      }
     },
     "quality": {
       "label": "Graphics quality",
@@ -168,6 +202,10 @@
         "aeonia": {
           "name": "The Marsh of Aeonia",
           "goal": "A portal has opened at the summit, and it does not lead home. On the other side: red water, a dead tree, a stone causeway running to its foot. Something waits there, and has never left."
+        },
+        "beyond": {
+          "name": "The Beyond",
+          "goal": "One last ring opened at the foot of the Tree. Behind it, a whole world, and a master who keeps score."
         }
       }
     },

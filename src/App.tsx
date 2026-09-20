@@ -30,7 +30,9 @@ import { PortfolioDialog } from './components/portfolio/PortfolioDialog'
 import { QuestButton } from './components/quests/QuestButton'
 import { QuestPanel } from './components/quests/QuestPanel'
 import { StrikeArc } from './components/StrikeArc'
+import { BeyondArrival } from './components/BeyondArrival'
 import { BootScreen } from './components/BootScreen'
+import { ChallengeHUD } from './components/ChallengeHUD'
 import { TeleportMenu } from './components/TeleportMenu'
 import { TeleportOverlay } from './components/TeleportOverlay'
 import { TouchControls } from './components/TouchControls'
@@ -154,6 +156,21 @@ export default function App() {
           deux ne peuvent pas être ouverts ensemble — chacun met la partie en
           pause, et leurs pastilles sont désactivées hors de `playing`. */}
       <QuestPanel />
+      {/*
+        Le défi du maître : sa proposition, son décompte, son chronomètre et son
+        résultat. Posé **avant** la révélation de coffre et le voyage, pour la
+        raison qui range déjà l'inventaire ici : ses deux panneaux mettent la
+        partie en pause, ils doivent donc recouvrir le HUD — mais jamais un
+        coffre qui s'ouvre, ni un voile de transition, ni l'écran de démarrage.
+
+        Monté en permanence et non sous condition de carte : il ne rend rien tant
+        qu'aucun défi ne court, et le tester ici aurait mis dans `App.tsx` une
+        troisième connaissance de la carte courante.
+      */}
+      <ChallengeHUD />
+      {/* La fanfare d'arrivée sur l'Outremonde, au même rang et pour les mêmes
+          raisons. Elle ne rend rien ailleurs, ni après ses six secondes. */}
+      <BeyondArrival />
       {/* La révélation d'un coffre passe devant tout le reste : c'est le seul
           moment du jeu où l'écran a une seule chose à dire. */}
       <ChestReveal />

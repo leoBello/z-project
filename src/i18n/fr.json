@@ -42,13 +42,47 @@
       "toward": {
         "continent": "Revenir sur le continent",
         "sky": "Gagner l'Île Céleste",
-        "rot": "Franchir le portail"
+        "rot": "Franchir le portail",
+        "beyond": "Passer dans l'Outremonde"
       }
     },
     "maps": {
       "continent": "Continent",
       "sky": "Île Céleste",
-      "rot": "Marais d'Aeonia"
+      "rot": "Marais d'Aeonia",
+      "beyond": "Outremonde"
+    },
+    "beyond": {
+      "kicker": "Au-delà",
+      "name": "L'Outremonde",
+      "hint": "Le Sanctuaire vous protège. Au-delà du dallage, plus rien ne le fera."
+    },
+    "challenge": {
+      "talk": "Parler au maître",
+      "senseiName": "Sangoku",
+      "offerTitle": "Le défi du maître",
+      "offerBody": "Salut à toi ! Tu as l'air costaud, ça se voit à ta démarche. Mais est-ce que tu es rapide ? Deux minutes, tout ce monde, et on compte ceux que tu mets au tapis. Alors, on essaie ?",
+      "offerBest": "Ton meilleur score : {count}",
+      "accept": "Relever le défi",
+      "decline": "Une autre fois",
+      "ready": "Prêt ?",
+      "go": "GO !",
+      "killsLabel": "Au tapis",
+      "timeLabel": "Temps restant",
+      "resultTitle": "Défi terminé",
+      "resultFailed": "Vous êtes tombé",
+      "resultNone": "Aucun adversaire au tapis.",
+      "resultScoreOne": "{count} adversaire au tapis.",
+      "resultScoreMany": "{count} adversaires au tapis.",
+      "resultBest": "Record de la partie : {count}",
+      "resultNewBest": "Nouveau record !",
+      "close": "Revenir au Sanctuaire",
+      "ranks": {
+        "novice": "Débutant",
+        "warrior": "Combattant",
+        "master": "Maître d'armes",
+        "legend": "Légende de l'Outremonde"
+      }
     },
     "quality": {
       "label": "Qualité graphique",
@@ -168,6 +202,10 @@
         "aeonia": {
           "name": "Le Marais d'Aeonia",
           "goal": "Un portail s'est ouvert au sommet, et il ne ramène pas chez soi. De l'autre côté : une eau rouge, un arbre mort, une chaussée de pierre qui mène à son pied. Quelque chose y attend, et n'en est jamais reparti."
+        },
+        "beyond": {
+          "name": "L'Outremonde",
+          "goal": "Un dernier anneau s'est ouvert au pied de l'Arbre. Derrière, un monde entier, et un maître qui compte les coups."
         }
       }
     },

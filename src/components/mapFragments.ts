@@ -1,4 +1,5 @@
 import type { MapId } from '../types/game'
+import { preloadBeyond } from './beyond/preload'
 import { preloadRotMarsh } from './rot/preload'
 import { preloadSkyIsland } from './skyisland/preload'
 
@@ -22,6 +23,7 @@ const FRAGMENTS: Record<MapId, () => Promise<unknown>> = {
   continent: () => Promise.resolve(),
   sky: preloadSkyIsland,
   rot: preloadRotMarsh,
+  beyond: preloadBeyond,
 }
 
 export function preloadMap(map: MapId) {

@@ -26,7 +26,7 @@ import {
   type MaleniaStrike,
 } from '../config/malenia'
 import { PARRY } from '../config/parry'
-import { ARENA_CENTER, ARENA_R, ENGAGE_R, GROUND_Y } from '../config/rotMarsh'
+import { ARENA_CENTER, ARENA_R, ENGAGE_R } from '../config/rotMarsh'
 import { ROT } from '../config/rotBlight'
 import { shake } from '../state/cameraShake'
 import { spawnDeathPuff, spawnDeathRing } from '../state/deathPuffs'
@@ -180,7 +180,58 @@ if (import.meta.env.DEV) {
   }
 }
 
-export function Malenia() {
+/**
+ * Les deux Malenia du jeu, et ce qui les sépare.
+ *
+ * `aeonia` est **la** Malenia : celle du bassin, au pied de l'Arbre blafard,
+ * dernier combat de la partie. Sa mort est un événement — elle verse un
+ * réceptacle, deux coffres, ferme la cinquième quête et perce l'anneau de
+ * l'Outremonde.
+ *
+ * `outcast` est la Déchue, au centre de l'Outremonde. C'est le même personnage,
+ * le même modèle, les mêmes dix attaques et les mêmes soixante points de vie —
+ * et sa mort ne vaut **rien** qu'une ligne au compteur du défi. C'est tout
+ * l'esprit de cette carte : ce qui était un aboutissement y devient un
+ * adversaire de plus, et le joueur qui l'abat en deux minutes chronomètre a
+ * compris quelque chose sur le chemin parcouru.
+ *
+ * Deux choses lui sont retirées, et une seule est une décision de jeu :
+ *
+ *  - **elle n'écrit pas `arenaFight`.** Ce champ resserre la caméra et verrouille
+ *    le combat ; sur une carte où un chronomètre tourne et où la fuite est une
+ *    tactique, une caméra qui se referme serait une punition ;
+ *  - **elle ne verse pas de pourriture.** Celle-là n'est pas un réglage
+ *    d'équilibrage mais une contrainte : la jauge écarlate est purgée à chaque
+ *    changement de carte et son moteur — reflux, contamination, prélèvement de
+ *    cœurs — est monté avec le Marais et avec lui seul. En verser ici
+ *    remplirait un bandeau que rien ne viderait jamais. Ses dégâts directs, eux,
+ *    sont inchangés.
+ */
+export interface MaleniaProps {
+  /** Son nom au registre des ennemis, à la minimap et à l'offre de parade. */
+  id?: string
+  /** Le centre de son dallage : x, altitude du **sol**, z. */
+  arena?: readonly [number, number, number]
+  /** Altitude de la **surface** sur laquelle elle se pose. Voir la note de spawn. */
+  floorY?: number
+  /** Rayon du dallage, rayon d'engagement, rayon de laisse. */
+  arenaR?: number
+  engageR?: number
+  leashR?: number
+  role?: 'aeonia' | 'outcast'
+}
+
+export function Malenia({
+  id = MALENIA_ID,
+  arena = ARENA_CENTER,
+  floorY = 0.45,
+  arenaR = ARENA_R,
+  engageR = ENGAGE_R,
+  leashR = LEASH_R,
+  role = 'aeonia',
+}: MaleniaProps = {}) {
+  /** Verse-t-elle de la pourriture ? Voir l'en-tête des props. */
+  const soaks = role === 'aeonia'
   const body = useRef<RapierRigidBody>(null)
   const visual = useRef<Group>(null)
   const rig = useMaleniaRig()
@@ -242,25 +293,25 @@ export function Malenia() {
   // sa barre de vie. Le retrait au démontage est indispensable — sans lui, une
   // Malenia morte resterait affichée sur la carte.
   useEffect(() => {
-    enemyRegistry.set(MALENIA_ID, {
+    enemyRegistry.set(id, {
       // `lynel` et non une espèce à elle : le registre indexe la couleur de
       // minimap et la barre du calque par espèce, et lui en donner une
       // quatrième aurait demandé une entrée dans `ENEMIES` — c'est-à-dire des
       // statistiques de patrouille, de détection et de tir qu'elle n'utilise
       // pas. Elle emprunte la famille des boss ; c'en est un.
       kind: 'lynel',
-      x: ARENA_CENTER[0],
-      y: ARENA_CENTER[1],
-      z: ARENA_CENTER[2],
+      x: arena[0],
+      y: arena[1],
+      z: arena[2],
       state: 'idle',
       hp: MALENIA_HP,
       maxHp: MALENIA_HP,
       lastHitAt: -Infinity,
     })
     return () => {
-      enemyRegistry.delete(MALENIA_ID)
+      enemyRegistry.delete(id)
     }
-  }, [])
+  }, [arena, id])
 
   useFrame((_, rawDelta) => {
     const rb = body.current
@@ -299,8 +350,8 @@ export function Malenia() {
         state.popped = true
         group.visible = false
         spawnDeathPuff(position.x, position.y, position.z, DEATH_TINT)
-        spawnDeathRing(position.x, GROUND_Y, position.z, DEATH_TINT)
-        enemyRegistry.delete(MALENIA_ID)
+        spawnDeathRing(position.x, arena[1], position.z, DEATH_TINT)
+        enemyRegistry.delete(id)
       }
       rb.setLinvel({ x: 0, y: rb.linvel().y, z: 0 }, false)
       if (age >= DEATH_REMOVE_MS) setRemoved(true)
@@ -334,7 +385,7 @@ export function Malenia() {
     const frozen = store.phase !== 'playing'
 
     updateEnemyMarker(
-      MALENIA_ID,
+      id,
       position.x,
       position.y,
       position.z,
@@ -355,22 +406,27 @@ export function Malenia() {
       second aurait fait deux endroits où oublier de refermer.
     */
     const fromCenter = Math.hypot(
-      playerTransform.position.x - ARENA_CENTER[0],
-      playerTransform.position.z - ARENA_CENTER[2],
+      playerTransform.position.x - arena[0],
+      playerTransform.position.z - arena[2],
     )
-    if (!state.engaged && fromCenter < ENGAGE_R && !frozen) {
+    if (!state.engaged && fromCenter < engageR && !frozen) {
       state.engaged = true
-      store.startMaleniaFight()
-      track('malenia_engaged', { phase: state.phase })
+      // La Déchue de l'Outremonde n'écrit pas `arenaFight` et ne se déclare pas
+      // au tableau de bord : elle n'est pas un événement de partie, elle est un
+      // ennemi. Voir l'en-tête des props.
+      if (role === 'aeonia') {
+        store.startMaleniaFight()
+        track('malenia_engaged', { phase: state.phase })
+      }
     }
     // Elle relâche si le joueur quitte franchement le bassin — même marge que le
     // Lynel, et pour la même raison : un pas de côté au bord ne doit pas couper
     // le combat en deux.
-    if (state.engaged && fromCenter > ARENA_R * 2) {
+    if (state.engaged && fromCenter > arenaR * 2) {
       state.engaged = false
-      store.endMaleniaFight(false)
+      if (role === 'aeonia') store.endMaleniaFight(false)
       state.pending = null
-      cancelParry(MALENIA_ID)
+      cancelParry(id)
     }
 
     // --- Coup d'épée du joueur ---------------------------------------------
@@ -418,7 +474,7 @@ export function Malenia() {
       state.morphAt = now
       state.pending = null
       state.struck = 0
-      cancelParry(MALENIA_ID)
+      cancelParry(id)
       state.phase = 'goddess'
       setGoddess(true)
       shake(0.22, 520)
@@ -441,7 +497,7 @@ export function Malenia() {
           playerTransform.position.x - puddle.x,
           playerTransform.position.z - puddle.z,
         ) < PUDDLE_R
-      if (inside && !frozen) soakRot(ROT.perSecondInPuddle * delta, now)
+      if (inside && !frozen && soaks) soakRot(ROT.perSecondInPuddle * delta, now)
     }
 
     // --- Déplacement --------------------------------------------------------
@@ -465,11 +521,11 @@ export function Malenia() {
 
     // La laisse : le bassin. Elle n'en sort pas, et il n'y a pas de herse — le
     // lieu enferme, donc c'est le code qui doit tenir la promesse du lieu.
-    const fromArena = Math.hypot(position.x - ARENA_CENTER[0], position.z - ARENA_CENTER[2])
-    if (fromArena > LEASH_R) {
+    const fromArena = Math.hypot(position.x - arena[0], position.z - arena[2])
+    if (fromArena > leashR) {
       const inward = {
-        x: (ARENA_CENTER[0] - position.x) / fromArena,
-        z: (ARENA_CENTER[2] - position.z) / fromArena,
+        x: (arena[0] - position.x) / fromArena,
+        z: (arena[2] - position.z) / fromArena,
       }
       // On annule la seule composante sortante, on ne la renverse pas : la
       // pousser vers le centre l'aurait fait rebondir sur sa propre laisse.
@@ -519,7 +575,7 @@ export function Malenia() {
           allumé trois secondes durant, ce qui ne dit plus rien.
         */
         const first = choice.strikes[0]
-        if (first.parryable) offerParry(MALENIA_ID, state.strikeOrigin + first.at)
+        if (first.parryable) offerParry(id, state.strikeOrigin + first.at)
       }
     }
 
@@ -536,8 +592,8 @@ export function Malenia() {
 
         // L'offre du coup suivant, dès que celui-ci est passé.
         const next = attack.strikes[state.struck]
-        if (next?.parryable) offerParry(MALENIA_ID, state.strikeOrigin + next.at)
-        else cancelParry(MALENIA_ID)
+        if (next?.parryable) offerParry(id, state.strikeOrigin + next.at)
+        else cancelParry(id)
       }
 
       if (state.struck >= attack.strikes.length) {
@@ -608,7 +664,7 @@ export function Malenia() {
         boss du jeu, des protections gagnées contre l'avant-dernier.
       */
       store.damagePlayer(strike.damage)
-      if (strike.rot) soakRot(strike.rot, now)
+      if (strike.rot && soaks) soakRot(strike.rot, now)
 
       /*
         La régénération — *la* mécanique du personnage.
@@ -643,7 +699,7 @@ export function Malenia() {
       */
       const ceiling = state.phase === 'goddess' ? MORPH_AT : MALENIA_HP
       state.hp = Math.min(ceiling, state.hp + amount)
-      const marker = enemyRegistry.get(MALENIA_ID)
+      const marker = enemyRegistry.get(id)
       if (marker) {
         marker.hp = state.hp
         marker.lastHitAt = at
@@ -656,7 +712,7 @@ export function Malenia() {
       hit.current = at + HIT_FLASH_MS
       playHit()
 
-      const marker = enemyRegistry.get(MALENIA_ID)
+      const marker = enemyRegistry.get(id)
       if (marker) {
         marker.lastHitAt = at
         marker.hp = Math.max(0, runtime.hp)
@@ -669,7 +725,7 @@ export function Malenia() {
       runtime.pending = null
       // Sans ça, la tuer pendant un télégraphe laisse l'anneau de parade allumé
       // pour l'éternité, sous un joueur qui n'a plus rien à parer.
-      cancelParry(MALENIA_ID)
+      cancelParry(id)
       if (marker) {
         marker.state = 'dead'
         marker.hp = 0
@@ -680,7 +736,17 @@ export function Malenia() {
       // La mesure d'audience part du store, avec le reste de ce que la victoire
       // déclenche : deux appels depuis deux endroits auraient fini par compter
       // deux fois, ou pas du tout.
-      store.endMaleniaFight(true, [position.x, position.y, position.z])
+      /*
+        Ce que sa mort vaut, et c'est le seul embranchement de la boucle sur le
+        rôle. La Lame de Miquella clôt une partie ; la Déchue avance un compteur
+        de deux minutes. Ce fichier sait la faire tomber, pas ce que sa chute
+        vaut — c'est le store qui décide, comme pour les quatre rôles du Lynel.
+      */
+      if (role === 'aeonia') {
+        store.endMaleniaFight(true, [position.x, position.y, position.z])
+      } else {
+        store.registerKill()
+      }
       return true
     }
   })
@@ -700,7 +766,7 @@ export function Malenia() {
         dans le sol, que Rapier devait ensuite expulser. Le dixième d'unité de
         marge lui laisse tomber sur ses pieds.
       */
-      position={[ARENA_CENTER[0], 0.45 + BODY_HALF_HEIGHT + BODY_RADIUS + 0.1, ARENA_CENTER[2] - 4]}
+      position={[arena[0], floorY + BODY_HALF_HEIGHT + BODY_RADIUS + 0.1, arena[2] - 4]}
       lockRotations
       mass={3}
       friction={0}
