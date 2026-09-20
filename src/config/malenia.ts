@@ -34,12 +34,18 @@ export { ARENA_CENTER, ARENA_R }
  * exactement le geste qui fait reposer la manette. Quarante-quatre en tout
  * aurait vidé la métamorphose de son poids.
  *
- * **Quarante-quatre, métamorphose à vingt-deux — descendu de soixante après la
- * première partie jouée.** Soixante tenait sur le papier et pas à la manette :
- * contre un adversaire qui se soigne et dont chaque touche coûte deux à quatre
- * cœurs, la première moitié du combat durait déjà plus longtemps que le Lynel
- * doré entier. Le combat garde ses deux formes, ses dix attaques et sa chute
- * d'armure ; il tient maintenant dans une durée qu'on accepte de rejouer.
+ * **Cinquante-six, métamorphose à vingt-huit.** Soixante au premier jet,
+ * quarante-quatre après la première partie, cinquante-six après la seconde — et
+ * le va-et-vient dit quelque chose qu'il vaut mieux écrire que répéter : *sa
+ * barre n'est pas le bon levier*. À soixante elle était longue, à quarante-quatre
+ * elle fondait, et dans les deux cas le combat se jouait de la même façon. Ce qui
+ * la rend redoutable est ce qu'elle fait pendant que la barre descend — sa
+ * cadence, sa régénération, sa vitesse — et c'est là que porte le rehaussement.
+ *
+ * Cinquante-six est donc un arbitrage et non une ambition : quatre coups d'épée
+ * punis de plus qu'à quarante-quatre, assez pour qu'une seule bonne séquence ne
+ * suffise plus, pas assez pour rendre la seconde moitié interminable — le
+ * plafond de soin de la phase II la borne de toute façon à vingt-huit.
  *
  * **Une seule barre, et c'est une économie qui n'était pas prévue.** La maquette
  * demandait une seconde barre vide sous la première pour annoncer la phase II.
@@ -47,7 +53,7 @@ export { ARENA_CENTER, ARENA_R }
  * `CombatOverlay` n'a rien à apprendre, et le joueur voit la barre descendre
  * vers un milieu qu'il peut lire.
  */
-export const MALENIA_HP = 44
+export const MALENIA_HP = 56
 
 /** Seuil de la métamorphose, en points de vie restants. */
 export const MORPH_AT = MALENIA_HP / 2
@@ -91,17 +97,21 @@ export const MORPH_MS = 2200
  * c'est-à-dire que la mécanique signature du personnage s'évaporait exactement
  * pour les joueurs les mieux équipés.
  *
- * Deux points sur quarante-quatre, soit **4,5 % de sa vie par touche**, et 11 %
+ * Trois points sur cinquante-six, soit **5,4 % de sa vie par touche**, et 14 %
  * sur la saisie. L'écart selon l'équipement demeure — il est inhérent au jeu, et
  * le Lynel doré a le même — mais il porte sur une valeur qu'on peut raisonner :
- * cinq touches encaissées lui rendent un quart de sa barre, quel que soit le
- * joueur.
+ * cinq touches encaissées lui rendent plus du quart de sa barre, quel que soit
+ * le joueur.
  *
- * C'était le nombre annoncé comme le plus susceptible de bouger après la
- * première partie, et il a bougé : 5 % la rendaient increvable pour un joueur
- * qui encaisse un peu, parce que la régénération se cumulait avec des dégâts
- * déjà trop élevés. Baisser les deux ensemble était nécessaire — l'un sans
- * l'autre n'aurait rien changé au ressenti.
+ * **Il a bougé deux fois, et le second mouvement corrige le premier.** Descendu à
+ * 4,5 % parce que la régénération se cumulait alors avec des dégâts trop élevés,
+ * il a emporté avec lui la mécanique signature du personnage : à deux points par
+ * touche, encaisser redevenait un échange acceptable — et un boss avec qui on
+ * peut échanger coup pour coup n'est plus celui-là. Remonté ici **sans** remonter
+ * les dégâts de la lame : c'est le soin qui doit faire peur, pas la barre de
+ * cœurs. Les deux disent « ne te fais pas toucher », mais l'un le dit en
+ * punissant l'erreur et l'autre en annulant le travail — et seul le second est
+ * elle.
  *
  * **La parade ne lui rend rien**, et c'était la question 02 de la maquette. Dans
  * le jeu d'origine, même bloqué le coup la soigne, et c'est célèbre pour être
@@ -109,8 +119,8 @@ export const MORPH_MS = 2200
  * qui la fait passer de bonne idée à obligation. C'est le seul écart de fidélité
  * assumé de tout le combat.
  */
-export const LIFESTEAL = 2
-export const LIFESTEAL_GRAB = 5
+export const LIFESTEAL = 3
+export const LIFESTEAL_GRAB = 8
 
 /**
  * Multiplicateur de dégâts pendant l'ouverture d'une parade réussie.
@@ -134,12 +144,20 @@ export const PUNISH_MULTIPLIER = 3
  * précédente. Le joueur n'avait jamais le temps de se replacer, encore moins de
  * frapper.
  *
- * Une demi-seconde partout plutôt qu'un rallongement des dix récupérations : la
+ * Une pause commune plutôt qu'un rallongement des dix récupérations : la
  * récupération dit ce que *cette* attaque coûte à sa lanceuse, la respiration dit
  * le rythme du combat. Les mélanger aurait rendu impossible de régler l'un sans
- * déplacer l'autre.
+ * déplacer l'autre — et c'est exactement ce réglage-là qu'il a fallu reprendre.
+ *
+ * **Deux cent quarante, et non cinq cents.** Une demi-seconde ajoutée aux dix
+ * récupérations faisait, avec elles, près d'une seconde et demie de vide entre
+ * deux séquences : le joueur se replaçait, frappait deux fois, et *attendait*.
+ * Un boss qui attend n'est pas difficile, il est lent — et c'était le reproche
+ * le plus juste qu'on pouvait faire à la version précédente. La respiration
+ * reste, parce que la raison qui l'a fait naître tient toujours ; elle ne tient
+ * plus la manette à la place du joueur.
  */
-export const BREATH_MS = 500
+export const BREATH_MS = 240
 
 /** Un coup dans une séquence. */
 export interface MaleniaStrike {
@@ -225,8 +243,8 @@ export const MALENIA_ATTACKS: Record<MaleniaAttackId, MaleniaAttack> = {
     range: 5,
     strikes: [blade(0, 3.4, 1.3, 2), blade(340, 3.4, 1.3, 2)],
     phase: 'blade',
-    cooldownMs: 2000,
-    recoveryMs: 620,
+    cooldownMs: 1800,
+    recoveryMs: 520,
     weight: 3,
   },
 
@@ -250,8 +268,8 @@ export const MALENIA_ATTACKS: Record<MaleniaAttackId, MaleniaAttack> = {
       blade(720, 3.8, 0.8, 1),
     ],
     phase: 'blade',
-    cooldownMs: 3600,
-    recoveryMs: 700,
+    cooldownMs: 2800,
+    recoveryMs: 620,
     weight: 2,
   },
 
@@ -267,12 +285,19 @@ export const MALENIA_ATTACKS: Record<MaleniaAttackId, MaleniaAttack> = {
     // 520 et non 380 : c'était le coup le plus rapide du jeu sur une portée de
     // 5,4, donc un coup qu'on encaissait sans l'avoir vu partir. Il doit punir
     // le pas en arrière, pas le fait de ne pas lire dans les pensées.
+    //
+    // **Le rehaussement ne le raccourcit pas**, et c'est la règle de tout le
+    // rehaussement : aucun télégraphe parable de cette table ne redescend sous
+    // 460 ms. Ce qui lui a été rendu, c'est la cadence, la portée du soin et le
+    // prix d'une touche — jamais la lisibilité. Un boss difficile est un boss
+    // qu'on lit et qu'on n'arrive pas à suivre ; un boss qu'on ne voit pas est
+    // seulement injuste, et l'injustice ne se rejoue pas.
     telegraphMs: 520,
     range: 7,
     strikes: [{ ...blade(0, 5.4, 0.22, 2), relocate: true }],
     phase: 'blade',
-    cooldownMs: 2600,
-    recoveryMs: 640,
+    cooldownMs: 2000,
+    recoveryMs: 560,
     weight: 3,
   },
 
@@ -290,8 +315,8 @@ export const MALENIA_ATTACKS: Record<MaleniaAttackId, MaleniaAttack> = {
     range: 3.2,
     strikes: [{ at: 0, reach: 2.6, arc: Math.PI, damage: 2, parryable: false }],
     phase: 'blade',
-    cooldownMs: 3200,
-    recoveryMs: 560,
+    cooldownMs: 2400,
+    recoveryMs: 480,
     weight: 2,
   },
 
@@ -300,20 +325,21 @@ export const MALENIA_ATTACKS: Record<MaleniaAttackId, MaleniaAttack> = {
 
     Elle recule d'un pas, ouvre la main de chair, et fond. Sept cents
     millisecondes de télégraphe, donc largement lisible : ce n'est pas un piège,
-    c'est une punition annoncée. **Six points de vie rendus**, soit trois fois
-    l'ordinaire : c'est le coup qu'il faut absolument ne pas encaisser, et le
-    seul qui ne se pare pas parce qu'il ne vient pas de la lame.
+    c'est une punition annoncée. **Huit points de vie rendus**, près de trois fois
+    l'ordinaire — un septième de sa barre offert en un geste : c'est le coup qu'il
+    faut absolument ne pas encaisser, et le seul qui ne se pare pas parce qu'il ne
+    vient pas de la lame.
   */
   grab: {
     id: 'grab',
     telegraphMs: 700,
     range: 3,
     strikes: [
-      { at: 0, reach: 2.4, arc: 0.35, damage: 2, parryable: false, lifesteal: LIFESTEAL_GRAB },
+      { at: 0, reach: 2.4, arc: 0.35, damage: 3, parryable: false, lifesteal: LIFESTEAL_GRAB },
     ],
     phase: 'blade',
-    cooldownMs: 9000,
-    recoveryMs: 900,
+    cooldownMs: 6500,
+    recoveryMs: 800,
     weight: 1,
   },
 
@@ -325,14 +351,16 @@ export const MALENIA_ATTACKS: Record<MaleniaAttackId, MaleniaAttack> = {
     raison de mettre ce personnage dans ce jeu.
 
     Les deux premières rafales **balaient devant elle** : elles se fuient, et le
-    jeu a une course à 7 unités par seconde pour une portée de 7 — la fuite
+    jeu a une course à 7 unités par seconde pour une portée de 6,5 — la fuite
     marche, tout juste. La troisième se **replace sur le joueur** : aucune
     distance n'en sort. Fuir les deux premières puis revenir parer la troisième
     est la traduction exacte de la réponse du jeu d'origine, et elle n'a demandé
     aucune mécanique nouvelle.
 
-    Sa récupération est la plus longue du combat (1200 ms) : c'est le prix de
-    l'avoir lue.
+    Sa récupération (1100 ms) est la deuxième du combat, derrière Aeonia seule :
+    c'est le prix de l'avoir lue. Sa recharge, elle, est tombée de vingt secondes
+    à treize — à vingt, un joueur pouvait traverser toute une phase sans la
+    revoir, et c'est la pièce autour de laquelle le combat est construit.
   */
   waterfowl: {
     id: 'waterfowl',
@@ -341,20 +369,20 @@ export const MALENIA_ATTACKS: Record<MaleniaAttackId, MaleniaAttack> = {
     strikes: [
       // Première rafale : trois coups (quatre à l'origine — dix touches faisaient
       // dix cœurs, soit deux barres pleines pour une seule attaque).
-      blade(0, 6, 0.9, 1),
-      blade(140, 6, 0.9, 1),
-      blade(280, 6, 0.9, 1),
+      blade(0, 6.5, 0.9, 1),
+      blade(140, 6.5, 0.9, 1),
+      blade(280, 6.5, 0.9, 1),
       // Pause de 550, puis deux coups.
-      blade(880, 5.5, 0.9, 1),
-      blade(990, 5.5, 0.9, 1),
+      blade(880, 6, 0.9, 1),
+      blade(990, 6, 0.9, 1),
       // Pause de 700, puis elle fond sur le joueur.
-      { ...blade(1690, 6, 0.9, 1), relocate: true },
-      blade(1810, 6, 0.9, 1),
-      blade(1930, 6, 0.9, 1),
+      { ...blade(1690, 6.5, 0.9, 1), relocate: true },
+      blade(1810, 6.5, 0.9, 1),
+      blade(1930, 6.5, 0.9, 1),
     ],
     phase: 'blade',
-    cooldownMs: 20000,
-    recoveryMs: 1500,
+    cooldownMs: 13000,
+    recoveryMs: 1100,
     weight: 2,
   },
 
@@ -370,7 +398,7 @@ export const MALENIA_ATTACKS: Record<MaleniaAttackId, MaleniaAttack> = {
     c'est une contamination garantie — quatre cœurs sur les dix secondes qui
     suivent, pendant lesquelles elle continue à frapper.
 
-    Sa récupération de 1800 ms est la plus grande ouverture du combat, et c'est
+    Sa récupération de 1500 ms est la plus grande ouverture du combat, et c'est
     ce qui la rend juste : le coup le plus cher à encaisser est aussi celui qui
     paie le plus quand on le lit.
   */
@@ -383,7 +411,7 @@ export const MALENIA_ATTACKS: Record<MaleniaAttackId, MaleniaAttack> = {
         at: 0,
         reach: ARENA_R,
         arc: Math.PI,
-        damage: 3,
+        damage: 4,
         parryable: false,
         puddle: true,
         // La moitié de la jauge et non son plein : une contamination garantie
@@ -395,8 +423,11 @@ export const MALENIA_ATTACKS: Record<MaleniaAttackId, MaleniaAttack> = {
       },
     ],
     phase: 'goddess',
-    cooldownMs: 42000,
-    recoveryMs: 1800,
+    // Vingt-six secondes et non quarante-deux : à quarante-deux, le premier geste
+    // de la phase II en était souvent le seul, et une phase qui s'ouvre sur une
+    // signature qu'on ne revoit jamais n'a pas de signature.
+    cooldownMs: 26000,
+    recoveryMs: 1500,
     weight: 2,
   },
 
@@ -418,7 +449,7 @@ export const MALENIA_ATTACKS: Record<MaleniaAttackId, MaleniaAttack> = {
         at: 0,
         reach: 4.5,
         arc: Math.PI,
-        damage: 2,
+        damage: 3,
         parryable: false,
         puddle: true,
         rot: ROT.perHit,
@@ -426,8 +457,8 @@ export const MALENIA_ATTACKS: Record<MaleniaAttackId, MaleniaAttack> = {
       },
     ],
     phase: 'goddess',
-    cooldownMs: 6500,
-    recoveryMs: 800,
+    cooldownMs: 5000,
+    recoveryMs: 700,
     weight: 3,
   },
 
@@ -444,12 +475,12 @@ export const MALENIA_ATTACKS: Record<MaleniaAttackId, MaleniaAttack> = {
     telegraphMs: 700,
     range: 12,
     strikes: [
-      { at: 0, reach: 7, arc: 0.5, damage: 1, parryable: false, relocate: true, rot: ROT.perHit },
+      { at: 0, reach: 7, arc: 0.5, damage: 2, parryable: false, relocate: true, rot: ROT.perHit },
       { at: 380, reach: 4.4, arc: 0.3, damage: 1, parryable: false, rot: ROT.perHit },
     ],
     phase: 'goddess',
-    cooldownMs: 5000,
-    recoveryMs: 760,
+    cooldownMs: 3600,
+    recoveryMs: 660,
     weight: 3,
   },
 
@@ -467,7 +498,7 @@ export const MALENIA_ATTACKS: Record<MaleniaAttackId, MaleniaAttack> = {
   */
   phantoms: {
     id: 'phantoms',
-    telegraphMs: 1100,
+    telegraphMs: 950,
     range: 10,
     strikes: [
       { ...blade(0, 4, 0.3, 1), phantom: true, rot: ROT.perHit },
@@ -475,8 +506,8 @@ export const MALENIA_ATTACKS: Record<MaleniaAttackId, MaleniaAttack> = {
       { ...blade(700, 4.4, 0.3, 1), phantom: true, relocate: true, rot: ROT.perHit },
     ],
     phase: 'goddess',
-    cooldownMs: 11000,
-    recoveryMs: 900,
+    cooldownMs: 7500,
+    recoveryMs: 800,
     weight: 2,
   },
 }
@@ -525,8 +556,28 @@ export const PUDDLE_MS = 10000
  * pied**, sinon le combat n'aurait aucune respiration. Ce qui rattrape le joueur
  * n'est jamais sa vitesse de déplacement, ce sont ses bonds — d'où l'écart entre
  * `range` et la portée des coups dans toute la table ci-dessus.
+ *
+ * **6,6 et non 5,6, et c'est une compensation et non une accélération.**
+ *
+ * Cette constante ment sur ce qu'elle mesure, et il faut le dire ici parce que
+ * rien d'autre ne le dira : **elle n'avance pas pendant une séquence** (voir la
+ * garde `pending === null` dans `Malenia.tsx`). Sa vitesse de poursuite réelle
+ * n'est donc pas 5,6 ni 6,6 — c'est cette valeur multipliée par la fraction de
+ * temps où elle n'attaque pas, et cette fraction dépend de `BREATH_MS` et des
+ * dix récupérations.
+ *
+ * D'où le piège que ce rehaussement a failli refermer sur lui-même : resserrer
+ * la cadence la cloue sur place *plus souvent*. Simulé sur cent vingt secondes
+ * de phase I, elle était libre 58 % du temps à l'ancienne cadence et ne l'est
+ * plus que 48 % — à 5,6, sa poursuite utile serait tombée de 3,2 à 2,7 unités
+ * par seconde, et un boss plus agressif serait devenu *plus facile à semer*.
+ *
+ * 6,6 remet la poursuite utile à 3,2 : exactement là où elle était. La fuite
+ * garde donc précisément la marge qu'elle avait — la règle « on peut la fuir à
+ * pied » est intacte — et ce qui change est la seule chose qu'on voulait changer,
+ * la densité de ses attaques.
  */
-export const WALK_SPEED = 5.6
+export const WALK_SPEED = 6.6
 
 /** Distance sous laquelle elle cesse d'avancer : elle est déjà à portée. */
 export const CLOSE_ENOUGH = 2.4

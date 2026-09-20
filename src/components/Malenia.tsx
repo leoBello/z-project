@@ -73,8 +73,18 @@ const BODY_RADIUS = 0.55
 /** Hauteur de sa capsule, à l'échelle du modèle. */
 const BODY_HALF_HEIGHT = 0.75
 
-/** Amortissement du cap. Plus vif que le Lynel : c'est une escrimeuse. */
-const YAW_DAMPING = 12
+/**
+ * Amortissement du cap. Plus vif que le Lynel : c'est une escrimeuse.
+ *
+ * **Dix-sept et non douze**, et c'est le dernier morceau du rehaussement. À
+ * douze, elle pivotait exactement à la vitesse du joueur (`PLAYER.turnDamping`
+ * vaut douze) : tourner autour d'elle à pleine course la laissait en retard d'un
+ * quart de tour en permanence, on vivait dans son dos, et le coup de pied — qui
+ * existe précisément pour punir le contournement — ne sortait presque jamais à
+ * portée utile. Elle se remet face au joueur plus vite qu'il ne peut la
+ * contourner, ce que le mot « escrimeuse » voulait déjà dire.
+ */
+const YAW_DAMPING = 17
 
 const toPlayer = new Vector3()
 const velocity = { x: 0, z: 0 }
