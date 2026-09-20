@@ -27,6 +27,8 @@ import { ChestReveal } from './components/inventory/ChestReveal'
 import { InventoryButton } from './components/inventory/InventoryButton'
 import { InventoryPanel } from './components/inventory/InventoryPanel'
 import { PortfolioDialog } from './components/portfolio/PortfolioDialog'
+import { QuestButton } from './components/quests/QuestButton'
+import { QuestPanel } from './components/quests/QuestPanel'
 import { StrikeArc } from './components/StrikeArc'
 import { BootScreen } from './components/BootScreen'
 import { TeleportMenu } from './components/TeleportMenu'
@@ -137,10 +139,15 @@ export default function App() {
           <QualityToggle />
           <LanguageToggle />
         </div>
-        {/* `key={runId}` : le point « nouvel objet » s'appuie sur un compteur
-            local au composant, qui doit repartir de zéro à chaque partie comme
-            l'inventaire lui-même. Voir l'en-tête d'`InventoryButton`. */}
-        <InventoryButton key={`inventory-${runId}`} />
+        {/* Les deux pastilles du **jeu**, rangées ensemble sous les réglages de
+            la page. `key={runId}` sur les deux : chacune s'appuie sur un
+            compteur local — « nouvel objet » pour l'une, « nouvelle quête » pour
+            l'autre — qui doit repartir de zéro à chaque partie comme l'état
+            qu'il observe. Voir les en-têtes des deux composants. */}
+        <div className="settings__game">
+          <QuestButton key={`quests-${runId}`} />
+          <InventoryButton key={`inventory-${runId}`} />
+        </div>
       </div>
       {/* Le panneau passe devant tout le HUD, invite d'interaction comprise. */}
       <PortfolioDialog />
@@ -148,6 +155,11 @@ export default function App() {
           doit recouvrir un panneau de lieu resté ouvert, mais pas l'onglet de
           voyage rapide, qui reste accessible en toutes circonstances. */}
       <InventoryPanel />
+      {/* Au même rang que l'inventaire, et pour les mêmes raisons : il recouvre
+          un panneau de lieu resté ouvert, jamais l'onglet de voyage rapide. Les
+          deux ne peuvent pas être ouverts ensemble — chacun met la partie en
+          pause, et leurs pastilles sont désactivées hors de `playing`. */}
+      <QuestPanel />
       {/* La révélation d'un coffre passe devant tout le reste : c'est le seul
           moment du jeu où l'écran a une seule chose à dire. */}
       <ChestReveal />

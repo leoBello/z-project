@@ -16,6 +16,7 @@ import { BLAST_FORWARD } from '../config/annihilation'
 import { chestById } from '../config/chests'
 import { enemyTotal } from '../config/enemies'
 import { itemById, type Equipment, type ItemSlot } from '../config/items'
+import { TRIAL_COUNT } from '../config/quests'
 import { WORLD, sampleHeight } from '../config/world'
 import { now as gameNow, resetClock } from '../state/gameClock'
 import { playerTransform, resetCombat } from '../state/playerTransform'
@@ -263,6 +264,28 @@ export interface GameState {
   /** Les trois cœurs de l'arrivée sur l'île ont-ils déjà été donnés ? */
   skyBoonTaken: boolean
   /**
+   * Le joueur a-t-il posé le pied sur l'Île Céleste, au moins une fois ?
+   *
+   * Un champ à lui plutôt qu'une lecture de `location` ou de `skyBoonTaken` :
+   * le premier repasse à `continent` dès qu'on rentre, et le second dit « la
+   * prime a été versée », ce qui est une autre question — le jour où elle
+   * changerait de condition, la quête du portail se déverrouillerait avec elle
+   * sans que personne n'ait touché au journal.
+   */
+  skyVisited: boolean
+  /**
+   * Bêtes de l'épreuve déjà abattues, par identifiant de poste.
+   *
+   * Par identifiant et non en compteur, pour la même raison que
+   * `heartContainers` : l'île se démonte quand on rentre au continent, et un
+   * simple compteur ferait reparaître les trois bêtes au retour — dont celles
+   * qu'on venait de tuer. C'est cette liste qui décide lesquelles sont montées
+   * (voir `SkyIsland.tsx`), et un compteur ne saurait pas *laquelle* est morte.
+   */
+  trialSlain: string[]
+  /** Le journal de quêtes est affiché. Implique `phase === 'paused'`. */
+  questsOpen: boolean
+  /**
    * Où le Lynel est tombé, en coordonnées monde, ou `null`.
    *
    * Dans le store et non dans son composant, parce que le composant se démonte
@@ -437,6 +460,16 @@ export interface GameState {
 
   /** Signale qu'un portail est à portée, ou qu'il ne l'est plus. */
   setNearbyPortal: (near: boolean) => void
+  /**
+   * Compte une bête de l'épreuve, et donne le cœur si c'était la dernière.
+   *
+   * Idempotent par identifiant : la mort d'un Lynel est résolue dans sa boucle
+   * de frame, et un appel de trop ne doit pas avancer l'épreuve.
+   */
+  registerTrialKill: (id: string) => void
+  /** Ouvre le journal de quêtes, et met la partie en pause. */
+  openQuests: () => void
+  closeQuests: () => void
   /** Le joueur entre dans l'arène : le combat commence. Idempotent. */
   startBossFight: () => void
   /**
@@ -498,6 +531,9 @@ const initialState = {
   portalOpenedAt: null as number | null,
   location: 'continent' as MapId,
   skyBoonTaken: false,
+  skyVisited: false,
+  trialSlain: [] as string[],
+  questsOpen: false,
   bossFellAt: null as [number, number, number] | null,
   bossState: 'idle' as 'idle' | 'fighting' | 'defeated',
   transit: null as MapId | null,
@@ -793,6 +829,21 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ inventoryOpen: false, activeItem: null, phase: 'playing' })
   },
 
+  // --- Journal de quêtes ----------------------------------------------------
+
+  // Même garde que `openInventory`, et pour la même raison : une pastille encore
+  // cliquable à l'instant du Game Over ouvrirait un panneau par-dessus l'écran
+  // de fin, et sa fermeture remettrait la phase à `playing` avec zéro cœur.
+  openQuests: () => {
+    if (get().phase !== 'playing') return
+    set({ questsOpen: true, phase: 'paused' })
+  },
+
+  closeQuests: () => {
+    if (!get().questsOpen) return
+    set({ questsOpen: false, phase: 'playing' })
+  },
+
   showItem: (id) => {
     if (!get().items.includes(id)) return
     set({ activeItem: id })
@@ -1017,6 +1068,29 @@ export const useGameStore = create<GameState>((set, get) => ({
   /** Même discipline que les monuments et les coffres : écriture sur transition. */
   setNearbyPortal: (near) => set({ nearbyPortal: near }),
 
+  /**
+   * Une bête de l'épreuve tombe.
+   *
+   * Le cœur de la troisième passe par `claimHeartContainer` plutôt que par un
+   * `set` d'ici, et ce n'est pas de la politesse : ce réceptacle-là n'a pas de
+   * socle à ramasser, mais il fait exactement la même chose qu'un autre — un
+   * cœur rouge de plus, la vie refaite jusqu'à la capacité, le son, et le
+   * bandeau du HUD qui lit `heartContainers`. Le réécrire ici en aurait donné
+   * une seconde version, à corriger deux fois.
+   */
+  registerTrialKill: (id) => {
+    const { trialSlain } = get()
+    if (trialSlain.includes(id)) return
+    const slain = [...trialSlain, id]
+    set({ trialSlain: slain })
+    if (slain.length < TRIAL_COUNT) return
+    // La mesure suit le verdict du réceptacle plutôt que le compte des bêtes :
+    // il refuse la prime hors de `playing`, et une épreuve dont la récompense
+    // n'a pas été versée n'est pas une épreuve terminée. Les cœurs sont relus
+    // *après*, sinon on rapporterait la barre d'avant la récompense.
+    if (get().claimHeartContainer('trial')) track('trial_cleared', { hearts: get().hearts })
+  },
+
   startBossFight: () => {
     // Idempotent, et ce n'est pas de la prudence : le Lynel l'appelle depuis sa
     // boucle, donc potentiellement soixante fois par seconde tant que le joueur
@@ -1100,6 +1174,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     */
     if (transit !== 'sky') get().endBossFight(false)
 
+    // Marqué à l'arrivée et jamais effacé : c'est ce qui accomplit la quête du
+    // portail, et elle ne se rouvre pas parce qu'on est rentré.
+    if (transit === 'sky') set({ skyVisited: true })
+
     /*
       L'île rend trois cœurs, une seule fois.
 
@@ -1169,6 +1247,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       items: [],
       equipped: {},
       openedChests: [],
+      trialSlain: [],
       bonusCarry: {},
       runId: state.runId + 1,
     }))

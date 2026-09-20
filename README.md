@@ -31,12 +31,14 @@ src/
   config/bridge.ts            tracé du pont de Nakano, ancrages lus dans le relief
   config/items.ts             objets : effets, emplacements, silhouettes, lames
   config/chests.ts            coffres : monument porteur, position locale, contenu
+  config/quests.ts            journal de quêtes : dérivé de l'état, jamais stocké
   i18n/fr.json, en.json       dictionnaires (interface + contenu du portfolio)
   i18n/index.ts               types, dictionnaires, format()
   i18n/useI18n.ts             accès au dictionnaire courant
   state/gameClock.ts          horloge de jeu : s'arrête en pause
   types/game.ts               types métier (phase, ennemis, biomes)
   store/useGameStore.ts       état de partie zustand (vie, phase, kills)
+  store/quests.ts             le journal, relu depuis l'état de partie
   state/playerTransform.ts    transform du joueur partagé hors React (60 fps)
   state/cameraView.ts         matrice view-projection publiée hors React + projection écran
   state/enemyRegistry.ts      position, état d'IA et PV des ennemis vivants
@@ -81,6 +83,8 @@ src/
     portfolio/ProjectIllustration.tsx  illustration générée par projet
     portfolio/illustration/   projection isométrique et motifs
     portfolio/sections.ts     contenu d'une section → diapositives
+    quests/QuestButton.tsx    pastille du journal, point d'appel, bulle d'entrée
+    quests/QuestPanel.tsx     le journal : quêtes en cours et accomplies
     models/SafeModel.tsx      fallback si un .glb est absent
     models/HeroModel.tsx      modèle du joueur (.glb ou personnage procédural)
     models/HeroPlaceholder.tsx  personnage articulé + animation procédurale
