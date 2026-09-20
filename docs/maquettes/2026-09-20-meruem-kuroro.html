@@ -1,0 +1,1549 @@
+<meta charset="utf-8">
+<title>Meruem et Kuroro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --ground: #f2ede1;
+    --surface: #ffffff;
+    --ink: #1d2018;
+    --ink-2: #565c4c;
+    --ink-3: #888f78;
+    --line: #d5cfbb;
+    --accent: #2f7a5e;
+    --violet: #6d2fd0;
+
+    --step--1: 0.8125rem;
+    --step-0: 0.9375rem;
+    --step-1: 1.125rem;
+    --step-2: 1.5rem;
+    --step-4: clamp(2.5rem, 6vw, 3.75rem);
+
+    --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+    --display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --ground: #140a10;
+      --surface: #1f1218;
+      --ink: #efe4d8;
+      --ink-2: #bba392;
+      --ink-3: #856f66;
+      --line: #3a222a;
+      --accent: #6fc9a4;
+      --violet: #b083ff;
+    }
+  }
+
+  :root[data-theme='dark'] {
+    --ground: #140a10;
+    --surface: #1f1218;
+    --ink: #efe4d8;
+    --ink-2: #bba392;
+    --ink-3: #856f66;
+    --line: #3a222a;
+    --accent: #6fc9a4;
+    --violet: #b083ff;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--step-0);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding-inline: 20px;
+    padding-block: 28px 64px;
+  }
+
+  .masthead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px 28px;
+    margin-bottom: 22px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 6px;
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: var(--step-4);
+    font-weight: 600;
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .standfirst {
+    max-width: 50ch;
+    color: var(--ink-2);
+    margin: 10px 0 0;
+  }
+
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 13px;
+    border: 1px solid var(--violet);
+    border-radius: 999px;
+    color: var(--violet);
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    white-space: nowrap;
+  }
+
+  .status::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: currentColor;
+  }
+
+  /* --- Visionneuse -------------------------------------------------------- */
+
+  .viewer {
+    position: relative;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #0a1410;
+    aspect-ratio: 16 / 9;
+    min-height: 340px;
+  }
+
+  .viewer canvas { display: block; width: 100%; height: 100%; }
+
+  .viewer__loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #7fae98;
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    background: #0a1410;
+  }
+
+  .rail {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    right: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    pointer-events: none;
+  }
+
+  .rail > * { pointer-events: auto; }
+
+  .rail__group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 8px;
+    background: rgba(8, 20, 16, 0.84);
+    border: 1px solid rgba(120, 200, 170, 0.24);
+    backdrop-filter: blur(8px);
+  }
+
+  .rail button {
+    appearance: none;
+    border: 0;
+    border-radius: 5px;
+    padding: 6px 11px;
+    background: transparent;
+    color: #c6dcd2;
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .rail button:hover { background: rgba(120, 200, 170, 0.18); color: #fff; }
+  .rail button[aria-pressed='true'] { background: #2f7a5e; color: #fff; }
+  .rail button[aria-pressed='true'][data-pose] { background: #5b34a8; }
+  .rail button:focus-visible { outline: 2px solid #6fc9a4; outline-offset: 1px; }
+
+  .readout {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(8, 20, 16, 0.86);
+    border: 1px solid rgba(120, 200, 170, 0.24);
+    color: #c6dcd2;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.55;
+    max-width: 62%;
+  }
+
+  .readout b { color: #fff; font-weight: 500; }
+  .readout .pose { color: #c7a8ff; display: block; margin-top: 4px; }
+
+  .hint {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin: 10px 0 0;
+    color: var(--ink-3);
+    font-family: var(--mono);
+    font-size: var(--step--1);
+  }
+
+  /* --- Sections ----------------------------------------------------------- */
+
+  section { margin-top: 52px; }
+
+  h2 {
+    font-family: var(--display);
+    font-size: var(--step-2);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 6px;
+  }
+
+  h3 {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 28px 0 10px;
+  }
+
+  .section-note {
+    max-width: 64ch;
+    color: var(--ink-2);
+    margin: 0 0 22px;
+  }
+
+  .tiers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .tier {
+    background: var(--surface);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .tier__swatch { width: 26px; height: 4px; border-radius: 999px; }
+
+  .tier__name {
+    font-family: var(--display);
+    font-size: var(--step-1);
+    font-weight: 600;
+  }
+
+  .tier__cote {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tier p { margin: 0; color: var(--ink-2); font-size: var(--step--1); }
+
+  table { width: 100%; border-collapse: collapse; font-size: var(--step--1); }
+  .table-scroll { overflow-x: auto; }
+
+  th, td {
+    text-align: left;
+    padding: 9px 14px 9px 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: baseline;
+  }
+
+  th {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  td:first-child { color: var(--ink); white-space: nowrap; }
+  td.num {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--accent);
+  }
+  td.yes { font-family: var(--mono); color: var(--violet); white-space: nowrap; }
+  td.no { font-family: var(--mono); color: var(--ink-3); white-space: nowrap; }
+  td:last-child { color: var(--ink-2); }
+
+  .mono { font-family: var(--mono); }
+
+  /* --- Frises ------------------------------------------------------------- */
+
+  .timeline {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    padding: 22px 20px 16px;
+    overflow-x: auto;
+  }
+
+  .track {
+    position: relative;
+    min-width: 560px;
+    height: 34px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--line), var(--line));
+    margin-bottom: 8px;
+  }
+
+  .track + .track { margin-top: 22px; }
+
+  .band {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: 5px;
+    display: grid;
+    place-items: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .band--tell { background: #8a8f7c; }
+  .band--cue { background: #6d2fd0; }
+  .band--parry { background: #4a7a2e; }
+  .band--fail { background: #b4553f; }
+  .band--rot { background: #a32b33; }
+  .band--punish { background: #d9a441; color: #241a14; }
+
+  .mark {
+    position: absolute;
+    top: -20px;
+    bottom: -16px;
+    width: 2px;
+    background: var(--ink);
+  }
+
+  .mark span {
+    position: absolute;
+    top: -4px;
+    left: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  .track__label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 6px;
+  }
+
+  .asks { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
+
+  .asks li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    align-items: baseline;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .asks li:first-child { border-top: 1px solid var(--line); }
+
+  .asks .q {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--violet);
+    letter-spacing: 0.08em;
+  }
+
+  .asks strong { font-weight: 600; display: block; }
+  .asks span { color: var(--ink-2); font-size: var(--step--1); }
+
+  .callout {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 10px 10px 0;
+    background: var(--surface);
+    padding: 16px 20px;
+    margin: 22px 0 0;
+    color: var(--ink-2);
+    font-size: var(--step--1);
+  }
+
+  .callout strong { color: var(--ink); }
+
+  footer {
+    margin-top: 52px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-3);
+    font-family: var(--mono);
+    font-size: var(--step--1);
+  }
+
+  @media (max-width: 620px) {
+    .viewer { aspect-ratio: 4 / 5; }
+    .readout { max-width: calc(100% - 24px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">z-project · maquette de skins — second jet</p>
+      <h1>Meruem et Kuroro</h1>
+      <p class="standfirst">
+        Les deux tenues du Marais, refaites <strong>d'après références</strong> et
+        non de mémoire. Le premier jet s'était trompé sur la couleur du Roi, sur
+        sa tête, sur sa queue, et sur à peu près tout le manteau du Voleur. Cette
+        page dit ce qui était faux, montre ce que ça donne, et attend un avis
+        avant que quoi que ce soit n'entre dans le dépôt.
+      </p>
+    </div>
+    <span class="status">à valider</span>
+  </header>
+
+  <div class="viewer" id="viewer">
+    <div class="viewer__loading" id="loading">construction des modèles…</div>
+    <div class="readout" id="readout"></div>
+    <div class="rail">
+      <div class="rail__group">
+        <button type="button" data-view="duo" aria-pressed="true">les deux</button>
+        <button type="button" data-view="roi" aria-pressed="false">le Roi</button>
+        <button type="button" data-view="roi-tete" aria-pressed="false">sa tête</button>
+        <button type="button" data-view="roi-queue" aria-pressed="false">sa queue</button>
+        <button type="button" data-view="voleur" aria-pressed="false">le Voleur</button>
+        <button type="button" data-view="voleur-tete" aria-pressed="false">sa tête</button>
+        <button type="button" data-view="voleur-dos" aria-pressed="false">son dos</button>
+        <button type="button" data-view="jeu" aria-pressed="false">caméra du jeu</button>
+        <button type="button" data-view="tour" aria-pressed="false">tour</button>
+      </div>
+    </div>
+  </div>
+  <p class="hint">
+    <span>glisser — orbiter</span>
+    <span>molette — zoom</span>
+    <span>clic droit — déplacer</span>
+    <span id="metrics"></span>
+  </p>
+
+  <section>
+    <h2>Ce que le premier jet a raté</h2>
+    <p class="section-note">
+      Les deux modèles déjà dans le dépôt ont été faits de mémoire, sans
+      références. Voici l'écart, point par point. C'est le tableau le plus utile
+      de cette page : il dit pourquoi les deux skins ne ressemblaient à rien.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Personnage</th><th scope="col">Ce que j'avais fait</th>
+            <th scope="col">Ce que disent les références</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Meruem</td>
+            <td class="no">Carapace <strong>violette</strong> saturée</td>
+            <td>Corps <strong>vert pâle et turquoise</strong>, avec des zones sombres pigmentées sur les bras, les jambes, le torse et la tête. Le violet n'existe que sur deux lignes du crâne et dans ses yeux.</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td class="no">Une <strong>couronne de six cornes</strong></td>
+            <td>Une <strong>carapace en casque</strong> qui couvre le crâne, lisse, avec une arête médiane vert sombre et deux lignes violettes sur les côtés. Aucune corne.</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td class="no">Rien aux oreilles</td>
+            <td><strong>Deux longues antennes</strong> partant des oreilles, qui pendent comme des lobes allongés. C'est son trait le plus reconnaissable après la queue, et il manquait entièrement.</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td class="no">Queue balayant vers l'arrière, dard vers l'avant</td>
+            <td>Queue articulée qui monte <strong>verticalement</strong> depuis le dos, annelée de vert sombre et de noir, terminée par un <strong>dard de scorpion</strong>.</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td class="no">Yeux cramoisis</td>
+            <td>Yeux <strong>violets</strong>.</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td class="no">Mains à cinq doigts, pieds chaussés</td>
+            <td><strong>Quatre doigts</strong> à chaque main et à chaque pied, et il est <strong>toujours pieds nus</strong>.</td>
+          </tr>
+          <tr>
+            <td>Kuroro</td>
+            <td class="no">Manteau <strong>noir</strong>, fermé jusqu'au col</td>
+            <td>Manteau <strong>violet sombre</strong>, <strong>ouvert</strong> sur la poitrine.</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td class="no">Fourrure au col seulement</td>
+            <td>Fourrure blanche au col <strong>et aux poignets</strong>.</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td class="no">Dos nu</td>
+            <td>Une <strong>croix de saint Pierre dorée</strong> brodée dans le dos, surmontée de deux cornes.</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td class="no">Pas de boucles d'oreilles</td>
+            <td><strong>Deux boucles d'or à perle bleue.</strong></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td class="no">Croix frontale de la couleur des cheveux</td>
+            <td>Croix <strong>inversée et violette</strong> — celle de saint Pierre, comme celle du dos.</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td class="no">Torse couvert, ceinture centrée</td>
+            <td>Maillot noir à <strong>entrelacs</strong> visible sous le manteau ouvert, et une ceinture <strong>fauve portée en biais</strong>.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <strong>Une erreur de méthode, pas de main.</strong> Aucun de ces douze
+      points n'est un détail de modélisation : ce sont des faits, et ils étaient
+      tous consultables. Les deux modèles ont été faits sans les consulter, et
+      c'est la seule chose à retenir de ce tableau.
+    </div>
+  </section>
+
+  <section>
+    <h2>Le Roi</h2>
+    <p class="section-note">
+      Humanoïde, musclé, et <strong>petit</strong> — plus petit que ses propres
+      gardes. C'est un point qui compte pour un skin de joueur : il ne change pas
+      la taille du personnage, il change sa densité.
+    </p>
+
+    <div class="tiers">
+      <div class="tier">
+        <span class="tier__swatch" style="background:#b7d9bc"></span>
+        <span class="tier__name">Le corps</span>
+        <span class="tier__cote">vert pâle · turquoise</span>
+        <p>
+          Le visage, le haut des bras, le buste et les flancs des jambes sont
+          d'un vert très clair, tirant sur le turquoise aux articulations. C'est
+          la valeur la plus claire de tout le casting après la peau du Voleur —
+          et c'est exactement l'inverse de ce que le premier jet en avait fait.
+        </p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#2c503c"></span>
+        <span class="tier__name">Les zones pigmentées</span>
+        <span class="tier__cote">bras · jambes · torse · tête</span>
+        <p>
+          Du vert très sombre, presque noir, posé en plaques sur le clair. Ce
+          n'est pas une armure : c'est la pigmentation de la carapace. Ce sont
+          ces plaques, et non une silhouette, qui font lire l'insecte.
+        </p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#7b4ea8"></span>
+        <span class="tier__name">Le violet</span>
+        <span class="tier__cote">2 lignes du crâne · les yeux</span>
+        <p>
+          Il n'existe qu'à deux endroits, et c'est ce qui lui donne sa valeur.
+          Deux lignes sur les flancs du casque, et le regard. Le premier jet en
+          avait fait tout le personnage — ce qui revenait à supprimer le seul
+          accent qu'il possède.
+        </p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#12201a"></span>
+        <span class="tier__name">La queue</span>
+        <span class="tier__cote">verticale · annelée · dard</span>
+        <p>
+          Articulée, elle monte droit derrière lui, annelée de vert sombre et de
+          noir, et se termine en dard de scorpion. Elle dépasse du volume du rig
+          vers le haut et non vers l'arrière — c'est ce qui la garde visible dans
+          une caméra qui plonge de dix-sept degrés.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Le Voleur</h2>
+    <p class="section-note">
+      Grand, mince, athlétique. Tout le personnage tient dans trois signes —
+      la croix au front, la fourrure, et le manteau ouvert — et le premier jet
+      n'en avait rendu qu'un, mal.
+    </p>
+
+    <div class="tiers">
+      <div class="tier">
+        <span class="tier__swatch" style="background:#3b2a4a"></span>
+        <span class="tier__name">Le manteau</span>
+        <span class="tier__cote">violet sombre · ouvert</span>
+        <p>
+          Violet sombre et non noir, et surtout <strong>ouvert</strong> : c'est
+          l'échancrure qui laisse voir le maillot à entrelacs, donc la seule
+          chose qui empêche la silhouette d'être une masse pleine. Fermé, il
+          devenait le manteau du clan en plus sombre.
+        </p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#eceae6"></span>
+        <span class="tier__name">La fourrure</span>
+        <span class="tier__cote">col <em>et</em> poignets</span>
+        <p>
+          Aux deux endroits, et c'est ce qui la distingue d'un simple col.
+          Quand les bras bougent, deux taches claires suivent le geste — à
+          vingt-et-une unités, c'est ce qui rend la tenue lisible en mouvement
+          plutôt qu'à l'arrêt. Le col mesure 0,72 de large contre 0,63 aux
+          bras : il déborde, et c'est une cote et non une intention.
+        </p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#c9a23e"></span>
+        <span class="tier__name">La croix du dos</span>
+        <span class="tier__cote">or · surmontée de deux cornes</span>
+        <p>
+          Une croix de saint Pierre brodée d'or, la seule pièce colorée du
+          personnage. Elle est <strong>dans le dos</strong> : c'est la face qu'on
+          voit le plus souvent dans ce jeu, puisque la caméra suit le joueur
+          par-derrière. Elle manquait entièrement.
+        </p>
+      </div>
+      <div class="tier">
+        <span class="tier__swatch" style="background:#7b4ea8"></span>
+        <span class="tier__name">La croix du front</span>
+        <span class="tier__cote">inversée · violette</span>
+        <p>
+          La même croix, renversée, et la barre courte est <strong>en bas</strong>.
+          C'est le seul détail du visage qu'on distingue à distance de jeu, et il
+          doit donc être franc : violet sur peau claire, sous une chevelure
+          plaquée qui dégage le front.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Cotes</h2>
+    <p class="section-note">
+      Mesurées sur les modèles affichés, à chaque chargement. Les deux montent
+      sur le <strong>squelette du héros</strong> — hanches à 0,44, épaules à
+      0,90, tête à 1,20 — parce que ce sont des skins de joueur et non des
+      créatures : ils n'ont pas le droit de changer les cotes du rig.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">Cote</th><th scope="col">Valeur</th><th scope="col">Pourquoi</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Hauteur du Roi</td><td class="num" id="m-roi">—</td>
+            <td>Queue comprise. Le corps s'arrête à la hauteur ordinaire ; c'est la queue qui dépasse, et elle dépasse <em>vers le haut</em>.</td>
+          </tr>
+          <tr>
+            <td>Hauteur du Voleur</td><td class="num" id="m-voleur">—</td>
+            <td>La cote du rig, sans un centimètre de plus : rien de sa tenue ne dépasse du crâne.</td>
+          </tr>
+          <tr>
+            <td>Largeur du Roi</td><td class="num" id="m-roi-w">—</td>
+            <td>Étroit. C'est un corps nu et musclé, pas une armure — et c'est ce qui le sépare du Seigneur Noir à la même distance.</td>
+          </tr>
+          <tr>
+            <td>Largeur du Voleur</td><td class="num" id="m-voleur-w">—</td>
+            <td>La cote la plus large est celle du <strong>bas du manteau</strong>, qui s'évase : c'est lui qui fixe le chiffre. La fourrure, elle, mesure 0,72 contre 0,63 aux bras — elle déborde donc des épaules, ce qui est ce qu'on lui demande, mais ce n'est pas elle qui décide de la largeur totale. La première version ne débordait pas du tout, et cette ligne l'affirmait quand même.</td>
+          </tr>
+          <tr>
+            <td>Longueur des antennes</td><td class="num" id="m-antenne">—</td>
+            <td>Elles descendent sous la mâchoire. Plus courtes, elles se lisent comme des oreilles ; plus longues, comme des tresses.</td>
+          </tr>
+          <tr>
+            <td>Hauteur du dard</td><td class="num" id="m-dard">—</td>
+            <td>Au-dessus de la tête, et c'est voulu : c'est la seule chose qui dépasse du gabarit du rig, donc le seul repère qui identifie ce skin de loin. La première version n'en dépassait que de <strong>quatre centimètres</strong> — autant dire pas — et c'est ce tableau qui l'a fait remonter.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ce que ça coûte</h2>
+    <p class="section-note">
+      Rien de neuf : les deux skins remplacent ceux déjà commis, aux mêmes
+      endroits. C'est le seul point rassurant de cette page.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">Chantier</th><th scope="col">Où</th><th scope="col">Ce qu'il faut</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Les deux palettes</td><td class="num">remplacement</td>
+            <td><span class="mono">OUTFITS</span> dans <span class="mono">HeroPlaceholder.tsx</span> — deux entrées à réécrire, aucune à ajouter.</td>
+          </tr>
+          <tr>
+            <td>Les six composants</td><td class="num">remplacement</td>
+            <td>Torse, visage et coiffe de chacun. Mêmes noms, mêmes signatures : la table <span class="mono">SKINS</span> ne bouge pas.</td>
+          </tr>
+          <tr>
+            <td>Les antennes du Roi</td><td class="num">extension</td>
+            <td>Elles doivent pendre et suivre le mouvement de la tête. Le rig a déjà ce qu'il faut — le groupe <span class="mono">headwear</span> traîne d'un pas derrière, avec un ressort réglable par skin. Il suffit de le régler haut, là où le casque de Vador le règle bas.</td>
+          </tr>
+          <tr>
+            <td>La queue du Roi</td><td class="num">à trancher</td>
+            <td>Elle est <strong>fille du buste</strong> et non de la coiffe : elle sort du dos. Le rig n'a pas de point d'attache dorsal, mais le groupe du torse en tient lieu sans rien changer. Voir la question 02.</td>
+          </tr>
+          <tr>
+            <td>Les deux illustrations de carte</td><td class="num">remplacement</td>
+            <td><span class="mono">ItemIllustration.tsx</span> et <span class="mono">ItemIcon.tsx</span>, deux entrées chacun. Les couleurs y sont fausses aussi.</td>
+          </tr>
+          <tr>
+            <td>Les accents d'inventaire</td><td class="num">remplacement</td>
+            <td>Le violet de la Carapace n'a plus lieu d'être : son accent doit devenir un vert. Celui du Manteau passe du gris au violet sombre.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ce que j'attends de toi</h2>
+    <p class="section-note">
+      Trois décisions. Le reste — les teintes exactes, la longueur des antennes,
+      le nombre de plaques — je le tranche et tu corriges après l'avoir vu bouger.
+    </p>
+    <ul class="asks">
+      <li>
+        <span class="q">01</span>
+        <div>
+          <strong>Le Roi est-il assez lisible à la distance du jeu ?</strong>
+          <span>
+            Clique sur « caméra du jeu » : c'est le cadre réel, à vingt-et-une
+            unités. Un corps nu vert pâle y a beaucoup moins de présence qu'une
+            armure noire ou qu'un manteau long — c'est un personnage qui se lit
+            par ses <em>détails</em>, et les détails disparaissent à cette
+            distance. La queue et les antennes sont ma réponse ; si elle ne
+            suffit pas, l'autre levier est d'épaissir les plaques sombres pour
+            lui donner une silhouette plus découpée, au prix de la fidélité.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">02</span>
+        <div>
+          <strong>La queue suit-elle le buste, ou reste-t-elle droite ?</strong>
+          <span>
+            Fille du buste, elle se balance au pas et bascule à chaque coup
+            d'épée — vivant, mais elle balaie beaucoup d'écran. Fixe, elle est
+            plus lisible et moins crédible. J'ai pris <strong>fille du
+            buste</strong>, avec une amplitude réduite de moitié.
+          </span>
+        </div>
+      </li>
+      <li>
+        <span class="q">03</span>
+        <div>
+          <strong>Le manteau ouvert, jusqu'où ?</strong>
+          <span>
+            Ouvert sur toute la poitrine, c'est fidèle et ça fait une silhouette
+            fendue en deux qui se lit mal de loin. Fermé, c'est le manteau du
+            clan en violet. J'ai pris une échancrure <strong>haute et
+            étroite</strong> — le maillot se voit, mais le manteau garde une
+            masse continue. C'est le seul écart de fidélité que je propose, et il
+            se discute.
+          </span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <footer>
+    Maquette — géométrie procédurale, palettes et cel-shading repris du jeu, sur
+    le squelette réel du héros. Rien de ce qui est ici n'est dans le dépôt : les
+    deux skins actuels sont ceux du premier jet, et cette page existe pour les
+    remplacer.
+  </footer>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+
+/* ------------------------------------------------------------------ cotes */
+
+/*
+  Le squelette du héros, recopié de `HeroPlaceholder.tsx`.
+
+  Ces trois nombres ne sont **pas négociables** : ce sont des skins de joueur,
+  pas des créatures. Ils habillent un rig existant, partagé par les six autres
+  tenues, et une silhouette qui déplacerait les épaules casserait l'animation de
+  tout le monde.
+*/
+const HIP_Y = 0.44
+const SHOULDER_Y = 0.9
+const HEAD_Y = 1.2
+/** Demi-écartement des épaules, sur le rig. */
+const SHOULDER_X = 0.24
+/** Rayon de la tête, sur le rig. */
+const HEAD_R = 0.26
+
+const C = {
+  /* --- Le Roi : vert pâle et turquoise, pigmenté de vert sombre ------------ */
+  chitin: '#b7d9bc',
+  chitinCool: '#93c9be',
+  chitinShade: '#8fb894',
+  pigment: '#2c503c',
+  pigmentDeep: '#12201a',
+  /* Le violet : deux lignes du crâne, et le regard. Rien d'autre. */
+  royal: '#7b4ea8',
+  royalEye: '#a86fe0',
+
+  /* --- Le Voleur ----------------------------------------------------------- */
+  coat: '#3b2a4a',
+  coatDeep: '#291d34',
+  fur: '#eceae6',
+  furShade: '#b9b6b0',
+  cross: '#c9a23e',
+  skin: '#f0d3b4',
+  skinShade: '#cfae90',
+  hair: '#2a1f38',
+  mesh: '#15121c',
+  belt: '#c9a97a',
+  greyEye: '#6d7380',
+  bead: '#4a7fd0',
+
+  /* --- Le héros de référence, en gris ------------------------------------- */
+  ghost: '#4a5560',
+
+  outline: '#0d1512',
+  sky: { zenith: '#0a1a16', horizon: '#1d4238', glow: '#3d7a62' },
+}
+
+/* --------------------------------------------------------------- matériaux */
+
+const gradient = new THREE.DataTexture(
+  new Uint8Array([88, 88, 88, 255, 176, 176, 176, 255, 255, 255, 255, 255]),
+  3, 1, THREE.RGBAFormat,
+)
+gradient.minFilter = THREE.NearestFilter
+gradient.magFilter = THREE.NearestFilter
+gradient.needsUpdate = true
+
+const toon = (color, options) =>
+  new THREE.MeshToonMaterial({ color: new THREE.Color(color), gradientMap: gradient, ...options })
+
+const MAT = {
+  chitin: toon(C.chitin),
+  chitinCool: toon(C.chitinCool),
+  chitinShade: toon(C.chitinShade),
+  pigment: toon(C.pigment),
+  pigmentDeep: toon(C.pigmentDeep),
+  royal: toon(C.royal),
+  coat: toon(C.coat),
+  coatDeep: toon(C.coatDeep),
+  fur: toon(C.fur),
+  furShade: toon(C.furShade),
+  cross: toon(C.cross, { emissive: new THREE.Color(C.cross), emissiveIntensity: 0.3 }),
+  skin: toon(C.skin),
+  skinShade: toon(C.skinShade),
+  hair: toon(C.hair),
+  mesh: toon(C.mesh),
+  belt: toon(C.belt),
+  ghost: toon(C.ghost),
+}
+/** Le regard et les perles : non éclairés, pour ne pas s'éteindre dans l'ombre. */
+const EYE = new THREE.MeshBasicMaterial({ color: new THREE.Color(C.royalEye) })
+const GREY_EYE = new THREE.MeshBasicMaterial({ color: new THREE.Color(C.greyEye) })
+const BEAD = new THREE.MeshBasicMaterial({ color: new THREE.Color(C.bead) })
+
+function outlineMaterial(thickness) {
+  return new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    uniforms: {
+      uThickness: { value: thickness },
+      uColor: { value: new THREE.Color(C.outline) },
+    },
+    vertexShader: `
+      uniform float uThickness;
+      void main() {
+        vec3 p = position + normal * uThickness;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+      }`,
+    fragmentShader: `
+      uniform vec3 uColor;
+      void main() { gl_FragColor = vec4(uColor, 1.0); }`,
+  })
+}
+/** L'épaisseur du jeu : 0,028 dans `HeroPlaceholder`. */
+const OUTLINE = outlineMaterial(0.028)
+const OUTLINE_THIN = outlineMaterial(0.014)
+
+function faceted(geometry) {
+  const flat = geometry.index ? geometry.toNonIndexed() : geometry
+  flat.computeVertexNormals()
+  return flat
+}
+
+function part(parent, geometry, material, position, rotation, scale) {
+  const mesh = new THREE.Mesh(geometry, material)
+  if (position) mesh.position.set(...position)
+  if (rotation) mesh.rotation.set(...rotation)
+  if (scale !== undefined) {
+    if (Array.isArray(scale)) mesh.scale.set(...scale)
+    else mesh.scale.setScalar(scale)
+  }
+  parent.add(mesh)
+  return mesh
+}
+
+function outline(mesh, material) {
+  mesh.add(new THREE.Mesh(mesh.geometry, material || OUTLINE))
+  return mesh
+}
+
+function joint(parent, position, rotation) {
+  const group = new THREE.Group()
+  if (position) group.position.set(...position)
+  if (rotation) group.rotation.set(...rotation)
+  parent.add(group)
+  return group
+}
+
+/* ----------------------------------------------------------------- scène */
+
+const viewer = document.getElementById('viewer')
+const readout = document.getElementById('readout')
+const loading = document.getElementById('loading')
+const metrics = document.getElementById('metrics')
+
+const renderer = new THREE.WebGLRenderer({ antialias: true })
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+viewer.appendChild(renderer.domElement)
+
+const scene = new THREE.Scene()
+/** Le FOV du jeu, et pas un autre : c'est lui qui fabrique le rendu diorama. */
+const camera = new THREE.PerspectiveCamera(48, 16 / 9, 0.05, 400)
+
+const controls = new OrbitControls(camera, renderer.domElement)
+controls.enableDamping = true
+controls.dampingFactor = 0.08
+controls.minDistance = 0.6
+controls.maxDistance = 40
+controls.autoRotateSpeed = 0.6
+
+const sky = new THREE.Mesh(
+  new THREE.SphereGeometry(200, 32, 24),
+  new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    depthWrite: false,
+    uniforms: {
+      uZenith: { value: new THREE.Color(C.sky.zenith) },
+      uHorizon: { value: new THREE.Color(C.sky.horizon) },
+      uGlow: { value: new THREE.Color(C.sky.glow) },
+    },
+    vertexShader: `
+      varying vec3 vPos;
+      void main() {
+        vPos = position;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: `
+      uniform vec3 uZenith; uniform vec3 uHorizon; uniform vec3 uGlow;
+      varying vec3 vPos;
+      void main() {
+        float h = normalize(vPos).y;
+        vec3 c = mix(uHorizon, uZenith, smoothstep(-0.05, 0.6, h));
+        c = mix(c, uGlow, smoothstep(0.16, -0.3, h));
+        gl_FragColor = vec4(c, 1.0);
+      }`,
+  }),
+)
+scene.add(sky)
+
+/* Les trois sources du jeu, à leurs intensités. */
+scene.add(new THREE.HemisphereLight(0xd2dcf4, 0x6a7a42, 0.7))
+scene.add(new THREE.AmbientLight(0xffffff, 0.3))
+const sun = new THREE.DirectionalLight(0xffe3ad, 2.0)
+sun.position.set(4, 6, 5)
+scene.add(sun)
+const rim = new THREE.DirectionalLight(0x9fb0e8, 0.6)
+rim.position.set(-4, 2, -5)
+scene.add(rim)
+
+/* --------------------------------------------------------- le rig partagé */
+
+/**
+ * Le squelette, tel que `HeroPlaceholder` le monte.
+ *
+ * Reconstruit à l'identique ici pour que les deux skins soient jugés dans les
+ * conditions du jeu : mêmes hauteurs de hanches, d'épaules et de tête, mêmes
+ * points d'attache de bras. Une maquette qui les montrerait sur un corps à elle
+ * ne dirait rien de ce qu'ils donneront une fois posés sur le rig.
+ */
+function buildRig(parent) {
+  const root = joint(parent, [0, 0, 0])
+  const torso = joint(root, [0, HIP_Y, 0])
+  const armL = joint(torso, [SHOULDER_X, SHOULDER_Y - HIP_Y, 0])
+  const armR = joint(torso, [-SHOULDER_X, SHOULDER_Y - HIP_Y, 0])
+  const head = joint(torso, [0, HEAD_Y - HIP_Y, 0])
+  const headwear = joint(head, [0, 0.16, 0])
+  return { root, torso, armL, armR, head, headwear }
+}
+
+/* ============================================================== LE ROI ==== */
+
+/** Le bout d'une antenne, retenu pour la mesure. Voir le tableau des cotes. */
+let antennaTip = null
+
+const king = new THREE.Group()
+scene.add(king)
+const kingRig = buildRig(king)
+
+/*
+  Le corps — **vert pâle, pigmenté de vert sombre.**
+
+  C'est la correction principale de ce second jet : le premier avait fait de lui
+  une carapace violette, alors qu'il est la silhouette la plus *claire* du
+  casting après la peau du Voleur. Le violet n'existe qu'à deux endroits, et
+  c'est précisément ce qui lui donne sa valeur — en peindre tout le corps
+  revenait à supprimer son seul accent.
+*/
+{
+  const { torso, armL, armR, head, headwear } = kingRig
+
+  // Le tronc : musclé, étroit, et sans le moindre vêtement.
+  outline(part(torso, new THREE.CapsuleGeometry(0.2, 0.3, 5, 14), MAT.chitin, [0, 0.26, 0]))
+  // Le pectoral, en plaque sombre : c'est de la pigmentation, pas une armure.
+  outline(part(torso, faceted(new THREE.SphereGeometry(0.2, 12, 9)), MAT.pigment,
+    [0, 0.4, 0.06], null, [1.02, 0.8, 0.72]))
+  // La rainure abdominale, en trois segments décroissants.
+  for (let i = 0; i < 3; i++) {
+    part(torso, faceted(new THREE.BoxGeometry(0.17 - i * 0.02, 0.05, 0.06)), MAT.chitinShade,
+      [0, 0.24 - i * 0.075, 0.16])
+  }
+  // Les hanches, sombres : la pigmentation reprend sous la taille.
+  outline(part(torso, new THREE.CapsuleGeometry(0.17, 0.08, 4, 12), MAT.pigment, [0, 0.02, 0]))
+
+  // Les bras : haut clair, avant-bras sombre.
+  for (const [arm, side] of [[armL, 1], [armR, -1]]) {
+    outline(part(arm, new THREE.CapsuleGeometry(0.072, 0.2, 4, 10), MAT.chitin, [0, -0.13, 0]))
+    outline(part(arm, new THREE.CapsuleGeometry(0.066, 0.2, 4, 10), MAT.pigment, [0, -0.36, 0]))
+    /*
+      La main à **quatre doigts**, et c'est une des douze corrections : il en a
+      quatre, pas cinq. À cette échelle un doigt fait trois millimètres — ce qui
+      se voit n'est pas le compte mais la *largeur* de la main, plus étroite d'un
+      cinquième que celle des six autres skins.
+    */
+    const hand = joint(arm, [0, -0.5, 0])
+    outline(part(hand, faceted(new THREE.BoxGeometry(0.085, 0.07, 0.055)), MAT.chitin))
+    for (let f = 0; f < 4; f++) {
+      part(hand, new THREE.CapsuleGeometry(0.012, 0.045, 3, 6), MAT.chitin,
+        [(f - 1.5) * 0.024, -0.06, 0], [0.2, 0, 0])
+    }
+  }
+
+  // Les jambes : flancs clairs, faces sombres, et **pieds nus**.
+  for (const side of [1, -1]) {
+    const leg = joint(torso, [side * 0.11, -0.02, 0])
+    outline(part(leg, new THREE.CapsuleGeometry(0.086, 0.18, 4, 10), MAT.chitin, [0, -0.14, 0]))
+    outline(part(leg, new THREE.CapsuleGeometry(0.078, 0.16, 4, 10), MAT.pigment, [0, -0.34, 0]))
+    const foot = joint(leg, [0, -0.44, 0])
+    outline(part(foot, faceted(new THREE.BoxGeometry(0.1, 0.055, 0.19)), MAT.chitin, [0, 0.02, 0.04]))
+    // Quatre orteils, comme les doigts.
+    for (let t = 0; t < 4; t++) {
+      part(foot, new THREE.CapsuleGeometry(0.014, 0.02, 3, 6), MAT.chitin,
+        [(t - 1.5) * 0.026, 0.01, 0.14], [Math.PI / 2, 0, 0])
+    }
+  }
+
+  /*
+    La tête — **une carapace en casque**, et non une couronne de cornes.
+
+    Lisse, elle couvre le crâne du front à la nuque. Son arête médiane est vert
+    sombre ; ses deux flancs portent **les seules lignes violettes du
+    personnage**. C'est la correction la plus visible du lot : le premier jet lui
+    avait planté six cornes, ce qu'il n'a nulle part.
+  */
+  outline(part(head, new THREE.SphereGeometry(HEAD_R, 16, 14), MAT.chitin))
+  // Le casque : une calotte un peu plus grande, reculée, qui laisse le visage.
+  outline(part(headwear, new THREE.SphereGeometry(HEAD_R + 0.012, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.66),
+    MAT.pigment, [0, -0.16, -0.012], null, [1, 1.08, 1.04]))
+  // L'arête médiane, qui court du front à la nuque.
+  part(headwear, faceted(new THREE.BoxGeometry(0.05, 0.08, 0.46)), MAT.pigmentDeep, [0, -0.06, -0.03])
+  // Les deux lignes violettes, sur les flancs du casque.
+  for (const side of [1, -1]) {
+    part(headwear, faceted(new THREE.BoxGeometry(0.022, 0.05, 0.34)), MAT.royal,
+      [side * 0.2, -0.1, -0.02], [0, 0, side * 0.18])
+  }
+
+  /*
+    Les antennes — **le trait qui manquait entièrement.**
+
+    Deux, parties des oreilles, qui pendent comme des lobes allongés jusque sous
+    la mâchoire. Elles sont filles de la coiffe, donc elles traînent d'un pas
+    derrière le mouvement de la tête : c'est exactement le ressort que le rig
+    offre déjà, et il suffit de le régler haut là où le casque de Vador le règle
+    bas.
+  */
+  for (const side of [1, -1]) {
+    let at = joint(headwear, [side * 0.21, -0.2, 0.02], [0.1, 0, side * 0.12])
+    for (let i = 0; i < 4; i++) {
+      const segment = joint(at, [0, -0.1, 0], [0.12, 0, side * 0.05])
+      outline(part(segment, new THREE.CapsuleGeometry(0.028 - i * 0.005, 0.07, 4, 8),
+        i % 2 ? MAT.chitinCool : MAT.chitin, [0, -0.05, 0]), OUTLINE_THIN)
+      at = segment
+    }
+    // Le bout de l'antenne gauche sert d'étalon au tableau des cotes.
+    if (side === 1) antennaTip = at
+  }
+
+  // Le regard : **violet**, et grand. Non éclairé, pour ne pas s'éteindre.
+  for (const side of [1, -1]) {
+    part(head, new THREE.SphereGeometry(0.062, 12, 10), EYE,
+      [side * 0.1, 0.02, 0.21], [0, 0, side * 0.3], [1, 0.72, 0.6])
+  }
+  // La fente de la bouche.
+  part(head, faceted(new THREE.BoxGeometry(0.09, 0.016, 0.03)), MAT.pigmentDeep, [0, -0.11, 0.22])
+
+  /*
+    La queue — articulée, **verticale**, annelée, et terminée en dard de scorpion.
+
+    Le premier jet la faisait balayer vers l'arrière avec le dard ramené devant.
+    Elle monte droit derrière lui : c'est ce qui la garde dans le cadre d'une
+    caméra qui plonge de dix-sept degrés, et c'est aussi la seule chose de ce
+    skin qui dépasse du gabarit du rig — donc le seul repère qui l'identifie de
+    loin.
+  */
+  const tail = joint(torso, [0, 0.06, -0.16])
+  let at = tail
+  /*
+    Huit segments de 0,15, et non sept de 0,12 : la première version portait le
+    dard à **quatre centimètres** au-dessus du crâne, c'est-à-dire nulle part.
+    Or c'est la seule chose de ce skin qui dépasse du gabarit du rig, donc le
+    seul repère qui l'identifie à la distance du jeu. Le tableau des cotes
+    mesure cette hauteur, et c'est lui qui a fait remonter le défaut.
+  */
+  for (let i = 0; i < 8; i++) {
+    const segment = joint(at, [0, 0.15, i < 3 ? -0.05 : 0.02], [i < 3 ? -0.2 : 0.16, 0, 0])
+    outline(part(segment, new THREE.CylinderGeometry(0.052 - i * 0.004, 0.058 - i * 0.004, 0.15, 8),
+      i % 2 ? MAT.pigmentDeep : MAT.pigment, [0, 0.07, 0]), OUTLINE_THIN)
+    at = segment
+  }
+  outline(part(at, new THREE.ConeGeometry(0.032, 0.18, 7), MAT.chitinCool, [0, 0.17, 0]), OUTLINE_THIN)
+}
+
+/* ========================================================== LE VOLEUR ==== */
+
+const thief = new THREE.Group()
+thief.position.x = 1.1
+scene.add(thief)
+const thiefRig = buildRig(thief)
+
+/*
+  Le manteau — **violet sombre et ouvert**, pas noir et fermé.
+
+  Deux corrections en une. Le violet le sépare de l'armure du Seigneur Noir, qui
+  est la seule autre silhouette sombre du casting ; l'échancrure lui donne une
+  ligne verticale claire au milieu du corps, sans laquelle il n'est qu'une masse
+  pleine — c'est-à-dire, à vingt-et-une unités, le manteau du clan en violet.
+*/
+{
+  const { torso, armL, armR, head, headwear } = thiefRig
+
+  // Le maillot à entrelacs, **dessous et visible** par l'échancrure.
+  outline(part(torso, new THREE.CapsuleGeometry(0.185, 0.3, 5, 14), MAT.mesh, [0, 0.26, 0]))
+  // Les entrelacs : quatre croisillons sur la poitrine. À cette taille ce n'est
+  // pas un motif qu'on lit, c'est une texture qui empêche le noir d'être plat.
+  for (let i = 0; i < 4; i++) {
+    for (const side of [1, -1]) {
+      part(torso, faceted(new THREE.BoxGeometry(0.11, 0.012, 0.02)), MAT.coatDeep,
+        [0, 0.42 - i * 0.07, 0.17], [0, 0, side * 0.6])
+    }
+  }
+
+  /*
+    Le corps du manteau : un cylindre **ouvert par devant**.
+
+    `cylinderGeometry` sait ne décrire qu'un secteur d'angle — le même procédé
+    que le gilet du premier skin et la cape du Seigneur Noir. Deux plaques posées
+    côte à côte auraient laissé voir le dos par la tranche au premier pivot.
+
+    L'échancrure est **haute et étroite** (elle s'arrête à 0,86 de tour) : c'est
+    l'écart de fidélité assumé de cette maquette — ouvert sur toute la poitrine,
+    il fend la silhouette en deux et se lit mal de loin. Voir la question 03.
+  */
+  const OPEN = 0.52
+  outline(part(torso, new THREE.CylinderGeometry(0.235, 0.3, 0.64, 18, 1, true, OPEN / 2, Math.PI * 2 - OPEN),
+    MAT.coat, [0, 0.25, 0]))
+  // La doublure, un centimètre en dedans : c'est elle qu'on voit dans
+  // l'échancrure, et sans elle la tranche d'épaisseur nulle disparaît.
+  part(torso, new THREE.CylinderGeometry(0.225, 0.29, 0.62, 18, 1, true, OPEN / 2 + 0.05, Math.PI * 2 - OPEN - 0.1),
+    MAT.coatDeep, [0, 0.25, 0])
+  // Les pans, qui descendent sous la taille et s'évasent.
+  outline(part(torso, new THREE.CylinderGeometry(0.3, 0.37, 0.34, 18, 1, true, OPEN / 2, Math.PI * 2 - OPEN),
+    MAT.coat, [0, -0.13, 0]))
+
+  /*
+    La croix de saint Pierre, **dans le dos**, brodée d'or.
+
+    C'est la seule pièce colorée du personnage, et elle est sur la face qu'on
+    voit le plus dans ce jeu — la caméra suit le joueur par-derrière. Elle
+    manquait entièrement au premier jet, ce qui revenait à supprimer sa
+    signature.
+
+    Inversée : la barre courte est **en bas**. Et deux petites cornes la
+    surmontent, comme sur la référence.
+  */
+  const back = joint(torso, [0, 0.3, -0.29])
+  part(back, faceted(new THREE.BoxGeometry(0.045, 0.3, 0.02)), MAT.cross, [0, 0, 0])
+  part(back, faceted(new THREE.BoxGeometry(0.17, 0.042, 0.02)), MAT.cross, [0, -0.08, 0])
+  for (const side of [1, -1]) {
+    part(back, faceted(new THREE.ConeGeometry(0.022, 0.06, 5)), MAT.cross,
+      [side * 0.045, 0.17, 0], [0, 0, side * -0.5])
+  }
+
+  /*
+    La fourrure — **au col ET aux poignets**.
+
+    C'est ce qui la distingue d'un simple col : quand les bras bougent, deux
+    taches claires suivent le geste. À vingt-et-une unités, c'est ce qui rend la
+    tenue lisible en mouvement plutôt qu'à l'arrêt, et le premier jet ne l'avait
+    mise qu'au col.
+  */
+  const collar = joint(torso, [0, 0.52, 0])
+  outline(part(collar, new THREE.CylinderGeometry(0.225, 0.26, 0.1, 14), MAT.furShade))
+  /*
+    Le col est plus large que les bras, et c'est mesuré et non affirmé.
+
+    Les bras du rig sont à 0,24 de l'axe pour un rayon de 0,075, soit une
+    silhouette de 0,63 de large. La première version posait les touffes à 0,20
+    avec un rayon de 0,085 : le col n'atteignait que 0,57, donc il ne débordait
+    pas — alors que la prose de cette page affirmait le contraire. À 0,26 pour
+    des touffes de 0,10, il monte à 0,72 et déborde franchement.
+  */
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2
+    part(collar, faceted(new THREE.DodecahedronGeometry([0.1, 0.078, 0.09][i % 3], 0)), MAT.fur,
+      [Math.sin(a) * 0.26, 0.03 + (i % 2) * 0.02, Math.cos(a) * 0.26], null, [1, 0.84, 1])
+  }
+
+  for (const [arm, side] of [[armL, 1], [armR, -1]]) {
+    outline(part(arm, new THREE.CapsuleGeometry(0.075, 0.24, 4, 10), MAT.coat, [0, -0.16, 0]))
+    outline(part(arm, new THREE.CapsuleGeometry(0.066, 0.18, 4, 10), MAT.coat, [0, -0.38, 0]))
+    // La fourrure du poignet.
+    const cuff = joint(arm, [0, -0.47, 0])
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2
+      part(cuff, faceted(new THREE.DodecahedronGeometry(0.045, 0)), MAT.fur,
+        [Math.sin(a) * 0.06, 0, Math.cos(a) * 0.06], null, [1, 0.8, 1])
+    }
+    outline(part(arm, faceted(new THREE.BoxGeometry(0.075, 0.09, 0.055)), MAT.skin, [0, -0.55, 0]),
+      OUTLINE_THIN)
+    void side
+  }
+
+  // Le pantalon à entrelacs, et la ceinture fauve **en biais**.
+  for (const side of [1, -1]) {
+    const leg = joint(torso, [side * 0.11, -0.02, 0])
+    outline(part(leg, new THREE.CapsuleGeometry(0.088, 0.2, 4, 10), MAT.mesh, [0, -0.15, 0]))
+    outline(part(leg, new THREE.CapsuleGeometry(0.08, 0.17, 4, 10), MAT.mesh, [0, -0.35, 0]))
+    outline(part(leg, faceted(new THREE.BoxGeometry(0.1, 0.07, 0.2)), MAT.coatDeep, [0, -0.48, 0.04]))
+  }
+  outline(part(torso, new THREE.CylinderGeometry(0.19, 0.19, 0.055, 14), MAT.belt,
+    [0, 0.03, 0], [0.16, 0, 0.1]))
+
+  /*
+    La tête : peau claire, cheveux plaqués en arrière, **front dégagé**.
+
+    Le front doit rester libre : la croix est la moitié de ce qui rend ce
+    personnage reconnaissable, et une mèche par-dessus l'effacerait.
+  */
+  outline(part(head, new THREE.SphereGeometry(HEAD_R, 16, 14), MAT.skin))
+  outline(part(headwear, new THREE.SphereGeometry(HEAD_R + 0.008, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.58),
+    MAT.hair, [0, -0.15, -0.035], null, [1, 1.06, 1.1]))
+  // Trois mèches plaquées, d'inégale longueur : une calotte seule est une
+  // casquette, c'est l'écoulement vers la nuque qui donne une direction.
+  for (const x of [-1, 0, 1]) {
+    outline(part(headwear, faceted(new THREE.BoxGeometry(0.07, 0.16 - Math.abs(x) * 0.03, 0.05)),
+      MAT.hair, [x * 0.07, -0.14 - Math.abs(x) * 0.015, -0.22], [0.42, 0, x * 0.12]), OUTLINE_THIN)
+  }
+
+  /*
+    La croix du front — **inversée, et violette.**
+
+    La même que celle du dos, renversée : barre longue verticale, barre courte
+    **en bas**. C'est cette position basse, et elle seule, qui la distingue d'une
+    croix ordinaire. Le premier jet l'avait peinte de la couleur des cheveux, ce
+    qui la faisait disparaître.
+  */
+  part(head, faceted(new THREE.BoxGeometry(0.028, 0.13, 0.014)), MAT.royal, [0, 0.12, 0.235])
+  part(head, faceted(new THREE.BoxGeometry(0.078, 0.026, 0.014)), MAT.royal, [0, 0.075, 0.24])
+
+  // Les yeux, gris.
+  for (const side of [1, -1]) {
+    part(head, new THREE.SphereGeometry(0.032, 10, 8), GREY_EYE,
+      [side * 0.085, -0.01, 0.235], null, [1, 0.74, 1])
+  }
+
+  // Les boucles d'or à perle bleue, qui manquaient.
+  for (const side of [1, -1]) {
+    const ear = joint(head, [side * 0.24, -0.06, 0.02])
+    part(ear, new THREE.TorusGeometry(0.028, 0.008, 6, 12), MAT.cross, null, [Math.PI / 2, 0, 0])
+    part(ear, new THREE.SphereGeometry(0.02, 8, 8), BEAD, [0, -0.045, 0])
+  }
+}
+
+/* ===================================================== LA SILHOUETTE DE RÉFÉRENCE */
+
+/**
+ * Le héros de départ, en gris, posé entre les deux.
+ *
+ * Il n'est pas là pour être beau : c'est l'étalon. Les deux skins habillent
+ * **son** squelette, et la seule question qui compte est de savoir s'ils restent
+ * reconnaissables l'un de l'autre — et de lui — à la distance du jeu.
+ */
+const ghost = new THREE.Group()
+ghost.position.x = -1.1
+scene.add(ghost)
+{
+  const { torso, armL, armR, head } = buildRig(ghost)
+  outline(part(torso, new THREE.CapsuleGeometry(0.2, 0.3, 5, 14), MAT.ghost, [0, 0.26, 0]))
+  outline(part(head, new THREE.SphereGeometry(HEAD_R, 16, 14), MAT.ghost))
+  for (const arm of [armL, armR]) {
+    outline(part(arm, new THREE.CapsuleGeometry(0.072, 0.42, 4, 10), MAT.ghost, [0, -0.26, 0]))
+  }
+  for (const side of [1, -1]) {
+    const leg = joint(torso, [side * 0.11, -0.02, 0])
+    outline(part(leg, new THREE.CapsuleGeometry(0.086, 0.38, 4, 10), MAT.ghost, [0, -0.24, 0]))
+  }
+}
+
+/* ----------------------------------------------------------------- le sol */
+
+const ground = part(
+  scene,
+  new THREE.CircleGeometry(6, 40),
+  toon('#24463a'),
+  [0, -0.002, 0],
+  [-Math.PI / 2, 0, 0],
+)
+void ground
+
+/* -------------------------------------------------------------- la mesure */
+
+const tmpBox = new THREE.Box3()
+
+/**
+ * La boîte englobante d'un objet, **en sautant ce qui est éteint**.
+ *
+ * `Box3.setFromObject` ne sait pas le faire, et il n'y a rien d'éteint ici —
+ * mais c'est la même fonction que la maquette de Malenia, et elle y avait servi.
+ * La garder identique évite d'avoir deux mesureurs dont un seul est juste.
+ */
+function measure(root) {
+  const box = new THREE.Box3().makeEmpty()
+  root.updateWorldMatrix(true, true)
+  root.traverse((object) => {
+    if (!object.isMesh || !object.geometry) return
+    let node = object
+    while (node && node !== root.parent) {
+      if (!node.visible) return
+      node = node.parent
+    }
+    if (!object.geometry.boundingBox) object.geometry.computeBoundingBox()
+    tmpBox.copy(object.geometry.boundingBox).applyMatrix4(object.matrixWorld)
+    box.union(tmpBox)
+  })
+  return box
+}
+
+const fmt = (v) => v.toFixed(2).replace('.', ',')
+const write = (id, text) => {
+  const cell = document.getElementById(id)
+  if (cell) cell.textContent = text
+}
+
+/* -------------------------------------------------------------- les vues */
+
+const VIEWS = {
+  duo: {
+    label: 'Les deux, et le héros de départ en gris entre eux.<br>La seule question : restent-ils reconnaissables l\'un de l\'autre ?',
+    position: new THREE.Vector3(0, 1.35, 3.4),
+    target: new THREE.Vector3(0, 0.8, 0),
+    fov: 42,
+  },
+  roi: {
+    label: 'Le Roi — corps <b>vert pâle</b> pigmenté de vert sombre, et non la carapace violette du premier jet.<br>Le violet ne subsiste qu\'au crâne et dans le regard.',
+    position: new THREE.Vector3(0.9, 1.15, 1.9),
+    target: new THREE.Vector3(0, 0.78, 0),
+    fov: 36,
+  },
+  'roi-tete': {
+    label: 'Sa tête — <b>une carapace en casque</b>, arête médiane sombre, deux lignes violettes sur les flancs,<br>et <b>deux longues antennes</b> qui pendent des oreilles. Aucune corne.',
+    position: new THREE.Vector3(0.55, 1.42, 0.95),
+    target: new THREE.Vector3(0, 1.18, 0),
+    fov: 30,
+  },
+  'roi-queue': {
+    label: 'Sa queue — articulée, <b>verticale</b>, annelée de vert sombre et de noir,<br>terminée par un dard de scorpion au-dessus de la tête.',
+    position: new THREE.Vector3(1.5, 1.5, -1.5),
+    target: new THREE.Vector3(0, 1.3, -0.2),
+    fov: 38,
+  },
+  voleur: {
+    label: 'Le Voleur — manteau <b>violet sombre et ouvert</b>, fourrure au col et aux poignets,<br>maillot à entrelacs visible, ceinture fauve en biais.',
+    position: new THREE.Vector3(2.0, 1.15, 1.9),
+    target: new THREE.Vector3(1.1, 0.78, 0),
+    fov: 36,
+  },
+  'voleur-tete': {
+    label: 'Sa tête — cheveux plaqués, <b>front dégagé</b>, croix de saint Pierre <b>inversée et violette</b>,<br>et les boucles d\'or à perle bleue qui manquaient.',
+    position: new THREE.Vector3(1.62, 1.4, 0.95),
+    target: new THREE.Vector3(1.1, 1.18, 0),
+    fov: 28,
+  },
+  'voleur-dos': {
+    label: 'Son dos — <b>la croix de saint Pierre brodée d\'or</b>, surmontée de deux cornes.<br>C\'est la face que la caméra du jeu montre le plus, et elle manquait entièrement.',
+    position: new THREE.Vector3(1.1, 1.05, -1.7),
+    target: new THREE.Vector3(1.1, 0.78, 0),
+    fov: 34,
+  },
+  jeu: {
+    label: 'La caméra du jeu, à ses cotes : FOV <b>48</b>, <b>11</b> de haut, <b>21</b> de recul,<br>visée relevée à <b>4,5</b>. C\'est ici que se juge la lisibilité — voir la question 01.',
+    position: new THREE.Vector3(0, 11, 21),
+    target: new THREE.Vector3(0, 4.5, 0),
+    fov: 48,
+  },
+  tour: {
+    label: 'Tour — trois quarts, rotation lente.',
+    position: new THREE.Vector3(1.9, 1.2, 2.2),
+    target: new THREE.Vector3(0.55, 0.75, 0),
+    fov: 40,
+    spin: true,
+  },
+}
+
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+let currentView = VIEWS.duo
+
+function applyView(name) {
+  currentView = VIEWS[name]
+  camera.fov = currentView.fov
+  camera.position.copy(currentView.position)
+  camera.updateProjectionMatrix()
+  controls.target.copy(currentView.target)
+  controls.autoRotate = !!currentView.spin && !reduceMotion
+  controls.update()
+  for (const button of document.querySelectorAll('[data-view]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.view === name))
+  }
+  readout.innerHTML = currentView.label
+}
+
+for (const button of document.querySelectorAll('[data-view]')) {
+  button.addEventListener('click', () => applyView(button.dataset.view))
+}
+controls.addEventListener('start', () => { controls.autoRotate = false })
+
+/* ------------------------------------------------------------------ boucle */
+
+function resize() {
+  const width = viewer.clientWidth
+  const height = viewer.clientHeight
+  if (!width || !height) return
+  renderer.setSize(width, height, false)
+  camera.aspect = width / height
+  camera.updateProjectionMatrix()
+}
+
+new ResizeObserver(resize).observe(viewer)
+resize()
+
+{
+  const roi = measure(king)
+  const voleur = measure(thief)
+  write('m-roi', `${fmt(roi.max.y)} u`)
+  write('m-voleur', `${fmt(voleur.max.y)} u`)
+  write('m-roi-w', `${fmt(roi.max.x - roi.min.x)} u`)
+  write('m-voleur-w', `${fmt(voleur.max.x - voleur.min.x)} u`)
+  // L'antenne : mesurée sur la chaîne montée, et non recopiée de la boucle qui
+  // la construit — une constante recopiée ment dès qu'on touche à la boucle.
+  const antenna = measure(antennaTip)
+  write('m-antenne', `${fmt(HEAD_Y + 0.16 - antenna.min.y)} u`)
+  write('m-dard', `${fmt(roi.max.y - (HEAD_Y + HEAD_R))} u au-dessus du crâne`)
+  metrics.textContent = 'cotes du tableau — mesurées sur ces modèles'
+}
+
+applyView('duo')
+loading.remove()
+
+function frame() {
+  controls.update()
+  sky.position.copy(camera.position)
+  renderer.render(scene, camera)
+  requestAnimationFrame(frame)
+}
+
+requestAnimationFrame(frame)
+</script>
