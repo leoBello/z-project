@@ -155,6 +155,10 @@
         "lynel-trial": {
           "name": "L'épreuve des trois Lynels",
           "goal": "Le gardien tombé, trois bêtes ont pris le jardin. Les abattre toutes les trois vaut un cœur de plus."
+        },
+        "golden-lynel": {
+          "name": "Le Lynel doré",
+          "goal": "La herse s'est levée. Au bout de la voie de l'ouest, une montagne, et à son sommet une bête d'or. L'abattre vaut un cœur de plus."
         }
       }
     },

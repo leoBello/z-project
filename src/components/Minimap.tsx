@@ -4,13 +4,18 @@ import { useI18n } from '../i18n/useI18n'
 import { ENEMIES } from '../config/enemies'
 import { LANDMARKS } from '../config/landmarks'
 import { PORTAL } from '../config/portal'
+import { SKY_COLORS, rimRadius, topHeight, topSlope } from '../config/skyIsland'
 import {
+  ISLAND_MAP_CENTER_X,
+  ISLAND_MAP_CENTER_Z,
   ISLAND_MAP_SIZE,
-  SKY_COLORS,
-  rimRadius,
-  topHeight,
-  topSlope,
-} from '../config/skyIsland'
+  MOUNT_BASE_R,
+  MOUNT_H,
+  mountainHeight,
+  mountainLocal,
+  mountainSlope,
+  nearCauseway,
+} from '../config/skyMountain'
 import { WORLD, classifyBiome, sampleHeight } from '../config/world'
 import { enemyRegistry } from '../state/enemyRegistry'
 import { playerTransform } from '../state/playerTransform'
@@ -121,7 +126,15 @@ function renderWorldMap() {
  *
  * Le hors-île est laissé **transparent** et non peint en bleu : il n'y a pas de
  * mer autour, il n'y a rien. C'est ce vide qui dit, d'un seul coup d'œil sur la
- * carte, qu'on est sur un caillou en l'air.
+ * carte, qu'on est sur un caillou en l'air. C'est aussi lui qui fait lire la
+ * voie de l'ouest comme un **pont** : un ruban de pierre de sept unités de
+ * large entouré de néant, et une montagne détachée au bout.
+ *
+ * Les trois morceaux sont peints par la même règle — la pente dit la couleur,
+ * donc la carte dit où l'on peut monter — et chacun la tire de sa propre source
+ * de vérité : `topSlope` pour l'île, `mountainSlope` pour la montagne. Aucun
+ * des deux n'est redessiné ici, ce qui interdit à la carte de contredire le
+ * terrain.
  */
 function renderIslandMap() {
   const canvas = document.createElement('canvas')
@@ -142,12 +155,64 @@ function renderIslandMap() {
   ]
   const lawn = toRgb(SKY_COLORS.lawn)
   const stone = toRgb(SKY_COLORS.stoneMid)
+  /**
+   * La roche de la montagne : elle n'a pas d'herbe, c'est un caillou nu.
+   *
+   * `rock` et non `rockDeep`, qui est la teinte du **dessous** de l'île. Sur la
+   * carte, le violet sombre de `rockDeep` rendait la montagne presque noire à
+   * côté du vert de l'île : on y voyait un trou dans le cadre plutôt qu'un
+   * relief, et la spire s'y perdait. Le plancher d'ombrage est relevé pour la
+   * même raison — un cône vu de dessus est sombre à sa base par construction,
+   * et la carte n'a pas à en rajouter.
+   */
+  const rock = toRgb(SKY_COLORS.rock)
+
+  /**
+   * Peint un pixel : deux couleurs, le mélange entre elles, et un ombrage.
+   *
+   * Les deux couleurs sont un paramètre parce que les deux reliefs n'ont pas la
+   * même matière — l'île oppose l'herbe à la pierre, la montagne la pierre à la
+   * roche nue. Un seul couple codé en dur aurait verdi les flancs du cône.
+   */
+  const paint = (
+    index: number,
+    flat: [number, number, number],
+    steep: [number, number, number],
+    t: number,
+    shade: number,
+  ) => {
+    for (let c = 0; c < 3; c++) {
+      image.data[index + c] = Math.min(255, (flat[c] * (1 - t) + steep[c] * t) * shade)
+    }
+    image.data[index + 3] = 255
+  }
 
   for (let py = 0; py < MAP_RESOLUTION; py++) {
-    const z = -half + py * step
+    const z = ISLAND_MAP_CENTER_Z - half + py * step
     for (let px = 0; px < MAP_RESOLUTION; px++) {
-      const x = -half + px * step
+      // Le cadre est décalé vers l'ouest pour tenir la montagne sans rapetisser
+      // l'île — voir `ISLAND_MAP_CENTER_X`.
+      const x = ISLAND_MAP_CENTER_X - half + px * step
       const index = (py * MAP_RESOLUTION + px) * 4
+
+      const mount = mountainLocal(x, z)
+      if (mount.d <= MOUNT_BASE_R) {
+        // La montagne, à la même règle que l'île : le chemin en spire ressort
+        // en clair parce qu'il est plat, les flancs restent sombres parce
+        // qu'ils ne le sont pas. Personne n'a dessiné de spirale.
+        const slope = Math.min(1, mountainSlope(mount.d, mount.phi) / 1.1)
+        const shade = 0.74 + 0.26 * (mountainHeight(mount.d, mount.phi) / MOUNT_H)
+        paint(index, stone, rock, slope, shade)
+        continue
+      }
+
+      // La voie : un rectangle dans **son** repère, que `nearCauseway` teste
+      // sans que la carte ait à savoir sous quel cap il est posé. Sa pente est
+      // nulle, donc sa couleur est celle du dallage, sans avoir à l'écrire.
+      if (nearCauseway(x, z, 0)) {
+        paint(index, stone, rock, 0, 0.9)
+        continue
+      }
 
       const r = Math.hypot(x, z)
       const theta = Math.atan2(x, z)
@@ -164,12 +229,7 @@ function renderIslandMap() {
       // Ombrage de relief : les terrasses se détachent parce que leur talus est
       // sombre, pas parce qu'on aurait dessiné un cercle par-dessus.
       const shade = 0.72 + 0.28 * (topHeight(r, theta) / 7.2)
-
-      for (let c = 0; c < 3; c++) {
-        const value = lawn[c] * (1 - slope) + stone[c] * slope
-        image.data[index + c] = Math.min(255, value * shade)
-      }
-      image.data[index + 3] = 255
+      paint(index, lawn, stone, slope, shade)
     }
   }
 
@@ -227,13 +287,21 @@ export function Minimap({ markers = [] }: MinimapProps) {
     let lastBiome: BiomeId | null = null
 
     const sky = location === 'sky'
-    // Le cadrage suit la carte : l'île tient dans 130 unités, le continent dans
-    // 200. Une seule échelle pour les deux rendrait l'île minuscule au milieu
-    // d'un vide, ce qui est exact et illisible.
+    // Le cadrage suit la carte : la carte céleste tient dans un cadre dérivé de
+    // son propre contenu (voir `ISLAND_MAP_SIZE`), le continent dans 200. Une
+    // seule échelle pour les deux rendrait l'île minuscule au milieu d'un vide,
+    // ce qui est exact et illisible.
     const extent = sky ? ISLAND_MAP_SIZE : WORLD.size
+    // Le cadre céleste n'est pas centré sur l'origine : il l'est sur le milieu
+    // de ce qu'il doit montrer, île **et** promontoire du nord-ouest — donc
+    // décalé sur les deux axes. Le décalage est appliqué ici et dans le fond de
+    // carte, et il n'existe qu'à ces deux endroits — un troisième aurait un
+    // jour dessiné les repères à côté du relief qu'ils désignent.
+    const centerX = sky ? ISLAND_MAP_CENTER_X : 0
+    const centerZ = sky ? ISLAND_MAP_CENTER_Z : 0
     const toPixels = (x: number, z: number) => ({
-      px: ((x + extent / 2) / extent) * size,
-      py: ((z + extent / 2) / extent) * size,
+      px: ((x - centerX + extent / 2) / extent) * size,
+      py: ((z - centerZ + extent / 2) / extent) * size,
     })
 
     const draw = () => {

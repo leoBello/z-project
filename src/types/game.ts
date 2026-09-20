@@ -84,25 +84,30 @@ export type LandmarkId = 'temple' | 'pyramid' | 'stele' | 'statue' | 'ruins' | '
  * Lynel ; l'annoncer sur la carte dès le départ le déflorerait. Même
  * raisonnement que le portail de l'île, qui n'est pas un monument non plus.
  *
- * `trial` n'est un lieu d'aucune sorte : c'est la récompense de l'épreuve des
- * trois Lynels, qui n'a pas de socle à ramasser. Elle passe quand même par ici
- * plutôt que par un chemin à elle, parce que le réceptacle *est* la chose —
- * même cœur maximal, même soin complet, même bandeau — et qu'un second chemin
- * vers `maxHearts` serait un second endroit où l'oublier.
+ * `trial` et `golden` ne sont des lieux d'aucune sorte : ce sont les
+ * récompenses de l'épreuve des trois Lynels et du Lynel doré, qui n'ont pas de
+ * socle à ramasser. Elles passent quand même par ici plutôt que par un chemin à
+ * elles, parce que le réceptacle *est* la chose — même cœur maximal, même soin
+ * complet, même bandeau — et qu'un second chemin vers `maxHearts` serait un
+ * second endroit où l'oublier.
  */
-export type HeartSourceId = LandmarkId | 'rotunda' | 'trial'
+export type HeartSourceId = LandmarkId | 'rotunda' | 'trial' | 'golden'
 
 /**
  * Identifiant de quête. La table vit dans `config/quests.ts`, et les libellés
  * dans `src/i18n/*.json` sous `ui.quests.entries`.
  *
  * Un type fermé et non une table extensible, pour la même raison que `MapId` :
- * aucune de ces trois quêtes n'est une ligne de configuration. Chacune se
+ * aucune de ces quatre quêtes n'est une ligne de configuration. Chacune se
  * termine sur un état de partie qui lui est propre — la carte vidée, l'île
- * atteinte, trois bêtes abattues — et en ajouter une demandera de dire *où*
- * elle s'achève, pas seulement comment elle s'intitule.
+ * atteinte, trois bêtes abattues, la montagne gravie — et en ajouter une
+ * demandera de dire *où* elle s'achève, pas seulement comment elle s'intitule.
  */
-export type QuestId = 'clear-continent' | 'sky-portal' | 'lynel-trial'
+export type QuestId =
+  | 'clear-continent'
+  | 'sky-portal'
+  | 'lynel-trial'
+  | 'golden-lynel'
 
 /**
  * Identifiant d'objet ramassable. La table vit dans `config/items.ts`, et les

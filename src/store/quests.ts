@@ -10,7 +10,7 @@ import { useGameStore } from './useGameStore'
  * de lire de la même façon. La laisser se recopier dans les deux ferait
  * diverger un jour la pastille qui pulse et la quête qu'elle annonce.
  *
- * Les cinq valeurs lues changent toutes à des transitions rares — un ennemi
+ * Les six valeurs lues changent toutes à des transitions rares — un ennemi
  * tué, un portail ouvert, une arrivée, une chute de boss — donc s'y abonner ne
  * coûte pas un rendu par image. `trialSlain.length` plutôt que le tableau :
  * c'est un nombre, il ne re-rend pas quand la référence change sans que le
@@ -27,6 +27,7 @@ export function useQuestBoard(): QuestStatus[] {
   const skyVisited = useGameStore((state) => state.skyVisited)
   const bossDefeated = useGameStore((state) => state.bossState === 'defeated')
   const trialSlain = useGameStore((state) => state.trialSlain.length)
+  const goldenSlain = useGameStore((state) => state.goldenSlainAt !== null)
 
   return questBoard({
     kills,
@@ -35,6 +36,7 @@ export function useQuestBoard(): QuestStatus[] {
     skyVisited,
     bossDefeated,
     trialSlain,
+    goldenSlain,
   })
 }
 

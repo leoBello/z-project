@@ -31,6 +31,24 @@ import {
   underHeight,
   underRadius,
 } from '../../config/skyIsland'
+import {
+  DECK_HALF,
+  DECK_X0,
+  DECK_X1,
+  DECK_Y,
+  GATE_X,
+  MOUNT_BASE_R,
+  MOUNT_DEPTH,
+  MOUNT_H,
+  MOUNT_X,
+  MOUNT_Z,
+  SPUR_YAW,
+  SUMMIT_R,
+  TOWER_H,
+  TOWER_R,
+  TOWER_Z,
+  spurToWorld,
+} from '../../config/skyMountain'
 import { smoothstep } from '../../config/world'
 
 /**
@@ -297,6 +315,61 @@ function buildMassing() {
     const dome = new CylinderGeometry(6.2, 10.8, 2.6, 10)
     dome.translate(0, CORE_Y + height + 1.3, 0)
     parts.push(tint(dome, SKY_COLORS.gold, 0.52))
+  }
+
+  /*
+    La voie de l'ouest, ses deux tours, et la montagne au bout.
+
+    **C'est la pièce qui change la silhouette de l'île**, et il fallait qu'elle
+    la change : le joueur voit ce rocher depuis l'écran de départ, et s'il n'y
+    trouvait pas le promontoire qu'il vient de gravir, ce serait la preuve que
+    les deux ne sont pas le même endroit.
+
+    Comme tout le reste ici, elle est **dérivée** et non dessinée à côté : les
+    cotes sortent de `config/skyMountain.ts`, les mêmes qui bâtissent le vrai
+    relief. Le cône tronqué a le rayon de base, le rayon de plateau et la
+    hauteur réels ; le socle a la profondeur réelle. La spire, elle, n'y est
+    pas — à cinq cents unités, six unités de large font un tiers de pixel, et
+    les triangles qu'elle coûterait ne dessineraient rien.
+  */
+  {
+    /*
+      Les cotes viennent du repère de la voie, et le cap est appliqué comme
+      dans le fragment de l'île : une rotation, puis la translation au point
+      **monde**. L'ordre n'est pas interchangeable — tourner après avoir
+      translaté ferait pivoter la pièce autour du centre de l'île et non autour
+      d'elle-même. Les cylindres y sont indifférents, la boîte du tablier non.
+    */
+    const at = (x: number, z: number) => spurToWorld(x, z)
+
+    // Le tablier. Une seule boîte : un pont vu de cinq cents unités est un
+    // trait, et un trait n'a pas de parapet.
+    const deckMid = at((DECK_X0 + DECK_X1) / 2, 0)
+    const deck = new BoxGeometry(Math.abs(DECK_X1 - DECK_X0), 2.4, DECK_HALF * 2)
+    deck.rotateY(SPUR_YAW)
+    deck.translate(deckMid.x, DECK_Y - 1.2, deckMid.z)
+    parts.push(tint(deck, SKY_COLORS.stone, HAZE))
+
+    // Les deux tours de la porte. Elles sont la seule verticale entre l'île et
+    // la montagne, donc le seul repère qui dise que le pont est gardé.
+    for (const side of [-1, 1]) {
+      const foot = at(GATE_X, side * TOWER_Z)
+      const drum = new CylinderGeometry(TOWER_R - 0.2, TOWER_R, TOWER_H, 6)
+      drum.translate(foot.x, DECK_Y + TOWER_H / 2, foot.z)
+      parts.push(tint(drum, SKY_COLORS.stone, HAZE - 0.04))
+    }
+
+    // La montagne : un cône tronqué, et son socle en pointe. Plus embrumée que
+    // l'île — elle est plus loin dans le tableau, et une masse posée au même
+    // degré de brume que le premier plan colle les deux l'une à l'autre.
+    const peak = at(MOUNT_X, MOUNT_Z)
+    const cone = new CylinderGeometry(SUMMIT_R, MOUNT_BASE_R, MOUNT_H, 12)
+    cone.translate(peak.x, DECK_Y + MOUNT_H / 2, peak.z)
+    parts.push(tint(cone, SKY_COLORS.rock, 0.54))
+
+    const keel = new CylinderGeometry(MOUNT_BASE_R, 0.8, MOUNT_DEPTH, 12)
+    keel.translate(peak.x, DECK_Y - MOUNT_DEPTH / 2, peak.z)
+    parts.push(tint(keel, SKY_COLORS.rockDeep, 0.62))
   }
 
   // L'arbre, à la hauteur réelle : c'est lui qui donne l'échelle de l'île. À

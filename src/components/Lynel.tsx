@@ -24,13 +24,17 @@ import {
   ARENA_CENTER,
   ARENA_LEASH,
   ARENA_R,
+  GOLDEN_DAMAGE_BONUS,
+  GOLDEN_PHASES,
   LYNEL_ATTACKS,
+  PHASE_THRESHOLDS,
   PUNISH_MULTIPLIER,
   RECENTER_RADIUS,
   attacksFor,
   phaseOf,
   type LynelAttack,
   type LynelLeash,
+  type LynelPhases,
 } from '../config/lynel'
 import { PARRY } from '../config/parry'
 import { shake } from '../state/cameraShake'
@@ -43,7 +47,7 @@ import { PROJECTILE_HIT_RADIUS, fireProjectile, projectiles } from '../state/pro
 import { useGameStore } from '../store/useGameStore'
 import type { LynelAttackId, LynelPhase } from '../types/game'
 import { LynelModel } from './enemies/LynelModel'
-import { LYNEL_COLORS } from './enemies/lynelMaterials'
+import { GOLDEN_LYNEL_PALETTE, LYNEL_COLORS } from './enemies/lynelMaterials'
 import type { LynelPose, LynelRig } from './enemies/LynelModel'
 import { useEnemyMaterials } from './enemies/models'
 
@@ -405,15 +409,22 @@ export interface LynelProps {
   /** Points de vie. Ceux de la table commune — le gardien — par défaut. */
   hp?: number
   /**
-   * Gardien de la rotonde, ou bête de l'épreuve.
+   * Gardien de la rotonde, bête de l'épreuve, ou Lynel doré.
    *
-   * Ce n'est pas un réglage de difficulté, c'est ce qui décide de **ce que sa
-   * mort déclenche** : le gardien ouvre les barrières, la caméra et les deux
-   * récompenses de la rotonde ; une bête de l'épreuve avance un compteur de
-   * quête. Et lui seul engage le combat d'arène — trois bêtes qui appelleraient
-   * `startBossFight` en refermeraient les barrières sur un boss déjà mort.
+   * C'est d'abord ce qui décide de **ce que sa mort déclenche** : le gardien
+   * ouvre les barrières, la caméra et les deux récompenses de la rotonde ; une
+   * bête de l'épreuve avance un compteur de quête ; le doré clôt la dernière et
+   * ouvre le portail du sommet. Et le gardien seul engage le combat d'arène —
+   * une autre bête qui appellerait `startBossFight` en refermerait les
+   * barrières sur un boss déjà mort.
+   *
+   * Le doré y ajoute trois réglages — sa robe, ses seuils de phase et le cœur
+   * qu'il ajoute à chaque coup — et ils sont **déduits du rôle** plutôt que
+   * passés en props. Trois props de plus au point de montage auraient permis de
+   * monter un doré argenté qui frappe comme un gardien, c'est-à-dire un état
+   * que rien ne décrit.
    */
-  role?: 'guardian' | 'trial'
+  role?: 'guardian' | 'trial' | 'golden'
 }
 
 export function Lynel({
@@ -424,12 +435,19 @@ export function Lynel({
   role = 'guardian',
 }: LynelProps = {}) {
   const stats = ENEMIES.lynel
-  const materials = useEnemyMaterials('lynel')
+  const golden = role === 'golden'
+  const materials = useEnemyMaterials('lynel', golden ? GOLDEN_LYNEL_PALETTE : undefined)
+  /** Ses seuils de phase, et le cœur qu'il ajoute à chaque coup. Voir `role`. */
+  const phases: LynelPhases = golden ? GOLDEN_PHASES : PHASE_THRESHOLDS
+  const damageBonus = golden ? GOLDEN_DAMAGE_BONUS : 0
 
   // Mémoïsé, et pas seulement par économie : `damage` est appelé depuis la
   // boucle de frame, et lui passer un objet neuf à chaque image ferait travailler
-  // le ramasse-miettes pour trois valeurs qui ne bougent jamais.
-  const beast = useMemo<Beast>(() => ({ id, groundY: home[1], role }), [home, id, role])
+  // le ramasse-miettes pour quatre valeurs qui ne bougent jamais.
+  const beast = useMemo<Beast>(
+    () => ({ id, groundY: home[1], role, phases }),
+    [home, id, phases, role],
+  )
 
   const body = useRef<RapierRigidBody>(null)
   const visual = useRef<Group>(null)
@@ -441,7 +459,7 @@ export function Lynel({
 
   const runtime = useRef<LynelRuntime>({
     hp,
-    phase: 'sword',
+    phase: phaseOf(hp, phases),
     pending: null,
     pendingStartedAt: 0,
     pendingImpactAt: 0,
@@ -701,7 +719,7 @@ export function Lynel({
       // reprendrait des dégâts à chaque frame dès la fin de ses i-frames.
       if (!state.chargeHit && distance < stats.radius + 0.9) {
         state.chargeHit = true
-        store.damagePlayer(LYNEL_ATTACKS.charge.damage, 'lynel')
+        store.damagePlayer(LYNEL_ATTACKS.charge.damage + damageBonus, 'lynel')
         playImpact()
       }
 
@@ -886,14 +904,16 @@ export function Lynel({
           s'esquiver. Le jeu avait un saut qui ne servait qu'à grimper.
         */
         if (playerTransform.grounded && attackHits(attack, position, state.yaw)) {
-          store.damagePlayer(attack.damage, 'lynel')
+          store.damagePlayer(attack.damage + damageBonus, 'lynel')
         }
         spawnDeathRing(position.x, home[1], position.z, SHOCK_COLOR, attack.reach)
         shake(0.14, 200)
         playImpact()
         state.pose = 'cabre'
       } else if (attack.id === 'breath') {
-        if (attackHits(attack, position, state.yaw)) store.damagePlayer(attack.damage, 'lynel')
+        if (attackHits(attack, position, state.yaw)) {
+          store.damagePlayer(attack.damage + damageBonus, 'lynel')
+        }
         // Les flaques sont semées le long du cône, du plus près au plus loin :
         // c'est le souffle qui se pose, pas une couronne autour de la bête.
         for (let i = 0; i < PUDDLES; i++) {
@@ -931,7 +951,7 @@ export function Lynel({
         }
         state.pose = 'balayage'
       } else if (attackHits(attack, position, state.yaw)) {
-        useGameStore.getState().damagePlayer(attack.damage, 'lynel')
+        useGameStore.getState().damagePlayer(attack.damage + damageBonus, 'lynel')
         // La charge et le triple tir sont traités au-dessus : ne restent ici que
         // les coups d'épée, qui partagent tous le même geste de suite.
         state.pose = 'balayage'
@@ -1024,7 +1044,7 @@ export function Lynel({
     // La phase se relit à chaque frame plutôt qu'au moment du coup : elle est une
     // fonction des PV, pas un événement, et la dériver évite qu'un chemin de
     // dégâts oublié laisse le boss dans une phase qu'il a déjà quittée.
-    state.phase = phaseOf(state.hp)
+    state.phase = phaseOf(state.hp, phases)
 
     // Le corps se gonfle pendant la préparation : c'est ce mouvement-là, plus
     // que la pose, qui se lit à la périphérie du regard.
@@ -1110,7 +1130,9 @@ interface Beast {
   id: string
   /** Altitude du poste, où se pose l'anneau de mort. */
   groundY: number
-  role: 'guardian' | 'trial'
+  role: 'guardian' | 'trial' | 'golden'
+  /** Ses seuils de phase : `damage` relit la phase après chaque coup. */
+  phases: LynelPhases
 }
 
 /**
@@ -1139,7 +1161,7 @@ function damage(
 ) {
   state.hp -= amount
   state.hitFlashUntil = now + HIT_FLASH_MS
-  state.phase = phaseOf(state.hp)
+  state.phase = phaseOf(state.hp, beast.phases)
   playHit()
 
   const marker = enemyRegistry.get(beast.id)
@@ -1174,15 +1196,19 @@ function damage(
   }
 
   /*
-    Ce que la mort déclenche, et c'est la seule chose qui sépare les deux rôles.
+    Ce que la mort déclenche : le seul embranchement du fichier sur le rôle.
 
     Le gardien ouvre les barrières et rouvre la caméra ; son état reste
     `defeated` pour toute la partie, on ne rengage pas un boss mort en repassant
     par là. Une bête de l'épreuve avance une quête, et la troisième donne le
-    cœur — le store décide, pas d'ici.
+    cœur. Le doré clôt la dernière quête, donne le sien et ouvre le portail du
+    sommet. Dans les trois cas c'est le store qui décide de la suite, pas d'ici :
+    ce fichier sait faire mourir une bête, pas ce que sa mort vaut.
   */
   if (beast.role === 'guardian') {
     useGameStore.getState().endBossFight(true, [x, beast.groundY, z])
+  } else if (beast.role === 'golden') {
+    useGameStore.getState().registerGoldenKill()
   } else {
     useGameStore.getState().registerTrialKill(beast.id)
   }

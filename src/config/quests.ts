@@ -43,8 +43,8 @@ export interface QuestStatus {
  * Les faits de partie dont le journal se déduit.
  *
  * Une interface structurelle plutôt que `GameState` lui-même : le journal ne
- * doit pouvoir lire *que* ces six valeurs, sinon la tentation viendra vite d'y
- * brancher une septième et de faire du fichier une seconde logique de jeu. Ça
+ * doit pouvoir lire *que* ces sept valeurs, sinon la tentation viendra vite d'y
+ * brancher une huitième et de faire du fichier une seconde logique de jeu. Ça
  * le rend aussi testable sans monter de store.
  */
 export interface QuestFacts {
@@ -59,6 +59,8 @@ export interface QuestFacts {
   bossDefeated: boolean
   /** Bêtes de l'épreuve déjà abattues. */
   trialSlain: number
+  /** Le Lynel doré, au sommet de la montagne de l'ouest, est tombé. */
+  goldenSlain: boolean
 }
 
 /**
@@ -107,6 +109,31 @@ export function questBoard(facts: QuestFacts): QuestStatus[] {
           : 'active',
       current: Math.min(facts.trialSlain, TRIAL_COUNT),
       target: TRIAL_COUNT,
+    },
+    {
+      /*
+        La montagne de l'ouest, et ce que la herse cachait.
+
+        Elle se déverrouille sur **la même condition qui lève la herse** — les
+        trois bêtes abattues — parce que c'est cette condition-là qui rend la
+        montagne atteignable. Le joueur voit donc la quête paraître à l'instant
+        précis où le chemin s'ouvre, et non avant : le promontoire et ses deux
+        tours se regardent depuis l'arrivée sur l'île, mais rien ne dit ce qui
+        s'y tient tant qu'on ne peut pas y monter.
+
+        Elle ne se compte pas — un doré, un seul — d'où le but à un. Le journal
+        rend alors la ligne sans jauge, ce qui est exact : il n'y a rien à
+        collectionner, il y a quelque chose à battre.
+      */
+      id: 'golden-lynel',
+      state:
+        facts.trialSlain < TRIAL_COUNT
+          ? 'locked'
+          : facts.goldenSlain
+            ? 'done'
+            : 'active',
+      current: facts.goldenSlain ? 1 : 0,
+      target: 1,
     },
   ]
 }

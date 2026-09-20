@@ -32,6 +32,7 @@ import {
   underHeight,
   underRadius,
 } from '../../config/skyIsland'
+import { nearCauseway } from '../../config/skyMountain'
 import { seededRandom, smoothstep } from '../../config/world'
 import { faceted } from '../environment/faceted'
 import { SKY_MATERIALS, type SkyMaterials } from './palette'
@@ -185,6 +186,10 @@ function buildFlora() {
       }
       // Ni dans le tronc du grand arbre, qui pousse à cette distance-là.
       if (inTreeTrunk(Math.sin(theta) * r, Math.cos(theta) * r)) continue
+      // Ni sous la voie de l'ouest, qui survole la prairie jusqu'à la lèvre :
+      // un bosquet y traverserait le tablier. Une marge d'une unité et demie,
+      // pour que le feuillage ne déborde pas non plus sur le parapet.
+      if (nearCauseway(Math.sin(theta) * r, Math.cos(theta) * r, 1.5)) continue
       // Ni sur le dallage de l'arène : le semis commence à r = 8, donc bien à
       // l'intérieur. Sauté après les tirages, pour la raison dite plus haut.
       if (r < ARENA_CLEAR_R) continue
@@ -208,6 +213,9 @@ function buildFlora() {
       const rotation = random() * Math.PI
       const scale = 0.7 + random() * 0.8
       if (inTreeTrunk(Math.sin(theta) * r, Math.cos(theta) * r)) continue
+      // Les touffes aussi : une herbe qui pousse au travers d'une dalle de
+      // pierre se voit d'autant mieux qu'on marche dessus.
+      if (nearCauseway(Math.sin(theta) * r, Math.cos(theta) * r, 0.4)) continue
       dummy.position.set(
         Math.sin(theta) * r,
         topHeight(r, theta) + 0.3,
