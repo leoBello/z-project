@@ -329,6 +329,125 @@ function LootShape({ id, accent }: { id: ItemId; accent: string }) {
     )
   }
 
+  if (id === 'vader-saber') {
+    return (
+      <>
+        {/* Dressée comme les deux autres armes — c'est la pose des armes
+            longues dans le faisceau — mais **elle n'emprunte rien au métal** :
+            ni pointe, ni garde, et le cœur de la lame est rendu sans éclairage.
+            C'est le seul butin du jeu qui éclaire au lieu de refléter, et à
+            cette taille c'est la seule chose qui le distingue du katana. */}
+        <mesh position={[0, 0.3, 0]}>
+          <capsuleGeometry args={[0.022, 0.5, 4, 8]} />
+          <meshBasicMaterial color="#ffe2df" />
+        </mesh>
+        <mesh position={[0, 0.3, 0]}>
+          <capsuleGeometry args={[0.045, 0.5, 4, 10]} />
+          {/* Pas d'écriture de profondeur : le halo est un effet, il ne doit
+              pas découper un trou dans le coffre qui passe derrière. Même
+              discipline que la traînée de `StrikeArc`. */}
+          <meshBasicMaterial
+            color={accent}
+            transparent
+            opacity={0.55}
+            depthWrite={false}
+          />
+        </mesh>
+
+        {/* L'émetteur, puis la poignée. Ce sont les deux seules pièces du butin
+            qui prennent la lumière, et la bague est ce qui dit où l'acier
+            s'arrête. */}
+        <mesh castShadow position={[0, -0.03, 0]}>
+          <cylinderGeometry args={[0.042, 0.038, 0.04, 10]} />
+          <meshToonMaterial gradientMap={toonGradient} color="#b9c0cc" />
+        </mesh>
+        <mesh castShadow position={[0, -0.16, 0]}>
+          <cylinderGeometry args={[0.034, 0.037, 0.24, 10]} />
+          <meshToonMaterial gradientMap={toonGradient} color="#b9c0cc" />
+        </mesh>
+        {[-0.1, -0.22].map((y) => (
+          <mesh key={y} position={[0, y, 0]}>
+            <cylinderGeometry args={[0.04, 0.04, 0.045, 10]} />
+            <meshToonMaterial gradientMap={toonGradient} color="#15171d" />
+          </mesh>
+        ))}
+        {/* Le témoin rouge de la poignée : trois millimètres qu'on ne voit
+            qu'ici, en gros plan, et c'est exactement ce que le faisceau du
+            coffre est fait pour montrer. */}
+        <mesh position={[0, -0.13, 0.038]}>
+          <boxGeometry args={[0.016, 0.026, 0.012]} />
+          <meshBasicMaterial color={accent} />
+        </mesh>
+      </>
+    )
+  }
+
+  if (id === 'vader-armor') {
+    return (
+      <>
+        {/* **Le casque, et non la tenue pliée.** Les deux autres tenues de
+            l'île sortent du coffre en pièce d'étoffe, parce qu'un vêtement
+            trouvé dans une caisse est plié ; celle-ci n'est pas un vêtement,
+            c'est une carapace — et son casque se reconnaît à lui seul, ce
+            qu'aucune autre pièce du jeu ne fait. */}
+        <mesh castShadow position={[0, 0.06, 0]} scale={[1, 1.02, 1.06]}>
+          <sphereGeometry args={[0.2, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.58]} />
+          <meshToonMaterial
+            gradientMap={toonGradient}
+            color="#14161f"
+            emissive={accent}
+            emissiveIntensity={0.5}
+          />
+        </mesh>
+        {/* La jupe évasée, qui ferme le casque par le bas. */}
+        <mesh castShadow position={[0, -0.09, 0]}>
+          <cylinderGeometry args={[0.2, 0.235, 0.22, 14]} />
+          <meshToonMaterial
+            gradientMap={toonGradient}
+            color="#14161f"
+            emissive={accent}
+            emissiveIntensity={0.4}
+          />
+        </mesh>
+
+        {/* Le masque : l'arête de front, les deux lentilles, le triangle du nez
+            et la grille. Quatre pièces, et c'est le minimum — à trois, le
+            casque redevient un galet noir. */}
+        <mesh position={[0, 0.06, 0.17]} rotation={[0.2, 0, 0]}>
+          <boxGeometry args={[0.22, 0.045, 0.06]} />
+          <meshToonMaterial gradientMap={toonGradient} color="#14161f" />
+        </mesh>
+        {[0.068, -0.068].map((x) => (
+          <mesh key={x} position={[x, 0.015, 0.175]} rotation={[0, 0, x > 0 ? 0.28 : -0.28]}>
+            <boxGeometry args={[0.085, 0.04, 0.02]} />
+            <meshBasicMaterial color="#343a46" />
+          </mesh>
+        ))}
+        <mesh position={[0, -0.04, 0.178]} rotation={[0, 0, Math.PI]} scale={[1, 1, 0.4]}>
+          <coneGeometry args={[0.042, 0.1, 3]} />
+          <meshToonMaterial gradientMap={toonGradient} color="#8d97ad" />
+        </mesh>
+        <mesh position={[0, -0.115, 0.168]}>
+          <boxGeometry args={[0.105, 0.055, 0.035]} />
+          <meshToonMaterial gradientMap={toonGradient} color="#8d97ad" />
+        </mesh>
+
+        {/* Le témoin rouge du plastron, posé au pied du casque.
+
+            C'est le seul butin du jeu qui n'emploie **pas** l'accent de son
+            objet pour sa touche de couleur : l'accent de cette tenue est un
+            acier bleuté, qui éclaire déjà la laque du dôme ci-dessus, et il
+            n'aurait rien dit de plus posé une seconde fois en bas. Le rouge,
+            lui, est la seule couleur que porte le personnage — et un butin
+            entièrement noir dans un faisceau doré n'est qu'une ombre. */}
+        <mesh position={[0, -0.185, 0.2]}>
+          <boxGeometry args={[0.14, 0.05, 0.03]} />
+          <meshBasicMaterial color="#d8252b" />
+        </mesh>
+      </>
+    )
+  }
+
   if (id === 'fishman-scales') {
     return (
       <>

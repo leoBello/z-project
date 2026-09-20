@@ -18,6 +18,7 @@ import { Causeway } from './Causeway'
 import { Mountain } from './Mountain'
 import { RotundaChest } from './RotundaChest'
 import { SkyChest } from './SkyChest'
+import { SummitChests } from './SummitChests'
 import { RotundaReward } from './RotundaReward'
 import { Flora } from './Flora'
 import { Ruins } from './Ruins'
@@ -171,6 +172,17 @@ export default function SkyIsland() {
         récompense qui fait gagner du temps se sent autant qu'un cœur.
       */}
       <Portal at={SUMMIT_PORTAL} openedAt={summitOpenedAt} />
+
+      {/*
+        Les deux coffres du sommet, qui paraissent avec ce portail-là et pour la
+        même raison : la bête est tombée.
+
+        Ils l'encadrent à dix unités, et cette distance est **imposée** par la
+        règle d'interaction — le portail l'emporte sur le coffre, et son anneau
+        réagit à sept unités. Posés à son pied, les deux coffres auraient été
+        visibles et inouvrables. Voir `summitChest`.
+      */}
+      <SummitChests />
 
       {/* Elles ne paraissent que pendant le combat : voir `bossState`. */}
       <ArenaGate />

@@ -181,6 +181,80 @@ const GLYPHS: Record<ItemId, React.JSX.Element> = {
       <circle cx="9.7" cy="13.4" r="0.95" fill="currentColor" />
     </>
   ),
+  'vader-armor': (
+    <>
+      {/* Le casque, et lui seul en pièce de tête : c'est la seule vignette du
+          jeu dont la silhouette se reconnaisse **sans le corps**. Dôme large,
+          deux joues qui tombent, et un menton carré — le fer à cheval de la
+          capuche du Dieu Démon s'ouvre en haut, celui-ci est fermé. */}
+      <path
+        d="M12 2.2c3.6 0 5.8 2.6 5.8 6.3 0 2-0.5 3.4-0.5 4.6l1 2.6-2.6 0.6L15 14.2h-6l-0.7 2-2.6-0.6 1-2.6c0-1.2-0.5-2.6-0.5-4.6 0-3.7 2.2-6.3 5.8-6.3z"
+        fill="currentColor"
+      />
+      {/* Les deux lentilles, en creux : c'est leur pente vers le nez qui fait
+          un regard qui vise plutôt qu'un regard inquiet. */}
+      <path d="M9 7.6 11.2 7v2.2L9 9.8z M15 7.6 12.8 7v2.2L15 9.8z" fill="#171226" />
+      {/* La grille de bouche, en creux elle aussi : les deux seules marques de
+          la case, et ce qui empêche le casque d'être un galet. */}
+      <path d="M10.6 11h2.8v2h-2.8z" fill="#171226" />
+      {/* Le plastron de commande, sous le casque : la seule pièce qui dise
+          « armure » plutôt que « masque ». */}
+      <rect x="8.6" y="17" width="6.8" height="4.6" rx="1" fill="currentColor" opacity="0.75" />
+      <path d="M9.8 18.6h1.4M12.2 18.6h1.6M10.4 20.2h3" stroke="#171226" strokeWidth="1.2" strokeLinecap="round" />
+    </>
+  ),
+  'vader-saber': (
+    <>
+      {/* La même diagonale que les deux autres armes — c'est elle qui dit
+          « arme » à 44 pixels — mais **sans pointe et sans garde** : une barre
+          de lumière à bouts ronds, plus longue et plus fine que les deux
+          lames d'acier. Les trois cases doivent se distinguer d'un coup d'œil,
+          les trois armes s'excluant deux à deux. */}
+      <path
+        d="M19.6 3.6 9.4 13.8"
+        stroke="currentColor"
+        strokeWidth="3.6"
+        strokeLinecap="round"
+        opacity="0.45"
+      />
+      {/* Le cœur blanc, dans le halo : c'est ce dégradé du centre au bord qui
+          fait lire une source de lumière, pas un bâton peint. */}
+      <path
+        d="M19.6 3.6 9.4 13.8"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      {/* La poignée, tracée **en creux** et non dans l'accent de l'objet.
+
+          C'est le seul glyphe d'arme dont la lame soit une source de lumière :
+          peinte de la même teinte que le halo, la poignée s'y fondait et la
+          case entière n'était plus qu'un trait rouge. Le creux la sépare, comme
+          il sépare déjà les ébréchures de Kitetsu et les lamelles du clan. */}
+      <path
+        d="M8.6 14.6 5 18.2"
+        stroke="#171226"
+        strokeWidth="3.2"
+        strokeLinecap="round"
+      />
+      {/* Les deux bagues, et l'émetteur qui ferme la poignée : trois entailles
+          qui suffisent à dire « objet » plutôt que « bâton ». */}
+      <path
+        d="M7.6 15.6 6.4 16.8M9.4 13.8 8.2 15"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        opacity="0.75"
+      />
+      <path
+        d="M10 13.2 8.8 14.4"
+        stroke="currentColor"
+        strokeWidth="3.6"
+        strokeLinecap="round"
+        opacity="0.85"
+      />
+    </>
+  ),
 }
 
 export function ItemIcon({ id, accent }: { id: ItemId; accent: string }) {

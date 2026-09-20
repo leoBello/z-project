@@ -946,6 +946,260 @@ function DemonArmour() {
   )
 }
 
+/** Teintes partagées avec la silhouette 3D. Voir `OUTFITS.vader`. */
+const VADER = {
+  lacquer: '#14161f',
+  lacquerLit: '#252a36',
+  sheen: '#2c313c',
+  suit: '#23262f',
+  graphite: '#3a3f4a',
+  steel: '#8d97ad',
+  steelBright: '#cdd3de',
+  light: '#d8252b',
+  groove: '#080a0f',
+  lens: '#343a46',
+  boot: '#191c24',
+} as const
+
+/**
+ * Armure du Seigneur Noir.
+ *
+ * Le fond est le seul **rouge** de la série. Les six autres cartes sont posées
+ * sur du prune, du bleu de l'île ou du brun ; il fallait ici une valeur qui
+ * détache une silhouette entièrement noire, et le violet des autres fonds la
+ * mangeait. Le rouge la découpe, et il annonce en plus la lame du coffre
+ * voisin : les deux cartes se lisent comme une paire, ce qu'elles sont.
+ *
+ * Quatre choses portent la reconnaissance, et elles sont dessinées dans cet
+ * ordre de priorité : le **casque** et son masque d'acier, la **cape** qui
+ * élargit la silhouette par le bas, le **plastron de commande** rouge — seule
+ * couleur du personnage — et la **ceinture** d'acier qui marque la taille.
+ *
+ * Le visage vient en dernier, et c'est le seul de la série qui n'en soit pas
+ * un : trois pièces d'acier là où l'on attend des traits.
+ */
+function VaderArmour() {
+  return (
+    <svg viewBox="0 0 320 300" role="img" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="vader-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#1a0d12" />
+          <stop offset="100%" stopColor="#5e2229" />
+        </linearGradient>
+        <radialGradient id="vader-halo" cx="0.5" cy="0.36" r="0.58">
+          <stop offset="0%" stopColor="#ff4a3f" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="#ff4a3f" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <rect width="320" height="300" fill="url(#vader-sky)" />
+      <circle cx="160" cy="108" r="145" fill="url(#vader-halo)" />
+
+      {/* Crête sous les pieds : ancre la silhouette au sol plutôt que de la
+          laisser flotter au milieu du cadre. */}
+      <path d="M0 278 L88 264 L160 272 L236 260 L320 276 L320 300 L0 300 Z" fill="#1d1016" />
+
+      {/* La cape, dessinée avant tout le reste : elle passe derrière le corps.
+          Elle s'évase jusqu'au bas du cadre — c'est la seule pièce de toute la
+          série d'illustrations qui touche les deux bords. */}
+      <path d="M112 118 L208 118 L246 272 L74 272 Z" fill={VADER.lacquer} />
+      <path d="M160 118 L208 118 L246 272 L160 272 Z" fill={VADER.groove} />
+
+      {/* Le casque : dôme, joues, menton carré. */}
+      <path
+        d="M160 20 C126 20 112 44 112 74 C112 88 114 96 112 104 L108 126 L130 132
+           L136 112 L184 112 L190 132 L212 126 L208 104 C206 96 208 88 208 74
+           C208 44 194 20 160 20 Z"
+        fill={VADER.lacquer}
+      />
+      {/* Le reflet de laque, sur le devant du dôme : sans lui, le casque est
+          une tache plate, et c'est tout le risque d'un personnage noir. */}
+      <path
+        d="M160 26 C136 26 124 44 124 66 C136 50 146 44 160 44 C174 44 184 50 196 66
+           C196 44 184 26 160 26 Z"
+        fill={VADER.sheen}
+      />
+
+      {/* Les lentilles. Sombres, à peine détachées de la laque : ce masque ne
+          regarde pas, il ne rend rien. L'inclinaison descend vers le nez. */}
+      <path d="M134 74 L154 68 L156 82 L134 88 Z" fill={VADER.lens} />
+      <path d="M186 74 L166 68 L164 82 L186 88 Z" fill={VADER.lens} />
+
+      {/* Le triangle du nez et la grille de bouche : les deux pièces d'acier de
+          l'axe, et les seules taches claires du visage. */}
+      <path d="M160 96 L150 80 L170 80 Z" fill={VADER.steel} />
+      <rect x="146" y="96" width="28" height="18" rx="2" fill={VADER.steel} />
+      {[152, 159, 166].map((x) => (
+        <rect key={x} x={x} y={99} width={3} height={12} fill={VADER.groove} />
+      ))}
+      {/* Les deux évents de joue, en biais le long de la mâchoire. */}
+      <path d="M122 92 L136 96 L132 116 L118 110 Z" fill={VADER.steel} />
+      <path d="M198 92 L184 96 L188 116 L202 110 Z" fill={VADER.steel} />
+
+      {/* Bras et gantelets : posés **en dehors** de l'emprise du buste, sinon
+          la cuirasse les recouvre et la carrure disparaît. */}
+      {[96, 196].map((x) => (
+        <g key={x}>
+          <rect x={x} y={134} width={28} height={62} rx={8} fill={VADER.lacquerLit} />
+          <rect x={x - 1} y={192} width={30} height={26} rx={6} fill={VADER.suit} />
+          <rect x={x - 2} y={214} width={32} height={6} fill={VADER.steel} />
+          <rect x={x} y={220} width={28} height={18} rx={8} fill={VADER.lacquer} />
+        </g>
+      ))}
+
+      {/* Les deux cloches d'épaule. Identiques : la seule silhouette
+          asymétrique du jeu est celle du Dieu Démon, et elle doit le rester. */}
+      <path d="M92 138 q32 -26 64 0 l0 10 q-32 -20 -64 0 Z" fill={VADER.graphite} />
+      <path d="M164 138 q32 -26 64 0 l0 10 q-32 -20 -64 0 Z" fill={VADER.graphite} />
+
+      {/* La cuirasse. */}
+      <path d="M124 130 h72 l8 78 h-88 Z" fill={VADER.lacquer} />
+      <path d="M160 130 h36 l8 78 h-44 Z" fill={VADER.lacquerLit} />
+
+      {/* Le plastron de commande : la seule pièce colorée du personnage, et
+          donc la première chose que la carte doit montrer après le casque. */}
+      <rect x="136" y="146" width="48" height="36" rx="3" fill={VADER.graphite} />
+      {[141, 157, 173].map((x) => (
+        <rect key={x} x={x} y={152} width={10} height={8} rx={1.5} fill={VADER.light} />
+      ))}
+      {[144, 166].map((x) => (
+        <rect key={x} x={x} y={164} width={14} height={6} rx={1.5} fill={VADER.steelBright} />
+      ))}
+      <circle cx="160" cy="176" r="4" fill={VADER.light} />
+
+      {/* La ceinture d'acier et ses trois caissons. */}
+      <rect x="118" y="206" width="84" height="16" rx="2" fill={VADER.steel} />
+      {[128, 152, 176].map((x) => (
+        <rect key={x} x={x} y={208} width={16} height={12} rx={2} fill={VADER.steelBright} />
+      ))}
+
+      {/* Le tablier : **deux pans**, et la fente entre eux. C'est elle qui
+          laisse voir les jambes matelassées — sans elle, le bas du personnage
+          est une cloche, ce qu'est déjà celui du Dieu Démon. */}
+      <path d="M122 222 h32 l4 46 h-40 Z" fill={VADER.lacquer} />
+      <path d="M166 222 h32 l4 46 h-40 Z" fill={VADER.lacquer} />
+
+      {/* Jambes matelassées, plaques de tibia, bottes à revers d'acier. */}
+      {[136, 164].map((x) => (
+        <g key={x}>
+          <rect x={x} y={222} width={22} height={40} fill={VADER.suit} />
+          {[226, 236, 246].map((y) => (
+            <rect key={y} x={x - 1} y={y} width={24} height={4} fill={VADER.lacquer} />
+          ))}
+          <rect x={x + 3} y={250} width={16} height={20} rx={2} fill={VADER.graphite} />
+          <rect x={x - 2} y={268} width={26} height={6} fill={VADER.steel} />
+          <path d={`M${x - 2} 274 h26 v8 h-30 Z`} fill={VADER.boot} />
+        </g>
+      ))}
+    </svg>
+  )
+}
+
+/** Teintes de la lame de lumière. Voir `SABER_CORE` et ses voisines. */
+const SABER = {
+  core: '#ffe2df',
+  glow: '#ff2f27',
+  hilt: '#b9c0cc',
+  hiltShade: '#79818f',
+  grip: '#15171d',
+} as const
+
+/**
+ * Lame de Lumière Écarlate.
+ *
+ * Elle occupe la même diagonale que les deux autres armes de la série — c'est
+ * la seule pose où une arme longue tient dans un format portrait — et elle doit
+ * pourtant se distinguer d'elles **en une image**, puisque les trois s'excluent
+ * et que le joueur choisit entre elles. Trois écarts s'en chargent :
+ *
+ *  - **il n'y a pas de garde.** Ni disque, ni barre : la poignée s'arrête sur
+ *    une bague d'émetteur, et la lumière commence. C'est le seul objet du jeu
+ *    dont on voie où l'arme *se termine* ;
+ *  - **il n'y a pas de pointe.** Les deux bouts sont ronds. Le katana file vers
+ *    un kissaki, la lame maudite est brisée net, celle-ci ne va nulle part ;
+ *  - **le trait est doublé.** Un halo large et translucide, un cœur presque
+ *    blanc au milieu. C'est ce dégradé du centre vers le bord, et lui seul, qui
+ *    fait lire une source de lumière plutôt qu'un bâton peint — une lame rouge
+ *    uniforme se lisait comme un néon.
+ *
+ * Le fond est le même rouge que celui de l'armure du coffre voisin : les deux
+ * cartes se lisent comme une paire, ce qu'elles sont.
+ */
+function ScarletSaber() {
+  return (
+    <svg viewBox="0 0 320 300" role="img" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="saber-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#1a0d12" />
+          <stop offset="100%" stopColor="#5e2229" />
+        </linearGradient>
+        <radialGradient id="saber-halo" cx="0.5" cy="0.5" r="0.62">
+          <stop offset="0%" stopColor={SABER.glow} stopOpacity="0.42" />
+          <stop offset="100%" stopColor={SABER.glow} stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <rect width="320" height="300" fill="url(#saber-sky)" />
+      <circle cx="160" cy="150" r="155" fill="url(#saber-halo)" />
+
+      {/* Trois traits de lumière derrière la lame, de plus en plus pâles : ce
+          n'est pas une traînée de mouvement, c'est l'éclairement du fond. Une
+          arme qui éclaire doit faire quelque chose au décor, ou elle ne fait
+          que briller. */}
+      {[0, 1, 2].map((i) => (
+        <path
+          key={i}
+          d={`M${62 + i * 20} ${252 - i * 12} L${236 + i * 20} ${78 - i * 12}`}
+          stroke={SABER.glow}
+          strokeWidth="6"
+          strokeLinecap="round"
+          opacity={0.2 - i * 0.06}
+        />
+      ))}
+
+      {/* Le pommeau et la poignée d'acier, bagues noires comprises. Elles
+          tiennent dans le coin, comme celle de la lame maudite. */}
+      <path d="M48 272 L64 256 L78 270 L62 286 Z" fill={SABER.hiltShade} />
+      <path d="M60 260 L96 224 L114 242 L78 278 Z" fill={SABER.hilt} />
+      <path d="M60 260 L96 224 L102 230 L66 266 Z" fill={SABER.hiltShade} />
+      {[0, 1].map((i) => (
+        <path
+          key={`ring-${i}`}
+          d={`M${68 + i * 20} ${268 - i * 20} l14 -14 l8 8 l-14 14 z`}
+          fill={SABER.grip}
+        />
+      ))}
+
+      {/* L'émetteur : la bague large d'où sort la lame, et la seule chose qui
+          dise où l'acier s'arrête. */}
+      <path d="M100 220 L120 240 L112 248 L92 228 Z" fill={SABER.hilt} />
+      <path d="M113 213 L127 227 L121 233 L107 219 Z" fill={SABER.grip} />
+
+      {/* Le halo, puis le cœur. Bouts ronds aux deux extrémités : une lame de
+          lumière ne s'effile pas. */}
+      <path
+        d="M118 222 L236 104"
+        stroke={SABER.glow}
+        strokeWidth="26"
+        strokeLinecap="round"
+        opacity="0.55"
+      />
+      <path
+        d="M118 222 L236 104"
+        stroke={SABER.glow}
+        strokeWidth="15"
+        strokeLinecap="round"
+      />
+      <path
+        d="M118 222 L236 104"
+        stroke={SABER.core}
+        strokeWidth="6"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
 const ILLUSTRATIONS: Record<ItemId, () => React.JSX.Element> = {
   'zoro-garb': ZoroGarb,
   'madara-garb': MadaraGarb,
@@ -954,6 +1208,8 @@ const ILLUSTRATIONS: Record<ItemId, () => React.JSX.Element> = {
   'cursed-blade': KitetsuBlade,
   'fishman-scales': FishmanScales,
   'demon-armor': DemonArmour,
+  'vader-armor': VaderArmour,
+  'vader-saber': ScarletSaber,
 }
 
 export function ItemIllustration({ id }: { id: ItemId }) {
