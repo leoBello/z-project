@@ -20,7 +20,12 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     environment: 'happy-dom',
-    include: ['src/**/*.test.ts'],
+    // `plugins/` en plus de `src/` : les scripts de mesure d'audience qu'ils
+    // écrivent échouent sans un mot quand ils sont mal formés — un tableau de
+    // bord vide, aucune erreur en console. Ce sont leurs *tests* qui entrent
+    // ici, pas les plugins eux-mêmes : la remarque ci-dessus tient toujours,
+    // aucune config de test ne les charge.
+    include: ['src/**/*.test.ts', 'plugins/**/*.test.ts'],
     restoreMocks: true,
   },
 })

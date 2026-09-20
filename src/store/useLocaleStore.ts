@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { track } from '../analytics'
 import { LOCALES, type Locale } from '../i18n'
 
 const STORAGE_KEY = 'z-project:locale'
@@ -54,5 +55,6 @@ export const useLocaleStore = create<LocaleState>((set) => ({
     }
     applyDocumentLanguage(locale)
     set({ locale })
+    track('language_changed', { locale })
   },
 }))

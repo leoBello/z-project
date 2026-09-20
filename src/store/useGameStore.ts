@@ -1036,6 +1036,13 @@ export const useGameStore = create<GameState>((set, get) => ({
       // fermées et la caméra serrée pendant tout l'écran de fin.
       bossState: next === 0 && get().bossState === 'fighting' ? 'idle' : get().bossState,
     })
+
+    // Après les deux reprises ci-dessus, donc seules les vraies morts passent
+    // ici : un second souffle et un relèvement sur l'Outremonde sont sortis
+    // avant. `from` est optionnel pour les appelants qui infligent un dégât
+    // sans être une bête — une chute, un piège —, et une colonne vide dans un
+    // tableau de bord ne se distingue pas d'une colonne perdue en route.
+    if (next === 0) track('player_died', { from: from ?? 'unknown', location: state.location })
   },
 
   isInvulnerable: () => gameNow() - get().lastHitAt < INVULNERABILITY_MS,

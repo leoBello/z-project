@@ -149,6 +149,93 @@ vie** à la fin de son défi se voit proposer d'enregistrer, et personne n'y est
 obligé. Les pseudos identiques sont autorisés — sans compte, un nom n'a pas de
 propriétaire.
 
+## Mesure d'audience
+
+Deux collecteurs reçoivent **exactement les mêmes événements** : **Umami** pour
+un tableau de bord qui se lit d'un coup d'œil, **Google Analytics 4** pour les
+entonnoirs, la comparaison de périodes et l'origine du trafic. Les deux sont
+facultatifs et indépendants — vider une variable d'environnement en éteint un
+sans toucher à l'autre, et sans rien changer au jeu.
+
+Leurs totaux ne coïncideront jamais : les bloqueurs de publicité coupent
+couramment Google sans toucher à Umami. Ce sont deux mesures partielles, pas une
+seule à deux endroits.
+
+**Configuration.** `VITE_UMAMI_WEBSITE_ID` pour Umami. Pour Google, rien à faire
+si Firebase est déjà configuré : `VITE_FIREBASE_MEASUREMENT_ID` porte
+l'identifiant du flux GA4 (`G-…`) et sert de repli. `VITE_GA_MEASUREMENT_ID` le
+remplace le jour où la mesure quitterait Firebase.
+
+**Aucun cookie, donc aucun bandeau.** Umami n'en pose pas par construction ;
+Google est chargé en mode consentement refusé (`analytics_storage: 'denied'`),
+ce qui lui interdit d'écrire quoi que ce soit et le limite à des relevés
+anonymes. Le prix : dans GA4, le nombre d'**utilisateurs** et tout ce qui
+suppose de reconnaître quelqu'un — rétention, parcours complet — sont des
+estimations. Les **événements**, eux, sont comptés tels quels.
+
+**Où sont les scripts.** Posés dans le `<head>` au build par
+`plugins/analytics.ts`, jamais importés depuis le bundle : chargés après les
+~3,6 Mo de moteur 3D, ils rateraient précisément les visiteurs qui abandonnent
+pendant le téléchargement, c'est-à-dire la mesure la plus utile du site. Rien
+n'est émis en développement, ni depuis les préproductions `*.vercel.app`.
+
+### Les événements
+
+Ils sont déclarés en un seul endroit, `src/analytics/index.ts`, chacun avec la
+question à laquelle il répond. En résumé :
+
+| Événement | Ce qu'il dit |
+| --- | --- |
+| `boot_complete` | le monde est jouable, en combien de temps — et le taux d'abandon au chargement |
+| `landmark_opened` | quelle rubrique du portfolio s'ouvre, à pied ou par téléportation |
+| `portfolio_slide_viewed` | quel projet, quelle école, quel contact est réellement atteint dans le panneau |
+| `landmark_closed` | combien de temps une rubrique est restée ouverte, et combien de pages y ont été lues |
+| `project_photo_opened` | une capture est ouverte en plein écran |
+| `outbound_link` | un lien sortant est cliqué (contact, projet, réseau) |
+| `language_changed` | la langue est changée à la main — donc la détection s'était trompée |
+| `portal_opened` | la carte est vidée, le portail s'ouvre : par les combats ou par le code de triche |
+| `sky_island_entered` | le portail est franchi |
+| `boss_engaged` / `boss_parry` / `boss_defeated` | le Lynel : engagé, paré, tombé, et avec combien de cœurs |
+| `trial_cleared` / `golden_slain` | l'épreuve des trois Lynels, puis le Lynel doré du sommet |
+| `malenia_engaged` / `malenia_morph` / `malenia_parry` / `malenia_defeated` | le dernier combat, de la première phase à la fin du jeu |
+| `beyond_entered` | l'après-partie est découverte |
+| `player_died` | le joueur tombe : qui l'a tué, et sur quelle carte |
+| `challenge_started` / `challenge_ended` | un défi, ses réglages, son score et ce qui l'a arrêté |
+| `score_submitted` | un score est écrit au classement |
+
+### Une étape à faire dans GA4, une seule fois
+
+**C'est le piège de Google, et il est silencieux.** GA4 reçoit et conserve les
+paramètres de chaque événement — `landmark`, `hearts`, `attack`… — mais n'en
+affiche aucun tant qu'ils n'ont pas été déclarés dans *Admin > Définitions
+personnalisées*. Rien ne le signale, et **les données d'avant la déclaration ne
+remontent pas** : un paramètre déclaré en retard est perdu pour la période
+écoulée. Umami, lui, les montre sans rien demander.
+
+Quatorze dimensions et sept métriques, soit vingt et un formulaires de trois
+champs où une lettre mal recopiée donne une colonne vide. D'où un script :
+
+```
+node scripts/ga4-custom-definitions.mjs <clé.json> --dry-run   # pour voir
+node scripts/ga4-custom-definitions.mjs <clé.json>             # pour faire
+```
+
+Il se relance sans risque — ce qui existe est sauté, rien n'est modifié ni
+supprimé — et il ne demande pas quel compte viser : il lit l'identifiant de flux
+dans `.env` et travaille sur la propriété qui le porte, ou s'arrête. La liste
+des définitions est en tête du fichier, et c'est **le miroir de
+`src/analytics/index.ts`** : ajouter un paramètre d'événement, c'est ajouter une
+ligne là et relancer.
+
+**Ce qu'il faut lui donner.** Une clé JSON de compte de service (celui de
+Firebase fait l'affaire) dont l'adresse a été ajoutée en rôle **Éditeur** dans
+*GA4 > Admin > Gestion des accès à la propriété*. L'API `analyticsadmin` doit
+être activée sur le projet Google Cloud. La clé est un identifiant de longue
+durée : elle se garde hors du dépôt et se supprime une fois le travail fait.
+
+Compter ensuite 24 à 48 h avant de voir les paramètres dans les rapports
+standard ; le DebugView et le temps réel, eux, répondent tout de suite.
+
 ## Assets 3D
 
 Tous les modèles sont chargés depuis `public/models/`. Tant qu'un fichier est
