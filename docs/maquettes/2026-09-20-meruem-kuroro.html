@@ -1118,7 +1118,8 @@ const MOUTH = new THREE.MeshBasicMaterial({ color: new THREE.Color('#1a2e24') })
 const VEIN = new THREE.MeshBasicMaterial({ color: new THREE.Color(C.chitinCool) })
 const SKIN_SHADE = new THREE.MeshBasicMaterial({ color: new THREE.Color('#c99a78') })
 const LASH = new THREE.MeshBasicMaterial({ color: new THREE.Color('#1a1526') })
-const CROSS_INK = new THREE.MeshBasicMaterial({ color: new THREE.Color(C.royal) })
+const INK = new THREE.MeshBasicMaterial({ color: new THREE.Color('#171220') })
+const SCLERA = new THREE.MeshBasicMaterial({ color: new THREE.Color('#f4f1ea') })
 /** L'œil du Voleur : grand et sombre, comme sur la référence. */
 const DARK_EYE = new THREE.MeshBasicMaterial({ color: new THREE.Color('#2b2038') })
 const JADE = new THREE.MeshBasicMaterial({ color: new THREE.Color(C.jade) })
@@ -1550,323 +1551,300 @@ scene.add(thief)
 const thiefRig = buildRig(thief)
 
 /*
-  Le Voleur — **le costume de York New**, et non le manteau à fourrure.
+  Le Voleur — **repris de zéro, en regardant enfin le résultat.**
 
-  Troisième version, et la deuxième fois que la référence change tout. Le manteau
-  à col de fourrure est son vêtement le plus connu, mais il ne convient pas ici
-  pour une raison qui ne se discute pas : **on ne voyait plus sa tête.** La
-  fourrure « extrêmement exagérée » que décrit la référence encadre le visage sur
-  une planche de manga ; sur un personnage de trois centimètres de haut à l'écran,
-  elle l'avale.
+  Les cinq versions précédentes ont été faites à l'aveugle. Pas de navigateur
+  ici : je corrigeais d'après des descriptions écrites, sans jamais voir la
+  forme. Un rasteriseur logiciel a été écrit pour ça, et la première image a
+  montré trois choses qu'aucune relecture de code n'aurait dites.
 
-  Le costume de York New règle le problème par construction — il n'y a pas de
-  fourrure — et il est celui du combat contre Hisoka, donc celui des planches
-  prises pour référence :
+  **Les marques du manteau étaient à l'intérieur du manteau.** Le laçage était
+  posé à 0,21 de l'axe sur un cylindre de rayon 0,222, et les badges d'épaule
+  exactement sur la surface. Ils étaient donc invisibles ou en z-fighting depuis
+  le premier jet. J'ai passé trois versions à redessiner des croix que le moteur
+  n'affichait pas.
 
-   - **cheveux lâchés**, en mèches pointues, et non plaqués en arrière ;
-   - un **bandeau** clair qui barre le front et **couvre la croix** ;
-   - les **boucles à perle verte**, qu'il garde dans tous ses déguisements ;
-   - veste sombre, chemise blanche, cravate noire.
+  **Les bras étaient dans la silhouette du manteau.** Le manteau montait à 0,27
+  de l'axe, les bras sont à 0,24 : ils disparaissaient dans la masse noire. On
+  voyait une dalle, pas un personnage.
 
-  Ce que ça coûte est réel et il faut le dire : **la croix disparaît**, et c'était
-  le seul trait de ce personnage qui restait lisible à vingt-et-une unités. Le
-  bandeau la remplace comme repère — il est clair sur des cheveux sombres, ce qui
-  est le contraste le plus fort de la tête. Voir la question 04.
+  **La fourrure pointait vers le bas.** L'azimut et l'inclinaison étaient mêlés
+  dans un même Euler XYZ, dont l'ordre d'application retournait la pointe. Au
+  lieu d'encadrer la tête, le col faisait un collier de crocs sous le menton.
+
+  Les cotes du visage ne sont plus inventées : elles sont reprises de `DawnFace`
+  et de `ClanFace`, qui sont les deux visages du jeu qui fonctionnent.
 */
 {
   const { torso, armL, armR, head, headwear } = thiefRig
 
+  /*
+    La fourrure hérissée.
+
+    Le pivot porte l'azimut, la pointe ne s'incline plus qu'autour de son X
+    local. Mélanger les deux dans un seul Euler était le défaut : en ordre XYZ,
+    la rotation d'azimut s'applique **après** l'inclinaison et la renvoie
+    n'importe où. C'est ce qui faisait pendre le col vers le bas.
+
+    Les longueurs suivent un motif de période 3 sur un compte qui n'est jamais
+    multiple de 3 : le motif ne se referme pas, donc la fourrure ne se lit
+    jamais comme une répétition.
+  */
+  function spikyFur(parent, ring, count, min, max, rise, tilt) {
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * Math.PI * 2
+      const len = [max, min, (min + max) / 2][i % 3]
+      const socket = joint(parent, [Math.sin(a) * ring, rise, Math.cos(a) * ring], [0, a, 0])
+      const tip = joint(socket, [0, 0, 0], [tilt, 0, 0])
+      part(tip, faceted(new THREE.ConeGeometry(len * 0.3, len, 4)), MAT.fur, [0, len / 2, 0])
+    }
+  }
+
   /* --- Le manteau ---------------------------------------------------------- */
 
   /*
-    Le manteau — **noir, long, et couvert de croix blanches.**
-
-    Les planches ont corrigé trois choses que les descriptions écrites n'avaient
-    pas dites :
-
-     - il est **noir**, pas violet ;
-     - il porte des **croix blanches** partout : des badges ronds aux épaules et
-       sur la poitrine, un **laçage en X** sur tout le devant, et une **grande
-       croix sur le pan**. C'est ce semis de marques claires sur du noir qui
-       identifie le vêtement, bien avant sa coupe ;
-     - la fourrure n'est pas duveteuse mais **hérissée** — voir `spikyFur`.
-
-    Les versions précédentes en faisaient un manteau sombre et lisse avec un col
-    en boules. Coupe juste, dessin faux.
+    Il est **plus étroit que l'envergure des bras**, et c'est la cote qui décide
+    de la silhouette. Les bras occupent 0,168 à 0,312 de l'axe ; le manteau
+    s'arrête à 0,235. Il reste donc de part et d'autre une bande de sept
+    centimètres où l'on voit le bras se détacher — sans elle, le personnage est
+    un monolithe, ce qu'il était.
   */
-  outline(part(torso, new THREE.CapsuleGeometry(0.19, 0.3, 5, 14), MAT.mesh2, [0, 0.28, 0]))
-  outline(part(torso, new THREE.CylinderGeometry(0.245, 0.3, 0.64, 18), MAT.coat, [0, 0.25, 0]))
-  // Les pans, longs : ils descendent jusqu'aux bottes sur les planches.
-  outline(part(torso, new THREE.CylinderGeometry(0.3, 0.36, 0.44, 18), MAT.coat, [0, -0.18, 0]))
+  outline(part(torso, new THREE.CapsuleGeometry(0.17, 0.3, 5, 14), MAT.mesh2, [0, 0.28, 0]))
+  outline(part(torso, new THREE.CylinderGeometry(0.188, 0.2, 0.62, 16), MAT.coat, [0, 0.25, 0]))
+  outline(part(torso, new THREE.CylinderGeometry(0.2, 0.238, 0.42, 16), MAT.coat, [0, -0.17, 0]))
 
   /*
-    Le laçage en X — quatre croisillons blancs sur le devant.
+    Le laçage en X — **posé en saillie**, cette fois.
 
-    C'est la marque la plus visible du vêtement en vue de face, et elle était
-    entièrement absente. Chaque croisillon est deux barres inclinées en sens
-    inverse ; les deux **ne se touchent pas au centre**, parce que sur les
-    planches ce sont des lacets tendus entre deux œillets, pas une croix peinte.
+    Chaque marque est à un centimètre et demi au-dessus de la surface du
+    cylindre. C'est la correction qui rend le devant du manteau lisible : jusqu'à
+    présent tout ce dessin existait dans le fichier et pas à l'écran.
+
+    Il est aussi **trois fois plus étroit** qu'au jet précédent. Rendu enfin
+    visible, il l'était trop : quatre X de vingt-cinq centimètres en travers de
+    la poitrine se lisaient comme le laçage d'un corset, et c'était la première
+    chose qu'on voyait du personnage. Sur les planches, c'est un cordon fin.
   */
-  for (let i = 0; i < 4; i++) {
-    const y = 0.44 - i * 0.135
+  for (let i = 0; i < 3; i++) {
+    const y = 0.44 - i * 0.145
     for (const side of [1, -1]) {
-      part(torso, faceted(new THREE.BoxGeometry(0.11, 0.016, 0.02)), MAT.mark,
-        [0, y, 0.23], [0, 0, side * 0.85])
-    }
-    // Les deux œillets, aux bouts.
-    for (const side of [1, -1]) {
-      part(torso, new THREE.CylinderGeometry(0.014, 0.014, 0.015, 8), MAT.mark,
-        [side * 0.085, y, 0.222], [Math.PI / 2, 0, 0])
+      part(torso, faceted(new THREE.BoxGeometry(0.082, 0.013, 0.016)), MAT.mark,
+        [0, y, 0.206], [0, 0, side * 0.8])
     }
   }
 
-  /*
-    La grande croix du pan.
-
-    Sur les planches, elle occupe le bas du manteau et se voit de face. Elle est
-    **beaucoup plus grande** que les badges, et c'est ce rapport d'échelle qui
-    fait le dessin : une constellation de petites croix, et une grande.
-  */
-  part(torso, faceted(new THREE.BoxGeometry(0.075, 0.26, 0.02)), MAT.mark, [-0.06, -0.2, 0.3])
-  part(torso, faceted(new THREE.BoxGeometry(0.19, 0.07, 0.02)), MAT.mark, [-0.06, -0.14, 0.3])
+  // La grande croix du pan. Elle était déjà visible — c'est la seule marque qui
+  // l'était, parce que c'est la seule que j'avais posée assez loin de l'axe.
+  part(torso, faceted(new THREE.BoxGeometry(0.044, 0.185, 0.016)), MAT.mark, [0, -0.2, 0.236])
+  part(torso, faceted(new THREE.BoxGeometry(0.122, 0.042, 0.016)), MAT.mark, [0, -0.155, 0.236])
 
   /*
-    Les badges ronds à croix — six, semés sur les épaules et la poitrine.
+    Les badges ronds d'épaule ont été **retirés**, après les avoir vus.
 
-    Ils ne sont pas alignés : sur les planches ils sont dispersés, et une grille
-    régulière se serait lue comme une texture. À cette taille, une texture n'est
-    plus rien du tout — c'est la leçon du plastron du Seigneur Noir.
+    Ils étaient dans le fichier depuis trois versions sans jamais avoir été à
+    l'écran — posés exactement sur la surface du cylindre, donc en z-fighting.
+    Mis en saillie, ils se sont révélés être deux disques blancs à pupille noire
+    de part et d'autre de la poitrine : le torse avait deux yeux. Aucun réglage
+    de taille ne rattrape ça, et ils n'identifient rien que la fourrure et la
+    grande croix ne disent déjà.
   */
-  for (const badge of [
-    { x: 0.2, y: 0.46, z: 0.15, r: 0.042 },
-    { x: -0.22, y: 0.39, z: 0.13, r: 0.036 },
-    { x: 0.17, y: 0.2, z: 0.2, r: 0.032 },
-    { x: -0.15, y: 0.12, z: 0.23, r: 0.038 },
-    { x: 0.23, y: -0.1, z: 0.19, r: 0.034 },
-    { x: -0.24, y: -0.26, z: 0.17, r: 0.03 },
-  ]) {
-    const at = joint(torso, [badge.x, badge.y, badge.z], [0, Math.atan2(badge.x, badge.z), 0])
-    part(at, new THREE.CylinderGeometry(badge.r, badge.r, 0.012, 10), MAT.mark, null, [Math.PI / 2, 0, 0])
-    part(at, faceted(new THREE.BoxGeometry(badge.r * 0.3, badge.r * 1.5, 0.016)), MAT.coat)
-    part(at, faceted(new THREE.BoxGeometry(badge.r * 1.1, badge.r * 0.3, 0.016)), MAT.coat, [0, badge.r * 0.35, 0])
-  }
 
   /*
-    La fourrure — **hérissée**, et c'est la correction qui décide de tout.
+    Le col : deux rangs de pointes qui **montent** en s'écartant, jusqu'au bas
+    de la mâchoire. Elles encadrent le visage au lieu de pendre sous le menton.
 
-    Les planches ne montrent pas des touffes rondes mais de **longues pointes
-    acérées** qui rayonnent du col, des poignets et du bas du manteau. C'est un
-    hérissement, pas un duvet — et c'est la silhouette la plus reconnaissable du
-    personnage, bien avant sa coupe ou sa couleur.
-
-    Les trois versions précédentes empilaient des dodécaèdres, c'est-à-dire des
-    boules. Aucune quantité de boules ne fait une pointe.
-
-    Les longueurs sont **inégales dans un rapport du simple au double** : des
-    pointes égales font une couronne d'épis, et une couronne d'épis est
-    régulière — donc lisible comme un objet fabriqué, ce qu'une fourrure n'est
-    pas.
+    Elles sont **plus courtes de quatre centimètres** qu'au jet précédent, où
+    elles remontaient jusqu'à la bouche : le personnage y avait le menton dans
+    la fourrure.
   */
-  function spikyFur(parent, ring, count, min, max, rise, outward) {
-    for (let i = 0; i < count; i++) {
-      const a = (i / count) * Math.PI * 2
-      // Trois longueurs qui se suivent selon un motif de période 3 ; le compte
-      // n'est jamais un multiple de trois, donc le motif ne se referme pas sur
-      // lui-même et ne se lit jamais comme une répétition.
-      const len = [max, min, (min + max) / 2][i % 3]
-      part(parent, faceted(new THREE.ConeGeometry(len * 0.17, len, 4)), MAT.fur,
-        [Math.sin(a) * ring, rise, Math.cos(a) * ring],
-        [outward * Math.cos(a), -a, -outward * Math.sin(a)])
-    }
-  }
-
-  /*
-    Le col : quatorze pointes qui montent et s'écartent, jusqu'à la hauteur des
-    oreilles. Il encadre la tête sans la couvrir — c'est l'équilibre que les
-    trois essais précédents ont cherché, l'un trop timide, l'autre l'avalant.
-  */
-  const collar = joint(torso, [0, 0.5, 0])
-  outline(part(collar, new THREE.CylinderGeometry(0.2, 0.235, 0.12, 14), MAT.coat))
-  spikyFur(collar, 0.2, 14, 0.14, 0.26, 0.06, -0.55)
-  // Un second étage, plus court et décalé, qui remplit les creux du premier.
-  spikyFur(collar, 0.175, 9, 0.1, 0.17, 0.12, -0.9)
+  const collar = joint(torso, [0, 0.45, 0])
+  outline(part(collar, new THREE.CylinderGeometry(0.162, 0.192, 0.085, 14), MAT.coat))
+  spikyFur(collar, 0.168, 15, 0.085, 0.145, 0.02, 0.55)
+  // Un second rang, plus court et décalé, qui bouche les creux du premier :
+  // un seul rang se lit comme une rangée de crocs, pas comme une fourrure.
+  spikyFur(collar, 0.148, 11, 0.055, 0.095, 0.06, 0.85)
 
   for (const arm of [armL, armR]) {
-    outline(part(arm, new THREE.CapsuleGeometry(0.075, 0.24, 4, 10), MAT.coat, [0, -0.16, 0]))
-    outline(part(arm, new THREE.CapsuleGeometry(0.068, 0.18, 4, 10), MAT.coat, [0, -0.38, 0]))
-    // La manchette hérissée, qui pointe vers le bas et vers l'extérieur.
-    spikyFur(joint(arm, [0, -0.46, 0]), 0.07, 7, 0.08, 0.15, 0, 1.9)
-    outline(part(arm, faceted(new THREE.BoxGeometry(0.075, 0.09, 0.055)), MAT.skin, [0, -0.55, 0]),
+    outline(part(arm, new THREE.CapsuleGeometry(0.072, 0.24, 4, 10), MAT.coat, [0, -0.16, 0]))
+    outline(part(arm, new THREE.CapsuleGeometry(0.065, 0.18, 4, 10), MAT.coat, [0, -0.38, 0]))
+    // La manchette : vers le bas et vers l'extérieur. C'est elle qui sépare la
+    // main du manteau quand le bras passe devant le corps.
+    spikyFur(joint(arm, [0, -0.45, 0]), 0.06, 7, 0.048, 0.082, 0, 2.75)
+    outline(part(arm, faceted(new THREE.BoxGeometry(0.072, 0.085, 0.055)), MAT.skin, [0, -0.545, 0]),
       OUTLINE_THIN)
   }
 
-  /*
-    Le bas du manteau, hérissé lui aussi.
+  // L'ourlet : il borde le bas du manteau et l'empêche de finir sur un trait net.
+  spikyFur(joint(torso, [0, -0.36, 0]), 0.232, 14, 0.052, 0.09, 0, 2.7)
 
-    C'est le troisième endroit où les planches montrent de la fourrure, et
-    l'oublier laissait le vêtement se terminer par un ourlet net — ce qui est
-    exactement ce qu'il n'a pas.
-  */
-  spikyFur(joint(torso, [0, -0.4, 0]), 0.35, 16, 0.1, 0.22, 0, 2.5)
-
-  // Les bottes, sous les pans.
   for (const side of [1, -1]) {
     const leg = joint(torso, [side * 0.11, -0.02, 0])
-    outline(part(leg, new THREE.CapsuleGeometry(0.086, 0.2, 4, 10), MAT.mesh2, [0, -0.15, 0]))
-    outline(part(leg, new THREE.CapsuleGeometry(0.082, 0.17, 4, 10), MAT.coatDeep, [0, -0.35, 0]))
-    outline(part(leg, faceted(new THREE.BoxGeometry(0.1, 0.07, 0.2)), MAT.coatDeep, [0, -0.48, 0.04]))
+    outline(part(leg, new THREE.CapsuleGeometry(0.084, 0.2, 4, 10), MAT.mesh2, [0, -0.15, 0]))
+    outline(part(leg, new THREE.CapsuleGeometry(0.08, 0.17, 4, 10), MAT.coatDeep, [0, -0.35, 0]))
+    outline(part(leg, faceted(new THREE.BoxGeometry(0.098, 0.07, 0.2)), MAT.coatDeep, [0, -0.48, 0.04]))
   }
 
   /* --- La tête -------------------------------------------------------------- */
 
-  outline(part(head, new THREE.SphereGeometry(HEAD_R, 18, 16), MAT.skin))
+  outline(part(head, new THREE.SphereGeometry(HEAD_R, 20, 18), MAT.skin))
 
   /*
-    Le visage — à plat sur la sphère, dans l'idiome du jeu. Voir la note du
-    visage du Roi pour les trois règles.
+    L'œil — **et c'est ici que se jouait tout le personnage.**
 
-    Les yeux sont **grands**, et c'est la correction que la référence impose : ce
-    sont de larges amandes sombres à gros éclat, pas les fentes mi-closes que la
-    version précédente lui donnait. L'expression de ce visage-là n'est pas
-    distante — elle est **calme et légèrement amusée**, ce qui n'est pas la même
-    chose et ne se rend pas avec les mêmes paupières.
+    Le diagnostic précédent était faux, et faux dans l'autre sens. Je croyais mes
+    yeux trop grands ; mesure faite sur les visages du jeu, `DawnFace` pose une
+    orbite de 0,098 sur 0,098, soit presque un rond. Les miens faisaient 0,062 de
+    large sur 0,112 de haut — une **fente verticale**. Ce n'était pas la taille,
+    c'était le rapport : un ovale noir plus haut que large se lit comme un œil
+    d'insecte, quelle que soit sa dimension.
+
+    Celui-ci est donc **deux fois plus large que haut** — 10,9 cm sur 5,5 — et
+    construit en trois pièces comme le seul visage du jeu qui ait un regard : le
+    blanc en amande, l'iris sombre qui l'occupe presque entièrement, et la
+    paupière lourde qui coupe le haut. C'est la paupière qui fait le calme du
+    personnage — sans elle, le même œil est un œil écarquillé.
+
+    Le jet précédent le faisait rond, à 10,9 sur 8,3. Rond, un grand œil sombre
+    donne une poupée ; couché, il donne un regard qui juge. C'est le même œil à
+    trois centimètres près, et ces trois centimètres sont le personnage.
+
+    L'iris occupe **neuf dixièmes de la largeur** du blanc, et non six. Un iris
+    rond au milieu d'une amande blanche fait un œil écarquillé, quelle que soit
+    l'inclinaison de la paupière : il ne reste alors du blanc qu'aux deux coins,
+    ce qui est la façon dont la planche le dessine.
   */
   for (const side of [1, -1]) {
-    const x = side * 0.1
-    part(head, new THREE.SphereGeometry(0.085, 12, 12), ORBIT,
-      [x, 0.005, 0.231], [0, 0, side * 0.1], [0.72, 0.86, 0.24])
-    part(head, new THREE.SphereGeometry(0.07, 12, 12), DARK_EYE,
-      [x, 0.0, 0.24], [0, 0, side * 0.1], [0.68, 0.82, 0.24])
-    // Le gros éclat anime, en haut et vers l'intérieur : c'est lui qui donne le
-    // regard vivant de la référence, et il est **gros** — un quart de l'iris.
-    part(head, new THREE.SphereGeometry(0.019, 8, 8), GLINT, [x - side * 0.016, 0.028, 0.248])
-    part(head, new THREE.SphereGeometry(0.009, 6, 6), GLINT, [x + side * 0.018, -0.022, 0.248])
-    // La ligne de cil supérieure, épaisse : c'est la signature du trait anime.
-    part(head, faceted(new THREE.BoxGeometry(0.105, 0.017, 0.012)), LASH,
-      [x, 0.046, 0.242], [0, 0, side * 0.1])
+    const x = side * 0.097
+    const tilt = side * 0.12
+    part(head, new THREE.SphereGeometry(0.072, 14, 12), SCLERA,
+      [x, 0.004, 0.232], [0, 0, tilt], [0.78, 0.38, 0.24])
+    part(head, new THREE.SphereGeometry(0.046, 12, 12), DARK_EYE,
+      [x, 0.002, 0.243], [0, 0, tilt], [0.99, 0.56, 0.26])
+    part(head, new THREE.SphereGeometry(0.012, 8, 8), GLINT,
+      [x - side * 0.014, 0.018, 0.251], null, [0.8, 0.8, 0.5])
+    // La paupière, en matière non éclairée comme dans `DawnFace` : un trait de
+    // deux centimètres sous cel-shading n'y produit qu'une bande d'ombre.
+    part(head, faceted(new THREE.BoxGeometry(0.116, 0.013, 0.016)), INK,
+      [x, 0.03, 0.238], [0, 0, side * 0.2])
+    /*
+      Le sourcil fait exception : il est de la teinte des cheveux et s'ombre avec
+      eux.
+
+      Il est **deux fois plus fin que la paupière et un centimètre plus haut**.
+      Au jet précédent les deux faisaient la même épaisseur à un centimètre
+      d'écart : ils se lisaient comme **deux sourcils**, et le visage avait l'air
+      d'un masque à quatre traits. C'est le contraste d'épaisseur entre les deux,
+      pas leur écartement, qui fait que l'un se lit comme une paupière.
+    */
+    part(head, faceted(new THREE.BoxGeometry(0.08, 0.011, 0.014)), MAT.hair,
+      [x * 1.02, 0.07, 0.233], [0, 0, side * 0.2])
   }
 
-  // Les sourcils : fins, courts, légèrement arqués. Matière des cheveux, donc
-  // ombrés comme eux — la seule exception à la règle du non-éclairé.
-  for (const side of [1, -1]) {
-    part(head, faceted(new THREE.BoxGeometry(0.07, 0.014, 0.012)), MAT.hair,
-      [side * 0.098, 0.082, 0.236], [0, 0, side * -0.12])
-  }
-
-  // Le nez : deux traits d'ombre, pas un volume. Et la bouche, avec le très
-  // léger sourire de la référence — un trait relevé à ses deux bouts.
-  part(head, faceted(new THREE.BoxGeometry(0.012, 0.03, 0.01)), SKIN_SHADE, [0.012, -0.055, 0.248])
-  part(head, faceted(new THREE.BoxGeometry(0.05, 0.011, 0.012)), SKIN_SHADE, [0, -0.122, 0.234])
-  for (const side of [1, -1]) {
-    part(head, faceted(new THREE.BoxGeometry(0.018, 0.011, 0.012)), SKIN_SHADE,
-      [side * 0.03, -0.116, 0.232], [0, 0, side * -0.4])
-  }
+  // La bouche : un trait sombre, comme les six autres visages du jeu. Elle était
+  // en teinte de peau ombrée, donc invisible.
+  part(head, faceted(new THREE.BoxGeometry(0.052, 0.011, 0.014)), INK, [0, -0.105, 0.234])
 
   /*
-    La croix du front — **inversée, et violette.**
+    La croix du front — **inversée, et sur un front réellement dégagé.**
 
-    Le bandeau qui la couvrait appartenait au déguisement de York New ; il
-    disparaît avec lui. Elle redevient donc le repère de la tête, et c'est ce
-    qu'on veut : c'est le **seul** trait de ce personnage qui reste lisible à
-    vingt-et-une unités.
-
-    Barre longue verticale, barre courte **en bas** — c'est cette position basse,
-    et elle seule, qui la distingue d'une croix ordinaire. Elle est volontairement
-    large : huit centimètres pour une tête de vingt-six de rayon.
-
-    Les mèches de la frange s'écartent devant elle (voir plus bas) : une frange
-    qui la recouvrirait annulerait tout l'intérêt de l'avoir remise.
+    Barre longue verticale, barre courte **en bas**. Elle est à 0,105 de haut et
+    0,240 de profondeur ; la calotte de cheveux, elle, ne redescend au plan du
+    front qu'à 0,152. C'est cet écart-là qui la rend
+    visible, et aucune des versions précédentes ne l'avait : le front y était
+    entièrement sous les cheveux, donc la marque n'a jamais été à l'écran.
   */
-  part(head, faceted(new THREE.BoxGeometry(0.018, 0.085, 0.012)), CROSS_INK, [0, 0.125, 0.236])
-  part(head, faceted(new THREE.BoxGeometry(0.05, 0.017, 0.012)), CROSS_INK, [0, 0.102, 0.24])
+  part(head, faceted(new THREE.BoxGeometry(0.013, 0.052, 0.014)), INK, [0, 0.105, 0.24])
+  part(head, faceted(new THREE.BoxGeometry(0.036, 0.012, 0.014)), INK, [0, 0.089, 0.243])
 
   /*
-    Les cheveux — **lâchés**, en mèches pointues, et non plaqués en arrière.
+    Les cheveux — **et la faute qui a tenu six versions.**
 
-    C'est l'autre moitié de la correction. La calotte couvre le crâne haut et
-    l'arrière ; par-dessus, deux séries de mèches :
+    `buildRig` place le pivot `headwear` **seize centimètres au-dessus du
+    centre de la tête** : c'est un porte-chapeau, fait pour un chapeau de paille
+    ou un bandeau. J'y ai posé les cheveux dès le premier jet, en y écrivant des
+    ordonnées que je calculais, elles, par rapport au crâne.
 
-     - **la frange**, qui retombe sur le bandeau et descend jusqu'aux sourcils.
-       Elle est irrégulière — cinq pointes de longueurs différentes — parce
-       qu'une frange régulière est un casque ;
-     - **les mèches de tempe**, plus longues, qui encadrent le visage jusqu'à la
-       mâchoire et cachent le haut des oreilles sans cacher les boucles.
+    Toute la chevelure flottait donc seize centimètres trop haut, depuis le
+    début. C'est ce qui expliquait, sans que je le voie, la calotte posée comme
+    un béret, la frange qui dépassait du sommet en deux languettes, et le
+    « chapeau de sorcier » des versions à cônes. J'ai passé quatre versions à
+    régler des longueurs de mèches qui n'étaient pas au bon endroit.
 
-    Et quelques pointes qui dépassent à l'arrière : c'est ce qui donne à la
-    silhouette son contour hérissé plutôt qu'un galet.
+    Tout ce qui suit est donc accroché à `head`, et non à `headwear`.
+
+    Ce n'est plus une calotte mais une **masse**, et le profil est ce qui l'a
+    montré. Écrasée à 0,60 comme celle de `ClanFace`, elle ne couvrait que le
+    dessus : vu de côté, l'arrière du crâne était de la peau nue jusqu'à la nuque.
+    `ClanFace` s'en accommode parce que sa masse arrière « ne se voit pas de
+    face » ; mais la caméra de ce jeu suit le joueur **par-derrière**, donc c'est
+    précisément la face qu'on voit le plus longtemps.
+
+    L'ellipsoïde enveloppe maintenant le crâne entier à deux centimètres au-dessus
+    de sa surface, et c'est le **recul de 4,5 cm** qui dégage le visage : il fait
+    sortir le front de l'ellipsoïde à partir de 0,155, soit deux centimètres
+    au-dessus du haut de la croix. Cet écart-là se calcule ; à l'œil, la
+    chevelure mange toujours le front.
   */
-  outline(part(headwear, new THREE.SphereGeometry(HEAD_R + 0.012, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.6),
-    MAT.hair, [0, -0.13, -0.02], null, [1.02, 1.02, 1.06]))
-  /*
-    Les épis du dessus.
-
-    Les planches montrent une chevelure **hérissée sur le crâne**, pas une
-    calotte lisse : une dizaine de pointes courtes qui partent dans tous les
-    sens. Sans elles, la tête est un galet, et c'est ce qu'étaient les trois
-    versions précédentes.
-  */
-  for (let i = 0; i < 11; i++) {
-    const a = (i / 11) * Math.PI * 2 * 2.3
-    const r = 0.07 + (i % 4) * 0.045
-    outline(part(headwear, faceted(new THREE.ConeGeometry(0.036, 0.13 + (i % 3) * 0.05, 4)), MAT.hair,
-      [Math.sin(a) * r, 0.02 + (i % 2) * 0.02, Math.cos(a) * r - 0.03],
-      [0.5 * Math.cos(a) - 0.2, i, -0.5 * Math.sin(a)]), OUTLINE_THIN)
-  }
+  outline(part(head, new THREE.SphereGeometry(0.268, 20, 16), MAT.hair,
+    [0, 0.055, -0.045], null, [1.04, 0.92, 1.04]))
 
   /*
-    La frange — **écartée au milieu**, pour dégager la croix.
+    Deux mèches qui retombent sur le front, **de part et d'autre de la croix**.
 
-    Quatre mèches et non cinq, et aucune au centre : c'est ce qui laisse la croix
-    visible entre elles. Le déguisement de York New couvrait le front d'un
-    bandeau ; ici c'est l'inverse, le front doit rester lisible.
-
-    Les longueurs restent inégales — une frange régulière est un casque.
-  */
-  for (const strand of [
-    { x: -0.175, len: 0.17, tilt: 0.44, roll: -0.55 },
-    { x: -0.1, len: 0.23, tilt: 0.32, roll: -0.3 },
-    { x: 0.1, len: 0.25, tilt: 0.32, roll: 0.3 },
-    { x: 0.175, len: 0.16, tilt: 0.46, roll: 0.56 },
-  ]) {
-    outline(part(headwear, faceted(new THREE.ConeGeometry(0.045, strand.len, 4)), MAT.hair,
-      [strand.x, -0.07, 0.2], [Math.PI - strand.tilt, Math.PI / 4, strand.roll]), OUTLINE_THIN)
-  }
-
-  // Les mèches de tempe, qui encadrent le visage.
-  for (const side of [1, -1]) {
-    for (let i = 0; i < 2; i++) {
-      outline(part(headwear, faceted(new THREE.ConeGeometry(0.05, 0.3 - i * 0.07, 4)), MAT.hair,
-        [side * (0.2 - i * 0.03), -0.13, 0.09 - i * 0.1],
-        [Math.PI - 0.22, 0, side * (0.3 + i * 0.12)]), OUTLINE_THIN)
-    }
-  }
-
-  // Les pointes de l'arrière, qui hérissent le contour.
-  for (const spike of [
-    { x: -0.13, y: -0.02, z: -0.24, tilt: -0.5, roll: -0.4 },
-    { x: 0.0, y: 0.03, z: -0.27, tilt: -0.7, roll: 0 },
-    { x: 0.14, y: -0.03, z: -0.23, tilt: -0.45, roll: 0.45 },
-    { x: -0.22, y: -0.12, z: -0.14, tilt: -0.2, roll: -0.8 },
-    { x: 0.22, y: -0.12, z: -0.14, tilt: -0.2, roll: 0.8 },
-  ]) {
-    outline(part(headwear, faceted(new THREE.ConeGeometry(0.048, 0.2, 4)), MAT.hair,
-      [spike.x, spike.y, spike.z], [spike.tilt, Math.PI / 4, spike.roll]), OUTLINE_THIN)
-  }
-
-  /*
-    Les boucles — **à perle verte**, et non bleue.
-
-    La référence les montre franchement vertes, presque jade. Elles sont le seul
-    point coloré de toute la silhouette : le costume est noir, la chemise
-    blanche, les cheveux sombres et le bandeau beige. Deux points verts de part
-    et d'autre du visage, et rien d'autre.
+    Elles ne se rejoignent pas au milieu : le vide central est ce qui laisse voir
+    la marque, et c'est la seule raison pour laquelle il est là. Sans elles la
+    ligne de cheveux est un arc horizontal net, qui se lit comme un bonnet.
   */
   for (const side of [1, -1]) {
-    const ear = joint(head, [side * 0.238, -0.055, 0.03])
-    part(ear, new THREE.SphereGeometry(0.05, 10, 8), SKIN_SHADE,
-      [0, 0.02, 0], [0, side * 0.3, 0], [0.22, 0.95, 0.75])
-    part(ear, new THREE.TorusGeometry(0.02, 0.006, 6, 10), MAT.cross, [0, -0.025, 0], [Math.PI / 2, 0, 0])
-    part(ear, new THREE.SphereGeometry(0.028, 10, 10), JADE, [0, -0.062, 0])
+    outline(part(head, faceted(new THREE.BoxGeometry(0.062, 0.115, 0.05)), MAT.hair,
+      [side * 0.092, 0.122, 0.208], [0.34, 0, side * 0.3]), OUTLINE_THIN)
+  }
+
+  /*
+    Les mèches de tempe, devant les oreilles.
+
+    Les cotes viennent de `ClanFace`, **raccourcies d'un tiers** : sa boîte de 34
+    descend jusqu'aux épaules et donne une coupe au carré, que ce personnage n'a
+    pas. À 23,5 elle s'arrête à la mâchoire.
+
+    Elles sont pour moitié dans le crâne, et c'est voulu : c'est l'angle de la
+    boîte qui ressort, et ce qui ressort suffit à resserrer un visage que la
+    sphère du rig fait très large.
+  */
+  for (const side of [1, -1]) {
+    outline(part(head, faceted(new THREE.BoxGeometry(0.085, 0.235, 0.06)), MAT.hair,
+      [side * 0.205, -0.005, 0.15], [0.22, 0, side * 0.1]), OUTLINE_THIN)
+  }
+
+  /*
+    Les épis de la nuque : cinq pointes courtes, **derrière seulement**.
+
+    Elles donnent le hérissement de profil, qui est un vrai trait du personnage,
+    sans jamais toucher le visage. Chacune est portée par un pivot qui tourne
+    d'abord de son azimut, si bien que sa profondeur n'est plus qu'un rayon —
+    qu'il suffit de prendre plus grand que celui du crâne pour être dehors.
+  */
+  for (let i = 0; i < 5; i++) {
+    const az = Math.PI + (i - 2) * 0.44
+    const len = 0.15 + (i % 2) * 0.06
+    const socket = joint(head, [0.03 * (i % 2), 0.05, 0], [0, az, 0])
+    const tip = joint(socket, [0, 0, 0], [1.3, 0, 0])
+    outline(part(tip, faceted(new THREE.ConeGeometry(0.046, len, 4)), MAT.hair,
+      [0, len / 2 + 0.235, 0]), OUTLINE_THIN)
+  }
+
+  /*
+    Les boucles — **à perle verte**, seul point coloré de toute la silhouette,
+    et **avancées sous la mâchoire**. Posées à 0,03 de profondeur, elles étaient
+    dans la masse de cheveux qui enveloppe désormais le crâne ; à 0,078 elles en
+    sortent. C'est le seul point coloré de toute la silhouette, donc le seul
+    détail qui ne peut pas se permettre d'être à moitié caché.
+  */
+  for (const side of [1, -1]) {
+    const ear = joint(head, [side * 0.216, -0.09, 0.078])
+    part(ear, new THREE.SphereGeometry(0.04, 10, 8), SKIN_SHADE,
+      [0, 0.02, 0], [0, side * 0.3, 0], [0.24, 0.9, 0.7])
+    part(ear, new THREE.SphereGeometry(0.021, 10, 10), JADE, [0, -0.045, 0])
   }
 }
 
