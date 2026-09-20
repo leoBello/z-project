@@ -258,28 +258,43 @@ const GLYPHS: Record<ItemId, React.JSX.Element> = {
 
   'meruem-garb': (
     <>
-      {/* Le buste : une carapace conique, épaules larges et taille étroite. Pas
-          d'échancrure, pas de pans — c'est un corps, pas un vêtement, et c'est
-          ce qui sépare cette case des cinq autres tenues. */}
-      <path d="M12 3.4 16.6 6l1 5.4-1.6 8.8h-8L6.4 11.4 7.4 6z" fill="currentColor" opacity="0.9" />
-      {/* Les trois rainures du ventre : la seule chose qui dise « segmenté ». */}
+      {/*
+        Le casque et ses deux cornes — **c'est lui qui identifie le personnage**,
+        et le glyphe précédent ne montrait que son tronc. Une carapace lisse sur
+        un crâne est une bosse ; ce sont les cornes balayées vers l'arrière qui
+        en font un casque, et elles seules débordent assez pour se voir à
+        quarante-quatre pixels.
+      */}
       <path
-        d="M9.6 12h4.8M9.9 14.4h4.2M10.2 16.8h3.6"
-        stroke="#171226"
-        strokeWidth="1.3"
+        d="M12 2.2C8.6 2.2 7 4.4 7.1 6.6L7.2 8h9.6l.1-1.4c.1-2.2-1.5-4.4-4.9-4.4z"
+        fill="currentColor"
+      />
+      <path d="M7.1 6.4 2.2 4.6l2.6 2.6-3-.3 5.1 1.5z" fill="currentColor" />
+      <path d="M16.9 6.4 21.8 4.6l-2.6 2.6 3-.3-5.1 1.5z" fill="currentColor" />
+
+      {/* Le tronc : une chitine conique, épaules larges et taille étroite. Pas
+          d'échancrure, pas de pans — c'est un corps, pas un vêtement, et c'est ce
+          qui sépare cette case des cinq autres tenues. */}
+      <path d="M12 8.4 16.4 10.4l.8 4.8-1.2 5.2h-8l-1.2-5.2.8-4.8z" fill="currentColor" opacity="0.9" />
+      {/* Les deux rainures du ventre : la seule chose qui dise « segmenté ». */}
+      <path
+        d="M10 14.4h4M10.3 16.6h3.4"
+        stroke="#0d1512"
+        strokeWidth="1.2"
         strokeLinecap="round"
       />
+
       {/* La queue et son dard, qui sortent du cadre de la silhouette. C'est le
           seul glyphe de la grille dont la forme déborde par la droite — et à
           quarante-quatre pixels, déborder est ce qui se remarque en premier. */}
       <path
-        d="M16.2 17.4c3.4.6 4.8-1.6 4.4-4.4"
+        d="M16.4 18c3.2.4 4.6-1.8 4.2-4.4"
         stroke="currentColor"
         strokeWidth="1.8"
         strokeLinecap="round"
         fill="none"
       />
-      <path d="M20.6 13.4 21.9 8.8 18.7 11z" fill="currentColor" />
+      <path d="M20.6 14 21.9 9.6 18.7 11.8z" fill="currentColor" />
     </>
   ),
   'kuroro-garb': (

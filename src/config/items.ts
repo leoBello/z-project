@@ -704,7 +704,22 @@ export const MERUEM_CARAPACE: Item = {
   // skin et non du vêtement, donc de `SKIN_TRAITS`.
   traits: NEUTRAL_TRAITS,
   outfit: 'meruem',
-  accent: '#8a4fd0',
+  /*
+    Le vert pâle de sa chitine, et non le violet du premier jet.
+
+    Ce violet venait d'un raisonnement de lisibilité — une teinte saturée pour
+    le séparer des cinq autres tenues à vingt-et-une unités — appliqué à une
+    couleur qui n'est pas la sienne. Il ne lui reste plus que ses yeux et deux
+    lignes sur le crâne, et une pastille d'inventaire doit dire ce que la chose
+    a l'air d'être.
+
+    Il voisine avec le `#8fd0c4` de l'armure du Démon, qui est l'autre tenue
+    verte de la table, et c'est assumé : celui-ci tire vers le jaune là où
+    l'autre tire vers le cyan, et surtout les deux glyphes n'ont rien en commun
+    — une carapace à queue contre un manteau. La table porte déjà deux rouges
+    pour la même raison.
+  */
+  accent: '#b7d9bc',
 }
 
 /**
@@ -757,7 +772,16 @@ export const KURORO_COAT: Item = {
   damageBy: EVERY_SPECIES_ALIKE,
   traits: NEUTRAL_TRAITS,
   outfit: 'kuroro',
-  accent: '#d7d9de',
+  /*
+    Le blanc cassé de la fourrure, et non un gris d'acier.
+
+    Le vêtement est noir, et le noir ne fait pas un accent — sur une carte
+    sombre, il ne reste rien du glyphe. Ce qui signe ce manteau est sa
+    fourrure, au col, aux poignets et à l'ourlet ; c'est donc elle qui donne la
+    teinte. Elle est **chaude**, pour ne pas se confondre avec le gris bleuté
+    du Seigneur Noir, qui est l'autre silhouette noire de la table.
+  */
+  accent: '#eceae3',
 }
 
 export const ITEMS: readonly Item[] = [
