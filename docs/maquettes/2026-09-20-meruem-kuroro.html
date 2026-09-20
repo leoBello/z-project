@@ -1513,43 +1513,103 @@ const kingRig = buildRig(king)
   */
 
   /*
-    Les yeux — orbite, iris, pupille, éclat.
+    Le regard — **et c'est la seule chose de cette tête qui restait à faire.**
 
-    Quatre pièces empilées vers l'avant, toutes écrasées pour épouser le crâne.
-    L'obliquité vient d'une rotation sur Z, comme celle de l'Aube : un œil
-    horizontal est un œil de peluche.
+    Une prise de vue serrée sur les deux yeux seuls a montré ce que le gros plan
+    du visage ne montrait pas : à l'échelle de la tête entière, un œil fait
+    cinquante pixels et l'on ne juge que sa tache, jamais sa construction.
 
-    L'iris est **lilas pâle** et la pupille noire. Les deux premières versions en
-    avaient fait un aplat violet, ce qui est la seule chose qu'un œil ne peut pas
-    être ; la troisième l'a corrigé en rose, et le rendu a montré deux pastilles
-    de chewing-gum. Le lilas est celui de la référence, et il a en plus l'avantage
-    de répondre au violet des flancs de la coque.
+    **La pupille était enterrée dans le bombé de l'iris.** Elle était bien posée
+    huit millimètres devant lui, mais un iris écrasé est une sphère, et son relief
+    ressortait à 0,258 quand la pupille s'arrêtait à 0,256. Deux millimètres, et
+    ce personnage n'avait pas de pupille du tout — sur sept versions.
 
-    La pupille est **ronde**, et non plus deux fois plus haute que large : une
-    pupille verticale dans un iris clair est un œil de reptile, et ce
-    personnage-là n'en est pas un — c'est tout le propos de son visage.
+    C'est le piège des visages de ce jeu, où tout est empilé à plat sur une sphère :
+    **ce n'est pas la position d'une pièce qui décide de l'ordre, c'est sa position
+    plus son relief.** Les profondeurs ci-dessous sont échelonnées en conséquence,
+    et chaque pièce est nettement plus plate que la précédente.
+
+    **L'éclat était une bille**, plus grosse que la pupille et posée au milieu de
+    l'œil. C'est à lui seul que la tête devait son air attendrissant : un gros
+    point blanc central est le procédé qui rend n'importe quel œil gentil, et ce
+    personnage est le contraire de gentil. Il est trois fois plus petit et rejeté
+    au bord supérieur.
+
+    **La paupière était claire.** En teinte d'ombre de chitine, donc plus claire
+    que la peau sous cet éclairage, elle se lisait comme une barre de lumière
+    flottant au-dessus de l'œil. Une paupière assombrit, elle n'éclaire pas : elle
+    est maintenant de la teinte de l'orbite, et elle **recouvre** le haut de
+    l'amande au lieu de la border.
+
+    Ce qui reste du jet précédent : l'amande couchée, l'obliquité sur Z, et son
+    sens — coin intérieur bas, coin extérieur haut. Dans l'autre sens, c'est le
+    même œil et un air accablé ; `DawnFace` le dit, et ça vaut ici aussi.
   */
   for (const side of [1, -1]) {
-    const x = side * 0.105
-    // L'orbite, qui détache l'œil de la peau claire et lui donne son amande.
-    part(head, new THREE.SphereGeometry(0.082, 12, 12), ORBIT,
-      [x, 0.005, 0.232], [0, 0, side * 0.38], [0.76, 0.34, 0.24])
-    part(head, new THREE.SphereGeometry(0.07, 12, 12), IRIS,
-      [x, 0.005, 0.241], [0, 0, side * 0.38], [0.72, 0.3, 0.24])
-    part(head, new THREE.SphereGeometry(0.024, 10, 10), PUPIL,
-      [x, 0.004, 0.249], [0, 0, side * 0.38], [0.86, 0.78, 0.3])
-    part(head, new THREE.SphereGeometry(0.0095, 6, 6), GLINT, [x - side * 0.021, 0.02, 0.252])
+    const x = side * 0.1
+    const slant = side * 0.32
+
     /*
-      La paupière supérieure : une boîte mince de la teinte de la carapace, qui
-      **mord sur le haut de l'iris**, et c'est la seule position qui marche. Une
-      fois l'œil aplati en amande, elle se retrouvait deux centimètres au-dessus
-      de lui : un trait clair en biais qui ne touche pas l'œil n'est pas une
-      paupière, c'est un sourcil peint sur le visage. Elle suit désormais la même
-      inclinaison que l'amande. C'est elle, et rien d'autre, qui donne un
-      regard bas plutôt que fixe — le même procédé que la paupière de l'Aube.
+      L'orbite, la plus large et la plus creuse : elle donne l'amande, et le
+      liseré sombre qu'elle laisse tout autour de l'iris est ce qui empêche
+      celui-ci de flotter sur la peau.
     */
-    part(head, faceted(new THREE.BoxGeometry(0.118, 0.019, 0.014)), FACE_SHADE,
-      [x, 0.028, 0.243], [0, 0, side * 0.38])
+    part(head, new THREE.SphereGeometry(0.076, 18, 14), ORBIT,
+      [x, 0.008, 0.229], [0, 0, slant], [0.84, 0.44, 0.2])
+    part(head, new THREE.SphereGeometry(0.076, 18, 14), IRIS,
+      [x, 0.006, 0.238], [0, 0, slant], [0.66, 0.34, 0.16])
+    /*
+      La pupille est **basse dans l'iris**, et **petite** : elle en occupe la
+      moitié de la hauteur. Au premier essai elle en prenait les quatre
+      cinquiemes, ce qui ne laissait du violet qu'un lisere — de loin, deux gros
+      yeux noirs, et de près un regard de peluche. La couleur d'un œil doit
+      **dominer** sa pupille, sans quoi elle ne compte pas.
+
+      Sa hauteur est ce qui se vérifie, pas sa largeur : c'est l'axe court de
+      l'amande, donc celui où une pupille même modérée sature vite.
+    */
+    part(head, new THREE.SphereGeometry(0.076, 14, 12), PUPIL,
+      [x, -0.002, 0.247], [0, 0, slant], [0.22, 0.2, 0.11])
+    part(head, new THREE.SphereGeometry(0.0052, 8, 8), GLINT,
+      [x - side * 0.021, 0.009, 0.268], null, [1.15, 0.8, 0.6])
+
+    /*
+      La paupière, sombre et **devant tout le reste**.
+
+      **Un demi-anneau, et rien d'autre.** C'est le point qui a demandé cinq
+      essais, et chacun dit quelque chose.
+
+      Une **boîte droite** ne peut pas fermer un œil courbe : inclinée du même
+      angle que l'amande, elle la touche en son milieu et s'en écarte aux deux
+      bouts, où il reste un coin de peau. On lit alors un **sourcil**, et ce
+      personnage n'en a pas.
+
+      Une **ellipse sombre de la même forme**, remontée, règle la courbe mais pas
+      le reste : sa moitié supérieure dépasse de l'œil et fait une grande tache
+      noire au-dessus. Deux sourcils, en plus gros.
+
+      J'ai alors essayé de **cacher cette moitié sous une paupière de peau** — une
+      seconde ellipse en `MAT.chitin`, la matière même du crâne, posée par-dessus.
+      Elle ne se confond jamais avec le front, et c'est géométrique : ses normales
+      ne sont pas celles de la sphère au point où elle se pose, donc elle ne prend
+      pas la même lumière. Bombée, elle fait deux coussins clairs ; aplatie, deux
+      écailles claires. Aucun réglage ne la fait disparaître.
+
+      **Il ne fallait donc pas la cacher mais ne jamais la dessiner.** Un demi-tore
+      aplati n'a pas de moitié supérieure : c'est un arc, de l'épaisseur qu'on lui
+      donne, posé exactement sur le bord haut de l'amande, dont il mange les cinq
+      derniers millimètres. Le tore est mis à l'échelle sans souci de l'épaisseur
+      de son tube, qui s'écrase avec lui : le trait est un peu plus épais aux
+      coins qu'au milieu, ce qui est exactement ce qu'un trait de cil fait.
+
+      La leçon est générale et coûte cher à chaque fois : sur ces visages, **une
+      forme qu'on ne veut voir qu'en partie se découpe, elle ne se recouvre pas.**
+
+      C'est ce trait, et rien d'autre, qui fait un regard qui juge plutôt qu'un
+      regard qui s'étonne — le même procédé que la paupière de l'Aube.
+    */
+    part(head, new THREE.TorusGeometry(1, 0.18, 8, 34, Math.PI), PUPIL,
+      [x, 0.006, 0.252], [0, 0, slant], [0.067, 0.027, 0.25])
   }
 
   /*
