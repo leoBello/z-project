@@ -212,16 +212,29 @@ personnalisées*. Rien ne le signale, et **les données d'avant la déclaration 
 remontent pas** : un paramètre déclaré en retard est perdu pour la période
 écoulée. Umami, lui, les montre sans rien demander.
 
-À déclarer en **dimensions personnalisées** (portée « événement ») :
+Quatorze dimensions et sept métriques, soit vingt et un formulaires de trois
+champs où une lettre mal recopiée donne une colonne vide. D'où un script :
 
-`landmark`, `slide`, `via`, `project`, `target`, `attack`, `phase`, `outcome`,
-`difficulty`, `duration`, `locale`, `from`, `location`, `failed`
+```
+node scripts/ga4-custom-definitions.mjs <clé.json> --dry-run   # pour voir
+node scripts/ga4-custom-definitions.mjs <clé.json>             # pour faire
+```
 
-À déclarer en **métriques personnalisées** :
+Il se relance sans risque — ce qui existe est sauté, rien n'est modifié ni
+supprimé — et il ne demande pas quel compte viser : il lit l'identifiant de flux
+dans `.env` et travaille sur la propriété qui le porte, ou s'arrête. La liste
+des définitions est en tête du fichier, et c'est **le miroir de
+`src/analytics/index.ts`** : ajouter un paramètre d'événement, c'est ajouter une
+ligne là et relancer.
 
-`ms`, `seconds`, `slides`, `index`, `hearts`, `score`, `kills`
+**Ce qu'il faut lui donner.** Une clé JSON de compte de service (celui de
+Firebase fait l'affaire) dont l'adresse a été ajoutée en rôle **Éditeur** dans
+*GA4 > Admin > Gestion des accès à la propriété*. L'API `analyticsadmin` doit
+être activée sur le projet Google Cloud. La clé est un identifiant de longue
+durée : elle se garde hors du dépôt et se supprime une fois le travail fait.
 
-Les quotas sont larges (50 dimensions, 50 métriques) : tout tient sans arbitrage.
+Compter ensuite 24 à 48 h avant de voir les paramètres dans les rapports
+standard ; le DebugView et le temps réel, eux, répondent tout de suite.
 
 ## Assets 3D
 
