@@ -1180,6 +1180,61 @@ canvas {
   filter: none;
 }
 
+/*
+  Le bandeau de pourriture, sous les cœurs.
+
+  Volontairement plus étroit et plus bas qu'eux : ce n'est pas une seconde barre
+  de vie, c'est ce qui va la manger. Une jauge de même largeur se serait lue
+  comme une ressource de plus à gérer.
+
+  Ses trois états ne reposent **pas sur la seule couleur** — la barre monte, puis
+  elle pulse, puis sa bordure s'allume. Un joueur qui ne distingue pas le rouge
+  du rouge sombre voit quand même deux changements.
+*/
+.rot-meter {
+  width: 170px;
+  height: 7px;
+  margin: 6px auto 0;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 119, 111, 0.35);
+  background: var(--hud-bg);
+  backdrop-filter: blur(4px);
+  overflow: hidden;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.rot-meter[hidden] { display: none; }
+
+.rot-meter__fill {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #8e1f2a, #c9304a 70%, #e8776f);
+  /* Pas de transition sur la largeur : elle est réécrite à chaque frame par
+     `RotMeter`, et une transition de 200 ms par-dessus une animation à 60 Hz
+     fait traîner la barre derrière la valeur qu'elle affiche. */
+}
+
+.rot-meter[data-state='warning'] {
+  border-color: rgba(232, 119, 111, 0.9);
+  animation: rot-pulse 620ms ease-in-out infinite;
+}
+
+.rot-meter[data-state='contaminated'] {
+  border-color: #f2a9a0;
+  box-shadow: 0 0 10px rgba(201, 48, 74, 0.75);
+  animation: rot-pulse 320ms ease-in-out infinite;
+}
+
+@keyframes rot-pulse {
+  50% { opacity: 0.55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rot-meter[data-state='warning'],
+  .rot-meter[data-state='contaminated'] { animation: none; }
+}
+
 /* Flash rouge sur les bords à chaque coup encaissé. */
 .hud__damage {
   position: absolute;

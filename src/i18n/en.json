@@ -6,7 +6,8 @@
       "attack": "attack",
       "parry": "parry",
       "interact": "interact",
-      "heartsLabel": "{current} of {total} hearts"
+      "heartsLabel": "{current} of {total} hearts",
+      "rotLabel": "Scarlet rot"
     },
     "touch": {
       "move": "move",

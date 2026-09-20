@@ -12,6 +12,7 @@ import {
   playTreasure,
 } from '../audio/sfx'
 import { preloadMap } from '../components/mapFragments'
+import { purgeRot, resetRot } from '../state/rot'
 import { BLAST_FORWARD } from '../config/annihilation'
 import { chestById } from '../config/chests'
 import { enemyTotal } from '../config/enemies'
@@ -745,6 +746,19 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (phase !== 'playing' || hearts >= capacity) return false
     playPickup()
     set({ hearts: Math.min(capacity, hearts + amount) })
+    /*
+      Un cœur ramassé purge la pourriture, contamination en cours comprise.
+
+      C'est la **seule** sortie de la jauge en dehors du reflux, et c'est ce qui
+      donne aux créatures du Marais leur raison d'exister : elles ne sont pas là
+      pour le défi, elles sont là pour que le joueur arrive avec une réserve.
+
+      L'enchaînement tombe juste tout seul, et c'est ce qui le rend bon : la
+      contamination retire des cœurs, donc elle fait de la place, donc le cœur
+      ramassé passe. Un joueur à pleine vie ne peut pas se purger — mais un
+      joueur à pleine vie n'est pas contaminé depuis longtemps.
+    */
+    purgeRot()
     return true
   },
 
@@ -1220,6 +1234,17 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     // Marqué à l'arrivée et jamais effacé : c'est ce qui accomplit la quête du
     // portail, et elle ne se rouvre pas parce qu'on est rentré.
+    /*
+      La pourriture ne quitte pas le Marais.
+
+      Elle est remise à zéro à **chaque** bascule de carte, y compris à
+      l'arrivée : la jauge est une propriété du lieu, pas du personnage. La
+      laisser courir aurait fait mourir sur le continent un joueur contaminé qui
+      vient de franchir le portail pour s'échapper — c'est-à-dire punir la seule
+      réaction sensée qu'il pouvait avoir.
+    */
+    resetRot()
+
     if (transit === 'sky') set({ skyVisited: true })
 
     /*

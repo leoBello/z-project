@@ -6,7 +6,8 @@
       "attack": "attaquer",
       "parry": "parer",
       "interact": "interagir",
-      "heartsLabel": "{current} cœurs sur {total}"
+      "heartsLabel": "{current} cœurs sur {total}",
+      "rotLabel": "Pourriture écarlate"
     },
     "touch": {
       "move": "se déplacer",

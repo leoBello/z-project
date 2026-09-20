@@ -4,6 +4,7 @@ import { Arena } from './Arena'
 import { Flora } from './Flora'
 import { Marsh } from './Marsh'
 import { PaleTree } from './PaleTree'
+import { RotBlight } from './RotBlight'
 import { Roots } from './Roots'
 import { useMarshMaterials } from './materials'
 
@@ -35,6 +36,10 @@ export default function RotMarsh() {
 
   return (
     <>
+      {/* Il ne rend rien : c'est le moteur de la jauge de pourriture, monté
+          avec le Marais et avec lui seul. Voir son en-tête. */}
+      <RotBlight />
+
       <Marsh materials={materials} />
       <Roots materials={materials} />
       <Flora materials={materials} />
