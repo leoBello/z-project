@@ -1503,6 +1503,31 @@ canvas {
   gap: 6px;
 }
 
+/*
+  Les deux pastilles du jeu — quêtes et inventaire — sur une seule rangée.
+
+  Côte à côte et non empilées, pour deux raisons. La première se lit : les trois
+  gélules du dessus règlent la *page*, ces deux rondes ouvrent le **jeu**, et les
+  tenir ensemble dit à quelle famille elles appartiennent. La seconde se calcule :
+  sur mobile, les cœurs sont poussés sous toute cette colonne par un `calc` qui
+  en additionne les hauteurs (voir `.hud__top`). Une troisième ligne l'aurait
+  rendu faux, et les cœurs seraient repassés sous la pastille du bas.
+
+  La bulle de première quête est un enfant de gauche : c'est le flex qui la
+  place, pas des coordonnées à tenir à jour.
+*/
+.settings__game {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.quest-cue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .language {
   display: flex;
   gap: 2px;
@@ -1957,6 +1982,47 @@ body:has(.lightbox) .teleport-menu {
   animation: touch-hint-slide 2.4s ease-in-out infinite;
 }
 
+/*
+  Bulle de première quête, à gauche de sa pastille.
+
+  Elle emprunte le cadre des bulles tactiles — même fond, même pointe, même
+  entrée — mais **pas leur règle de disparition** : celles-là s'effacent au
+  premier contact avec l'écran, parce que ce contact prouve qu'on a compris
+  qu'on touche cet écran. Celle-ci annonce qu'il y a quelque chose à faire et
+  où le lire ; elle n'a rempli son office que quand le journal a été ouvert. Et
+  elle vaut pour toutes les machines, souris comprise : c'est le seul endroit
+  du jeu où l'on dit au joueur ce qu'on attend de lui.
+
+  Sa pointe est à droite, vers la pastille, là où celle du menu des lieux est à
+  gauche.
+*/
+.touch-hint--quest {
+  /* Plus étroite que ses sœurs : elle part du bord droit, où l'attendent déjà
+     les deux pastilles, et sur un téléphone c'est la carte qu'elle entamerait
+     en s'allongeant. Elle passe à trois lignes plutôt qu'à deux. */
+  max-width: min(190px, 46vw);
+}
+
+.touch-hint--quest::after {
+  content: '';
+  position: absolute;
+  right: -5px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin-top: -5px;
+  transform: rotate(45deg);
+  background: var(--touch-hint-bg);
+  border-right: 1px solid var(--touch-hint-line);
+  border-top: 1px solid var(--touch-hint-line);
+}
+
+/* Le point d'exclamation bat comme la pastille qu'il désigne : les deux
+   informations sont la même, elles doivent se répondre. */
+.touch-hint--quest .touch-hint__icon {
+  animation: inventory-dot 1.8s ease-in-out infinite;
+}
+
 @keyframes touch-hint-in {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
@@ -2058,14 +2124,20 @@ body:has(.lightbox) .teleport-menu {
 /* --- Inventaire ------------------------------------------------------------ */
 
 /*
-  Pastille d'accès, sous la rangée des réglages.
+  Les deux pastilles d'accès, sous la rangée des réglages.
 
-  Ronde là où ses voisines sont des gélules : les trois du dessus règlent la
-  *page* (son, qualité, langue), celle-ci ouvre une partie du **jeu**. Une forme
-  différente évite qu'on la lise comme un quatrième réglage et qu'on ne la
-  clique jamais.
+  Rondes là où leurs voisines sont des gélules : les trois du dessus règlent la
+  *page* (son, qualité, langue), celles-ci ouvrent une partie du **jeu**. Une
+  forme différente évite qu'on les lise comme un quatrième réglage et qu'on ne
+  les clique jamais.
+
+  Le journal de quêtes partage **toutes** ces règles plutôt que d'en recopier une
+  variante : ce sont les deux portes du jeu dans une interface qui n'en a pas
+  d'autre, et leur donner deux tailles ou deux opacités aurait laissé croire à
+  une hiérarchie qui n'existe pas.
 */
-.inventory-button {
+.inventory-button,
+.quest-button {
   position: relative;
   display: grid;
   place-items: center;
@@ -2087,25 +2159,30 @@ body:has(.lightbox) .teleport-menu {
   pointer-events: auto;
 }
 
-.inventory-button svg {
+.inventory-button svg,
+.quest-button svg {
   width: 22px;
   height: 22px;
 }
 
-.inventory-button:hover:not(:disabled) {
+.inventory-button:hover:not(:disabled),
+.quest-button:hover:not(:disabled) {
   opacity: 1;
   transform: scale(1.06);
 }
 
-.inventory-button:active:not(:disabled) {
+.inventory-button:active:not(:disabled),
+.quest-button:active:not(:disabled) {
   transform: scale(0.94);
 }
 
-.inventory-button:disabled {
+.inventory-button:disabled,
+.quest-button:disabled {
   opacity: 0.3;
 }
 
-.inventory-button:focus-visible {
+.inventory-button:focus-visible,
+.quest-button:focus-visible {
   outline: 2px solid #f6f2e4;
   outline-offset: 2px;
 }
@@ -2117,7 +2194,8 @@ body:has(.lightbox) .teleport-menu {
   icône déjà petite, elle passait pour un défaut de rendu. La pulsation la
   désigne comme une information.
 */
-.inventory-button__dot {
+.inventory-button__dot,
+.quest-button__dot {
   position: absolute;
   top: 6px;
   right: 6px;
@@ -2132,6 +2210,154 @@ body:has(.lightbox) .teleport-menu {
 @keyframes inventory-dot {
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.35); opacity: 0.7; }
+}
+
+/* --- Journal de quêtes ---------------------------------------------------- */
+
+/* Voile et cadre de l'inventaire, repris tels quels : les écrans modaux du jeu
+   se reconnaissent à leur cadre avant même d'être lus. */
+.quests {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: radial-gradient(
+    120% 90% at 50% 45%,
+    rgba(10, 16, 12, 0.5) 0%,
+    rgba(5, 9, 7, 0.82) 100%
+  );
+  backdrop-filter: blur(5px);
+  pointer-events: auto;
+  animation: portfolio-in 180ms ease-out;
+}
+
+.quests__panel {
+  position: relative;
+  width: min(520px, 100%);
+  max-height: 100%;
+  padding: 28px;
+  border: 1px solid rgba(245, 220, 149, 0.16);
+  border-radius: 20px;
+  background: linear-gradient(158deg, rgba(34, 46, 38, 0.95) 0%, rgba(16, 23, 18, 0.96) 55%);
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  color: var(--hud-fg);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(245, 220, 149, 0.3) transparent;
+  animation: portfolio-panel-in 220ms cubic-bezier(0.22, 0.8, 0.28, 1);
+}
+
+.quests__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+  Une quête est une **carte**, pas une ligne de liste.
+
+  Le journal en comptera trois au plus, et chacune porte trois informations de
+  natures différentes — un état, un titre, un objectif en prose. Alignées sur une
+  ligne, elles auraient obligé l'œil à trier ; encadrées, elles se lisent une par
+  une, et la quête en cours se distingue de celles qui sont derrière sans qu'on
+  ait à comparer deux gris.
+*/
+.quests__item {
+  padding: 14px 16px;
+  border: 1px solid rgba(245, 220, 149, 0.22);
+  border-left: 3px solid rgba(242, 193, 74, 0.8);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Accomplie : le liseré doré s'éteint et l'ensemble recule d'un cran. Elle
+   reste lisible — c'est la trace du chemin parcouru — mais elle ne dispute plus
+   le regard à ce qu'il reste à faire. */
+.quests__item--done {
+  border-left-color: rgba(245, 220, 149, 0.25);
+  opacity: 0.55;
+}
+
+.quests__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.quests__state {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f2c14a;
+}
+
+.quests__item--done .quests__state {
+  color: rgba(245, 242, 228, 0.7);
+}
+
+/* Pastille de la quête en cours : le même point doré que celui de la pastille
+   du HUD, pour que l'un annonce l'autre. */
+.quests__bullet {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #f2c14a;
+  box-shadow: 0 0 8px rgba(242, 193, 74, 0.8);
+}
+
+.quests__mark {
+  width: 13px;
+  height: 13px;
+}
+
+.quests__count {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+.quests__name {
+  display: block;
+  font-size: 16px;
+  letter-spacing: 0.01em;
+}
+
+.quests__goal {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  opacity: 0.72;
+}
+
+/* Jauge d'avancement : un trait, pas un widget. Elle n'existe que pour les deux
+   quêtes qui se comptent — vingt-six ennemis, puis trois bêtes — et un compteur
+   seul ne dit pas d'un coup d'œil où l'on en est d'une carte entière. */
+.quests__bar {
+  height: 4px;
+  margin-top: 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.quests__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f2c14a, #f5dc95);
+  transition: width 260ms ease-out;
 }
 
 /* Voile et cadre repris du portfolio : les écrans modaux du jeu se
@@ -2635,7 +2861,14 @@ body:has(.lightbox) .teleport-menu {
   /* La pastille cesse de battre, mais reste visible : c'est une information,
      pas une décoration — la supprimer priverait le joueur du seul indice qui
      dit qu'il faut rouvrir le sac. */
-  .inventory-button__dot {
+  .inventory-button__dot,
+  .quest-button__dot {
     animation: none;
+  }
+
+  /* Même raison pour la jauge : elle informe par sa longueur, pas par sa
+     course. */
+  .quests__fill {
+    transition: none;
   }
 }

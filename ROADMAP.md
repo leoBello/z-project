@@ -4,8 +4,8 @@ Mini-jeu 3D navigateur inspiré de Zelda, pour portfolio front-end.
 Direction artistique : **diorama low-poly cozy** — cel-shading, FOV étroit,
 tilt-shift. La recette caméra + post-traitement du HD-2D, appliquée à de la 3D.
 
-Dernière mise à jour : 20 septembre 2026 — le Lynel argenté, boss de la rotonde
-de l'Île Céleste, et la parade qui va avec.
+Dernière mise à jour : 20 septembre 2026 — le journal de quêtes, et l'épreuve
+des trois Lynels qui ferme la partie.
 
 ---
 
@@ -231,6 +231,56 @@ de l'Île Céleste, et la parade qui va avec.
 - Une attaque est parable si sa table le déclare (`parryable` dans
   `EnemyStats`, `LYNEL_ATTACKS`) : étendre la parade à une espèce de plus est un
   drapeau, pas une refonte
+
+### Journal de quêtes
+- **Trois quêtes, enchaînées** : purger le continent de ses vingt-six ennemis,
+  franchir le portail de Nakano, puis abattre les trois Lynels de l'épreuve.
+  Entre l'arrivée sur l'île et la chute du gardien, le journal n'a **rien** à
+  proposer, et c'est voulu : l'île se visite. Une consigne « battez le gardien »
+  aurait réduit une découverte à une tâche
+- **Aucun état de quête n'est stocké.** `src/config/quests.ts` est une
+  *lecture* de la partie : la carte vidée, l'île atteinte, trois bêtes abattues
+  sont des faits que le store tient déjà parce que d'autres systèmes en dépendent
+  — le portail, la prime de cœurs, les bêtes montées sur l'île. Aucune quête ne
+  peut donc mentir, et un chemin de code oublié (le code de triche qui vide la
+  carte) la coche sans avoir à la connaître
+- **Les quêtes verrouillées ne s'affichent pas.** Un journal qui liste ce qui
+  viendra, fût-ce en points d'interrogation, raconte la partie avant qu'elle ait
+  lieu. Ce qui est accompli, lui, reste : c'est la seule trace du chemin parcouru
+- **Une bulle de première quête**, à côté de la pastille, sur le cadre des bulles
+  tactiles mais **pas leur règle de disparition** : celles-là s'effacent au
+  premier contact avec l'écran, celle-ci attend que le journal ait été ouvert —
+  elle demande une action précise, la retirer avant serait la retirer à qui ne
+  l'a pas lue. Sur mobile elle passe **après** les deux autres : trois encadrés
+  sur 390 points ne se lisent pas, ils se contournent
+
+### L'épreuve des trois Lynels
+- Le gardien tombé, trois Lynels de 18 PV prennent la couronne du jardin. Les
+  trois abattus, un **cœur maximal de plus** — par `claimHeartContainer`, comme
+  un réceptacle : même soin complet, même bandeau, une seule implémentation
+- **Le même composant que le boss**, à quatre props près (`id`, `home`, `leash`,
+  `hp`, `role`). Un boss qui mourrait autrement que ses semblables serait un boss
+  dont la mort se lit moins bien, pas un boss plus important. Seul `role` change
+  ce que la mort déclenche : les barrières et la caméra pour le gardien, un
+  compteur de quête pour les autres
+- **Trente-six unités entre deux postes, pour un rayon de détection de
+  quatorze** : c'est ce qui permet de les tirer un par un, et donc ce qui rend
+  l'épreuve jouable. Élargir la laisse (11 unités autour du poste), c'est
+  transformer trois combats en un seul contre trois
+- **Les postes sont à 30°, 150° et 270°, et le détail compte** : les six rampes
+  du jardin sont aux multiples de 60°. Une série partie de 60° plantait les trois
+  bêtes au milieu d'une rampe — elles y naissaient en dévers et glissaient de
+  trois unités, en travers du seul chemin qui monte à la rotonde
+- **La laisse est un anneau, pas un disque** : le jardin est une couronne entre
+  la terrasse du cœur et l'enceinte. Bornée par le seul rayon extérieur, une bête
+  lancée vers l'intérieur se cognait au talus et y restait collée, hors
+  d'atteinte
+- **Le gardien ne ressuscite plus.** Monté sans condition, il se reconstruisait
+  neuf — trente-six points de vie compris — à chaque aller-retour par le portail,
+  dans une rotonde dont les barrières étaient déjà ouvertes. Mais le démonter sur
+  l'état *vivant* du store l'aurait emporté à la frame de sa mort, sans
+  écrasement, sans détente et sans fumée : les deux listes de bêtes sont donc des
+  instantanés pris **au montage de l'île**
 
 ### Objets et inventaire
 - Table déclarative dans `src/config/items.ts` : un objet y déclare ce qu'il
@@ -528,6 +578,8 @@ de l'Île Céleste, et la parade qui va avec.
 | Son **synthétisé**, jamais échantillonné | Même promesse que la végétation, le ciel et les illustrations : rien à télécharger. Un pas et un coup d'épée ne sont que du bruit filtré et une enveloppe. |
 | Son **coupé par défaut** | Un portfolio qui souffle du vent sans prévenir est agaçant — et le geste par lequel le visiteur allume le son est précisément celui qui autorise l'audio au regard de la politique d'autoplay. |
 | Découpage du bundle par **vitesse de changement**, pas par graphe de dépendances | Le total téléchargé ne bouge pas : une scène 3D a besoin de tout dès la première frame. Ce qu'on gagne est le cache du navigateur — le code du jeu change à chaque commit, `three` et Rapier une ou deux fois par an. |
+| Les quêtes sont **dérivées**, jamais stockées | Une quête est une lecture de l'état de partie, pas une case qu'un appelant pense à cocher. Le portail ouvert, l'île visitée et les bêtes abattues sont déjà dans le store parce que le jeu en dépend ailleurs ; les recopier dans un état de quête aurait créé deux vérités, dont une seule est celle que le joueur voit. |
+| Un instantané **au montage** décide quelles bêtes existent sur l'île | Sur l'état vivant, la bête disparaîtrait à la frame de sa mort — avant son écrasement, sa détente et sa fumée. Sans instantané du tout, elle ressusciterait au premier aller-retour par le portail. |
 | Cœurs et projectiles en pools hors React et hors Rapier | Même raison : durée de vie courte, aucune allocation en cours de partie, et le redémarrage n'a qu'à vider les pools. |
 
 ---
@@ -870,4 +922,9 @@ codé.
 | Réceptacle de cœur : emplacement, rayon | `<HeartContainer>` dans `src/components/environment/Temple.tsx` |
 | Ce que change chaque niveau de qualité | `QUALITY` dans `src/store/useQualityStore.ts` |
 | Sons : timbre, volume, cadence des pas | `src/audio/sfx.ts`, `STRIDE_LENGTH` dans `src/components/Player.tsx` |
+| Libellés et objectifs des quêtes | `ui.quests` dans `src/i18n/*.json` |
+| Ce qui accomplit une quête | `questBoard` dans `src/config/quests.ts` |
+| Mise en page du journal, bulle de première quête | `src/components/quests/` + `.quests*` et `.touch-hint--quest` dans `src/index.css` |
+| Postes, points de vie et laisse des Lynels de l'épreuve | `TRIAL_*` dans `src/config/lynel.ts` |
+| Ce que la mort d'un Lynel déclenche | `damage()` dans `src/components/Lynel.tsx` |
 | Découpage du bundle | `advancedChunks` dans `vite.config.ts` |

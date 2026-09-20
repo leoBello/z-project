@@ -99,6 +99,14 @@ interface Events {
    * majorité à pleine vie et il ne demande rien.
    */
   boss_defeated: { hearts: number }
+  /**
+   * Les trois Lynels de l'épreuve sont tombés, et le cœur est donné.
+   *
+   * C'est le dernier écran du jeu : l'écart entre `boss_defeated` et celui-ci
+   * dit combien de joueurs, une fois le gardien vaincu, ont trouvé qu'il restait
+   * quelque chose à faire — c'est-à-dire si le journal de quêtes se lit.
+   */
+  trial_cleared: { hearts: number }
 }
 
 declare global {

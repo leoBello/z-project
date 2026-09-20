@@ -134,6 +134,30 @@
       "kicker": "Trésor",
       "equip": "Équiper maintenant"
     },
+    "quests": {
+      "open": "Ouvrir le journal de quêtes",
+      "title": "Journal de quêtes",
+      "close": "Fermer le journal",
+      "hint": "Ta première quête t'attend ici",
+      "active": "En cours",
+      "done": "Accomplie",
+      "progress": "{current} / {total}",
+      "none": "Plus rien à faire pour l'instant. L'île se visite.",
+      "entries": {
+        "clear-continent": {
+          "name": "Purger le continent",
+          "goal": "Abattre tous les ennemis de la carte. Le dernier tombé, quelque chose s'ouvrira."
+        },
+        "sky-portal": {
+          "name": "Le portail de Nakano",
+          "goal": "Un anneau violet s'est ouvert au temple. Le franchir mène à l'Île Céleste."
+        },
+        "lynel-trial": {
+          "name": "L'épreuve des trois Lynels",
+          "goal": "Le gardien tombé, trois bêtes ont pris le jardin. Les abattre toutes les trois vaut un cœur de plus."
+        }
+      }
+    },
     "inventory": {
       "open": "Ouvrir l'inventaire",
       "title": "Inventaire",

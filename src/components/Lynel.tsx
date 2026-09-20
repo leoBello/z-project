@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import {
   CapsuleCollider,
@@ -22,6 +22,7 @@ import {
 import { ATTACK } from '../config/gameplay'
 import {
   ARENA_CENTER,
+  ARENA_LEASH,
   ARENA_R,
   LYNEL_ATTACKS,
   PUNISH_MULTIPLIER,
@@ -29,6 +30,7 @@ import {
   attacksFor,
   phaseOf,
   type LynelAttack,
+  type LynelLeash,
 } from '../config/lynel'
 import { PARRY } from '../config/parry'
 import { shake } from '../state/cameraShake'
@@ -62,14 +64,15 @@ import { useEnemyMaterials } from './enemies/models'
  */
 
 /**
- * Son identité, une fois pour toutes.
+ * Le nom du gardien au registre des ennemis.
  *
- * Il n'y a qu'un Lynel, et la même chaîne sert au registre de la minimap, au
- * calque de combat et à l'offre de parade — qui doit pouvoir être retirée en le
- * nommant (`cancelParry`), sans quoi tuer la bête pendant son télégraphe laisse
- * l'anneau allumé pour l'éternité.
+ * Il en faut un par bête : la même chaîne sert au registre de la minimap, au
+ * calque de combat et à l'offre de parade — qui doit pouvoir être retirée en la
+ * nommant (`cancelParry`), sans quoi tuer une bête pendant son télégraphe laisse
+ * l'anneau allumé pour l'éternité. Les trois Lynels de l'épreuve portent celui
+ * de leur poste (voir `TRIAL_POSTS`).
  */
-const SPAWN_ID = 'lynel'
+const GUARDIAN_ID = 'lynel'
 
 /**
  * Distance à laquelle il cesse d'avancer sur le joueur.
@@ -155,6 +158,8 @@ const RETURNED_ARROW_DAMAGE = 2
  * ici ferait travailler le ramasse-miettes pour un crochet de console.
  */
 const lynelDebug = {
+  /** Laquelle des bêtes a écrit en dernier : l'épreuve en aligne trois. */
+  id: '',
   hp: 0,
   phase: 'sword' as LynelPhase,
   pose: 'repos' as string,
@@ -182,6 +187,8 @@ if (import.meta.env.DEV) {
 const SHOCK_COLOR = new Color(LYNEL_COLORS.glow)
 
 const toPlayer = new Vector3()
+/** Vitesse horizontale de la frame, écrite puis corrigée par `clampToLeash`. */
+const velocity = { x: 0, z: 0 }
 const muzzle = new Vector3()
 const aim = new Vector3()
 const knockback = new Vector3()
@@ -337,9 +344,92 @@ if (import.meta.env.DEV) {
   }
 }
 
-export function Lynel() {
+/**
+ * La bête est-elle au bord de sa laisse, ou au-delà ?
+ *
+ * Sert à terminer une charge : elle ne s'arrête pas sur un raycast contre les
+ * piliers — un lancer de rayon par frame pour une attaque qui sort toutes les
+ * cinq secondes serait cher — mais sur la géométrie de sa laisse, qui *est*
+ * l'enceinte dans le cas du gardien, et la couronne du jardin dans celui des
+ * bêtes de l'épreuve.
+ */
+function beyondLeash(rings: readonly LynelLeash[], x: number, z: number, margin: number) {
+  for (const ring of rings) {
+    const distance = Math.hypot(x - ring.x, z - ring.z)
+    if (distance > ring.max - margin) return true
+    if (ring.min > 0 && distance < ring.min + margin) return true
+  }
+  return false
+}
+
+/**
+ * Retire de la vitesse ce qui ferait sortir de la laisse.
+ *
+ * On annule la composante **radiale** fautive plutôt que la vitesse entière :
+ * annuler tout le vecteur collerait la bête au bord dès qu'elle l'effleure,
+ * alors qu'elle doit pouvoir continuer à longer le pourtour pour contourner le
+ * joueur. Écrit dans `velocity`, qui est un objet de travail partagé — appelé à
+ * chaque frame, il ne doit rien allouer.
+ */
+function clampToLeash(rings: readonly LynelLeash[], x: number, z: number) {
+  for (const ring of rings) {
+    const dx = x - ring.x
+    const dz = z - ring.z
+    const distance = Math.hypot(dx, dz) || 1
+    const outX = dx / distance
+    const outZ = dz / distance
+    if (distance > ring.max - 1) {
+      const outward = velocity.x * outX + velocity.z * outZ
+      if (outward > 0) {
+        velocity.x -= outward * outX
+        velocity.z -= outward * outZ
+      }
+    }
+    if (ring.min > 0 && distance < ring.min + 1) {
+      const inward = -(velocity.x * outX + velocity.z * outZ)
+      if (inward > 0) {
+        velocity.x += inward * outX
+        velocity.z += inward * outZ
+      }
+    }
+  }
+}
+
+export interface LynelProps {
+  /** Son nom au registre des ennemis, à la minimap et à l'offre de parade. */
+  id?: string
+  /** Poste de garde : son point d'apparition, et celui où elle revient. */
+  home?: readonly [number, number, number]
+  /** Les anneaux dont elle ne sort pas. */
+  leash?: readonly LynelLeash[]
+  /** Points de vie. Ceux de la table commune — le gardien — par défaut. */
+  hp?: number
+  /**
+   * Gardien de la rotonde, ou bête de l'épreuve.
+   *
+   * Ce n'est pas un réglage de difficulté, c'est ce qui décide de **ce que sa
+   * mort déclenche** : le gardien ouvre les barrières, la caméra et les deux
+   * récompenses de la rotonde ; une bête de l'épreuve avance un compteur de
+   * quête. Et lui seul engage le combat d'arène — trois bêtes qui appelleraient
+   * `startBossFight` en refermeraient les barrières sur un boss déjà mort.
+   */
+  role?: 'guardian' | 'trial'
+}
+
+export function Lynel({
+  id = GUARDIAN_ID,
+  home = ARENA_CENTER,
+  leash = ARENA_LEASH,
+  hp = ENEMIES.lynel.hp,
+  role = 'guardian',
+}: LynelProps = {}) {
   const stats = ENEMIES.lynel
   const materials = useEnemyMaterials('lynel')
+
+  // Mémoïsé, et pas seulement par économie : `damage` est appelé depuis la
+  // boucle de frame, et lui passer un objet neuf à chaque image ferait travailler
+  // le ramasse-miettes pour trois valeurs qui ne bougent jamais.
+  const beast = useMemo<Beast>(() => ({ id, groundY: home[1], role }), [home, id, role])
 
   const body = useRef<RapierRigidBody>(null)
   const visual = useRef<Group>(null)
@@ -350,7 +440,7 @@ export function Lynel() {
   const puddleMeshes = useRef<(Mesh | null)[]>([])
 
   const runtime = useRef<LynelRuntime>({
-    hp: stats.hp,
+    hp,
     phase: 'sword',
     pending: null,
     pendingStartedAt: 0,
@@ -383,20 +473,20 @@ export function Lynel() {
   // combat sa barre de vie. Le retrait au démontage est indispensable — sans
   // lui, un Lynel mort resterait affiché sur la carte.
   useEffect(() => {
-    enemyRegistry.set(SPAWN_ID, {
+    enemyRegistry.set(id, {
       kind: 'lynel',
-      x: ARENA_CENTER[0],
-      y: ARENA_CENTER[1],
-      z: ARENA_CENTER[2],
+      x: home[0],
+      y: home[1],
+      z: home[2],
       state: 'idle',
-      hp: stats.hp,
-      maxHp: stats.hp,
+      hp,
+      maxHp: hp,
       lastHitAt: -Infinity,
     })
     return () => {
-      enemyRegistry.delete(SPAWN_ID)
+      enemyRegistry.delete(id)
     }
-  }, [stats.hp])
+  }, [hp, home, id])
 
   useFrame((_, rawDelta) => {
     const rb = body.current
@@ -421,7 +511,7 @@ export function Lynel() {
 
       `startBossFight` est idempotent : on peut l'appeler à chaque frame.
     */
-    if (state.deathAt === -Infinity && store.phase === 'playing') {
+    if (role === 'guardian' && state.deathAt === -Infinity && store.phase === 'playing') {
       const playerFromCenter = Math.hypot(
         playerTransform.position.x - ARENA_CENTER[0],
         playerTransform.position.z - ARENA_CENTER[2],
@@ -463,10 +553,12 @@ export function Lynel() {
         state.popped = true
         group.visible = false
         spawnDeathPuff(position.x, position.y, position.z, materials.base.body)
-        // Le dallage de la rotonde est plat : son altitude est celle du centre
-        // de l'arène, il n'y a pas de champ de hauteurs à échantillonner ici.
-        spawnDeathRing(position.x, ARENA_CENTER[1], position.z, materials.base.body)
-        enemyRegistry.delete(SPAWN_ID)
+        // L'altitude du poste, et non un champ de hauteurs échantillonné : le
+        // dallage de la rotonde est plat, et la couronne du jardin où se tiennent
+        // les bêtes de l'épreuve ne varie que de quelques centimètres sur le
+        // rayon d'une laisse.
+        spawnDeathRing(position.x, home[1], position.z, materials.base.body)
+        enemyRegistry.delete(id)
       }
 
       rb.setLinvel({ x: 0, y: rb.linvel().y, z: 0 }, false)
@@ -490,7 +582,7 @@ export function Lynel() {
     const frozen = store.phase !== 'playing'
 
     updateEnemyMarker(
-      SPAWN_ID,
+      id,
       position.x,
       position.y,
       position.z,
@@ -527,6 +619,7 @@ export function Lynel() {
         const amount = store.swordDamage() * (punishing ? PUNISH_MULTIPLIER : 1)
         const died = damage(
           state,
+          beast,
           rb,
           position.x,
           position.z,
@@ -558,6 +651,7 @@ export function Lynel() {
       projectile.active = false
       const died = damage(
         state,
+        beast,
         rb,
         position.x,
         position.z,
@@ -578,10 +672,10 @@ export function Lynel() {
     // --- Déplacement --------------------------------------------------------
     // Il n'a pas de machine à états : il avance, ou il ne bouge pas. Ce qui
     // ressemblerait à `chase` / `attack` est déjà porté par `pending`.
-    let velocityX = 0
-    let velocityZ = 0
+    velocity.x = 0
+    velocity.z = 0
     let targetYaw = state.yaw
-    const fromCenter = Math.hypot(position.x - ARENA_CENTER[0], position.z - ARENA_CENTER[2])
+    const fromHome = Math.hypot(position.x - home[0], position.z - home[2])
 
     if (state.chargeDir !== null && !frozen) {
       /*
@@ -599,8 +693,8 @@ export function Lynel() {
         serait faux et injuste. Figée, elle se lit : on voit où elle va, on
         s'écarte.
       */
-      velocityX = state.chargeDir.x * CHARGE_SPEED
-      velocityZ = state.chargeDir.z * CHARGE_SPEED
+      velocity.x = state.chargeDir.x * CHARGE_SPEED
+      velocity.z = state.chargeDir.z * CHARGE_SPEED
       targetYaw = Math.atan2(state.chargeDir.x, state.chargeDir.z)
 
       // Fauché une fois par charge : sans ce drapeau, un joueur collé au flanc
@@ -612,14 +706,16 @@ export function Lynel() {
       }
 
       /*
-        Fin de charge : le bord du dallage, ou le temps.
+        Fin de charge : le bord de la laisse, ou le temps.
 
         Le bord, et non une requête physique contre les piliers — un raycast par
         frame pour une attaque qui sort toutes les cinq secondes serait cher, et
-        le dallage est un disque : en sortir, c'est avoir heurté l'enceinte, quel
-        que soit l'endroit.
+        la laisse du gardien *est* le dallage : en sortir, c'est avoir heurté
+        l'enceinte, quel que soit l'endroit. Une bête de l'épreuve, elle, finit
+        sa course contre le talus du cœur ou contre le mur du jardin, que ses
+        deux anneaux décrivent aussi bien.
       */
-      if (fromCenter > ARENA_R - 1.2 || now > state.chargeUntil) {
+      if (beyondLeash(leash, position.x, position.z, 1.2) || now > state.chargeUntil) {
         state.chargeDir = null
         state.staggerUntil = now + CHARGE_STUN_MS
         state.pose = 'brise'
@@ -637,50 +733,44 @@ export function Lynel() {
       // rendrait la sortie de portée impossible, donc l'esquive illusoire.
       if (state.pending === null && distance > ENGAGE_RANGE) {
         toPlayer.normalize()
-        velocityX = toPlayer.x * stats.speed
-        velocityZ = toPlayer.z * stats.speed
+        velocity.x = toPlayer.x * stats.speed
+        velocity.z = toPlayer.z * stats.speed
       }
-    } else if (fromCenter > RECENTER_RADIUS) {
+    } else if (fromHome > RECENTER_RADIUS) {
       /*
-        Le joueur est sorti : il retourne au centre plutôt que de le poursuivre.
+        Le joueur est sorti : elle retourne à son poste plutôt que de le
+        poursuivre.
 
         C'est ce qui lui donne une démarche de gardien, ce qui laisse au joueur
         les trois secondes qu'il faut pour se soigner, et surtout ce qui rend
         vraies les portées mesurées depuis le centre — les trois anneaux d'or du
-        dallage ne disent quelque chose que si la bête part de l'origine.
+        dallage ne disent quelque chose que si la bête part de l'origine. Pour
+        les bêtes de l'épreuve, le poste est leur point d'apparition dans le
+        jardin : c'est lui qui les garde à trente-six unités les unes des autres,
+        donc qui permet de les tirer une par une.
       */
-      const angle = Math.atan2(ARENA_CENTER[0] - position.x, ARENA_CENTER[2] - position.z)
-      velocityX = Math.sin(angle) * stats.patrolSpeed
-      velocityZ = Math.cos(angle) * stats.patrolSpeed
+      const angle = Math.atan2(home[0] - position.x, home[2] - position.z)
+      velocity.x = Math.sin(angle) * stats.patrolSpeed
+      velocity.z = Math.cos(angle) * stats.patrolSpeed
       targetYaw = angle
     }
 
     /*
-      La laisse : il ne sort pas du dallage.
+      La laisse : elle ne sort pas de son terrain.
 
       Rien ne l'y retenait. Les barrières ne ferment que les deux brèches, et
       entre deux piliers il n'y a aucun collider : en poursuivant le joueur — ou
-      en finissant une charge — il passait la lèvre du cœur, tombait les 3,6
-      unités jusqu'au jardin, et **ne pouvait plus remonter**, la falaise étant à
-      2,7 de pente contre 0,5 de praticable. Le boss disparaissait du combat sans
-      mourir, et se laissait achever sans jamais réagir.
+      en finissant une charge — le gardien passait la lèvre du cœur, tombait les
+      3,6 unités jusqu'au jardin, et **ne pouvait plus remonter**, la falaise
+      étant à 2,7 de pente contre 0,5 de praticable. Il disparaissait du combat
+      sans mourir, et se laissait achever sans jamais réagir.
 
-      On annule la composante **radiale sortante** plutôt que la vitesse entière :
-      annuler tout le vecteur le collerait au bord dès qu'il l'effleure, alors
-      qu'il doit pouvoir continuer à longer le pourtour pour contourner le
-      joueur.
+      Voir `clampToLeash` pour le détail du geste, et `LynelLeash` pour la raison
+      des deux rayons.
     */
-    if (fromCenter > ARENA_R - 1) {
-      const outX = (position.x - ARENA_CENTER[0]) / fromCenter
-      const outZ = (position.z - ARENA_CENTER[2]) / fromCenter
-      const outward = velocityX * outX + velocityZ * outZ
-      if (outward > 0) {
-        velocityX -= outward * outX
-        velocityZ -= outward * outZ
-      }
-    }
+    clampToLeash(leash, position.x, position.z)
 
-    rb.setLinvel({ x: velocityX, y: rb.linvel().y, z: velocityZ }, true)
+    rb.setLinvel({ x: velocity.x, y: rb.linvel().y, z: velocity.z }, true)
     state.yaw = dampAngle(state.yaw, targetYaw, 9, delta)
     group.rotation.y = state.yaw
 
@@ -713,7 +803,7 @@ export function Lynel() {
           l'estoc, à 400 ms — allument l'anneau d'emblée.
         */
         if (choice.parryable) {
-          offerParry(SPAWN_ID, state.pendingImpactAt)
+          offerParry(id, state.pendingImpactAt)
           /*
             La feinte décale l'impact **après** que l'offre a été posée.
 
@@ -742,7 +832,7 @@ export function Lynel() {
       (frozen || distance > state.pending.reach + 2 || now < state.staggerUntil)
     ) {
       state.pending = null
-      cancelParry(SPAWN_ID)
+      cancelParry(id)
       state.pose = 'repos'
     }
 
@@ -798,7 +888,7 @@ export function Lynel() {
         if (playerTransform.grounded && attackHits(attack, position, state.yaw)) {
           store.damagePlayer(attack.damage, 'lynel')
         }
-        spawnDeathRing(position.x, ARENA_CENTER[1], position.z, SHOCK_COLOR, attack.reach)
+        spawnDeathRing(position.x, home[1], position.z, SHOCK_COLOR, attack.reach)
         shake(0.14, 200)
         playImpact()
         state.pose = 'cabre'
@@ -884,7 +974,7 @@ export function Lynel() {
       // Deux centimètres au-dessus du dallage : posée dessus, la flaque se bat
       // avec le sol dans le tampon de profondeur et clignote par bandes. Même
       // réglage que les anneaux de mort.
-      mesh.position.set(puddle.x, ARENA_CENTER[1] + 0.02, puddle.z)
+      mesh.position.set(puddle.x, home[1] + 0.02, puddle.z)
       // Elle s'éteint en s'effaçant, et non d'un coup : une flaque qui
       // disparaît à l'instant où elle cesse de brûler ne prévient pas.
       ;(mesh.material as MeshBasicMaterial).opacity = 0.45 * Math.min(1, left / 700)
@@ -916,6 +1006,7 @@ export function Lynel() {
       « dans 900 ms » se comprend, « 41 327 » non.
     */
     if (import.meta.env.DEV) {
+      lynelDebug.id = id
       lynelDebug.hp = state.hp
       lynelDebug.phase = state.phase
       lynelDebug.pose = state.pose
@@ -983,9 +1074,9 @@ export function Lynel() {
       type="dynamic"
       colliders={false}
       position={[
-        ARENA_CENTER[0],
-        ARENA_CENTER[1] + stats.halfHeight + stats.radius + 0.4,
-        ARENA_CENTER[2],
+        home[0],
+        home[1] + stats.halfHeight + stats.radius + 0.4,
+        home[2],
       ]}
       lockRotations
       mass={4}
@@ -1008,6 +1099,21 @@ export function Lynel() {
 }
 
 /**
+ * Ce qu'il faut savoir de la bête pour résoudre un coup : qui elle est, où elle
+ * se tient, et ce que sa mort déclenche.
+ *
+ * Un objet plutôt que trois paramètres de plus, et surtout un objet **stable** :
+ * il est construit une fois par bête et non à chaque frame, alors que `damage`
+ * est appelé depuis la boucle.
+ */
+interface Beast {
+  id: string
+  /** Altitude du poste, où se pose l'anneau de mort. */
+  groundY: number
+  role: 'guardian' | 'trial'
+}
+
+/**
  * Applique des dégâts, et tout ce qui va avec : flash, recul, mort.
  *
  * Deux sources y mènent — le coup d'épée et le projectile renvoyé — et elles
@@ -1017,10 +1123,12 @@ export function Lynel() {
  * Le pendant d'`Enemy.tsx` à deux différences près, toutes deux volontaires :
  * aucun cœur lâché, et **aucun `registerKill()`** — ce compteur est celui des
  * vingt-six ennemis du continent, et c'est lui qui décide de l'ouverture du
- * portail. Y ajouter le boss, tué bien après, n'aurait aucun sens.
+ * portail. Y ajouter les Lynels, tués bien après, n'aurait aucun sens : ils ont
+ * leur propre quête.
  */
 function damage(
   state: LynelRuntime,
+  beast: Beast,
   rb: RapierRigidBody,
   x: number,
   z: number,
@@ -1034,7 +1142,7 @@ function damage(
   state.phase = phaseOf(state.hp)
   playHit()
 
-  const marker = enemyRegistry.get(SPAWN_ID)
+  const marker = enemyRegistry.get(beast.id)
   if (marker) {
     marker.lastHitAt = now
     marker.hp = Math.max(0, state.hp)
@@ -1058,16 +1166,26 @@ function damage(
   state.pose = 'repos'
   // Sans ça, tuer le Lynel pendant son télégraphe laisse l'anneau de parade
   // allumé pour l'éternité, sous un joueur qui n'a plus rien à parer.
-  cancelParry(SPAWN_ID)
+  cancelParry(beast.id)
 
   if (marker) {
     marker.state = 'dead'
     marker.hp = 0
   }
 
-  // Les barrières s'ouvrent et la caméra se rouvre. L'état reste `defeated`
-  // pour toute la partie : on ne rengage pas un boss mort en repassant par là.
-  useGameStore.getState().endBossFight(true, [x, ARENA_CENTER[1], z])
+  /*
+    Ce que la mort déclenche, et c'est la seule chose qui sépare les deux rôles.
+
+    Le gardien ouvre les barrières et rouvre la caméra ; son état reste
+    `defeated` pour toute la partie, on ne rengage pas un boss mort en repassant
+    par là. Une bête de l'épreuve avance une quête, et la troisième donne le
+    cœur — le store décide, pas d'ici.
+  */
+  if (beast.role === 'guardian') {
+    useGameStore.getState().endBossFight(true, [x, beast.groundY, z])
+  } else {
+    useGameStore.getState().registerTrialKill(beast.id)
+  }
 
   // Les trois retours qui font la différence entre « il a disparu » et « je
   // l'ai eu ». Tous en temps réel : ils doivent jouer pendant le gel.

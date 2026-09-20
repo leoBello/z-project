@@ -1,4 +1,5 @@
-import { CORE_Y, ROTUNDA_R } from './skyIsland'
+import { TRIAL_COUNT } from './quests'
+import { CORE_Y, ROTUNDA_R, WALL_R, groundAt } from './skyIsland'
 import type { LynelAttackId, LynelPhase } from '../types/game'
 
 /**
@@ -44,6 +45,121 @@ export const RECENTER_RADIUS = 4
 
 /** Multiplicateur des dégâts pendant l'ouverture d'une parade réussie. */
 export const PUNISH_MULTIPLIER = 3
+
+/**
+ * L'anneau dans lequel une bête tient, et dont elle ne sort pas.
+ *
+ * Deux rayons et non un seul, parce qu'une laisse circulaire ne décrit pas un
+ * jardin : celui de l'île est une couronne entre la terrasse du cœur (14) et
+ * l'enceinte (29,5). Bornée par le seul `max`, une bête lancée vers l'intérieur
+ * se cognait au talus du cœur et y restait collée, hors d'atteinte d'un joueur
+ * resté sur le dallage.
+ */
+export interface LynelLeash {
+  x: number
+  z: number
+  /** En deçà, la composante entrante de la vitesse est annulée. Zéro = pas de trou. */
+  min: number
+  /** Au-delà, c'est la composante sortante. */
+  max: number
+}
+
+/** La laisse du gardien : le dallage de la rotonde, et rien d'autre. */
+export const ARENA_LEASH: readonly LynelLeash[] = [
+  { x: ARENA_CENTER[0], z: ARENA_CENTER[2], min: 0, max: ARENA_R },
+]
+
+/**
+ * Points de vie d'une bête de l'épreuve.
+ *
+ * La moitié du gardien, et le nombre se lit dans la table des phases : à 18 PV
+ * elle commence en phase `arena` — épée, estoc, charge et volée — et bascule en
+ * `rage` à 12, comme lui. Ce sont donc de vrais Lynels et non des figurants,
+ * mais ils n'ont pas de premier tiers : le joueur qui les affronte a déjà appris
+ * la parade sur le gardien, et lui refaire donner trois cours d'épée serait le
+ * faire attendre.
+ *
+ * Trois fois 18 font 54 contre les 36 du gardien. C'est plus, et c'est
+ * volontaire — mais ils se tirent un par un (voir `TRIAL_POSTS`), ce qui
+ * n'arrive jamais qu'à qui ne se jette pas au milieu.
+ */
+export const TRIAL_HP = 18
+
+/**
+ * Rayon du cercle de garde d'une bête de l'épreuve, autour de son poste.
+ *
+ * Il décide de la seule chose qui rende l'épreuve jouable : **on n'en réveille
+ * qu'une à la fois.** Les trois postes sont à 36 unités l'un de l'autre pour un
+ * rayon de détection de 14 ; une bête qui pourrait suivre le joueur sur onze
+ * unités reste hors de portée des deux autres, quel que soit l'endroit où la
+ * poursuite s'arrête. Élargir cette valeur, c'est transformer trois combats en
+ * un seul contre trois.
+ */
+const TRIAL_LEASH_R = 11
+
+/**
+ * Le jardin, borné pour les bêtes : entre la lèvre de la terrasse et l'enceinte.
+ *
+ * Une unité et demie en deçà du mur plutôt que sur lui — la porte au sud est une
+ * ouverture franche dans l'enceinte, et sans cette marge une charge lancée dans
+ * son axe sortait de l'île par là.
+ */
+const GARDEN_LEASH: LynelLeash = { x: 0, z: 0, min: 15, max: WALL_R - 1.5 }
+
+/** Rayon auquel les postes de garde sont plantés, sur la couronne du jardin. */
+const TRIAL_POST_R = 21
+
+/**
+ * Cap du premier poste. Les trois suivent à 120°.
+ *
+ * **Trente degrés, parce que les six rampes du jardin sont aux multiples de
+ * soixante** (voir `RAMPS_OUTER` et `RAMPS_INNER`) : les trois qui montent au
+ * cœur sont à 60°, 180° et 300°, les trois qui descendent au pré à 0°, 120° et
+ * 240°. Une série de postes partie de 60° les plantait donc toutes les trois au
+ * milieu d'une rampe — et une rampe n'est pas du plat : la bête y naissait en
+ * dévers et glissait jusqu'au jardin, à trois unités de son poste, en travers du
+ * seul chemin qui monte à la rotonde. Mesuré : rayon 21 au départ, 24 à 25 vingt
+ * secondes plus tard.
+ *
+ * Trente degrés tombe pile entre deux rampes, et le couloir de rampe ne fait que
+ * 0,21 rad de demi-largeur : les trois postes sont sur le plat, à 12° du bord le
+ * plus proche. Ça les écarte aussi de la porte de l'enceinte — au cap 0, à
+ * quinze unités du premier poste, soit une de plus que son rayon de détection :
+ * on entre dans le jardin sans que rien ne se réveille.
+ */
+const TRIAL_POST_THETA = Math.PI / 6
+
+/** Un poste de garde : la bête qui s'y tient, et l'anneau qu'elle défend. */
+export interface TrialPost {
+  /** Son nom au registre des ennemis. Sert aussi de clé React et de marque de mort. */
+  id: string
+  /** Point d'apparition, et point de retour entre deux engagements. */
+  home: [number, number, number]
+  leash: readonly LynelLeash[]
+}
+
+/**
+ * Les trois postes de l'épreuve, calculés une fois au chargement.
+ *
+ * Posés sur le sol réel de l'île (`groundAt`) et non à l'altitude nominale du
+ * jardin : le relief de surface y monte de quelques dizaines de centimètres, et
+ * une bête posée sur la moyenne apparaîtrait enfoncée dans un creux.
+ */
+export const TRIAL_POSTS: readonly TrialPost[] = Array.from(
+  { length: TRIAL_COUNT },
+  (_, i) => {
+    const theta = TRIAL_POST_THETA + (i * Math.PI * 2) / TRIAL_COUNT
+    const ground = groundAt(TRIAL_POST_R, theta)
+    return {
+      id: `lynel-trial-${i}`,
+      home: [ground.x, ground.y, ground.z] as [number, number, number],
+      leash: [
+        GARDEN_LEASH,
+        { x: ground.x, z: ground.z, min: 0, max: TRIAL_LEASH_R },
+      ] as const,
+    }
+  },
+)
 
 /**
  * Seuils de phase, en points de vie restants.

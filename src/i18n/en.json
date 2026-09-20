@@ -134,6 +134,30 @@
       "kicker": "Treasure",
       "equip": "Equip now"
     },
+    "quests": {
+      "open": "Open the quest log",
+      "title": "Quest log",
+      "close": "Close the quest log",
+      "hint": "Your first quest is waiting here",
+      "active": "In progress",
+      "done": "Completed",
+      "progress": "{current} / {total}",
+      "none": "Nothing left to do for now. The island is worth a walk.",
+      "entries": {
+        "clear-continent": {
+          "name": "Clear the mainland",
+          "goal": "Cut down every enemy on the map. When the last one falls, something will open."
+        },
+        "sky-portal": {
+          "name": "The Nakano portal",
+          "goal": "A violet ring has opened at the temple. Step through it to reach the Sky Island."
+        },
+        "lynel-trial": {
+          "name": "Trial of the three Lynels",
+          "goal": "With the guardian down, three beasts have taken the garden. Fell all three for one more heart."
+        }
+      }
+    },
     "inventory": {
       "open": "Open the inventory",
       "title": "Inventory",
