@@ -1,4 +1,7 @@
+import { useState } from 'react'
 import { MARSH_PORTAL } from '../../config/rotMarsh'
+import { useGameStore } from '../../store/useGameStore'
+import { Malenia } from '../Malenia'
 import { Portal } from '../environment/Portal'
 import { Arena } from './Arena'
 import { Flora } from './Flora'
@@ -33,6 +36,20 @@ import { useMarshMaterials } from './materials'
  */
 export default function RotMarsh() {
   const materials = useMarshMaterials()
+  /*
+    Qui était debout **à l'arrivée sur la carte**, et non à cette frame-ci.
+
+    L'instantané est pris une fois au montage, exactement comme celui du gardien
+    de la rotonde, et pour la même raison : le Marais se démonte quand on rentre
+    par le portail, et le monter sur l'état vivant l'aurait emportée à la frame
+    suivant sa chute — sans l'écrasement, sans la détente, sans la fumée. Un
+    boss retire lui-même son corps ; personne n'a à le faire pour lui.
+
+    `maleniaSlainAt` et non `bossState` : celui-ci décrit le gardien de la
+    rotonde, et il vaut déjà `defeated` quand on arrive ici. S'en servir l'aurait
+    fait naître morte.
+  */
+  const [standing] = useState(() => useGameStore.getState().maleniaSlainAt === null)
 
   return (
     <>
@@ -45,6 +62,27 @@ export default function RotMarsh() {
       <Flora materials={materials} />
       <PaleTree materials={materials} />
       <Arena materials={materials} />
+
+      {/*
+        Elle attend dans le bassin, **debout dès l'arrivée sur la carte**.
+
+        Même raisonnement que le Lynel doré sur son plateau : ce qui doit être
+        mérité, c'est le passage, pas l'existence de l'adversaire. Elle s'inscrit
+        donc au registre des ennemis dès la première seconde, et son point paraît
+        sur la minimap au pied de l'arbre — le joueur sait qu'il y a quelque chose
+        là-bas avant de savoir ce que c'est.
+
+        Elle ne coûte rien à laisser tourner : à cent trente unités du portail
+        d'arrivée, elle est hors de son rayon d'engagement (15), donc immobile au
+        centre du bassin. Le calque de combat ne montre une barre de vie que pour
+        une bête engagée ou blessée récemment — elle n'affiche rien.
+
+        Le montage est conditionné à sa mort, comme le gardien de la rotonde :
+        l'instantané est pris **au montage de la carte** et non à la frame
+        courante, sans quoi elle disparaîtrait en pleine mort au lieu de retirer
+        son corps elle-même.
+      */}
+      {standing && <Malenia />}
 
       {/*
         L'anneau du retour, qui ramène **au sommet** de la Montagne de l'Ouest.

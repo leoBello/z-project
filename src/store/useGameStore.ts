@@ -299,6 +299,28 @@ export interface GameState {
    * a qu'un, et la question « lequel est mort » ne se pose pas.
    */
   goldenSlainAt: number | null
+  /**
+   * Instant de la chute de Malenia, ou `null` tant qu'elle tient.
+   *
+   * Un champ à elle, exactement comme `goldenSlainAt` en a un : `bossState` ne
+   * décrit **que** le gardien de la rotonde, et il vaut déjà `defeated` quand on
+   * arrive dans le Marais — le joueur a dû tuer le gardien, l'épreuve et le
+   * Lynel doré pour y accéder. S'en servir pour elle l'aurait fait naître morte.
+   */
+  maleniaSlainAt: number | null
+  /**
+   * Quel combat de boss est engagé, ou `null`.
+   *
+   * **Générique, là où `bossState` est celui de la rotonde.** La distinction a
+   * été forcée par Malenia : `bossState === 'fighting'` pilotait à la fois la
+   * caméra d'arène (qui vaut pour tous les boss) et les barrières de la rotonde
+   * (qui ne valent que pour elle). Les deux ne pouvaient pas rester le même
+   * champ le jour où un second boss a eu besoin de la caméra sans avoir de
+   * barrières.
+   *
+   * Le gardien écrit les deux ; Malenia n'écrit que celui-ci.
+   */
+  arenaFight: 'guardian' | 'malenia' | null
   /** Le journal de quêtes est affiché. Implique `phase === 'paused'`. */
   questsOpen: boolean
   /**
@@ -504,6 +526,14 @@ export interface GameState {
   /** Le joueur entre dans l'arène : le combat commence. Idempotent. */
   startBossFight: () => void
   /**
+   * Malenia se lève. Idempotent, pour la même raison que `startBossFight` :
+   * elle l'appelle depuis sa boucle, donc potentiellement soixante fois par
+   * seconde tant que le joueur est dans le bassin.
+   */
+  startMaleniaFight: () => void
+  /** Elle tombe, ou le joueur quitte le bassin. */
+  endMaleniaFight: (defeated: boolean) => void
+  /**
    * Le combat s'arrête, vaincu ou non.
    *
    * `fellAt` n'est lu que sur une victoire : c'est là que se posera le
@@ -565,6 +595,8 @@ const initialState = {
   skyVisited: false,
   trialSlain: [] as string[],
   goldenSlainAt: null as number | null,
+  maleniaSlainAt: null as number | null,
+  arenaFight: null as 'guardian' | 'malenia' | null,
   questsOpen: false,
   bossFellAt: null as [number, number, number] | null,
   bossState: 'idle' as 'idle' | 'fighting' | 'defeated',
@@ -1152,8 +1184,30 @@ export const useGameStore = create<GameState>((set, get) => ({
     // est dans l'arène. Sans cette garde, chaque frame écrirait dans le store et
     // re-rendrait tout ce qui s'y abonne.
     if (get().bossState !== 'idle') return
-    set({ bossState: 'fighting' })
+    set({ bossState: 'fighting', arenaFight: 'guardian' })
     track('boss_engaged', { phase: 'sword' })
+  },
+
+  startMaleniaFight: () => {
+    if (get().arenaFight !== null) return
+    set({ arenaFight: 'malenia' })
+  },
+
+  /**
+   * Les deux sorties ne sont pas symétriques, comme pour le gardien.
+   *
+   * Vaincue, elle ne se relève pas : `maleniaSlainAt` est écrit une fois pour
+   * toute la partie, et c'est lui qui empêche le Marais de la remonter à la
+   * visite suivante. Le joueur mort, ou simplement sorti du bassin, le combat
+   * redevient disponible — elle remonte avec ses soixante points de vie, et sa
+   * phase repart de la lame.
+   */
+  endMaleniaFight: (defeated) => {
+    if (get().arenaFight !== 'malenia') return
+    set({
+      arenaFight: null,
+      maleniaSlainAt: defeated ? gameNow() : get().maleniaSlainAt,
+    })
   },
 
   endBossFight: (defeated, fellAt) => {
@@ -1169,6 +1223,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({
       bossState: defeated ? 'defeated' : 'idle',
       bossFellAt: defeated ? (fellAt ?? null) : null,
+      arenaFight: null,
     })
     if (defeated) track('boss_defeated', { hearts: get().hearts })
   },
@@ -1318,6 +1373,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       openedChests: [],
       trialSlain: [],
       goldenSlainAt: null,
+      maleniaSlainAt: null,
+      arenaFight: null,
       bonusCarry: {},
       runId: state.runId + 1,
     }))

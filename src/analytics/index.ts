@@ -1,4 +1,4 @@
-import type { LandmarkId, LynelAttackId } from '../types/game'
+import type { LandmarkId, LynelAttackId, MaleniaPhase } from '../types/game'
 
 /**
  * Mesure d'audience.
@@ -106,6 +106,37 @@ interface Events {
    * le gardien vaincu, ont trouvé qu'il restait quelque chose à faire —
    * c'est-à-dire si le journal de quêtes se lit.
    */
+  /**
+   * Le joueur entre dans le bassin du Marais et Malenia se lève.
+   *
+   * Le pendant de `boss_engaged` pour le dernier combat. L'écart avec
+   * `golden_slain` dit combien de joueurs, une fois le Lynel doré tombé, ont
+   * franchi le portail du sommet — c'est-à-dire si le troisième monde se trouve.
+   */
+  malenia_engaged: { phase: MaleniaPhase }
+  /**
+   * Elle tombe à mi-vie et se relève sans armure.
+   *
+   * C'est le seul chiffre qui dise si la phase I est à la bonne difficulté :
+   * rapporté à `malenia_engaged`, il donne le taux de joueurs qui voient
+   * seulement la métamorphose. S'il est très bas, la première moitié du combat
+   * est trop dure pour ce qu'elle enseigne.
+   */
+  malenia_morph: { hearts: number }
+  /**
+   * Une parade réussie contre elle, et sur quelle attaque.
+   *
+   * Le pendant de `boss_parry`, et il mesure autre chose : contre elle, la
+   * parade est le seul moyen d'avancer sans lui rendre de vie. Un joueur qui
+   * n'en réussit aucune ne perd pas le combat, il ne le finit jamais.
+   */
+  malenia_parry: { attack: string }
+  /**
+   * Elle tombe, et avec combien de cœurs il restait au joueur.
+   *
+   * La fin du jeu. Rapporté à `malenia_engaged`, c'est le taux d'achèvement.
+   */
+  malenia_defeated: { hearts: number }
   trial_cleared: { hearts: number }
   /**
    * Le Lynel doré tombe au sommet de la montagne de l'ouest.

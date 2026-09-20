@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from 'react'
+import { useFrame } from '@react-three/fiber'
 import { Outlines } from '@react-three/drei'
-import { Euler, InstancedMesh, Matrix4, MeshBasicMaterial, Quaternion, Vector3 } from 'three'
+import { Euler, InstancedMesh, MathUtils, Matrix4, MeshBasicMaterial, Quaternion, Vector3 } from 'three'
 import type { Group, Material } from 'three'
 import {
   ANKLE_Y,
@@ -15,6 +16,7 @@ import {
   HELM_PIECES,
   HIP_X,
   HIP_Y,
+  HOVER,
   KNEE_Y,
   LEFT,
   MODEL_SCALE,
@@ -47,6 +49,18 @@ import {
   useMaleniaMaterials,
   type MaleniaMaterials,
 } from './maleniaMaterials'
+import { ROT_COLORS } from '../../config/rotPalette'
+import { now as gameNow } from '../../state/gameClock'
+
+/** Les surfaces qui blanchissent sous le coup, et leur teinte de repos. */
+const FLASHED = ['skin', 'gold', 'goldBright', 'bronze'] as const
+const BASE_COLORS: Record<(typeof FLASHED)[number], string> = {
+  skin: ROT_COLORS.skin,
+  gold: ROT_COLORS.gold,
+  goldBright: ROT_COLORS.goldBright,
+  bronze: ROT_COLORS.bronze,
+}
+const WHITE = '#ffffff'
 import type { MaleniaRig } from './maleniaRig'
 
 /**
@@ -228,10 +242,32 @@ export interface MaleniaModelProps {
   rig: MaleniaRig
   /** `false` en phase I : armure, heaume, pas d'ailes. `true` en phase II. */
   goddess: boolean
+  /**
+   * Jusqu'à quand blanchir le modèle, sur l'horloge de jeu.
+   *
+   * Une **référence** écrite par la machine à états, et non une prop de valeur :
+   * un coup encaissé ne doit pas re-rendre les deux cents maillages du modèle.
+   * C'est la même discipline que `playerTransform` — la donnée chaude passe à
+   * côté de React, pas dedans.
+   */
+  hit: RefObject<number>
 }
 
-export function MaleniaModel({ rig, goddess }: MaleniaModelProps) {
+export function MaleniaModel({ rig, goddess, hit }: MaleniaModelProps) {
   const materials = useMaleniaMaterials()
+  const flashing = useRef(false)
+  /*
+    Le groupe de vol appartient au **modèle**, pas au rig.
+
+    Il est glissé entre `body` (que la machine à états pose) et le corps
+    proprement dit, et il ne sert qu'à une chose : flotter. La distinction n'est
+    pas cosmétique — animer une articulation reçue en prop revient à muter le
+    bien de quelqu'un d'autre, ce que la règle `react(immutability)` signale à
+    juste titre. En s'en donnant une à lui, le modèle anime ce qu'il possède, et
+    la machine garde un `body` intact pour les poses qu'elle écrira.
+  */
+  const hover = useRef<Group>(null)
+
   /*
     Le rig est déstructuré d'un coup, et pas lu `rig.torso` au fil du JSX.
 
@@ -247,6 +283,43 @@ export function MaleniaModel({ rig, goddess }: MaleniaModelProps) {
     hipR, kneeR, hipL, kneeL, wingL, wingR,
   } = rig
 
+
+  /*
+    Le flash blanc à l'impact — le retour qui rend le combat lisible.
+
+    Écrit **sur transition seulement** : sans le test, ce serait six écritures
+    de couleur par frame, chacune invalidant l'uniforme du matériau. Les quatre
+    surfaces choisies sont celles qui portent la silhouette (peau, or, or vif,
+    bronze) ; les ailes en sont exclues parce qu'elles sont déjà au-dessus du
+    seuil de bloom et ne peuvent pas devenir plus claires.
+  */
+  useFrame((_, delta) => {
+    const on = gameNow() < hit.current
+    if (on !== flashing.current) {
+      flashing.current = on
+      for (const key of FLASHED) {
+        materials[key].color.set(on ? WHITE : BASE_COLORS[key])
+      }
+    }
+
+    /*
+      Le vol de la phase II.
+
+      Il est piloté **ici** et pas par la machine à états, et c'est le bon
+      partage : la machine décide de la forme, le modèle décide de ce que la
+      forme a l'air. Elle n'a pas à connaître la hauteur à laquelle on flotte,
+      pas plus qu'elle ne connaît la largeur des ailes.
+
+      La hauteur se rejoint au lieu de sauter : un bond instantané de 0,55 à la
+      frame de la métamorphose se lirait comme un défaut d'affichage, et non
+      comme un décollage. C'est aussi ce qui donne à la métamorphose ses deux
+      secondes de montée pendant qu'elle est invulnérable.
+    */
+    const joint = hover.current
+    if (joint) {
+      joint.position.y = MathUtils.damp(joint.position.y, goddess ? HOVER : 0, 4, delta)
+    }
+  })
   // La marbrure de la peau et l'intensité des veines : deux écritures dans des
   // uniformes, faites à la **transition** de phase et jamais par frame.
   useEffect(() => {
@@ -256,6 +329,7 @@ export function MaleniaModel({ rig, goddess }: MaleniaModelProps) {
   return (
     <group ref={root} scale={MODEL_SCALE}>
       <group ref={body}>
+       <group ref={hover}>
         {/* Sa jambe gauche est la prothèse ; son pied droit en est une aussi,
             mais il appartient à la jambe de chair. Voir `thighPieces`. */}
         <Leg side={LEFT} prosthetic materials={materials} hipRef={hipL} kneeRef={kneeL} />
@@ -353,6 +427,7 @@ export function MaleniaModel({ rig, goddess }: MaleniaModelProps) {
             </group>
           </>
         )}
+       </group>
       </group>
     </group>
   )

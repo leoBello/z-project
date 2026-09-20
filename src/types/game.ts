@@ -57,6 +57,32 @@ export type LynelAttackId =
   | 'volley'
   | 'breath'
 
+/**
+ * Les deux formes de Malenia.
+ *
+ * Elles ne changent pas ses statistiques, elles changent la *liste* de ce qu'elle
+ * peut faire — même règle que les trois phases du Lynel. `blade` est la Lame de
+ * Miquella : au sol, casquée, six attaques. `goddess` est la Déesse de la
+ * Pourriture : en vol, sans armure, dix.
+ *
+ * Deux et non trois, parce qu'il n'y a pas de tiers d'apprentissage à ménager :
+ * le joueur qui arrive ici a déjà tué cinq Lynels et connaît la parade.
+ */
+export type MaleniaPhase = 'blade' | 'goddess'
+
+/** Les dix attaques. La table vit dans `config/malenia.ts`. */
+export type MaleniaAttackId =
+  | 'slash'
+  | 'flurry'
+  | 'thrust'
+  | 'kick'
+  | 'grab'
+  | 'waterfowl'
+  | 'aeonia'
+  | 'plunge'
+  | 'flying'
+  | 'phantoms'
+
 /** Description statique d'un ennemi, telle que posée dans un biome. */
 export interface EnemySpawn {
   id: string
