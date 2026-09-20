@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { track } from '../analytics'
 import { DEFAULT_DIFFICULTY, DEFAULT_DURATION } from '../config/challenge'
 import {
   ANY,
@@ -212,6 +213,15 @@ export const useScoresStore = create<ScoresState>((set, get) => ({
       set({ saveStatus: 'error' })
       return
     }
+
+    // Après l'`await` et jamais avant : ce qui se compte ici est une ligne
+    // écrite dans la base, pas une intention. Un envoi refusé par les règles
+    // Firestore est sorti au `catch` ci-dessus.
+    track('score_submitted', {
+      difficulty: entry.difficulty,
+      duration: entry.duration,
+      score: entry.score,
+    })
 
     const key = `${entry.duration}/${entry.difficulty}`
     let around: ScoreEntry[]

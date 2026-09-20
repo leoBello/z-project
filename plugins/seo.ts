@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Plugin } from 'vite'
-import { umamiTag, umamiWebsiteId } from './analytics.ts'
+import { trackingTags } from './analytics.ts'
 import {
   buildFallback,
   buildJsonLd,
@@ -92,7 +92,7 @@ export function seo(): Plugin {
     name: 'seo-fallback',
 
     configResolved(config) {
-      tracking = umamiTag(umamiWebsiteId(config.env))
+      tracking = trackingTags(config.env)
     },
 
     transformIndexHtml: {

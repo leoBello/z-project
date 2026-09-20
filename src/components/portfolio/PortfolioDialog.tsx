@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { linkTarget, track } from '../../analytics'
 import { landmarkById, type PortfolioSection } from '../../config/landmarks'
+import type { LandmarkId } from '../../types/game'
 import { format } from '../../i18n'
 import { useI18n } from '../../i18n/useI18n'
 import { useGameStore } from '../../store/useGameStore'
@@ -15,6 +16,15 @@ const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabi
 
 interface PortfolioPanelProps {
   section: PortfolioSection
+  /**
+   * Le lieu d'où vient la section, porté pour la seule mesure d'audience.
+   *
+   * La section suffirait à l'affichage — et c'est bien elle qui le pilote. Mais
+   * `landmark_opened` compte des lieux, et deux séries de statistiques indexées
+   * l'une sur `projects` et l'autre sur `pyramid` ne se recoupent dans aucun
+   * tableau de bord.
+   */
+  landmark: LandmarkId
   onClose: () => void
 }
 
@@ -26,7 +36,7 @@ interface PortfolioPanelProps {
  * le composant, ce qui remet l'index à zéro sans écrire une seule ligne de
  * synchronisation — le même mécanisme que `runId` sur le joueur et les ennemis.
  */
-function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
+function PortfolioPanel({ section, landmark, onClose }: PortfolioPanelProps) {
   const { dict } = useI18n()
   const [index, setIndex] = useState(0)
   const [photo, setPhoto] = useState(0)
@@ -117,6 +127,50 @@ function PortfolioPanel({ section, onClose }: PortfolioPanelProps) {
   useEffect(() => {
     closeButton.current?.focus()
   }, [])
+
+  /*
+    Ce qui a été lu pendant cette ouverture.
+
+    Un `Set` de clés et non un compteur : les flèches tournent en rond (voir
+    `go`), donc trois allers-retours sur deux diapositives produiraient six
+    lectures d'un compteur naïf, et la première diapositive de chaque monument
+    passerait pour la page la plus consultée du site.
+
+    Dans une `ref` et non dans un état : rien de tout ça ne s'affiche, et un
+    `setState` à chaque changement de diapositive ferait un rendu de plus pour
+    une statistique.
+  */
+  const seen = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!slide || seen.current.has(slide.id)) return
+    seen.current.add(slide.id)
+    track('portfolio_slide_viewed', { landmark, slide: slide.id, index })
+  }, [index, landmark, slide])
+
+  /*
+    La fermeture, mesurée au démontage.
+
+    C'est le parent qui rend ce choix possible : il monte le panneau avec une
+    `key` égale au lieu ouvert, donc passer d'un monument à l'autre démonte
+    celui-ci. Un démontage *est* une fermeture — par la croix, par Échap, par
+    téléportation vers un autre monument — et le gestionnaire `onClose` n'en
+    voyait que le premier tiers.
+  */
+  useEffect(() => {
+    const slides = seen.current
+    // L'horloge part d'ici et non d'une `ref` initialisée au rendu : lire
+    // `performance.now()` pendant un rendu est un appel impur, et React se
+    // réserve d'en rejouer un sans le monter.
+    const since = performance.now()
+    return () => {
+      track('landmark_closed', {
+        landmark,
+        seconds: Math.round((performance.now() - since) / 1000),
+        slides: slides.size,
+      })
+    }
+  }, [landmark])
 
   /*
     Retour du focus après le plein écran.
@@ -360,6 +414,11 @@ export function PortfolioDialog() {
   if (!landmark || landmark.section === null) return null
 
   return (
-    <PortfolioPanel key={activeLandmark} section={landmark.section} onClose={closeLandmark} />
+    <PortfolioPanel
+      key={activeLandmark}
+      section={landmark.section}
+      landmark={activeLandmark}
+      onClose={closeLandmark}
+    />
   )
 }

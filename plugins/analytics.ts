@@ -1,12 +1,15 @@
-import type { Plugin } from 'vite'
+import type { HtmlTagDescriptor, Plugin } from 'vite'
 
 /**
- * Injection du script de mesure d'audience (Umami).
+ * Injection des scripts de mesure d'audience — Umami, et Google Analytics 4.
+ *
+ * Les deux sont posés côte à côte et reçoivent les mêmes événements ; ce qui
+ * distingue le second est écrit plus bas, à la section qui le construit.
  *
  * Ce plugin couvre `index.html`. Les pages texte `/profil/` et `/en/profile/`
  * sont écrites à la main par `plugins/seo.ts` et n'ont donc rien à voir avec
- * `transformIndexHtml` : elles récupèrent la même balise par `umamiTag()`,
- * exporté plus bas.
+ * `transformIndexHtml` : elles récupèrent les mêmes balises par
+ * `trackingTags()`, exporté plus bas.
  *
  * Trois décisions valent d'être expliquées.
  *
@@ -27,10 +30,11 @@ import type { Plugin } from 'vite'
  * production, donc `apply: 'build'` ne les filtre pas. Umami n'émet que depuis
  * les domaines listés ici, ce qui les écarte sans configuration côté Vercel.
  *
- * Sans `VITE_UMAMI_WEBSITE_ID`, le plugin n'injecte rien : le site se construit
- * et se déploie normalement, simplement sans mesure. C'est l'état du dépôt tant
- * que l'identifiant n'est pas renseigné dans les variables d'environnement
- * Vercel, et l'état permanent de quiconque clone le projet.
+ * Sans `VITE_UMAMI_WEBSITE_ID` ni identifiant de mesure Google, le plugin
+ * n'injecte rien : le site se construit et se déploie normalement, simplement
+ * sans mesure. C'est l'état permanent de quiconque clone le projet, et chaque
+ * collecteur s'éteint séparément — vider une seule des deux variables laisse
+ * l'autre en place.
  */
 
 /** Point de collecte de l'offre hébergée d'Umami. */
@@ -98,6 +102,7 @@ export function umamiTag(websiteId: string | undefined): string {
 
 export function analytics(): Plugin {
   let websiteId: string | undefined
+  let measurementId: string | undefined
 
   return {
     name: 'analytics',
@@ -109,12 +114,126 @@ export function analytics(): Plugin {
       // second chemin qu'arrive la variable définie dans le tableau de bord
       // Vercel, où aucun fichier `.env` n'existe.
       websiteId = umamiWebsiteId(config.env)
+      measurementId = gaMeasurementId(config.env)
     },
 
     transformIndexHtml() {
-      if (!websiteId) return
+      // Les deux collecteurs sont indépendants : l'un configuré sans l'autre
+      // doit donner une mesure partielle, jamais une page sans mesure.
+      const tags: HtmlTagDescriptor[] = []
 
-      return [{ tag: 'script', injectTo: 'head', attrs: { defer: true, ...attrs(websiteId) } }]
+      if (websiteId) {
+        tags.push({ tag: 'script', injectTo: 'head', attrs: { defer: true, ...attrs(websiteId) } })
+      }
+      if (measurementId) {
+        // `children` et non `src` : la balise porte son propre garde de domaine,
+        // voir `googleSnippet()`.
+        tags.push({ tag: 'script', injectTo: 'head', children: googleSnippet(measurementId) })
+      }
+
+      return tags
     },
   }
+}
+
+/* --- Google Analytics 4 ------------------------------------------------------ */
+
+/**
+ * Le second collecteur, posé à côté d'Umami et non à sa place.
+ *
+ * Les deux reçoivent exactement les mêmes événements (voir `track()` dans
+ * `src/analytics/`), et c'est voulu : Umami donne un tableau de bord d'une page
+ * qu'on lit en dix secondes, GA4 donne les entonnoirs, la comparaison de
+ * périodes et l'origine du trafic. Débrancher l'un revient à vider sa variable
+ * d'environnement ; rien d'autre ne bouge.
+ *
+ * **Le tag est posé sans cookie, et c'est une décision, pas un oubli.** Le
+ * bandeau de consentement est la seule chose que ce site ne peut pas se
+ * permettre : il s'ouvre sur une scène 3D plein écran dont le premier écran
+ * *est* l'argument, et une boîte de dialogue posée devant coûterait plus de
+ * visiteurs que la mesure n'en explique. Le mode consentement de Google répond
+ * exactement à ça — `analytics_storage: 'denied'` dès le premier appel, avant
+ * tout `config` : la bibliothèque n'écrit alors aucun cookie et n'envoie que
+ * des relevés anonymes.
+ *
+ * Ce qu'on perd, et qu'il vaut mieux savoir en lisant les chiffres : le nombre
+ * d'**utilisateurs** et tout ce qui suppose de reconnaître quelqu'un d'une page
+ * à l'autre — rétention, parcours complet — deviennent des estimations de
+ * Google. Les **événements**, eux, sont comptés tels quels, et ce sont eux
+ * qu'on regarde ici.
+ */
+
+/** Préfixe de l'identifiant de flux GA4. Une ancienne clé `UA-` ne vaut rien. */
+const GA_PREFIX = 'G-'
+
+/**
+ * Où lire l'identifiant de mesure, dans l'ordre.
+ *
+ * `VITE_FIREBASE_MEASUREMENT_ID` sert de repli parce que la propriété GA4 de ce
+ * projet a été créée **depuis la console Firebase** : l'identifiant y figure
+ * déjà, et exiger de le recopier sous un second nom n'aurait servi qu'à créer
+ * l'occasion de recopier une faute. `VITE_GA_MEASUREMENT_ID` reste prioritaire
+ * pour le jour où la mesure quitterait Firebase.
+ */
+const GA_ENV_KEYS = ['VITE_GA_MEASUREMENT_ID', 'VITE_FIREBASE_MEASUREMENT_ID'] as const
+
+/** Lit l'identifiant de flux GA4. `undefined` s'il est absent ou mal formé. */
+export function gaMeasurementId(env: Record<string, unknown>): string | undefined {
+  for (const key of GA_ENV_KEYS) {
+    const id = env[key]
+    if (typeof id === 'string' && id.startsWith(GA_PREFIX)) return id
+  }
+  return undefined
+}
+
+/**
+ * Le script d'amorçage, en une seule balise inline.
+ *
+ * On aurait pu poser la balise `<script async src="…/gtag/js?id=…">` que Google
+ * donne dans sa documentation, puis la configurer juste après. Ce n'est pas
+ * possible ici, pour une raison qu'Umami règle par un attribut : **Vercel
+ * publie une préproduction par commit**, et ces domaines `*.vercel.app` sont de
+ * vrais builds de production. `data-domains` écarte ces visites côté Umami ;
+ * gtag.js n'a pas d'équivalent, la seule barrière est donc de ne pas charger le
+ * script du tout — d'où le `return` en tête, avant la moindre requête.
+ *
+ * Le reste suit l'ordre imposé par Google : `dataLayer` d'abord, le
+ * consentement **avant** `config` (une fois la configuration passée, un défaut
+ * de consentement arrive trop tard et le premier relevé part avec un cookie),
+ * le script en dernier — les commandes empilées dans `dataLayer` avant son
+ * arrivée sont rejouées au chargement.
+ */
+function googleSnippet(measurementId: string): string {
+  const allowed = JSON.stringify(DOMAINS.split(','))
+  return `(function(){
+if(${allowed}.indexOf(location.hostname)===-1)return;
+window.dataLayer=window.dataLayer||[];
+function gtag(){dataLayer.push(arguments)}
+window.gtag=gtag;
+gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied'});
+gtag('js',new Date());
+gtag('config','${measurementId}');
+var s=document.createElement('script');
+s.async=true;
+s.src='https://www.googletagmanager.com/gtag/js?id=${measurementId}';
+document.head.appendChild(s);
+})()`
+}
+
+/** La balise Google en HTML brut. Chaîne vide sans identifiant. */
+export function googleTag(measurementId: string | undefined): string {
+  if (!measurementId) return ''
+  return `<script>${googleSnippet(measurementId)}</script>
+`
+}
+
+/**
+ * Les deux balises de mesure, pour les pages que Vite ne transforme pas.
+ *
+ * Un seul point d'entrée plutôt que deux appels côte à côte dans `seo.ts` :
+ * ajouter un troisième collecteur un jour ne doit pas demander de se souvenir
+ * qu'il existe une seconde famille de pages à servir.
+ */
+export function trackingTags(env: Record<string, unknown>): string {
+  return umamiTag(umamiWebsiteId(env)) + googleTag(gaMeasurementId(env))
 }
