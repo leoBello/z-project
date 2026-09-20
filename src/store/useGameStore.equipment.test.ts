@@ -186,7 +186,7 @@ describe('claimHeartContainer', () => {
   it('ajoute un cœur rouge et refait la vie en entier', () => {
     hit(3)
 
-    expect(store().claimHeartContainer('sky-summit')).toBe(true)
+    expect(store().claimHeartContainer('rotunda')).toBe(true)
     expect(store().maxHearts).toBe(MAX_HEARTS + 1)
     expect(store().hearts).toBe(MAX_HEARTS + 1)
   })
@@ -195,28 +195,28 @@ describe('claimHeartContainer', () => {
     equip('zoro-garb')
     hit(3)
 
-    store().claimHeartContainer('sky-summit')
+    store().claimHeartContainer('rotunda')
 
     expect(store().hearts).toBe(store().heartCapacity())
   })
 
   it('ne se réclame qu une fois', () => {
-    store().claimHeartContainer('sky-summit')
+    store().claimHeartContainer('rotunda')
 
-    expect(store().claimHeartContainer('sky-summit')).toBe(false)
+    expect(store().claimHeartContainer('rotunda')).toBe(false)
     expect(store().maxHearts).toBe(MAX_HEARTS + 1)
   })
 
   it('refuse hors de la phase de jeu', () => {
     useGameStore.setState({ phase: 'paused' })
 
-    expect(store().claimHeartContainer('sky-summit')).toBe(false)
+    expect(store().claimHeartContainer('rotunda')).toBe(false)
   })
 
   it('le réceptacle agrandit la réserve rouge sous les jaunes déjà posés', () => {
     equip('zoro-garb')
 
-    store().claimHeartContainer('sky-summit')
+    store().claimHeartContainer('rotunda')
     store().unequipItem('zoro-garb')
 
     // Les deux jaunes partent, les six rouges restent pleins.
@@ -228,7 +228,7 @@ describe('reset', () => {
   it('rend une partie neuve sans rien laisser de l ancienne', () => {
     equip('zoro-garb', 'kusanagi')
     hit(2)
-    store().claimHeartContainer('sky-summit')
+    store().claimHeartContainer('rotunda')
 
     store().reset()
 
