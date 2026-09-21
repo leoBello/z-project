@@ -27,6 +27,8 @@ import {
   type DurationId,
   type ScoreTarget,
 } from '../config/challenge'
+import { isMasteringRun } from '../config/senseiForms'
+import { readMastery, withMastered, writeMastery } from '../state/senseiMastery'
 import { ATTACK, PLAYER } from '../config/gameplay'
 import { chestById } from '../config/chests'
 import { enemyTotal } from '../config/enemies'
@@ -549,6 +551,16 @@ export interface GameState {
    */
   challengeBests: Record<string, { score: number; kills: number }>
   /**
+   * Les catégories **maîtrisées** : celles où le rang Guerrier a été atteint.
+   *
+   * Elle double partiellement `challengeBests`, et c'est voulu. Les records
+   * disent *combien* on a marqué et meurent avec l'onglet ; celle-ci dit
+   * seulement *quelles cases sont cochées* et survit aux visites, parce qu'elle
+   * commande la forme du maître — la seule récompense de l'Outremonde qui
+   * n'ait pas à être regagnée chaque fois. Voir `state/senseiMastery`.
+   */
+  senseiMastered: string[]
+  /**
    * Génération du peuplement de l'Outremonde. Sert de `key` React.
    *
    * L'incrémenter démonte et remonte les soixante-treize corps de la carte —
@@ -903,6 +915,9 @@ const initialState = {
   challengeResultOutfit: 'luffy' as OutfitId,
   challengeResultWeapon: 'fists' as WeaponId,
   challengeBests: {} as Record<string, { score: number; kills: number }>,
+  // Hydraté depuis le stockage, contrairement à tout le reste de l'état : une
+  // partie recommence, une progression de maître non.
+  senseiMastered: readMastery(),
   populationId: 0,
 }
 
@@ -2081,6 +2096,32 @@ export const useGameStore = create<GameState>((set, get) => ({
     const key = categoryKey(state.challengeDuration, state.challengeDifficulty)
     const previous = state.challengeBests[key]
 
+    /*
+      La maîtrise de la catégorie, qui commande la forme du maître.
+
+      Elle suit **le rang de la course**, pas le record : une course qui tient
+      le rythme du Guerrier coche la case même si elle ne bat pas le meilleur
+      score de la catégorie, parce que ce qu'on demande est d'avoir su le faire,
+      pas de le refaire mieux à chaque fois.
+
+      Les défis ratés comptent, exactement comme pour les records : on garde ce
+      qu'on a marqué avant de tomber. Un rythme de Guerrier tenu pendant quatre-
+      vingt-dix secondes reste un rythme de Guerrier, et exiger de survivre
+      aurait fait du palier une épreuve de prudence plutôt que de tranchant.
+
+      L'écriture disque ne passe que quand la liste change : la relancer à
+      chaque défi rejouerait une sérialisation pour rien, et surtout écraserait
+      la sauvegarde à chaque course perdue.
+    */
+    const mastered = isMasteringRun(challengeScore, ran)
+      ? withMastered(state.senseiMastered, key)
+      : state.senseiMastered
+    // Comparaison par **longueur** et non par référence : `withMastered` rend
+    // toujours un tableau neuf, donc l'identité serait fausse à chaque course
+    // et le disque réécrit pour rien. La fonction ne fait qu'ajouter, la
+    // longueur est donc un test exact.
+    if (mastered.length !== state.senseiMastered.length) writeMastery(mastered)
+
     // L'équipement est figé **ici**, une fois pour la course. Voir la
     // déclaration de `challengeResultOutfit` : relu plus tard, il aurait dit ce
     // que le joueur porte, pas ce avec quoi il a marqué.
@@ -2120,6 +2161,7 @@ export const useGameStore = create<GameState>((set, get) => ({
               [key]: { score: challengeScore, kills: challengeKills },
             }
           : state.challengeBests,
+      senseiMastered: mastered,
       // Le panneau met la partie en pause, comme tous les panneaux du jeu.
       phase: 'paused',
     })
@@ -2293,6 +2335,18 @@ export const useGameStore = create<GameState>((set, get) => ({
       // les remet seul — sauf à se souvenir que le record, lui, est un acquis de
       // *partie* et non de session. Une nouvelle partie repart sans record, comme
       // elle repart sans cœurs et sans objets.
+      /*
+        La maîtrise est l'exception, et la seule du store : elle est **portée
+        d'une visite à l'autre** puisqu'elle commande la forme du maître.
+
+        La remettre à `initialState` la ramènerait à l'instantané pris au
+        chargement du module, donc ferait régresser le maître dès qu'on
+        recommence une partie — jusqu'au prochain rechargement de page, où le
+        stockage la rétablirait. Un personnage qui perd ses paliers en lançant
+        une nouvelle partie puis les retrouve en rafraîchissant est exactement
+        le genre d'incohérence qu'on ne remarque qu'une fois livrée.
+      */
+      senseiMastered: state.senseiMastered,
       runId: state.runId + 1,
     }))
   },

@@ -62,6 +62,14 @@
       "talk": "Talk to the master",
       "stop": "End the challenge",
       "senseiName": "Goku",
+      "senseiForms": {
+        "base": "Goku",
+        "ss": "Super Saiyan",
+        "ss2": "Super Saiyan 2",
+        "ss3": "Super Saiyan 3",
+        "ssg": "Super Saiyan God",
+        "ssb": "Super Saiyan Blue"
+      },
       "offerTitle": "The master's challenge",
       "offerBody": "Hey there! You look strong, I can tell by the way you walk. But are you fast? Pick your rules, and we'll count the points.",
       "difficultyLabel": "Difficulty",

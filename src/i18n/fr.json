@@ -62,6 +62,14 @@
       "talk": "Parler au maître",
       "stop": "Terminer le défi",
       "senseiName": "Sangoku",
+      "senseiForms": {
+        "base": "Sangoku",
+        "ss": "Super Saiyan",
+        "ss2": "Super Saiyan 2",
+        "ss3": "Super Saiyan 3",
+        "ssg": "Super Saiyan God",
+        "ssb": "Super Saiyan Blue"
+      },
       "offerTitle": "Le défi du maître",
       "offerBody": "Salut à toi ! Tu as l'air costaud, ça se voit à ta démarche. Mais est-ce que tu es rapide ? Choisis ta règle, et on compte les points.",
       "difficultyLabel": "Difficulté",
