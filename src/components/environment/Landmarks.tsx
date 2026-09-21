@@ -47,7 +47,7 @@ function LandmarkProximity() {
       const distance = Math.hypot(position.x - landmark.x, position.z - landmark.z)
 
       if (distance < landmark.discoverRadius && !store.discovered.includes(landmark.id)) {
-        store.discoverLandmark(landmark.id)
+        store.discoverPlace(landmark.id)
       }
       // Un lieu sans section n'ouvre rien : il se découvre et paraît sur la
       // minimap, mais il n'a ni braise ni promesse à tenir. On saute donc son

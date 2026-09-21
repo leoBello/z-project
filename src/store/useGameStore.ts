@@ -56,6 +56,7 @@ import type {
   HeartSourceId,
   LandmarkId,
   MapId,
+  PlaceId,
 } from '../types/game'
 
 /**
@@ -165,8 +166,13 @@ export interface GameState {
   /**
    * Lieux déjà trouvés, dans l'ordre de découverte. Le dernier élément pilote
    * le bandeau du HUD ; l'ordre est donc porteur d'information, pas décoratif.
+   *
+   * Monuments **et** lieux remarquables, dans la même file : le joueur ne fait
+   * pas la différence entre trouver la Pyramide et trouver le Gué, et deux
+   * listes parallèles auraient fini par afficher deux bandeaux l'un sur
+   * l'autre. Voir `PlaceId` et `config/sites.ts`.
    */
-  discovered: LandmarkId[]
+  discovered: PlaceId[]
   /**
    * Monuments dont le réceptacle de cœur a été pris.
    *
@@ -616,7 +622,7 @@ export interface GameState {
    */
   claimHeartContainer: (id: HeartSourceId) => boolean
   /** Marque un lieu comme trouvé. Sans effet s'il l'était déjà. */
-  discoverLandmark: (id: LandmarkId) => void
+  discoverPlace: (id: PlaceId) => void
   /** Ouvre le panneau d'un lieu et met la partie en pause. */
   openLandmark: (id: LandmarkId) => void
   /** Referme le panneau et rend la main au jeu. */
@@ -851,7 +857,7 @@ const initialState = {
   reviveUsed: false,
   revivedAt: -Infinity,
   kills: 0,
-  discovered: [] as LandmarkId[],
+  discovered: [] as PlaceId[],
   heartContainers: [] as HeartSourceId[],
   items: [] as ItemId[],
   equipped: {} as Equipment,
@@ -1285,7 +1291,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     return true
   },
 
-  discoverLandmark: (id) =>
+  discoverPlace: (id) =>
     set((state) =>
       state.discovered.includes(id)
         ? state

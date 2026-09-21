@@ -13,6 +13,7 @@ import { Terrain } from './environment/Terrain'
 import { Vegetation } from './environment/Vegetation'
 import { StarrySky } from './environment/StarrySky'
 import { RotSky } from './rot/RotSky'
+import { SiteDiscovery } from './SiteDiscovery'
 import { BeyondSky } from './beyond/BeyondSky'
 import { Water } from './environment/Water'
 
@@ -221,6 +222,20 @@ export function Environment() {
       {location === 'rot' ? <RotSky /> : location === 'beyond' ? <BeyondSky /> : <StarrySky />}
       <MapFog map={location} />
       <Lighting map={location} />
+      {/*
+        La découverte des lieux remarquables, et elle est **hors du
+        branchement** : le gué et le pont sont sur le continent, la rotonde et
+        le sommet sur l'île, la chaussée et le bassin sur le Marais, le Creuset
+        sur l'Outremonde. Une seule boucle pour les quatre cartes, qui lit la
+        table de `config/sites.ts` et se tait sur celles qui n'en ont pas.
+
+        Rangée ici plutôt que dans chaque décor pour la même raison que le
+        firmament et la brume : ce n'est pas une pièce de carte, c'est une
+        règle du jeu. Trois des quatre décors sont d'ailleurs chargés à la
+        demande — y glisser une copie de la boucle l'aurait rendue absente
+        pendant les quelques frames où le fragment arrive.
+      */}
+      <SiteDiscovery />
       {/*
         Chaque carte différée a une frontière `<Suspense>` **à elle**, et la
         `key` est tout ce qui le garantit.
