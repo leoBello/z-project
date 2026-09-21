@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { Vector3 } from 'three'
 import { TRIAL_COUNT } from '../config/quests'
 import { chestById } from '../config/chests'
-import { resetClock } from '../state/gameClock'
+import { advance, now as gameNow, resetClock } from '../state/gameClock'
+import { dropPickup, pickups } from '../state/pickups'
+import { fireProjectile, projectiles } from '../state/projectiles'
 import { MAX_HEARTS, SKY_BOON_HEARTS, useGameStore } from './useGameStore'
 
 /**
@@ -361,5 +364,59 @@ describe('l épreuve des trois bêtes', () => {
 
     expect(store().goldenSlainAt).toBe(slainAt)
     expect(store().maxHearts).toBe(MAX_HEARTS + 1)
+  })
+})
+
+describe('la remise à zéro d une nouvelle partie', () => {
+  /*
+    Les pools qui vivent hors de React, et qu'`initialState` ne peut pas voir.
+
+    `reset` en nomme déjà quatre — l'horloge, les compteurs de combat, la
+    pourriture, la difficulté — pour cette raison exacte : un objet de module ne
+    revient pas à sa valeur de départ parce que le store, lui, y est revenu.
+    Les cœurs au sol et les projectiles en vol sont de la même famille, et ils
+    se voient plus que les autres : ce sont des objets à l'écran.
+
+    À ne pas confondre avec le relèvement après une mort, qui garde les cœurs
+    exprès — ils sont tombés d'ennemis vaincus et le monde continue. Ici le
+    monde recommence.
+  */
+  it('vide les cœurs restés au sol', () => {
+    dropPickup(4, 2, -7)
+    expect(pickups.filter((pickup) => pickup.active)).toHaveLength(1)
+
+    store().reset()
+
+    expect(pickups.filter((pickup) => pickup.active)).toHaveLength(0)
+  })
+
+  it('vide les projectiles restés en vol', () => {
+    fireProjectile(new Vector3(0, 1, 0), new Vector3(6, 1, 0))
+    expect(projectiles.filter((projectile) => projectile.active)).toHaveLength(1)
+
+    store().reset()
+
+    expect(projectiles.filter((projectile) => projectile.active)).toHaveLength(0)
+  })
+
+  it('ne laisse pas un cœur de la partie précédente survivre à l horloge', () => {
+    /*
+      La raison pour laquelle le pool ne se vidait pas tout seul.
+
+      `reset` remet l'horloge à zéro, donc l'âge d'un cœur lâché à la minute
+      trois devient négatif. Le test d'expiration de `Pickups` — `age >
+      PICKUP_LIFETIME_MS` — ne l'atteint jamais : sans ce nettoyage, il restait
+      ramassable pour toute la partie suivante.
+    */
+    advance(180)
+    dropPickup(4, 2, -7)
+    const born = pickups.find((pickup) => pickup.active)?.bornAt ?? 0
+
+    store().reset()
+
+    // Le cœur est né trois minutes après un zéro que `reset` vient de rétablir :
+    // son âge est désormais négatif, donc il n'expirerait jamais.
+    expect(born).toBeGreaterThan(gameNow())
+    expect(pickups.some((pickup) => pickup.active)).toBe(false)
   })
 })

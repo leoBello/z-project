@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { BEYOND_PORTAL, BEYOND_SHAPE } from '../../config/beyond'
+import { applyGround, resetGround } from '../../state/ground'
 import { useGameStore } from '../../store/useGameStore'
 import { Portal } from '../environment/Portal'
 import { Terrain } from '../environment/Terrain'
@@ -50,6 +52,25 @@ export default function Beyond() {
     monde entier plutôt que sur ses restes.
   */
   const populationId = useGameStore((state) => state.populationId)
+
+  /*
+    Cette carte déclare son relief aux pools qui vivent au-dessus d'elle.
+
+    Les cœurs sont montés une seule fois, dans `App.tsx`, donc au-dessus des
+    quatre cartes : ils ne peuvent pas nommer un champ de hauteurs sans tirer
+    dans le bundle d'accueil la configuration de celui-ci. Ils lisaient donc
+    celui du continent en dur, et sur l'Outremonde les deux reliefs s'écartent
+    assez pour que trois cœurs sur quatre se posent hors de portée — pendant le
+    défi, c'est-à-dire au seul endroit du jeu où l'on en ramasse beaucoup.
+
+    Même discipline que la trêve du Sanctuaire : on pose au montage, on rend au
+    démontage. Le tableau vide est correct — `BEYOND_SHAPE` est un objet de
+    module, pas un littéral reconstruit à chaque rendu.
+  */
+  useEffect(() => {
+    applyGround(BEYOND_SHAPE.height)
+    return resetGround
+  }, [])
 
   return (
     <>
