@@ -1,5 +1,5 @@
 import type { ChestId, ItemId, MapId } from '../types/game'
-import { NAKANO, PYRAMID, RUINS, STELE, TEMPLE, type Landmark } from './landmarks'
+import { NAKANO, PYRAMID, RUINS, STATUE, STELE, TEMPLE, type Landmark } from './landmarks'
 import {
   CORE_Y,
   ROTUNDA_RUINED_BAYS,
@@ -274,6 +274,46 @@ export const STELE_CHEST = define({
 })
 
 /**
+ * Coffre de l'Idole des Terres Arides — le papyrus.
+ *
+ * **Le dernier point d'intérêt de la carte à en recevoir un**, et c'est ce qui
+ * l'a décidé : les quatre autres monuments à section gardaient chacun sa
+ * trouvaille, l'idole seule n'avait rien à donner à qui montait jusqu'à elle.
+ *
+ * Posé en `[5.4, -1.2]` dans son repère, et les trois nombres se mesurent
+ * exactement comme ceux des cinq autres coffres du continent :
+ *
+ *  - **5,53 unités du centre**, angles du coffre à 6,35 : la terrasse est plate
+ *    jusqu'à 7 (`STATUE.radius`), donc à l'altitude 3,4 exactement. Un coffre à
+ *    cheval sur le fondu du relief flotterait d'un côté et s'enfoncerait de
+ *    l'autre. Il est au passage bien au large du socle de l'idole, dont le
+ *    collider fait 2,3 de rayon ;
+ *  - **7,85 séparent le coffre du marqueur**, posé en local `[0, 4.5]`. Les
+ *    deux zones d'interaction font 3 et 2,6 : leur somme vaut 5,6, elles ne
+ *    peuvent donc pas se recouvrir, et `F` n'a jamais à arbitrer entre ouvrir le
+ *    coffre et ouvrir la page du parcours ;
+ *  - **au sud du monument** en coordonnées monde — `(39,8 ; 1,2)` pour un
+ *    centre à `(38 ; -4)`. C'est la contrainte qui a décidé du **signe** de la
+ *    coordonnée locale en X : l'idole regarde l'ouest, son repère local tourne
+ *    donc presque d'un quart de tour, et `-5.4` aurait posé le coffre plein
+ *    nord, derrière la pierre. La caméra est fixe et tournée vers le nord ; un
+ *    coffre posé là est un coffre que personne ne voit.
+ *
+ * Le cap est tourné vers le marqueur, donc vers le joueur qui vient de lire le
+ * parcours — et de biais d'un vingtième de radian, comme les cinq autres :
+ * d'équerre avec la terrasse, le coffre se serait lu comme une pièce du
+ * dallage plutôt que comme un objet déposé là.
+ */
+export const STATUE_CHEST = define({
+  id: 'statue-chest',
+  landmark: STATUE,
+  local: [5.4, -1.2],
+  yaw: -0.72,
+  item: 'konami-papyrus',
+  interactRadius: 2.6,
+})
+
+/**
  * Coffre des Ruines de l'Île — les écailles.
  *
  * **Le placement le plus contraint de la carte**, et le seul qui ait dû se
@@ -511,6 +551,7 @@ export const CHESTS: readonly Chest[] = [
   PYRAMID_CHEST,
   NAKANO_CHEST,
   STELE_CHEST,
+  STATUE_CHEST,
   RUINS_CHEST,
   // Recensé avec les autres bien qu'il vive sur l'autre carte : `chestById` est
   // la seule façon dont le store retrouve l'objet d'un coffre qu'on vient

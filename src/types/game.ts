@@ -196,6 +196,15 @@ export type ItemId =
   | 'vader-saber'
   | 'meruem-garb'
   | 'kuroro-garb'
+  /**
+   * Le papyrus de l'Idole, et le premier objet du jeu qui ne se porte pas.
+   *
+   * Les onze autres sont des tenues, des armes ou une babiole : ils occupent un
+   * emplacement et changent quelque chose au personnage. Celui-ci ne change
+   * rien — c'est un texte, et tout ce qu'il donne, il le donne à lire. Voir
+   * `KONAMI_PAPYRUS` et la famille `relic` qu'il inaugure.
+   */
+  | 'konami-papyrus'
 
 /** Identifiant de coffre au trésor. La table vit dans `config/chests.ts`. */
 export type ChestId =
@@ -203,6 +212,7 @@ export type ChestId =
   | 'pyramid-chest'
   | 'nakano-chest'
   | 'stele-chest'
+  | 'statue-chest'
   | 'ruins-chest'
   | 'rotunda-chest'
   | 'road-chest'

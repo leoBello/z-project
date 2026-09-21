@@ -1,22 +1,10 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { itemById } from '../../config/items'
+import { INVENTORY_SLOTS, itemById, slotOf } from '../../config/items'
 import { useI18n } from '../../i18n/useI18n'
 import { useGameStore } from '../../store/useGameStore'
 import { ItemCard } from './ItemCard'
 import { ItemIcon } from './ItemIcon'
 import { useDialogFocus } from './useDialogFocus'
-
-/**
- * Nombre d'emplacements affichés, objets compris.
- *
- * Douze, alors qu'il n'y a qu'un objet à trouver aujourd'hui. Les cases vides
- * ne sont pas du remplissage : un sac qui n'affiche que ce qu'il contient se
- * lit comme une liste et ne promet rien, alors qu'une grille à trous dit qu'il
- * reste des choses à trouver. C'est la seule indication du jeu qu'un trésor
- * existe quelque part — il n'y a volontairement aucun repère de coffre sur la
- * minimap.
- */
-const SLOTS = 12
 
 /** Ne rien faire — voir le désarmement du piège à focus plus bas. */
 const NOOP = () => {}
@@ -95,7 +83,11 @@ export function InventoryPanel() {
         </h2>
 
         <ul className="inventory__grid">
-          {Array.from({ length: SLOTS }, (_, index) => {
+          {/* Le nombre de cases se dérive de la table des objets et ne
+              s'écrit plus ici : une grille figée finit par être plus petite que
+              ce qu'il y a à trouver, et le premier objet de trop est ramassé
+              puis invisible. Voir `INVENTORY_SLOTS`. */}
+          {Array.from({ length: INVENTORY_SLOTS }, (_, index) => {
             const id = items[index]
             const item = id ? itemById(id) : undefined
 
@@ -107,7 +99,10 @@ export function InventoryPanel() {
               )
             }
 
-            const isWorn = equipped[item.kind] === id
+            // Par l'emplacement et non par la famille : une relique n'en a
+            // pas, et `equipped.relic` n'existe pas.
+            const slot = slotOf(item)
+            const isWorn = slot !== null && equipped[slot] === id
             const wornSuffix = isWorn ? ' — ' + dict.ui.inventory.equipped : ''
 
             return (

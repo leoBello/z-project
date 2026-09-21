@@ -52,6 +52,26 @@ describe('equipItem', () => {
     expect(store().bonusHearts).toBe(0)
   })
 
+  it('refuse une relique, qui ne se porte pas', () => {
+    // Le refus vit dans le store et non dans les boutons : l'interface n'en
+    // propose aucun pour un papyrus, mais c'est ici que passent aussi la carte
+    // d'objet et la fermeture de coffre qui équipe dans la foulée.
+    equip('konami-papyrus')
+
+    expect(store().equipped).toEqual({})
+    expect(store().items).toContain('konami-papyrus')
+  })
+
+  it('laisse la babiole en place quand on ramasse une relique', () => {
+    // Le piège qu'a évité la famille `relic` : rangé parmi les babioles, le
+    // papyrus aurait chassé les écailles de leur emplacement, c'est-à-dire fait
+    // payer un effet réel pour un texte.
+    equip('fishman-scales')
+    equip('konami-papyrus')
+
+    expect(store().equipped.trinket).toBe('fishman-scales')
+  })
+
   it('refuse de réequiper ce qui est déjà porté', () => {
     equip('zoro-garb')
     const hearts = store().hearts
