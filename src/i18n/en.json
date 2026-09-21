@@ -18,11 +18,12 @@
       "hint": "Touch the screen to bring up the joystick"
     },
     "gameover": {
-      "title": "Game Over",
+      "title": "You have fallen",
       "noKills": "No enemies defeated.",
       "killsOne": "{count} enemy defeated.",
       "killsMany": "{count} enemies defeated.",
-      "restart": "Play again"
+      "hint": "You will rise again where the map begins, healed, and keep everything you found.",
+      "resume": "Rise again"
     },
     "discovery": {
       "kicker": "Place discovered"

@@ -41,25 +41,31 @@ import { SkyWater } from './Water'
  * identique. C'est aussi ce qui garantit qu'une retouche de la pierre se voie
  * partout à la fois.
  */
-export default function SkyIsland() {
-  const defeated = useGameStore((state) => state.bossState === 'defeated')
+/**
+ * Les cinq bêtes de l'île : le gardien de la rotonde, les trois de l'épreuve, le
+ * doré du sommet.
+ *
+ * Elles sont rassemblées dans un composant à elles pour une seule raison : leur
+ * montage. Les trois instantanés ci-dessous décident qui se lève, et ils doivent
+ * être pris **à la naissance de cette génération de bêtes** — pas à l'arrivée sur
+ * l'île, ce qu'ils faisaient tant qu'ils vivaient dans `SkyIsland`.
+ *
+ * La nuance est celle que la mort du joueur a introduite : il se relève au point
+ * d'apparition de sa carte sans que l'île se démonte (voir `respawn`), et les
+ * bêtes blessées doivent se relever avec lui — sans quoi un boss se grignoterait
+ * en mourant. `worldId` les remonte donc, et les instantanés relisent le store à
+ * cet instant : qui est tombé reste tombé, qui tenait revient entier.
+ *
+ * Leur ordre dans cet arbre n'a aucune importance : ce sont cinq corps
+ * indépendants posés dans une scène, pas des blocs dans une page.
+ */
+function SkyBeasts() {
   /*
-    Quand le doré est tombé, ou `null` s'il tient encore : c'est directement la
-    prop d'ouverture du portail du sommet.
+    Qui était déjà mort **à la naissance de cette génération**, et non qui est
+    mort à cette frame-ci.
 
-    Rien à mémoriser ici, et c'est le point — l'instant vit dans le store (voir
-    `goldenSlainAt`), donc l'anneau se perce une fois, à la chute, puis reste
-    déplié à toutes les visites suivantes. Un état local aurait rejoué
-    l'ouverture à chaque retour sur l'île.
-  */
-  const summitOpenedAt = useGameStore((state) => state.goldenSlainAt)
-
-  /*
-    Qui était déjà mort **à l'arrivée sur l'île**, et non qui est mort à cette
-    frame-ci.
-
-    Les deux instantanés ci-dessous sont pris une fois au montage, et c'est ce
-    qui distingue « ne pas ressusciter » de « disparaître en pleine mort ». Le
+    Les trois instantanés sont pris une fois au montage, et c'est ce qui
+    distingue « ne pas ressusciter » de « disparaître en pleine mort ». Le
     gardien monté sans condition ressuscitait : l'île se démonte quand on rentre
     au continent, et un aller-retour reconstruisait un Lynel neuf, ses
     trente-six points de vie compris, dans une rotonde dont les barrières étaient
@@ -79,19 +85,15 @@ export default function SkyIsland() {
   const [goldenStanding] = useState(
     () => useGameStore.getState().goldenSlainAt === null,
   )
+  /*
+    L'épreuve, elle, se lit en **abonnement vivant** : les trois bêtes ne se
+    plantent qu'une fois le gardien tombé, et cela doit arriver sous les yeux du
+    joueur, dans la seconde, sans qu'il ait à quitter l'île.
+  */
+  const trialOpen = useGameStore((state) => state.bossState === 'defeated')
 
   return (
     <>
-      <SkyTerrain />
-      <Ruins />
-      <SkyWater />
-      <Flora />
-
-      {/* Le jumeau de celui de Nakano, au point d'arrivée. Le même composant :
-          deux portails qui divergeraient au premier réglage de l'anneau
-          seraient un défaut qu'on ne verrait qu'en faisant l'aller-retour. */}
-      <Portal at={SKY_PORTAL} openedAt={ALREADY_OPEN} to="continent" />
-
       {/* Le gardien de la rotonde. Il s'inscrit lui-même au registre des
           ennemis, donc à la minimap et au calque de combat : rien à lui passer. */}
       {guardianStanding && <Lynel />}
@@ -106,7 +108,7 @@ export default function SkyIsland() {
         mourrait autrement que ses semblables serait un boss dont la mort se lit
         moins bien, pas un boss plus important.
       */}
-      {defeated &&
+      {trialOpen &&
         posts.map((post) => (
           <Lynel
             key={post.id}
@@ -117,16 +119,6 @@ export default function SkyIsland() {
             role="trial"
           />
         ))}
-      {/*
-        La montagne de l'ouest, et la voie qui y mène.
-
-        Elles sont là **dès l'arrivée**, herse baissée, exactement comme le
-        coffre de la Voie : ce qui doit être mérité, c'est le passage, pas
-        l'existence du lieu. Une montagne qui se matérialise à la fin de
-        l'épreuve n'aurait jamais été une promesse, seulement une récompense.
-      */}
-      <Causeway />
-      <Mountain />
 
       {/*
         Le Lynel doré, sur le plateau du sommet.
@@ -160,6 +152,62 @@ export default function SkyIsland() {
           role="golden"
         />
       )}
+    </>
+  )
+}
+
+/**
+ * Le porte-clé des bêtes, et il n'existe que pour porter cette clé.
+ *
+ * L'abonnement à `worldId` est confiné ici plutôt que posé dans `SkyIsland` :
+ * là-haut, il aurait fait re-rendre l'île entière — terrain, ruines, eau, flore,
+ * chaussée et montagne — à chaque relèvement du joueur, pour ne remonter que cinq
+ * corps.
+ */
+function SkyBeastsSlot() {
+  const worldId = useGameStore((state) => state.worldId)
+  return <SkyBeasts key={worldId} />
+}
+
+export default function SkyIsland() {
+  /*
+    Quand le doré est tombé, ou `null` s'il tient encore : c'est directement la
+    prop d'ouverture du portail du sommet.
+
+    Rien à mémoriser ici, et c'est le point — l'instant vit dans le store (voir
+    `goldenSlainAt`), donc l'anneau se perce une fois, à la chute, puis reste
+    déplié à toutes les visites suivantes. Un état local aurait rejoué
+    l'ouverture à chaque retour sur l'île.
+  */
+  const summitOpenedAt = useGameStore((state) => state.goldenSlainAt)
+
+  return (
+    <>
+      <SkyTerrain />
+      <Ruins />
+      <SkyWater />
+      <Flora />
+
+      {/* Le jumeau de celui de Nakano, au point d'arrivée. Le même composant :
+          deux portails qui divergeraient au premier réglage de l'anneau
+          seraient un défaut qu'on ne verrait qu'en faisant l'aller-retour. */}
+      <Portal at={SKY_PORTAL} openedAt={ALREADY_OPEN} to="continent" />
+
+      {/* Les cinq bêtes de l'île, montées ensemble : voir `SkyBeasts`. C'est
+          leur génération qui décide qui se lève, et elle repart entière quand le
+          joueur se relève. */}
+      <SkyBeastsSlot />
+
+      {/*
+        La montagne de l'ouest, et la voie qui y mène.
+
+        Elles sont là **dès l'arrivée**, herse baissée, exactement comme le
+        coffre de la Voie : ce qui doit être mérité, c'est le passage, pas
+        l'existence du lieu. Une montagne qui se matérialise à la fin de
+        l'épreuve n'aurait jamais été une promesse, seulement une récompense.
+      */}
+      <Causeway />
+      <Mountain />
 
       {/*
         Le troisième portail, au sommet, une fois la bête tombée.

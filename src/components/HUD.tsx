@@ -2,7 +2,6 @@ import { getControlHints } from '../config/controls'
 import { format } from '../i18n'
 import { RotMeter } from './RotMeter'
 import { useI18n } from '../i18n/useI18n'
-import { clearPickups } from '../state/pickups'
 import { clearProjectiles } from '../state/projectiles'
 import { clearDeathPuffs } from '../state/deathPuffs'
 import { interactionLabel, useInteraction } from '../store/interaction'
@@ -50,7 +49,7 @@ export function HUD() {
   const heartContainers = useGameStore((state) => state.heartContainers)
   const annihilation = useGameStore((state) => state.annihilation)
   const portalOpenedAt = useGameStore((state) => state.portalOpenedAt)
-  const reset = useGameStore((state) => state.reset)
+  const respawn = useGameStore((state) => state.respawn)
   const { dict } = useI18n()
   // Une seule source de vérité pour « que fait la touche ici ? », partagée avec
   // le raccourci clavier et le bouton tactile : l'invite ne peut pas annoncer
@@ -66,14 +65,20 @@ export function HUD() {
   // prendre, pas la liste de ceux qu'on possède.
   const lastContainer = heartContainers[heartContainers.length - 1]
 
-  const restart = () => {
-    // Projectiles en vol, cœurs au sol et fumées en cours survivraient au
-    // redémarrage : ils vivent dans des pools hors React, que remonter les
-    // composants ne vide pas.
+  /*
+    On reprend là où la partie en était, pas depuis le début de la partie.
+
+    Les deux pools hors React qui portaient le combat sont vidés — une flèche
+    figée en plein vol et les fumées de mort de l'adversaire reprendraient leur
+    course à la seconde où la partie repart, à l'autre bout de la carte et sans
+    plus rien à toucher. Les cœurs au sol, eux, **restent** : ils sont tombés
+    d'ennemis vaincus, ils appartiennent au monde, et le monde n'est plus remis à
+    zéro. Ils expireront d'eux-mêmes si personne ne revient les chercher.
+  */
+  const resume = () => {
     clearProjectiles()
-    clearPickups()
     clearDeathPuffs()
-    reset()
+    respawn()
   }
 
   return (
@@ -237,8 +242,13 @@ export function HUD() {
                     count: kills,
                   })}
             </p>
-            <button type="button" onClick={restart}>
-              {dict.ui.gameover.restart}
+            {/* La ligne qui dit ce que la mort coûte, et elle est nécessaire :
+                le bouton seul laisserait croire à une nouvelle partie, et
+                personne ne cliquerait dessus de gaieté de cœur après une heure
+                de jeu. Voir `respawn` dans le store. */}
+            <p className="gameover__hint">{dict.ui.gameover.hint}</p>
+            <button type="button" onClick={resume}>
+              {dict.ui.gameover.resume}
             </button>
           </div>
         </div>

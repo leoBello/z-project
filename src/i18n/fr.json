@@ -18,11 +18,12 @@
       "hint": "Touchez l'écran pour faire apparaître le joystick"
     },
     "gameover": {
-      "title": "Game Over",
+      "title": "Vous êtes tombé",
       "noKills": "Aucun ennemi vaincu.",
       "killsOne": "{count} ennemi vaincu.",
       "killsMany": "{count} ennemis vaincus.",
-      "restart": "Rejouer"
+      "hint": "Vous vous relèverez au départ de la carte, soigné, sans rien perdre de ce que vous avez trouvé.",
+      "resume": "Se relever"
     },
     "discovery": {
       "kicker": "Lieu découvert"

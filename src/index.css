@@ -1128,9 +1128,25 @@ canvas {
 
 /* --- Cœurs, dégâts, game over ---------------------------------------------- */
 
+/*
+  Une colonne, et c'est ce qui manquait.
+
+  Le bandeau de pourriture est arrivé dans cette boîte en se décrivant comme
+  posé « sous les cœurs » — mais la boîte est restée un flex en **ligne**, donc
+  il s'est rangé à côté d'eux. Pire : ses marges latérales `auto` absorbaient
+  alors tout l'espace libre de la rangée, ce qui poussait la barre de vie contre
+  le bord gauche de l'écran à la seconde où la jauge s'entamait. Le joueur
+  voyait ses cœurs sauter à gauche en entrant dans le marais, et n'avait aucune
+  raison de faire le lien avec la petite barre rouge apparue à côté.
+
+  `align-items` plutôt qu'un `justify-content` hérité : en colonne, c'est l'axe
+  transversal qui centre horizontalement.
+*/
 .hud__top {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
   padding-top: 4px;
 }
 
@@ -1194,7 +1210,10 @@ canvas {
 .rot-meter {
   width: 170px;
   height: 7px;
-  margin: 6px auto 0;
+  /* Pas de marge latérale `auto` : c'est le `align-items` de `.hud__top` qui
+     place la barre, et des marges automatiques la recentreraient sur mobile,
+     où la colonne entière est poussée à droite pour contourner la carte. */
+  margin-top: 6px;
   border-radius: 999px;
   border: 1px solid rgba(232, 119, 111, 0.35);
   background: var(--hud-bg);
@@ -1499,6 +1518,25 @@ canvas {
   margin: 0 0 18px;
   font-size: 14px;
   opacity: 0.75;
+}
+
+/*
+  La ligne qui dit ce que la mort coûte, sous le compte des ennemis.
+
+  Sa largeur est bornée en `ch` et non laissée à celle du panneau : la phrase
+  fait quatre-vingts signes, et la boîte se serait étirée d'un bord à l'autre de
+  l'écran pour les tenir sur une seule ligne — le titre s'y serait perdu.
+
+  Le compte des ennemis perd sa marge basse au passage : les deux lignes disent
+  la même chose, l'une ce qui est acquis, l'autre ce qui l'est encore, et
+  dix-huit pixels entre elles les auraient données pour deux informations sans
+  rapport.
+*/
+.gameover__panel p:not(:last-of-type) { margin-bottom: 4px; }
+
+.gameover__hint {
+  max-width: 34ch;
+  line-height: 1.45;
 }
 
 .gameover__panel button {
@@ -2139,7 +2177,11 @@ body:has(.lightbox) .teleport-menu {
     suit désormais la colonne au lieu de la contredire.
   */
   .hud__top {
-    justify-content: flex-end;
+    /* `align-items` et non `justify-content` : la boîte est une colonne depuis
+       que le bandeau de pourriture s'y range sous les cœurs, et c'est donc
+       l'axe transversal qui pousse la pile vers la droite. En `justify-content`
+       la règle ne collait plus à droite — elle collait vers le bas. */
+    align-items: flex-end;
     padding-top: calc(
       var(--settings-top) + var(--settings-pill) + var(--settings-gap) +
         var(--inventory-size) + 8px - 16px

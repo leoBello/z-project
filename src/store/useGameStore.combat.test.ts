@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { ItemId } from '../types/game'
 import type { EnemyKind } from '../types/game'
+import { ROT } from '../config/rotBlight'
+import { arrivalFor, spawnFor } from '../config/portal'
 import { applyDifficulty, resetDifficulty } from '../state/difficulty'
 import { advance, resetClock } from '../state/gameClock'
+import { pendingPlacement } from '../state/playerBody'
 import { playerTransform } from '../state/playerTransform'
+import { rot, soakRot } from '../state/rot'
 import { CRIT_MULTIPLIER, INVULNERABILITY_MS, MAX_HEARTS, useGameStore } from './useGameStore'
 
 /**
@@ -236,6 +240,118 @@ describe('damagePlayer — le second souffle', () => {
     store().unequipItem('dawn-cloak')
     store().equipItem('dawn-cloak')
 
+    hit(99)
+
+    expect(store().phase).toBe('gameover')
+  })
+})
+
+/**
+ * Le relèvement, c'est-à-dire ce que la mort coûte désormais.
+ *
+ * Elle a longtemps coûté la partie entière, et c'est ce que ces cas verrouillent
+ * en creux : ce qui est **gardé** a autant besoin d'un test que ce qui est rendu,
+ * parce qu'une ligne ajoutée dans `respawn` par mégarde — un `...initialState`
+ * recopié du voisin — reprendrait l'inventaire sans que rien ne s'en plaigne.
+ */
+describe('respawn', () => {
+  it('rend la main au jeu, la vie refaite jusqu à la capacité totale', () => {
+    equip('zoro-garb')
+    hit(99)
+    expect(store().phase).toBe('gameover')
+
+    store().respawn()
+
+    expect(store().phase).toBe('playing')
+    expect(store().hearts).toBe(store().heartCapacity())
+    // Cœurs jaunes de la tenue compris : on se relève entier ou pas du tout.
+    expect(store().hearts).toBe(MAX_HEARTS + 2)
+  })
+
+  it('garde tout ce que la partie avait acquis', () => {
+    equip('kusanagi')
+    store().claimHeartContainer('rotunda')
+    useGameStore.setState({ kills: 7, discovered: ['nakano'], openedChests: ['road-chest'] })
+    hit(99)
+
+    store().respawn()
+
+    expect(store().items).toContain('kusanagi')
+    expect(store().equipped).toEqual({ weapon: 'kusanagi' })
+    expect(store().heartContainers).toEqual(['rotunda'])
+    expect(store().kills).toBe(7)
+    expect(store().discovered).toEqual(['nakano'])
+    expect(store().openedChests).toEqual(['road-chest'])
+  })
+
+  it('repose le joueur au point d apparition de sa carte, et non à sa porte', () => {
+    pendingPlacement.at = null
+    hit(99)
+
+    store().respawn()
+
+    expect(pendingPlacement.at).toEqual(spawnFor('continent'))
+    // La distinction coûte cent trente unités sur le continent : la porte de
+    // Nakano n'est pas le début de la partie.
+    expect(pendingPlacement.at).not.toEqual(arrivalFor('continent'))
+  })
+
+  it('repose sur la carte où l on est tombé', () => {
+    useGameStore.setState({ location: 'rot' })
+    pendingPlacement.at = null
+    hit(99)
+
+    store().respawn()
+
+    expect(pendingPlacement.at).toEqual(spawnFor('rot'))
+  })
+
+  it('solde la pourriture, qui survivrait sinon à la mort qu elle a causée', () => {
+    useGameStore.setState({ location: 'rot' })
+    soakRot(ROT.max)
+    hit(99)
+
+    store().respawn()
+
+    expect(rot.level).toBe(0)
+  })
+
+  it('relâche l arène et remonte la génération des boss', () => {
+    useGameStore.setState({ location: 'rot', arenaFight: 'malenia' })
+    const before = store().worldId
+    hit(99)
+
+    store().respawn()
+
+    expect(store().arenaFight).toBeNull()
+    expect(store().worldId).toBe(before + 1)
+  })
+
+  it('couvre le relèvement par des i-frames', () => {
+    hit(99)
+
+    store().respawn()
+
+    expect(store().isInvulnerable()).toBe(true)
+  })
+
+  it('ne fait rien tant que le joueur n est pas tombé', () => {
+    hit(1)
+    const hearts = store().hearts
+    const worldId = store().worldId
+
+    store().respawn()
+
+    expect(store().hearts).toBe(hearts)
+    expect(store().worldId).toBe(worldId)
+  })
+
+  it('ne recharge pas le second souffle : mourir ne répare pas un objet', () => {
+    equip('dawn-cloak')
+    hit(99)
+    hit(99)
+
+    store().respawn()
     hit(99)
 
     expect(store().phase).toBe('gameover')
