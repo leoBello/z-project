@@ -10,6 +10,7 @@ import {
   formatRemaining,
   rankFor,
 } from '../config/challenge'
+import { formForMastery } from '../config/senseiForms'
 import { format } from '../i18n'
 import { useI18n } from '../i18n/useI18n'
 import { scoresAvailable } from '../scores/firestore'
@@ -258,11 +259,24 @@ function SenseiOffer() {
   const accept = useGameStore((state) => state.acceptChallenge)
   const close = useGameStore((state) => state.closeSenseiOffer)
   const openBoard = useScoresStore((state) => state.openBoard)
+  const mastered = useGameStore((state) => state.senseiMastered.length)
   const { dict } = useI18n()
   const panel = useRef<HTMLDivElement>(null)
   useDialogFocus(panel, close)
 
   const best = bests[categoryKey(duration, difficulty)]
+  /*
+    La forme atteinte, affichée à côté du nom — et seulement au-delà de la
+    première.
+
+    C'est le seul endroit où le joueur lit ce qu'il a débloqué : le modèle le
+    *montre*, mais rien ne le nomme, et « Super Saiyan 2 » sous les yeux au
+    moment de choisir sa règle relie le palier à l'effort qui l'a produit.
+    Muette à la forme de base, la mention n'annonce pas une mécanique à qui
+    n'en a pas encore vu la première manifestation.
+  */
+  const form = formForMastery(mastered)
+  const formLabel = form.id === 'base' ? null : dict.ui.challenge.senseiForms[form.id]
 
   return (
     <div className="gameover challenge-modal">
@@ -272,7 +286,10 @@ function SenseiOffer() {
         role="dialog"
         aria-modal="true"
       >
-        <span className="challenge-modal__who">{dict.ui.challenge.senseiName}</span>
+        <span className="challenge-modal__who">
+          {dict.ui.challenge.senseiName}
+          {formLabel ? <em className="challenge-modal__form">{formLabel}</em> : null}
+        </span>
         <h1>{dict.ui.challenge.offerTitle}</h1>
         <p className="challenge-modal__body">{dict.ui.challenge.offerBody}</p>
 

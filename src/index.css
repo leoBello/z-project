@@ -3150,6 +3150,27 @@ body:has(.lightbox) .teleport-menu {
   opacity: 0.85;
 }
 
+/*
+  La forme atteinte, accolée au nom du maître.
+
+  Même graisse et même interlettrage que le nom : c'est une seconde moitié de
+  la même ligne, pas une étiquette posée à côté. Seule la teinte la détache —
+  l'or du palier contre le parme du nom — et un point médian les sépare, parce
+  qu'une simple espace aurait fait lire « Sangoku Super Saiyan 2 » comme un
+  nom à rallonge.
+*/
+.challenge-modal__form {
+  font-style: normal;
+  color: #f0c04a;
+  opacity: 0.95;
+}
+
+.challenge-modal__form::before {
+  content: ' · ';
+  color: #c79bff;
+  opacity: 0.6;
+}
+
 .challenge-modal__body {
   margin: 10px 0 0;
   font-size: 14px;
