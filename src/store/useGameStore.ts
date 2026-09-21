@@ -1979,6 +1979,24 @@ export const useGameStore = create<GameState>((set, get) => ({
    * score reste affiché tant qu'on ne relance pas, et le remettre à zéro en
    * fermant le panneau aurait effacé sous les yeux du joueur le nombre qu'il
    * venait de faire.
+   *
+   * **Et la vie est refaite, ici et non ailleurs.** Deux chemins la rendaient
+   * déjà — la mort sur l'Outremonde et le bouton « retour au Sanctuaire » du
+   * panneau de résultat — mais aucun des deux n'est obligatoire : un joueur qui
+   * ferme le résultat sur place pour finir le Lynel qu'il avait engagé, ou qui
+   * arrive du continent après une traversée coûteuse, repartait sur ce qu'il
+   * lui restait. Le soin dépendait donc du bouton par lequel on était passé, ce
+   * qui n'est pas une règle qu'un joueur peut deviner.
+   *
+   * Le moment juste est celui-ci : un défi est une course chronométrée qu'on
+   * relance « autant de fois qu'on veut », et deux courses ne se comparent que
+   * si elles partent du même endroit — même peuplement (voir `populationId`),
+   * même difficulté, et même barre de vie. Capacité **totale**, cœurs jaunes de
+   * la tenue compris, comme partout ailleurs.
+   *
+   * Pas d'i-frames en revanche, à la différence des deux autres chemins : ceux-
+   * là reposent le joueur ailleurs, au milieu de ce qui traîne. Ici il n'a pas
+   * bougé, il est devant le maître, et la trêve du Sanctuaire tient.
    */
   acceptChallenge: () => {
     const { challenge, challengeDifficulty, challengeDuration, populationId } = get()
@@ -1999,6 +2017,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       challengeKills: 0,
       challengeScore: 0,
       challengeResult: null,
+      hearts: get().heartCapacity(),
       /*
         **Le monde entier se relève.**
 

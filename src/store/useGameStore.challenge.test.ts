@@ -80,6 +80,29 @@ describe('acceptChallenge', () => {
     expect(difficulty.damage).toBe(1.6)
   })
 
+  it('refait toute la vie, quel que soit le chemin par lequel on revient', () => {
+    run()
+    hit(2)
+    store().endChallenge(false)
+    // La sortie sur place, celle qui ne soigne pas : c'est par elle qu'on
+    // revenait devant le maître avec la barre entamée du défi précédent.
+    store().dismissChallengeResult()
+    expect(store().hearts).toBeLessThan(MAX_HEARTS)
+
+    store().acceptChallenge()
+
+    expect(store().hearts).toBe(store().heartCapacity())
+  })
+
+  it('refait la vie jusqu’à la capacité totale, cœurs jaunes compris', () => {
+    goBeyond()
+    useGameStore.setState({ bonusHearts: 3, hearts: 1 })
+
+    store().acceptChallenge()
+
+    expect(store().hearts).toBe(MAX_HEARTS + 3)
+  })
+
   it('ne se relance pas par-dessus un défi en cours', () => {
     run()
     const started = store().challengeStartedAt
