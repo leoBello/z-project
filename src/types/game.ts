@@ -124,6 +124,37 @@ export interface Annihilation {
 export type LandmarkId = 'temple' | 'pyramid' | 'stele' | 'statue' | 'ruins' | 'nakano'
 
 /**
+ * Identifiant de lieu remarquable. La table vit dans `config/sites.ts`.
+ *
+ * Un lieu remarquable n'est **pas** un monument au rabais : c'est l'autre
+ * moitié de la carte, celle qui n'ouvre rien. Un monument creuse une terrasse,
+ * interdit la végétation, porte une braise, entre dans le menu de
+ * téléportation et présente une page ; un lieu remarquable ne fait qu'une
+ * chose, se faire nommer quand on y arrive. Les inscrire dans `LANDMARKS`
+ * aurait donné une terrasse à un gué et une entrée de sommaire à une arène.
+ */
+export type SiteId =
+  | 'ford'
+  | 'nakano-bridge'
+  | 'rotunda'
+  | 'west-gate'
+  | 'summit'
+  | 'causeway'
+  | 'root-basin'
+  | 'pale-tree'
+  | 'crucible'
+
+/**
+ * Tout ce qui peut se découvrir, monuments et lieux remarquables confondus.
+ *
+ * Une seule union parce qu'il n'y a qu'**un** bandeau et qu'une liste de
+ * trouvailles : le joueur ne fait pas la différence entre découvrir la Pyramide
+ * et découvrir le Gué, et deux files parallèles auraient tôt ou tard affiché
+ * deux annonces l'une sur l'autre.
+ */
+export type PlaceId = LandmarkId | SiteId
+
+/**
  * D'où peut venir un réceptacle de cœur.
  *
  * Les monuments, et la rotonde — qui n'est **pas** un monument et ne doit pas en

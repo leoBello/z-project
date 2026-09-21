@@ -177,6 +177,17 @@
       "ruins": { "name": "Island Ruins" },
       "nakano": { "name": "Nakano Temple" }
     },
+    "sites": {
+      "ford": "The Ford",
+      "nakano-bridge": "Nakano Bridge",
+      "rotunda": "The Rotunda",
+      "west-gate": "Western Gate",
+      "summit": "Mountain Summit",
+      "causeway": "Elphael Causeway",
+      "root-basin": "Root Basin",
+      "pale-tree": "The Pale Tree",
+      "crucible": "The Crucible"
+    },
     "teleport": {
       "tab": "Places",
       "group": "Fast travel",

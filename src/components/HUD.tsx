@@ -1,4 +1,5 @@
 import { getControlHints } from '../config/controls'
+import { isSiteId } from '../config/sites'
 import { format } from '../i18n'
 import { RotMeter } from './RotMeter'
 import { useI18n } from '../i18n/useI18n'
@@ -59,7 +60,8 @@ export function HUD() {
   const capacity = maxHearts + bonusHearts
 
   // Seul le dernier lieu trouvé s'affiche : le bandeau annonce une découverte,
-  // il ne tient pas un journal.
+  // il ne tient pas un journal. Monuments et lieux remarquables passent par la
+  // même file et le même bandeau — voir `PlaceId`.
   const lastDiscovery = discovered[discovered.length - 1]
   // Même raisonnement : le bandeau annonce le réceptacle qu'on vient de
   // prendre, pas la liste de ceux qu'on possède.
@@ -143,8 +145,15 @@ export function HUD() {
       {lastDiscovery && (
         <div key={lastDiscovery} className="discovery">
           <span className="discovery__kicker">{dict.ui.discovery.kicker}</span>
+          {/* Deux dictionnaires pour un seul bandeau : les monuments portent un
+              objet — ils auront un jour autre chose qu'un nom — quand un lieu
+              remarquable n'est qu'une chaîne, puisqu'il n'est *que* son nom. Le
+              prédicat vient de la table des lieux plutôt que d'une liste
+              recopiée ici, qui aurait vieilli au premier lieu ajouté. */}
           <strong className="discovery__name">
-            {dict.ui.landmarks[lastDiscovery].name}
+            {isSiteId(lastDiscovery)
+              ? dict.ui.sites[lastDiscovery]
+              : dict.ui.landmarks[lastDiscovery].name}
           </strong>
         </div>
       )}

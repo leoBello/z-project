@@ -177,6 +177,17 @@
       "ruins": { "name": "Ruines de l'Île" },
       "nakano": { "name": "Temple de Nakano" }
     },
+    "sites": {
+      "ford": "Le Gué",
+      "nakano-bridge": "Pont de Nakano",
+      "rotunda": "La Rotonde",
+      "west-gate": "Porte de l'Ouest",
+      "summit": "Sommet de la Montagne",
+      "causeway": "Chaussée d'Elphaël",
+      "root-basin": "Bassin de racines",
+      "pale-tree": "L'Arbre blafard",
+      "crucible": "Le Creuset"
+    },
     "teleport": {
       "tab": "Lieux",
       "group": "Téléportation rapide",

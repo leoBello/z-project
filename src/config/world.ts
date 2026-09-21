@@ -143,8 +143,20 @@ const ISLANDS: readonly Island[] = [
   { x: 70, z: -70, radius: 12, height: 5.6 },
 ]
 
-/** Haut-fond guéable reliant la plage du continent à l'île du sud-est. */
-const CAUSEWAY = { ax: 53, az: 53, bx: 66, bz: 66, halfWidth: 9 } as const
+/**
+ * Le gué : le haut-fond guéable qui relie la plage du continent à l'île du
+ * sud-est.
+ *
+ * Exporté, et pas seulement parce qu'un second lecteur est apparu : le gué est
+ * un **lieu**, au même titre que le pont de Nakano — c'est là qu'on comprend
+ * que la mer se traverse à pied. `config/sites.ts` y pose donc son annonce, et
+ * la pose au milieu du segment plutôt que sur une cote recopiée.
+ *
+ * Il ne s'appelle plus `CAUSEWAY` : le Marais a une chaussée, l'Île Céleste en
+ * a une autre, et trois `CAUSEWAY` dans trois fichiers de configuration
+ * finissent par s'importer l'un pour l'autre.
+ */
+export const SHALLOWS = { ax: 53, az: 53, bx: 66, bz: 66, halfWidth: 9 } as const
 
 /** Masque d'une île prise isolément : 1 sur son plateau, 0 au large. */
 function maskOf(island: Island, x: number, z: number) {
@@ -203,16 +215,16 @@ export function sampleHeight(x: number, z: number) {
   }
 
   // Haut-fond : remonte le fond juste sous la surface, en gué.
-  const causewayDistance = distanceToSegment(
+  const shallowsDistance = distanceToSegment(
     x,
     z,
-    CAUSEWAY.ax,
-    CAUSEWAY.az,
-    CAUSEWAY.bx,
-    CAUSEWAY.bz,
+    SHALLOWS.ax,
+    SHALLOWS.az,
+    SHALLOWS.bx,
+    SHALLOWS.bz,
   )
-  if (causewayDistance < CAUSEWAY.halfWidth) {
-    const shelf = lerp(-0.3, -1.2, smoothstep(2, CAUSEWAY.halfWidth, causewayDistance))
+  if (shallowsDistance < SHALLOWS.halfWidth) {
+    const shelf = lerp(-0.3, -1.2, smoothstep(2, SHALLOWS.halfWidth, shallowsDistance))
     height = Math.max(height, shelf)
   }
 

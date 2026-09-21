@@ -4,9 +4,10 @@ Mini-jeu 3D navigateur inspiré de Zelda, pour portfolio front-end.
 Direction artistique : **diorama low-poly cozy** — cel-shading, FOV étroit,
 tilt-shift. La recette caméra + post-traitement du HD-2D, appliquée à de la 3D.
 
-Dernière mise à jour : 20 septembre 2026 — l'Outremonde : une quatrième carte
-de 200 × 200 avec ses sept biomes, ouverte par la chute de Malenia, et le défi
-chronométré de deux minutes que propose le maître du Sanctuaire.
+Dernière mise à jour : 21 septembre 2026 — les lieux remarquables : neuf
+endroits des quatre cartes qui se nomment en y arrivant — un gué, un pont,
+une rotonde, une porte, un sommet, une chaussée, deux bassins, un creuset —
+sans rien emprunter à la machinerie des monuments.
 
 ---
 
@@ -101,6 +102,36 @@ chronométré de deux minutes que propose le maître du Sanctuaire.
 - **Illustrations générées** : emblèmes isométriques en SVG, un solide = trois
   aplats francs, transposition en 2D du `toonGradient` du rendu 3D. Motif déduit
   des tags du projet, palette prélevée sur le jeu, cadrage calculé. Zéro asset
+
+### Lieux remarquables — ce qui se nomme sans s'ouvrir
+- Table déclarative dans `src/config/sites.ts` : **neuf lieux sur les quatre
+  cartes**, qui portent un nom et un rayon de découverte, et rien d'autre. Le
+  gué et le pont de Nakano sur le continent ; la rotonde, la Porte de l'Ouest
+  et le sommet de la montagne sur l'Île Céleste ; la chaussée d'Elphaël, le
+  bassin de racines et l'Arbre blafard sur le Marais ; le Creuset sur
+  l'Outremonde
+- Pourquoi une seconde table plutôt qu'une entrée de plus dans `landmarks.ts` :
+  un monument creuse une terrasse, interdit le semis, pose un repère de
+  minimap, porte une braise et entre au menu de téléportation. Un gué n'a
+  besoin d'aucun des cinq — il a besoin d'un nom
+- **Aucune position n'est écrite à la main.** Chacune se lit dans la
+  configuration qui fait déjà foi pour la géométrie du lieu : le tracé du gué
+  dans `world.ts`, la culée du pont dans `bridge.ts`, le centre de la montagne
+  dans `skyMountain.ts`
+- Même bandeau et même file que les monuments (`discovered`, voir `PlaceId`) :
+  le joueur ne fait pas la différence entre trouver la Pyramide et trouver le
+  Gué, et deux files parallèles auraient fini par afficher deux annonces l'une
+  sur l'autre
+- Une seule boucle de proximité pour les quatre cartes, montée par
+  `<Environment>` **hors du branchement de carte** — trois des quatre décors
+  sont chargés à la demande, une copie par décor aurait fini par en oublier un
+- Rien ne se découvre tant que `phase` n'est pas `playing` : on arrive sur
+  trois cartes sur quatre par un portail, et un bandeau déclenché sous le voile
+  opaque a été annoncé à personne
+- `sites.test.ts` tient les distances, parce qu'une annonce qui en efface une
+  autre est le seul vrai risque de cette table : dix unités de marche minimum
+  entre deux annonces voisines, huit entre un point d'arrivée et la première, et
+  les trois arènes se nomment avant que leur occupante ne se lève
 
 ### Île Céleste — la seconde carte
 - **Une île flottante inspirée de Laputa**, où mène le portail violet ouvert
@@ -724,7 +755,9 @@ chronométré de deux minutes que propose le maître du Sanctuaire.
   - chevrons d'alerte au sol pour les tirs venus de hors cadre, posés du côté
     d'où vient la menace et pointant vers le joueur
 - Cinq cœurs au lieu de trois
-- Bandeau de découverte d'un lieu, animé en CSS pur, sans état piloté depuis React
+- Bandeau de découverte d'un lieu, animé en CSS pur, sans état piloté depuis
+  React. Il annonce aussi bien les six monuments du continent que les neuf
+  lieux remarquables des quatre cartes — une seule file, un seul bandeau
 - **Réceptacle de cœur** sur l'autel du temple : un cœur maximal de plus et la
   vie refaite, ramassé en marchant jusqu'à l'autel. Bandeau dédié, rouge, décalé
   sous celui de la découverte — les deux se déclenchent à quelques secondes
@@ -1075,6 +1108,8 @@ codé.
 | Géométrie, cotes et colliders du temple | `src/components/environment/Temple.tsx` |
 | Ajouter un monument | `src/config/landmarks.ts` + un composant, monté dans `src/components/environment/Landmarks.tsx` |
 | Bandeau « Lieu découvert » | `src/components/HUD.tsx` + `.discovery` dans `src/index.css` |
+| Nommer un lieu qui n'ouvre rien (gué, pont, arène, sommet) | `src/config/sites.ts` + `ui.sites` dans `src/i18n/*.json` |
+| Rayon où une annonce de lieu se déclenche | `radius` dans `src/config/sites.ts` |
 | Apparence du marqueur d'interaction | `src/components/environment/InteractionMarker.tsx` |
 | Emplacement du marqueur et zone d'interaction | `TEMPLE_MARKER_Z` et `interact` dans `src/config/landmarks.ts` |
 | Textes affichés, dans les deux langues | `src/i18n/fr.json` et `src/i18n/en.json` |

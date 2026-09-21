@@ -36,6 +36,7 @@ src/
   config/biomes.ts            palettes des sept biomes
   config/enemies.ts           statistiques par espèce, placement
   config/landmarks.ts         points d'intérêt : position, terrasse, découverte
+  config/sites.ts             lieux remarquables : ce qui se nomme sans s'ouvrir
   config/bridge.ts            tracé du pont de Nakano, ancrages lus dans le relief
   config/items.ts             objets : effets, emplacements, silhouettes, lames
   config/chests.ts            coffres : monument porteur, position locale, contenu
