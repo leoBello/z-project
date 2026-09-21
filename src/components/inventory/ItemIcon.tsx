@@ -320,6 +320,30 @@ const GLYPHS: Record<ItemId, React.JSX.Element> = {
       />
     </>
   ),
+  'konami-papyrus': (
+    <>
+      {/* Un rouleau **couché**, et c'est tout le glyphe : les onze autres cases
+          sont debout — silhouettes de vêtements, lames en diagonale. Une
+          horizontale franche ne ressemble à aucune d'elles, ce qui est
+          exactement ce qu'on demande à une case reconnaissable du coin de
+          l'œil. */}
+      <path d="M5.5 8.5h13v7h-13z" fill="currentColor" opacity="0.9" />
+      {/* Les deux tambours enroulés aux extrémités. Ce sont eux qui disent
+          « rouleau » plutôt que « plaque » : sans eux, le rectangle se lit
+          comme une tablette. */}
+      <ellipse cx="5.5" cy="12" rx="1.7" ry="3.5" fill="currentColor" />
+      <ellipse cx="18.5" cy="12" rx="1.7" ry="3.5" fill="currentColor" />
+      {/* Trois lignes d'écriture en creux, inégales : trois traits de même
+          longueur auraient fait des rayures, et c'est la dernière, plus
+          courte, qui fait lire « texte ». */}
+      <path
+        d="M8.2 10.4h7.4M8.2 12h7.4M8.2 13.6h4.6"
+        stroke="#171226"
+        strokeWidth="1.1"
+        strokeLinecap="round"
+      />
+    </>
+  ),
 }
 
 export function ItemIcon({ id, accent }: { id: ItemId; accent: string }) {

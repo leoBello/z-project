@@ -478,6 +478,41 @@ function LootShape({ id, accent }: { id: ItemId; accent: string }) {
     )
   }
 
+  if (id === 'konami-papyrus') {
+    return (
+      <>
+        {/* Un rouleau **couché**, seul butin horizontal du jeu — les lames se
+            dressent, les tenues se tiennent debout. Dans un faisceau vertical,
+            c'est l'orientation qui identifie l'objet avant sa couleur. */}
+        <mesh castShadow rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.1, 0.1, 0.56, 12]} />
+          <meshToonMaterial
+            gradientMap={toonGradient}
+            color="#e8d3a2"
+            emissive={accent}
+            emissiveIntensity={0.5}
+          />
+        </mesh>
+        {/* Les deux tambours de bois, plus larges que la feuille : c'est ce
+            débord qui fait lire « rouleau » plutôt que « bâton ». */}
+        {[-0.3, 0.3].map((x) => (
+          <mesh key={x} castShadow position={[x, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.125, 0.125, 0.06, 12]} />
+            <meshToonMaterial gradientMap={toonGradient} color="#8c6a42" />
+          </mesh>
+        ))}
+        {/* La cordelette qui le ferme. L'anneau est tourné d'un quart de tour
+            autour de Y pour que son axe suive celui du rouleau : à plat, il
+            l'aurait traversé au lieu d'en faire le tour. Un rouleau ficelé se
+            lit comme un document, un rouleau nu comme une pièce de charpente. */}
+        <mesh position={[0.07, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+          <torusGeometry args={[0.112, 0.014, 6, 14]} />
+          <meshToonMaterial gradientMap={toonGradient} color="#5d4128" />
+        </mesh>
+      </>
+    )
+  }
+
   return (
     <>
       <mesh castShadow>

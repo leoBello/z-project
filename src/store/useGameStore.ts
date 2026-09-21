@@ -33,6 +33,7 @@ import { enemyTotal } from '../config/enemies'
 import {
   itemById,
   outfitOf,
+  slotOf,
   weaponOf,
   type Equipment,
   type ItemSlot,
@@ -199,7 +200,9 @@ export interface GameState {
    * et les faire se chasser l'un l'autre aurait fait d'une deuxième trouvaille
    * un renoncement à la première. La famille de l'objet *est* son emplacement
    * (voir `ItemSlot`), il n'y a donc rien à déclarer en plus dans la table des
-   * objets.
+   * objets — à une exception près, les reliques, qui sont une famille sans
+   * emplacement et n'entrent donc jamais dans ce registre. C'est `slotOf` qui
+   * tranche, et rien ici ne lit plus `item.kind`.
    */
   equipped: Equipment
   /**
@@ -1364,17 +1367,23 @@ export const useGameStore = create<GameState>((set, get) => ({
   equipItem: (id) => {
     const state = get()
     const item = itemById(id)
-    if (!item || !state.items.includes(id) || state.equipped[item.kind] === id) return
+    if (!item || !state.items.includes(id)) return
+    // Une relique ne se porte pas, et le refus vit ici plutôt que dans les
+    // boutons qui appellent : l'interface n'en propose aucun, mais le store est
+    // la seule porte que tout le monde franchit — la carte d'objet, la grille,
+    // et la fermeture de coffre qui équipe dans la foulée.
+    const slot = slotOf(item)
+    if (slot === null || state.equipped[slot] === id) return
 
     // L'objet qui occupait l'emplacement part d'abord, dans le même `set` : deux
     // écritures successives feraient passer la barre de vie par une valeur
     // intermédiaire, visible le temps d'une frame.
-    const stripped = stripSlot(state, item.kind)
+    const stripped = stripSlot(state, slot)
     const carried = stripped.bonusCarry[id] ?? item.bonusHearts
 
     playEquip()
     set({
-      equipped: { ...stripped.equipped, [item.kind]: id },
+      equipped: { ...stripped.equipped, [slot]: id },
       // Somme et non affectation : `stripSlot` n'a remis les jaunes à zéro que
       // s'il vidait l'emplacement qui les portait. Équiper une arme ne doit pas
       // faire disparaître les cœurs de la tenue.
@@ -1390,9 +1399,11 @@ export const useGameStore = create<GameState>((set, get) => ({
   unequipItem: (id) => {
     const state = get()
     const item = itemById(id)
-    if (!item || state.equipped[item.kind] !== id) return
+    if (!item) return
+    const slot = slotOf(item)
+    if (slot === null || state.equipped[slot] !== id) return
     playEquip()
-    set({ ...stripSlot(state, item.kind), equipChangedAt: gameNow() })
+    set({ ...stripSlot(state, slot), equipChangedAt: gameNow() })
   },
 
   // --- Coffres --------------------------------------------------------------

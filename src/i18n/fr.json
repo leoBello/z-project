@@ -282,7 +282,7 @@
       "equip": "Équiper",
       "unequip": "Retirer",
       "effect": "Effet",
-      "kinds": { "outfit": "Tenue", "trinket": "Babiole", "weapon": "Arme" }
+      "kinds": { "outfit": "Tenue", "trinket": "Babiole", "weapon": "Arme", "relic": "Relique" }
     },
     "items": {
       "zoro-garb": {
@@ -350,6 +350,11 @@
         "meta": "Trouvé dans l'autre coffre du Marais, à trois pas du premier",
         "description": "Un manteau noir semé de croix blanches, une fourrure pâle au col, aux poignets et à l'ourlet, et une croix retournée au milieu du front. Celui qui le portait n'avait pas de pouvoir à lui : il prenait ceux des autres et les rangeait dans un livre. On ne lui a jamais connu d'arme, et ceux qui l'ont vu venir n'ont pas eu le temps de s'en étonner.",
         "effect": "+4 cœurs jaunes, un coup sur trois porte double, course et détente juste derrière la Carapace"
+      },
+      "konami-papyrus": {
+        "name": "Papyrus de l'Idole",
+        "meta": "Trouvé dans le coffre de l'Idole des Terres Arides",
+        "description": "Un rouleau de roseau séché, cassant aux bords, glissé dans un étui de cuir. On y raconte un héros d'avant les cartes, qui trouvait les combats trop longs et qui refusa d'apprendre à parer. La légende dit qu'il prit deux fois le nord, deux fois le sud, deux fois le couchant et le levant, puis appela son frère B et son frère A — et que le ciel, ce jour-là, fit le travail à sa place. Le scribe ajoute, plus bas, qu'un homme qui gagne ainsi ne se souvient d'aucune de ses victoires."
       }
     },
     "language": {

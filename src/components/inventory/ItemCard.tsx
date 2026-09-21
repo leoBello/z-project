@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { hasEffect, itemById } from '../../config/items'
+import { hasEffect, itemById, slotOf } from '../../config/items'
 import { useI18n } from '../../i18n/useI18n'
 import { useGameStore } from '../../store/useGameStore'
 import type { ItemId } from '../../types/game'
@@ -108,7 +108,8 @@ export function ItemCard({ id, context, onClose, onEquip }: ItemCardProps) {
   // Le booléen est calculé dans le sélecteur et non à côté : s'abonner à
   // `equipped` ferait re-rendre la carte à chaque changement d'emplacement, y
   // compris ceux qui ne la concernent pas.
-  const isWorn = useGameStore((state) => (item ? state.equipped[item.kind] === id : false))
+  const slot = item ? slotOf(item) : null
+  const isWorn = useGameStore((state) => (slot ? state.equipped[slot] === id : false))
 
   // Mémoïsé : `useDialogFocus` le garde en dépendance de son écouteur clavier,
   // et une fonction recréée à chaque rendu le réabonnerait sans arrêt.
@@ -159,7 +160,12 @@ export function ItemCard({ id, context, onClose, onEquip }: ItemCardProps) {
               la table des objets et non ici : une carte qui énumère elle-même
               les effets qu'elle connaît oublie le premier qu'on ajoute, et
               l'objet s'affiche alors muet. Voir `hasEffect`. */}
-          {hasEffect(item) && (
+          {/* `'effect' in text` n'est pas une précaution : une relique n'a pas
+              d'effet, donc pas de ligne d'effet à traduire, et les deux
+              dictionnaires s'accordent pour ne pas en écrire une. Le test
+              porte donc sur les deux — l'objet a-t-il quelque chose à annoncer,
+              et la traduction a-t-elle la phrase pour le dire. */}
+          {hasEffect(item) && 'effect' in text && (
             <p className="item-card__effect">
               <span className="item-card__effect-label">{dict.ui.inventory.effect}</span>
               {/* Le pictogramme est dessiné en plus du texte, pas à sa place : le
@@ -179,7 +185,12 @@ export function ItemCard({ id, context, onClose, onEquip }: ItemCardProps) {
             </p>
           )}
 
-          {context === 'inventory' ? (
+          {/* Une relique n'a pas d'emplacement : sa carte n'a donc aucun
+              bouton, ni dans le sac ni à la sortie du coffre. Un « Équiper »
+              qui ne fait rien aurait été pire que pas de bouton du tout — il
+              aurait laissé croire que le papyrus se porte et qu'on n'a pas
+              compris comment. */}
+          {slot === null ? null : context === 'inventory' ? (
             <button
               type="button"
               className={`item-card__action${isWorn ? ' item-card__action--worn' : ''}`}

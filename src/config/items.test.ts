@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { ITEMS, hasEffect, itemById, outfitOf, traitsOf, weaponOf } from './items'
+import {
+  INVENTORY_SLOTS,
+  ITEMS,
+  hasEffect,
+  itemById,
+  outfitOf,
+  slotOf,
+  traitsOf,
+  weaponOf,
+} from './items'
 import type { Equipment } from './items'
 
 /**
@@ -63,13 +72,67 @@ describe('la table elle-même', () => {
       if (item.kind === 'weapon') expect(item.weapon, item.id).toBeTruthy()
     }
   })
+
+  it('ne donne ni silhouette ni arme à ce qui ne se porte pas', () => {
+    // Une relique qui déclarerait une tenue ou une arme serait équipable par
+    // `outfitOf` ou `weaponOf` sans passer par un emplacement : le personnage
+    // changerait d'apparence en portant un objet que le store refuse d'équiper.
+    for (const item of ITEMS) {
+      if (slotOf(item) !== null) continue
+      expect(item.outfit, item.id).toBeUndefined()
+      expect(item.weapon, item.id).toBeUndefined()
+    }
+  })
+})
+
+describe('slotOf', () => {
+  it('rend la famille comme emplacement pour tout ce qui se porte', () => {
+    expect(slotOf(itemById('zoro-garb')!)).toBe('outfit')
+    expect(slotOf(itemById('kusanagi')!)).toBe('weapon')
+    expect(slotOf(itemById('fishman-scales')!)).toBe('trinket')
+  })
+
+  it("ne donne aucun emplacement à une relique", () => {
+    expect(slotOf(itemById('konami-papyrus')!)).toBeNull()
+  })
+})
+
+describe('INVENTORY_SLOTS', () => {
+  /**
+   * La garde qui empêche un objet d'être ramassé puis invisible.
+   *
+   * La grille ne rend que ses `INVENTORY_SLOTS` premières cases : le jour où la
+   * table dépasse ce compte, le dernier objet trouvé entre bien dans `items` et
+   * ne s'affiche nulle part. Ce test est la seule chose qui s'en aperçoive
+   * avant le joueur qui finit le jeu.
+   */
+  it('a toujours au moins une case par objet du jeu', () => {
+    expect(INVENTORY_SLOTS).toBeGreaterThanOrEqual(ITEMS.length)
+  })
+
+  it('remplit des rangées entières de quatre', () => {
+    expect(INVENTORY_SLOTS % 4).toBe(0)
+  })
 })
 
 describe('hasEffect', () => {
-  it('reconnaît un effet à chacun des objets du jeu', () => {
-    // Aucun objet ne s'affiche sans effet : c'est le piège que l'en-tête de
-    // `hasEffect` décrit, et il s'est déjà présenté deux fois.
-    for (const item of ITEMS) expect(hasEffect(item), item.id).toBe(true)
+  it('reconnaît un effet à chacun des objets qui se portent', () => {
+    // Aucun objet équipable ne s'affiche sans effet : c'est le piège que
+    // l'en-tête de `hasEffect` décrit, et il s'est déjà présenté deux fois.
+    for (const item of ITEMS) {
+      if (slotOf(item) === null) continue
+      expect(hasEffect(item), item.id).toBe(true)
+    }
+  })
+
+  it('ne trouve aucun effet à une relique', () => {
+    // L'exception est nommée plutôt que la règle assouplie : une relique n'a
+    // rien à annoncer, et sa carte n'affiche donc pas de ligne d'effet. Le jour
+    // où l'une d'elles en gagne un, c'est ici qu'on s'en aperçoit.
+    for (const item of ITEMS) {
+      if (slotOf(item) !== null) continue
+      expect(hasEffect(item), item.id).toBe(false)
+    }
   })
 
   it('reconnaît un effet qui ne vise qu une espèce', () => {
@@ -166,8 +229,11 @@ describe('traitsOf', () => {
 
   it('ne rend jamais une aptitude nulle ou négative', () => {
     for (const item of ITEMS) {
+      const slot = slotOf(item)
       const outfit = item.kind === 'outfit' ? item.outfit! : 'luffy'
-      const traits = traitsOf({ [item.kind]: item.id }, outfit)
+      // Une relique ne s'équipe pas : on l'évalue sac vide, ce qui est
+      // exactement l'état dans lequel elle laisse le personnage.
+      const traits = traitsOf(slot ? { [slot]: item.id } : {}, outfit)
 
       expect(traits.speed, item.id).toBeGreaterThan(0)
       expect(traits.jump, item.id).toBeGreaterThan(0)

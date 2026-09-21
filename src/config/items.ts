@@ -20,10 +20,23 @@ import type { EnemyKind, ItemId } from '../types/game'
  * emplacement unique aurait obligé à choisir entre l'apparence et l'arme, et
  * transformé une trouvaille en renoncement.
  */
-export type ItemKind = 'outfit' | 'trinket' | 'weapon'
+export type ItemKind = 'outfit' | 'trinket' | 'weapon' | 'relic'
 
-/** Emplacement d'équipement. Une famille d'objet, un emplacement. */
-export type ItemSlot = ItemKind
+/**
+ * Emplacement d'équipement. Une famille d'objet, un emplacement — **sauf une**.
+ *
+ * `relic` n'en est pas un, et c'est toute la raison d'être de la famille : un
+ * papyrus ne se porte pas. Lui inventer un emplacement à lui aurait donné à
+ * l'inventaire un bouton « Équiper » qui ne fait rien et une case « Équipé »
+ * qui ne veut rien dire ; le ranger dans `trinket` aurait été pire — il aurait
+ * chassé les Écailles de l'Homme-Poisson, c'est-à-dire fait payer un effet réel
+ * pour un texte.
+ *
+ * La famille reste donc une famille — elle donne le libellé de la carte — mais
+ * elle cesse d'être un emplacement. C'est `slotOf` qui fait la traduction, et
+ * personne ne lit plus `item.kind` pour interroger `equipped`.
+ */
+export type ItemSlot = Exclude<ItemKind, 'relic'>
 
 /**
  * Silhouette du joueur associée à un skin. Voir `HeroPlaceholder`.
@@ -784,6 +797,53 @@ export const KURORO_COAT: Item = {
   accent: '#eceae3',
 }
 
+/**
+ * Papyrus de l'Idole — le seul objet du jeu qui ne se porte pas.
+ *
+ * Les onze autres changent quelque chose au personnage : une silhouette, une
+ * arme, une vitesse, un tarif de dégâts. Celui-ci ne change rien du tout, et
+ * c'est ce qui a fait naître la famille `relic` — voir `ItemSlot`. Un objet
+ * sans effet rangé parmi les babioles aurait chassé les Écailles de
+ * l'Homme-Poisson de leur emplacement : le joueur aurait payé sa traversée de
+ * la mer pour lire une histoire.
+ *
+ * **Ce qu'il donne, il le donne à lire.** Le code Konami existe depuis le début
+ * et rien, nulle part, ne l'annonçait : c'est une triche qu'on connaît ou qu'on
+ * ne connaît pas. Le papyrus est le premier — et le seul — endroit du jeu où la
+ * séquence est écrite, et elle l'est comme une rumeur sur un héros mort, pas
+ * comme une ligne d'aide. Qui lit jusqu'au bout tient les dix touches ; qui
+ * survole a lu une légende de plus.
+ *
+ * Il est à l'Idole des Terres Arides parce que c'est le lieu du **parcours**,
+ * la seule page du portfolio qui parle d'un passé, et parce que l'idole est
+ * borgne, manchote et penchée : une statue que personne n'est venu redresser
+ * est le bon endroit pour une histoire que personne n'est venu vérifier.
+ *
+ * `hasEffect` le rend donc `false`, et c'est voulu : sa carte n'affiche pas de
+ * ligne d'effet, parce qu'il n'en a pas. C'est la seule exception de la table,
+ * et le test de `hasEffect` la nomme plutôt que de s'assouplir.
+ *
+ * L'accent est un ocre de roseau séché. Il voisine avec le vert du bretteur et
+ * l'or de personne — aucun autre objet de la table n'est dans les jaunes
+ * chauds, et c'est ce qui rend sa case reconnaissable du coin de l'œil.
+ */
+export const KONAMI_PAPYRUS: Item = {
+  id: 'konami-papyrus',
+  kind: 'relic',
+  bonusHearts: 0,
+  revives: 0,
+  attackMultiplier: 1,
+  damageMultiplier: 1,
+  reachMultiplier: 1,
+  critChance: 0,
+  damageBy: EVERY_SPECIES_ALIKE,
+  // Neutre sur les trois axes, comme tout objet qui ne touche pas au
+  // déplacement. Déclaré plutôt qu'omis : `traitsOf` multiplie sans regarder la
+  // famille, et un champ absent y sortirait un `NaN` de vitesse.
+  traits: NEUTRAL_TRAITS,
+  accent: '#d8a75c',
+}
+
 export const ITEMS: readonly Item[] = [
   ZORO_GARB,
   MADARA_GARB,
@@ -796,7 +856,29 @@ export const ITEMS: readonly Item[] = [
   CURSED_BLADE,
   VADER_SABER,
   FISHMAN_SCALES,
+  KONAMI_PAPYRUS,
 ]
+
+/**
+ * Nombre d'emplacements de la grille d'inventaire.
+ *
+ * **Dérivé de la table, jamais écrit à la main.** Il a longtemps valu douze
+ * pour onze objets, ce qui marchait tant qu'on comptait : le douzième objet
+ * ajouté aurait rempli la grille au ras, et le treizième aurait été ramassé,
+ * rangé dans `items`, puis **invisible** — la grille ne rend que ses `SLOTS`
+ * premières cases. Un objet trouvable et introuvable dans le sac est le genre
+ * de bogue qu'on ne voit qu'en finissant le jeu.
+ *
+ * Arrondi à la rangée supérieure — quatre colonnes, la disposition la plus
+ * large — pour deux raisons : la grille reste rectangulaire, et il reste
+ * toujours au moins quelques cases vides tant que la table n'est pas un
+ * multiple de quatre. Ces cases-là ne sont pas du remplissage : un sac qui
+ * n'affiche que ce qu'il contient se lit comme une liste et ne promet rien,
+ * alors qu'une grille à trous dit qu'il reste des choses à trouver. C'est la
+ * seule indication du jeu qu'un trésor existe quelque part — il n'y a
+ * volontairement aucun repère de coffre sur la minimap.
+ */
+export const INVENTORY_SLOTS = Math.ceil(ITEMS.length / 4) * 4
 
 /** Retrouve un objet par son identifiant. */
 export function itemById(id: ItemId): Item | undefined {
@@ -843,6 +925,22 @@ export function hasEffect(item: Item): boolean {
  * décide de ce qu'est un emplacement — le store ne fait que tenir le registre.
  */
 export type Equipment = Partial<Record<ItemSlot, ItemId>>
+
+/**
+ * Emplacement occupé par un objet, ou `null` s'il ne se porte pas.
+ *
+ * La seule façon autorisée de passer d'un objet à une clé d'`equipped`. Avant
+ * le papyrus, `item.kind` faisait l'affaire — les trois familles étaient les
+ * trois emplacements — et quatre endroits l'écrivaient tel quel. Le jour où une
+ * famille a cessé d'être un emplacement, ces quatre-là seraient allés chercher
+ * `equipped.relic`, qui n'existe pas, et auraient proposé d'équiper un texte.
+ *
+ * Ici et non dans le store, comme `outfitOf` et `weaponOf` : c'est la table des
+ * objets qui décide de ce qu'un objet est, pas le registre qui le devine.
+ */
+export function slotOf(item: Item): ItemSlot | null {
+  return item.kind === 'relic' ? null : item.kind
+}
 
 /**
  * Silhouette à afficher pour l'équipement courant.

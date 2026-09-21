@@ -1481,6 +1481,218 @@ function KuroroCoat() {
   )
 }
 
+/** Teintes du rouleau. Aucune silhouette 3D à suivre : c'est un objet, pas une tenue. */
+const PAPYRUS = {
+  sheet: '#e8d3a2',
+  sheetShade: '#cdb07c',
+  sheetDeep: '#b0905f',
+  ink: '#44301c',
+  inkPale: '#7a6142',
+  roll: '#8c6a42',
+  leather: '#5d4128',
+  accent: '#d8a75c',
+} as const
+
+/**
+ * Les dix pas du code, dans l'ordre où le papyrus les grave.
+ *
+ * Un quart de tour par flèche, et `null` pour les deux lettres — B puis A —
+ * que `KonamiGlyph` dessine au lieu d'une pointe. La table est écrite ici et
+ * non importée de `KonamiCode.tsx` : les deux n'ont rien à partager, l'un
+ * écoute un clavier et l'autre grave une pierre, et un import entre les deux
+ * aurait fait dépendre une illustration d'un écouteur d'événements.
+ */
+const KONAMI_STEPS: ReadonlyArray<{ turn: number | null; letter?: string }> = [
+  { turn: 0 },
+  { turn: 0 },
+  { turn: 180 },
+  { turn: 180 },
+  { turn: -90 },
+  { turn: 90 },
+  { turn: -90 },
+  { turn: 90 },
+  { turn: null, letter: 'B' },
+  { turn: null, letter: 'A' },
+]
+
+/** Tracés des deux lettres. Stroke et non fill : pleines, elles font des taches. */
+const LETTERS: Record<string, string> = {
+  B: 'M-4 -7 V7 M-4 -7 H1 a3.6 3.6 0 0 1 0 7 H-4 M-4 0 H2 a3.6 3.6 0 0 1 0 7 H-4',
+  A: 'M-5.4 7 L0 -7.4 L5.4 7 M-2.9 1.4 H2.9',
+}
+
+/** Une flèche, ou une lettre, gravée dans un cartouche du rouleau. */
+function KonamiGlyph({
+  x,
+  y,
+  turn,
+  letter,
+}: {
+  x: number
+  y: number
+  turn: number | null
+  letter?: string
+}) {
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      {/* Le cartouche creusé sous le signe : sans lui, dix marques se lisent
+          comme une ligne de texte de plus, et c'est précisément ce que cette
+          bande ne doit pas être. */}
+      <rect x="-14" y="-14" width="28" height="28" rx="4" fill={PAPYRUS.sheetShade} />
+      <rect
+        x="-14"
+        y="-14"
+        width="28"
+        height="28"
+        rx="4"
+        fill="none"
+        stroke={PAPYRUS.inkPale}
+        strokeWidth="1.2"
+      />
+      {turn === null ? (
+        <path
+          d={LETTERS[letter ?? 'A']}
+          fill="none"
+          stroke={PAPYRUS.ink}
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ) : (
+        <path
+          d="M0 -7.6 L6.4 0.4 H2.9 V7.6 H-2.9 V0.4 H-6.4 Z"
+          fill={PAPYRUS.ink}
+          transform={`rotate(${turn})`}
+        />
+      )}
+    </g>
+  )
+}
+
+/**
+ * Papyrus de l'Idole.
+ *
+ * La seule carte de l'inventaire qui ne montre ni un corps ni une lame, et la
+ * seule dont le sujet soit **ce qui est écrit dessus**. Le cadrage suit de là :
+ * le rouleau est déroulé à plat, plein cadre, vu de face et non de biais — une
+ * perspective aurait fait des dix signes une frise en fuite, alors qu'ils sont
+ * la raison d'être de l'objet.
+ *
+ * Trois registres, et l'ordre de lecture est l'ordre du dessin : deux lignes de
+ * texte illisible en haut — le préambule, qui dit « vieux document » sans
+ * prétendre se lire —, **les dix signes au milieu**, en deux rangées de cinq,
+ * puis deux lignes de plus en bas dont la dernière est courte, comme une
+ * signature. Le texte du dessus et du dessous n'est pas du remplissage : sans
+ * lui la bande centrale serait une notice, et c'est une légende.
+ *
+ * Les huit flèches sont **une seule géométrie tournée quatre fois**. Quatre
+ * tracés séparés auraient divergé au premier ajustement, et deux flèches de
+ * poids différents dans une même frise se voient immédiatement.
+ *
+ * Le fond est un ocre sombre, le seul de la série : les autres cartes sont
+ * parme, bleu nuit ou vert d'eau, et un rouleau de roseau posé sur l'une
+ * d'elles serait passé pour un accessoire de tenue.
+ */
+function KonamiPapyrus() {
+  return (
+    <svg viewBox="0 0 320 300" role="img" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="papyrus-wall" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#2a1d14" />
+          <stop offset="100%" stopColor="#5b402a" />
+        </linearGradient>
+        <radialGradient id="papyrus-halo" cx="0.5" cy="0.44" r="0.6">
+          <stop offset="0%" stopColor={PAPYRUS.accent} stopOpacity="0.42" />
+          <stop offset="100%" stopColor={PAPYRUS.accent} stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="papyrus-sheet" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor={PAPYRUS.sheetShade} />
+          <stop offset="16%" stopColor={PAPYRUS.sheet} />
+          <stop offset="84%" stopColor={PAPYRUS.sheet} />
+          <stop offset="100%" stopColor={PAPYRUS.sheetShade} />
+        </linearGradient>
+      </defs>
+
+      <rect width="320" height="300" fill="url(#papyrus-wall)" />
+      <circle cx="160" cy="132" r="150" fill="url(#papyrus-halo)" />
+
+      {/* L'étui de cuir, ouvert derrière le bas du rouleau : il donne au
+          document un endroit d'où sortir, et c'est ce qui le pose au lieu de le
+          suspendre au milieu du cadre. */}
+      <path d="M52 236 L268 236 L252 280 L68 280 Z" fill={PAPYRUS.leather} />
+      <path d="M52 236 L268 236 L262 248 L58 248 Z" fill="#7a5735" />
+
+      {/* Le rouleau. Le tambour dépasse de la feuille de part et d'autre :
+          c'est ce débord, et lui seul, qui empêche le dessin de se lire comme
+          une affiche clouée au mur. */}
+      <rect x="46" y="64" width="228" height="24" rx="12" fill={PAPYRUS.roll} />
+      <rect x="46" y="64" width="228" height="10" rx="5" fill="#a5814f" />
+      <path d="M58 88 L262 88 L262 228 L58 228 Z" fill="url(#papyrus-sheet)" />
+      {/* Bord inférieur effrangé, trois entailles inégales : un bord droit
+          aurait fait du roseau séché une feuille de papier. */}
+      <path
+        d="M58 228 L92 234 L124 226 L166 236 L204 225 L238 233 L262 228 L262 238 L58 238 Z"
+        fill={PAPYRUS.sheetDeep}
+      />
+
+      {/* Deux fibres verticales, à peine visibles : le roseau se voit par bandes. */}
+      {[104, 218].map((x) => (
+        <path
+          key={x}
+          d={`M${x} 88 V230`}
+          stroke={PAPYRUS.sheetDeep}
+          strokeWidth="1.6"
+          opacity="0.35"
+        />
+      ))}
+
+      {/* Préambule : deux lignes qui ne se lisent pas et n'ont pas à se lire. */}
+      {[
+        [78, 108, 164],
+        [78, 122, 138],
+      ].map(([x, y, width]) => (
+        <path
+          key={y}
+          d={`M${x} ${y} H${x + width}`}
+          stroke={PAPYRUS.inkPale}
+          strokeWidth="3.4"
+          strokeLinecap="round"
+          opacity="0.75"
+        />
+      ))}
+
+      {/* Les dix signes, en deux rangées de cinq. */}
+      {KONAMI_STEPS.map((step, index) => (
+        <KonamiGlyph
+          key={index}
+          x={82 + (index % 5) * 39}
+          y={156 + Math.floor(index / 5) * 38}
+          turn={step.turn}
+          letter={step.letter}
+        />
+      ))}
+
+      {/* La note du scribe, sous la frise, et la dernière ligne plus courte :
+          c'est ce décrochement qui fait lire « fin de texte » plutôt que
+          « rayures ». */}
+      {[
+        [78, 214, 148],
+        [78, 224, 84],
+      ].map(([x, y, width]) => (
+        <path
+          key={y}
+          d={`M${x} ${y} H${x + width}`}
+          stroke={PAPYRUS.inkPale}
+          strokeWidth="2.6"
+          strokeLinecap="round"
+          opacity="0.6"
+        />
+      ))}
+    </svg>
+  )
+}
+
+
 const ILLUSTRATIONS: Record<ItemId, () => React.JSX.Element> = {
   'zoro-garb': ZoroGarb,
   'madara-garb': MadaraGarb,
@@ -1493,6 +1705,7 @@ const ILLUSTRATIONS: Record<ItemId, () => React.JSX.Element> = {
   'vader-saber': ScarletSaber,
   'meruem-garb': MeruemCarapace,
   'kuroro-garb': KuroroCoat,
+  'konami-papyrus': KonamiPapyrus,
 }
 
 export function ItemIllustration({ id }: { id: ItemId }) {

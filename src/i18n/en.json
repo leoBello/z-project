@@ -282,7 +282,7 @@
       "equip": "Equip",
       "unequip": "Unequip",
       "effect": "Effect",
-      "kinds": { "outfit": "Outfit", "trinket": "Trinket", "weapon": "Weapon" }
+      "kinds": { "outfit": "Outfit", "trinket": "Trinket", "weapon": "Weapon", "relic": "Relic" }
     },
     "items": {
       "zoro-garb": {
@@ -350,6 +350,11 @@
         "meta": "Found in the other Marsh chest, three paces from the first",
         "description": "A black coat strewn with white crosses, pale fur at the collar, the cuffs and the hem, and an upturned cross in the middle of the forehead. Whoever wore it had no power of his own: he took other people's and filed them away in a book. He was never known to carry a weapon, and those who saw him coming had no time to find that strange.",
         "effect": "+4 yellow hearts, one hit in three lands double, speed and jump just behind the Carapace"
+      },
+      "konami-papyrus": {
+        "name": "The Idol's Papyrus",
+        "meta": "Found in the chest at the Idol of the Barrens",
+        "description": "A roll of dried reed, brittle at the edges, tucked into a leather case. It tells of a hero from before the maps, who found battles too long and refused to learn how to parry. The legend says he took the north twice, the south twice, the sunset and the sunrise twice over, then called upon his brother B and his brother A — and that the sky, that day, did the work in his stead. Lower down, the scribe adds that a man who wins this way remembers none of his victories."
       }
     },
     "language": {
