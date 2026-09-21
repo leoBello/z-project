@@ -23,7 +23,6 @@ import { playDefeat, playHit, playParrySuccess } from '../audio/sfx'
 import { killRadius } from '../config/annihilation'
 import { ATTACK } from '../config/gameplay'
 import { PARRY } from '../config/parry'
-import { sampleHeight } from '../config/world'
 import { cancelParry, consumeParry, offerParry } from '../state/parry'
 import { playerTransform } from '../state/playerTransform'
 import { shake } from '../state/cameraShake'
@@ -32,6 +31,7 @@ import { enemyRegistry, updateEnemyMarker } from '../state/enemyRegistry'
 import { sanctuary } from '../state/sanctuary'
 import { scaledHp } from '../state/difficulty'
 import { hitStop, isHitStopped, now as gameNow } from '../state/gameClock'
+import { ground } from '../state/ground'
 import { dropPickup } from '../state/pickups'
 import {
   fireProjectile,
@@ -391,10 +391,12 @@ export function Enemy({ spawn, respawnMs }: EnemyProps) {
         spawnDeathPuff(position.x, position.y, position.z, materials.base.body)
         // L'anneau se pose sur la surface **visible** du terrain, pas sous le
         // centre de la capsule : même échantillonneur que le mesh, le collider
-        // et les cœurs, donc aucune seconde source de vérité.
+        // et les cœurs, donc aucune seconde source de vérité. Ce composant sert
+        // deux cartes qui n'ont pas le même relief, d'où le sol courant plutôt
+        // que celui du continent — voir `state/ground.ts`.
         spawnDeathRing(
           position.x,
-          sampleHeight(position.x, position.z),
+          ground.height(position.x, position.z),
           position.z,
           materials.base.body,
         )

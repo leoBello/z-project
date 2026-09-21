@@ -7,16 +7,16 @@ import {
   Quaternion,
   Vector3,
 } from 'three'
-import { sampleHeight } from '../config/world'
 import { isHitStopped, now as gameNow } from '../state/gameClock'
 import { playerTransform } from '../state/playerTransform'
 import {
   PICKUP_GRAVITY,
-  PICKUP_HOVER,
   PICKUP_LIFETIME_MS,
   PICKUP_POOL_SIZE,
   PICKUP_RADIUS,
+  PICKUP_REACH_Y,
   PICKUP_WARNING_MS,
+  landingHeight,
   pickups,
 } from '../state/pickups'
 import { useGameStore } from '../store/useGameStore'
@@ -76,11 +76,13 @@ export function Pickups() {
         if (!pickup.landed) {
           pickup.velocityY += PICKUP_GRAVITY * delta
           pickup.position.y += pickup.velocityY * delta
-          // Même échantillonneur que le terrain : le cœur se pose exactement
-          // sur la surface visible, jamais enfoncé ni flottant.
-          const ground = sampleHeight(pickup.position.x, pickup.position.z) + PICKUP_HOVER
-          if (pickup.position.y <= ground && pickup.velocityY <= 0) {
-            pickup.position.y = ground
+          // Même échantillonneur que le terrain **de la carte où l'on est** : le
+          // cœur se pose exactement sur la surface visible, jamais enfoncé ni
+          // flottant. Ce composant est monté au-dessus des quatre cartes, donc
+          // il ne peut pas nommer un relief ; c'est la carte qui pose le sien.
+          const floor = landingHeight(pickup.position.x, pickup.position.z)
+          if (pickup.position.y <= floor && pickup.velocityY <= 0) {
+            pickup.position.y = floor
             pickup.velocityY = 0
             pickup.landed = true
           }
@@ -91,7 +93,7 @@ export function Pickups() {
         const dy = playerTransform.position.y - pickup.position.y
         if (
           Math.hypot(dx, dz) < PICKUP_RADIUS &&
-          Math.abs(dy) < 2 &&
+          Math.abs(dy) < PICKUP_REACH_Y &&
           // Le cœur n'est consommé que s'il a servi : à vie pleine il reste au
           // sol, et le joueur peut revenir le chercher après avoir pris un coup.
           store.healPlayer(1)

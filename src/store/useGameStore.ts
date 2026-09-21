@@ -48,6 +48,7 @@ import { WORLD, sampleHeight } from '../config/world'
 import { now as gameNow, resetClock } from '../state/gameClock'
 import { playerTransform, resetCombat } from '../state/playerTransform'
 import { shake } from '../state/cameraShake'
+import { clearPickups } from '../state/pickups'
 import { clearProjectiles } from '../state/projectiles'
 import type {
   Annihilation,
@@ -2318,6 +2319,23 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Une nouvelle partie commencée en difficile encaisserait les dégâts majorés
     // dès le premier Moblin du continent.
     resetDifficulty()
+    /*
+      Les deux pools hors React, et c'est une nouvelle partie qui les vide — pas
+      un relèvement.
+
+      La distinction est celle que fait déjà `resume` dans le HUD : après une
+      mort, les cœurs au sol **restent**, parce qu'ils sont tombés d'ennemis
+      vaincus et que le monde n'est pas remis à zéro. Ici il l'est — les objets,
+      les coffres, les monuments découverts, tout repart — et un cœur tombé dans
+      la partie précédente serait ramassable dans celle-ci, à un endroit que rien
+      n'explique plus.
+
+      Le pool ne se vide pas de lui-même : la remise à zéro de l'horloge, juste
+      au-dessus, rend l'âge de ces cœurs **négatif**, donc le test d'expiration
+      ne les atteint jamais. Ils resteraient là toute la partie suivante.
+    */
+    clearPickups()
+    clearProjectiles()
     set((state) => ({
       ...initialState,
       discovered: [],

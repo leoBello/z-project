@@ -9,8 +9,8 @@ import {
   type InstancedMesh,
 } from 'three'
 import { ATTACK } from '../config/gameplay'
-import { sampleHeight } from '../config/world'
 import { enemyRegistry } from '../state/enemyRegistry'
+import { ground } from '../state/ground'
 import { isHitStopped, now as gameNow } from '../state/gameClock'
 import { playerTransform } from '../state/playerTransform'
 import {
@@ -173,9 +173,11 @@ export function Projectiles() {
           projectile.active = false
         } else if (
           // Impact sur le sol : on interroge le même échantillonneur de relief
-          // que le terrain, donc l'impact tombe pile sur la surface visible.
+          // que le terrain **de la carte où l'on est**, donc l'impact tombe pile
+          // sur la surface visible. Ce pool est monté au-dessus des quatre
+          // cartes et ne peut donc pas nommer un relief — voir `state/ground.ts`.
           projectile.position.y <
-          sampleHeight(projectile.position.x, projectile.position.z)
+          ground.height(projectile.position.x, projectile.position.z)
         ) {
           projectile.active = false
         }

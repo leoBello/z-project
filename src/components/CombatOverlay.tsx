@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { PARRY } from '../config/parry'
 import { ENEMIES } from '../config/enemies'
-import { sampleHeight } from '../config/world'
 import { cameraView, makeScreenPoint, projectToScreen } from '../state/cameraView'
 import { enemyRegistry } from '../state/enemyRegistry'
 import { now as gameNow } from '../state/gameClock'
+import { ground } from '../state/ground'
 import { parry, parryOffered } from '../state/parry'
 import { playerTransform } from '../state/playerTransform'
 import { projectiles } from '../state/projectiles'
@@ -75,8 +75,8 @@ const anchor = makeScreenPoint()
  * l'information devenait un mensonge sur sa position. Le filtre « engagé ou
  * blessé récemment, à moins de 45 unités » limitait les cas sans les supprimer.
  *
- * On sonde `sampleHeight` — **le même échantillonneur que le mesh, le collider
- * et la minimap**, donc aucune seconde source de vérité — en une douzaine de
+ * On sonde le sol de la carte courante — **le même échantillonneur que le mesh,
+ * le collider et la minimap**, donc aucune seconde source de vérité — en une douzaine de
  * points le long du segment. Un raycast Rapier serait plus complet (il verrait
  * aussi les troncs) mais coûterait une requête physique par ennemi et par
  * frame, et surtout : ce calque vit hors de R3F et n'a pas le monde physique
@@ -93,7 +93,7 @@ function terrainHides(x: number, y: number, z: number) {
     const sx = eye.x + (x - eye.x) * t
     const sy = eye.y + (y - eye.y) * t
     const sz = eye.z + (z - eye.z) * t
-    if (sampleHeight(sx, sz) > sy + OCCLUSION_TOLERANCE) return true
+    if (ground.height(sx, sz) > sy + OCCLUSION_TOLERANCE) return true
   }
   return false
 }
