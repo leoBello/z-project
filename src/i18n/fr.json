@@ -355,6 +355,14 @@
       "label": "Langue",
       "fr": "Français",
       "en": "English"
+    },
+    "consent": {
+      "label": "Mesure d'audience",
+      "body": "Google Analytics dépose un cookie pour reconnaître les visites.",
+      "aside": "Refuser ne change rien au jeu : la mesure anonyme, sans cookie, continue.",
+      "accept": "Accepter",
+      "deny": "Refuser",
+      "reopen": "Revenir sur le choix des cookies"
     }
   },
   "about": {

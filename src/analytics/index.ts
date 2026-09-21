@@ -267,7 +267,11 @@ declare global {
      * script d'amorçage ait tourné, ce qui n'est le cas ni en développement ni
      * sur les préproductions.
      */
-    gtag?: (command: 'event', event: string, data?: Record<string, unknown>) => void
+    gtag?: {
+      (command: 'event', event: string, data?: Record<string, unknown>): void
+      /** Le mode consentement — voir `analytics/consent.ts`. */
+      (command: 'consent', action: 'default' | 'update', params: Record<string, string>): void
+    }
   }
 }
 

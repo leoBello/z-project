@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { gaMeasurementId, googleTag, trackingTags, umamiTag, umamiWebsiteId } from './analytics.ts'
 
@@ -44,9 +45,20 @@ describe('la balise Google', () => {
     expect(html.indexOf("gtag('consent','default'")).toBeLessThan(html.indexOf("gtag('config'"))
   })
 
-  it('refuse le stockage, donc ne dépose aucun cookie', () => {
-    expect(googleTag(GA)).toContain("analytics_storage:'denied'")
+  it('refuse le stockage par défaut, donc ne dépose aucun cookie sans réponse', () => {
+    // La branche par défaut du ternaire : sans choix enregistré, c'est `denied`
+    // qui part. Le cas du visiteur déjà consentant est testé plus bas.
+    expect(googleTag(GA)).toContain("?'granted':'denied'")
     expect(googleTag(GA)).toContain("ad_storage:'denied'")
+  })
+
+  it('ne demande jamais rien pour la publicité', () => {
+    // Trois refus qui ne sont jamais levés, pas même à l'acceptation : ce site
+    // ne vend pas d'audience, et demander plus que ce dont on se sert est ce
+    // qui rend ces bandeaux détestables.
+    const html = googleTag(GA)
+    expect(html).toContain("ad_user_data:'denied'")
+    expect(html).toContain("ad_personalization:'denied'")
   })
 
   it('n émet que depuis les domaines de production', () => {
@@ -62,6 +74,43 @@ describe('la balise Google', () => {
 
   it('ne rend rien sans identifiant', () => {
     expect(googleTag(undefined)).toBe('')
+  })
+})
+
+describe('le consentement déjà donné', () => {
+  it('est relu avant le premier relevé', () => {
+    const html = googleTag(GA)
+    // L'ordre est tout : si la lecture du stockage suivait le `consent`, le
+    // visiteur qui a déjà accepté repartirait anonyme pour toute la première
+    // seconde — page vue comprise, c'est-à-dire la moitié de ce qu'on mesure.
+    expect(html.indexOf('localStorage.getItem')).toBeLessThan(
+      html.indexOf("gtag('consent'"),
+    )
+    expect(html).toContain("analytics_storage:granted?'granted':'denied'")
+  })
+
+  it('survit à un stockage qui lève', () => {
+    // Navigation privée, cookies bloqués : `localStorage` peut lever à la
+    // simple lecture. Sans le `try`, le tag entier ne se poserait pas.
+    expect(googleTag(GA)).toMatch(/try\{.*localStorage.*\}catch/)
+  })
+
+  it('lit la même clé que le store, qui la recopie', () => {
+    /*
+      La seule valeur dupliquée du projet, et la couture qui la tient.
+
+      Le plugin tourne dans Node et produit du texte ; le store tourne dans le
+      navigateur. Un module partagé compilé pour les deux mondes coûterait plus
+      que cette comparaison. Ce qu'elle empêche est précis : renommer la clé
+      d'un côté ferait repartir tous les visiteurs déjà consentants à zéro,
+      sans erreur et sans trace.
+    */
+    // Chemin depuis la racine du dépôt, où Vitest est lancé : `import.meta.url`
+    // n'est pas un `file://` une fois le module transformé.
+    const store = readFileSync('src/store/useConsentStore.ts', 'utf8')
+    const declared = store.match(/STORAGE_KEY = '([^']+)'/)?.[1]
+    expect(declared).toBeDefined()
+    expect(googleTag(GA)).toContain(`localStorage.getItem('${declared}')`)
   })
 })
 

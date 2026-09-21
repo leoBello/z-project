@@ -147,21 +147,39 @@ export function analytics(): Plugin {
  * périodes et l'origine du trafic. Débrancher l'un revient à vider sa variable
  * d'environnement ; rien d'autre ne bouge.
  *
- * **Le tag est posé sans cookie, et c'est une décision, pas un oubli.** Le
- * bandeau de consentement est la seule chose que ce site ne peut pas se
- * permettre : il s'ouvre sur une scène 3D plein écran dont le premier écran
- * *est* l'argument, et une boîte de dialogue posée devant coûterait plus de
- * visiteurs que la mesure n'en explique. Le mode consentement de Google répond
- * exactement à ça — `analytics_storage: 'denied'` dès le premier appel, avant
- * tout `config` : la bibliothèque n'écrit alors aucun cookie et n'envoie que
- * des relevés anonymes.
+ * **Le tag démarre sans cookie, et attend une réponse.**
+ * `analytics_storage: 'denied'` est posé dès le premier appel, avant tout
+ * `config` : passé lui, un défaut de consentement arrive trop tard et le
+ * premier relevé part avec un cookie. Le bandeau du jeu (voir
+ * `components/ConsentBanner.tsx`) envoie ensuite l'`update` qui suit la
+ * réponse, et le choix est relu ici à chaque visite suivante — sans quoi un
+ * visiteur consentant repartirait anonyme pendant toute la première seconde,
+ * page vue comprise.
  *
- * Ce qu'on perd, et qu'il vaut mieux savoir en lisant les chiffres : le nombre
- * d'**utilisateurs** et tout ce qui suppose de reconnaître quelqu'un d'une page
- * à l'autre — rétention, parcours complet — deviennent des estimations de
- * Google. Les **événements**, eux, sont comptés tels quels, et ce sont eux
- * qu'on regarde ici.
+ * **Ce que vaut l'état refusé, et il vaut moins qu'on ne croit.** Un relevé
+ * sans cookie ne porte ni identifiant d'utilisateur ni identifiant de session :
+ * GA4 ne l'affiche ni en temps réel, ni dans les rapports, ni dans DebugView.
+ * Il ne nourrit que la modélisation comportementale, qui exige mille
+ * utilisateurs **consentants** par jour pour s'activer — un seuil qu'un
+ * portfolio n'atteint pas. Tant que personne n'accepte, Google reçoit tout et
+ * ne montre rien. C'est précisément ce qui a rendu ce bandeau nécessaire.
+ *
+ * Umami, lui, ne dépend d'aucun de ces réglages : sans cookie ni identifiant
+ * persistant, il compte tout le monde, y compris ceux qui refusent ici.
  */
+
+/**
+ * Où le choix du visiteur est rangé, et **la même chaîne que
+ * `src/store/useConsentStore.ts`**.
+ *
+ * Elle est recopiée plutôt qu'importée, et c'est le seul endroit du projet où
+ * une valeur l'est : ce fichier tourne dans Node au build et produit du texte,
+ * l'autre tourne dans le navigateur. Les faire se rejoindre demanderait un
+ * module partagé compilé pour les deux mondes, pour une chaîne de dix-sept
+ * caractères. Le test de `plugins/analytics.test.ts` compare les deux fichiers
+ * et casse si l'une des deux bouge sans l'autre — c'est lui, la couture.
+ */
+const CONSENT_KEY = 'z-project:consent'
 
 /** Préfixe de l'identifiant de flux GA4. Une ancienne clé `UA-` ne vaut rien. */
 const GA_PREFIX = 'G-'
@@ -207,10 +225,11 @@ function googleSnippet(measurementId: string): string {
   const allowed = JSON.stringify(DOMAINS.split(','))
   return `(function(){
 if(${allowed}.indexOf(location.hostname)===-1)return;
+var granted=false;try{granted=localStorage.getItem('${CONSENT_KEY}')==='granted'}catch(e){}
 window.dataLayer=window.dataLayer||[];
 function gtag(){dataLayer.push(arguments)}
 window.gtag=gtag;
-gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied'});
+gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:granted?'granted':'denied'});
 gtag('js',new Date());
 gtag('config','${measurementId}');
 var s=document.createElement('script');

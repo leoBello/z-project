@@ -166,18 +166,51 @@ si Firebase est déjà configuré : `VITE_FIREBASE_MEASUREMENT_ID` porte
 l'identifiant du flux GA4 (`G-…`) et sert de repli. `VITE_GA_MEASUREMENT_ID` le
 remplace le jour où la mesure quitterait Firebase.
 
-**Aucun cookie, donc aucun bandeau.** Umami n'en pose pas par construction ;
-Google est chargé en mode consentement refusé (`analytics_storage: 'denied'`),
-ce qui lui interdit d'écrire quoi que ce soit et le limite à des relevés
-anonymes. Le prix : dans GA4, le nombre d'**utilisateurs** et tout ce qui
-suppose de reconnaître quelqu'un — rétention, parcours complet — sont des
-estimations. Les **événements**, eux, sont comptés tels quels.
+**Umami ne pose aucun cookie** et ne demande donc rien à personne : il compte
+tout le monde, y compris ceux qui refusent Google.
+
+**Google, lui, démarre refusé et attend une réponse.** Le tag est chargé en
+mode consentement refusé (`analytics_storage: 'denied'`), et un bandeau — voir
+`components/ConsentBanner.tsx` — demande au visiteur une fois le monde chargé.
+
+Ce détour a une raison qu'il vaut mieux connaître avant de vouloir le
+supprimer : **un relevé sans cookie ne remonte nulle part.** Il ne porte ni
+identifiant d'utilisateur ni identifiant de session, donc GA4 ne l'affiche ni
+en temps réel, ni dans les rapports, ni dans DebugView ; il ne nourrit que la
+modélisation comportementale, qui réclame mille utilisateurs **consentants**
+par jour pour s'activer. Sans bandeau, Google recevait tout et ne montrait
+rien — la propriété est restée vide pendant les premiers jours pour cette seule
+raison. Ce n'est donc pas une précaution juridique ajoutée après coup, c'est ce
+qui rend le collecteur utilisable.
 
 **Où sont les scripts.** Posés dans le `<head>` au build par
 `plugins/analytics.ts`, jamais importés depuis le bundle : chargés après les
 ~3,6 Mo de moteur 3D, ils rateraient précisément les visiteurs qui abandonnent
 pendant le téléchargement, c'est-à-dire la mesure la plus utile du site. Rien
 n'est émis en développement, ni depuis les préproductions `*.vercel.app`.
+
+### Le bandeau
+
+Il ne paraît **qu'une fois le monde chargé** : l'écran de chargement est la
+première image du portfolio, et une boîte de dialogue posée devant coûterait
+plus de visiteurs que la mesure n'en explique. Il ne met pas la partie en pause
+et ne capture pas le clavier — on peut l'ignorer et jouer, le refus étant l'état
+par défaut.
+
+Les deux boutons sont **identiques**, et aucun modificateur CSS n'est prévu
+pour les distinguer : refuser doit être aussi simple qu'accepter, faute de quoi
+l'accord ne vaut rien juridiquement et ne dit rien de vrai statistiquement.
+
+Le choix est rangé dans `localStorage` sous `z-project:consent`, **relu par le
+script du `<head>`** avant le premier relevé : sans ça, un visiteur déjà
+consentant repartirait anonyme pendant toute la première seconde, page vue
+comprise. Cette clé est la seule valeur du projet écrite à deux endroits — le
+plugin tourne dans Node, le store dans le navigateur — et un test compare les
+deux fichiers pour qu'elle ne puisse pas diverger en silence.
+
+Une pastille discrète, en bas à gauche, rouvre le bandeau une fois la réponse
+donnée : on doit pouvoir se rétracter aussi facilement qu'on a accepté. Elle
+n'existe pas tant que la question n'a pas été posée.
 
 ### Les événements
 

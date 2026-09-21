@@ -32,6 +32,7 @@ import { QuestPanel } from './components/quests/QuestPanel'
 import { StrikeArc } from './components/StrikeArc'
 import { BeyondArrival } from './components/BeyondArrival'
 import { BootScreen } from './components/BootScreen'
+import { ConsentBanner } from './components/ConsentBanner'
 import { ChallengeHUD } from './components/ChallengeHUD'
 import { TeleportMenu } from './components/TeleportMenu'
 import { TeleportOverlay } from './components/TeleportOverlay'
@@ -182,6 +183,10 @@ export default function App() {
           voyage entre cartes doit recouvrir un vol de braises resté à l'écran,
           mais jamais l'écran de démarrage. */}
       <WorldTransition />
+      {/* Après le voile de transition et **avant** l'écran de chargement : le
+          bandeau ne doit jamais recouvrir ce dernier, et il ne paraît de toute
+          façon qu'une fois celui-ci effacé. Voir l'en-tête du composant. */}
+      <ConsentBanner />
       <BootScreen />
     </KeyboardControls>
   )
