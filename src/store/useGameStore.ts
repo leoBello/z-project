@@ -40,7 +40,7 @@ import {
   type WeaponId,
 } from '../config/items'
 import { TRIAL_COUNT } from '../config/quests'
-import { arrivalFor, arrivalYaw } from '../config/portal'
+import { arrivalFor, arrivalYaw, spawnFor } from '../config/portal'
 import { WORLD, sampleHeight } from '../config/world'
 import { now as gameNow, resetClock } from '../state/gameClock'
 import { playerTransform, resetCombat } from '../state/playerTransform'
@@ -562,6 +562,26 @@ export interface GameState {
   runId: number
 
   /**
+   * Génération des boss de la carte courante. Sert de `key` React.
+   *
+   * Troisième exemplaire de l'idiome de `runId`, après `populationId`, et le
+   * plus étroit des trois : il ne remonte que les adversaires qui ont un nom.
+   *
+   * Il existe parce que la mort ne rejoue plus la partie. Le joueur repart du
+   * point d'apparition de sa carte avec son inventaire (voir `respawn`), donc
+   * plus rien ne démonte le Marais ni l'Île — et une Déchue laissée à huit
+   * points de vie se serait achevée à la visite suivante. Or c'est la seule
+   * chose qu'un boss ne doit pas être : une barre de vie qu'on grignote en
+   * mourant. Le monde garde ses plaies, les boss non.
+   *
+   * Les instantanés de montage (`standing`, `guardianStanding`, le doré) sont
+   * repris au passage, et c'est ce qui empêche l'inverse — un boss **vaincu**
+   * qui ressusciterait à la mort du joueur : ils relisent le store au montage,
+   * donc un boss tombé reste tombé.
+   */
+  worldId: number
+
+  /**
    * Inflige des dégâts au joueur ; ignoré pendant l'invincibilité.
    *
    * `from` nomme l'**espèce** qui frappe, et il est optionnel : une chute, un
@@ -779,6 +799,11 @@ export interface GameState {
    * modale d'un lieu devant lequel le joueur n'a jamais été déposé.
    */
   abortTransit: () => void
+  /**
+   * Relève le joueur après une mort : au point d'apparition de sa carte, soigné,
+   * tout son acquis en poche.
+   */
+  respawn: () => void
   /** Relance une partie depuis zéro. */
   reset: () => void
 
@@ -932,6 +957,10 @@ function stripSlot(state: GameState, slot: ItemSlot) {
 export const useGameStore = create<GameState>((set, get) => ({
   ...initialState,
   runId: 0,
+  // Hors d'`initialState`, comme `runId` et pour la même raison : ce sont des
+  // clés React, et une clé qui reviendrait à sa valeur d'origine au milieu
+  // d'une session ne garantirait plus le remontage qu'on lui demande.
+  worldId: 0,
 
   damagePlayer: (amount = 1, from) => {
     const state = get()
@@ -2117,6 +2146,76 @@ export const useGameStore = create<GameState>((set, get) => ({
     })
   },
 
+  /**
+   * On se relève, et on ne recommence pas.
+   *
+   * C'est la réponse au reproche le plus net qu'on puisse faire à ce jeu : mourir
+   * effaçait la partie. Trente minutes de continent, le gardien, l'épreuve, le
+   * doré, le Marais — et une charge mal lue au fond d'un bassin rendait le tout à
+   * l'écran d'accueil. Aucun joueur ne va au bout d'un boss dans ces conditions ;
+   * il ferme l'onglet, ce qui est la même chose que perdre, sans le clic.
+   *
+   * Ce que la mort coûte désormais : **le chemin**. On rouvre les yeux au point
+   * d'apparition de la carte où l'on est tombé — l'entrée du Marais, l'arrivée de
+   * l'île, le centre du continent —, donc à la distance qu'on vient de parcourir,
+   * et le boss est de nouveau entier (voir `worldId`). C'est le tarif des jeux
+   * dont celui-ci s'inspire, et il suffit : refaire la traversée est une punition
+   * qu'on accepte, refaire la partie n'en est pas une.
+   *
+   * Ce qu'elle ne coûte pas : l'inventaire, les réceptacles, les coffres ouverts,
+   * les lieux découverts, les quêtes, le compteur d'ennemis. Rien de tout cela
+   * n'est remis en jeu, et la barre de vie est refaite jusqu'à la capacité
+   * **totale**, cœurs jaunes de la tenue compris — on se relève entier ou on ne
+   * se relève pas.
+   *
+   * Trois détails qui ne se voient que quand ils manquent :
+   *
+   *  - **`spawnFor` et non `arrivalFor`.** Les deux tables existent précisément
+   *    pour ne pas se confondre : l'une dit où une *porte* dépose, l'autre où
+   *    l'on *réapparaît* sur cette carte. Se relever est la seconde question —
+   *    sur le continent, la première aurait reposé le joueur au portail de
+   *    Nakano, à cent trente unités du début de la partie ;
+   *  - **la pourriture est soldée.** Elle survivrait autrement à la mort qu'elle
+   *    vient de causer, et la contamination en cours reprendrait sur une barre
+   *    neuve, à l'autre bout de la carte, sans que rien la justifie ;
+   *  - **`arenaFight` est relâché ici.** La caméra d'arène et les barrières
+   *    tiennent à ce champ, et c'est le boss qui le rend d'ordinaire en voyant le
+   *    joueur s'éloigner. Mais il est remonté au même instant : le nouveau n'a
+   *    jamais engagé le combat, il ne le clôturera donc jamais, et la partie se
+   *    serait poursuivie avec le cadrage serré du bassin.
+   *
+   * Le second souffle de la tenue, lui, ne repart pas : il vaut une fois par
+   * partie, et la partie continue. Sans quoi la mort le rendrait, c'est-à-dire
+   * que mourir deviendrait une façon de recharger un objet.
+   */
+  respawn: () => {
+    const state = get()
+    if (state.phase !== 'gameover') return
+
+    resetRot()
+    // Une **demande** et non une écriture directe, comme le relèvement au
+    // Sanctuaire : le monde de Rapier est gelé pendant l'écran de fin, mais les
+    // deux chemins qui reposent le joueur doivent rester le même chemin. Voir
+    // l'en-tête de `pendingPlacement`.
+    requestPlacement(spawnFor(state.location), arrivalYaw(state.location))
+    playRevive()
+    shake(REVIVE_SHAKE, REVIVE_SHAKE_MS)
+    set({
+      phase: 'playing',
+      hearts: state.maxHearts + state.bonusHearts,
+      // Les i-frames du relèvement, pour la raison d'ailleurs : on réapparaît
+      // seul au point d'apparition, rien ne peut frapper, mais une vie refaite
+      // qu'un projectile resté en vol entamerait ne serait pas un relèvement.
+      lastHitAt: gameNow(),
+      arenaFight: null,
+      // `damagePlayer` l'a déjà rendu en tuant, mais la mort n'est pas le seul
+      // chemin vers l'écran de fin qu'on puisse ouvrir un jour, et un boss
+      // « en combat » sans boss est ce qui ferme les barrières pour toujours.
+      bossState: state.bossState === 'fighting' ? 'idle' : state.bossState,
+      worldId: state.worldId + 1,
+    })
+  },
+
   // Les collections sont réécrites explicitement : `initialState` est un objet
   // unique partagé par toutes les parties, et en réutiliser les tableaux (ou
   // les objets `equipped` et `bonusCarry`) ferait qu'une mutation en place
@@ -2130,6 +2229,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     // survivent au remontage du joueur : sans ça, `attackStartedAt` reste dans
     // le futur de l'horloge fraîchement remise à zéro et l'attaque se bloque.
     resetCombat()
+    // Troisième de la même famille, et celui-là se voyait : la jauge de
+    // pourriture vit hors de React, donc une partie relancée depuis le Marais
+    // rouvrait sur le continent avec le bandeau écarlate encore rempli sous les
+    // cœurs. Il n'y avait plus rien pour le vider — le reflux ne tourne que sur
+    // le Marais — et la barre restait là pour toute la partie suivante.
+    resetRot()
     // Même famille, même raison : la difficulté de l'Outremonde vit hors de
     // React et ne serait pas remise à neutre par le retour à `initialState`.
     // Une nouvelle partie commencée en difficile encaisserait les dégâts majorés

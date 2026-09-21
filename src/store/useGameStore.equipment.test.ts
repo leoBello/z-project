@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { EnemyKind, ItemId } from '../types/game'
+import { ROT } from '../config/rotBlight'
 import { advance, resetClock } from '../state/gameClock'
+import { rot, soakRot } from '../state/rot'
 import { INVULNERABILITY_MS, MAX_HEARTS, useGameStore } from './useGameStore'
 
 /**
@@ -262,5 +264,19 @@ describe('reset', () => {
     store().reset()
 
     expect(store().runId).toBe(before + 1)
+  })
+
+  /*
+    La jauge de pourriture vit hors de React, donc hors d'`initialState`, et
+    c'était le trou : une partie relancée depuis le Marais rouvrait sur le
+    continent avec le bandeau écarlate encore rempli sous les cœurs — où plus
+    rien ne pouvait le vider, le reflux ne tournant que sur le Marais.
+  */
+  it('solde la jauge de pourriture, qui ne vit pas dans le store', () => {
+    soakRot(ROT.max / 2)
+
+    store().reset()
+
+    expect(rot.level).toBe(0)
   })
 })

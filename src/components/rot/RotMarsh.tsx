@@ -36,25 +36,47 @@ import { useMarshMaterials } from './materials'
  * a rien à expliquer : c'est un chemin vers un combat, pas une carte
  * d'exploration.
  */
+/**
+ * La Déchue, et la question « est-elle encore debout ? » posée à son montage.
+ *
+ * Deux composants pour un boss, et c'est la génération de boss qui l'exige :
+ *
+ *  - l'instantané est pris **au montage**, et non à la frame courante. Le lire
+ *    en direct l'aurait emportée à la frame suivant sa chute — sans l'écrasement,
+ *    sans la détente, sans la fumée. Un boss retire lui-même son corps ; personne
+ *    n'a à le faire pour lui ;
+ *  - mais il doit être **repris** quand la mort du joueur la remonte entière
+ *    (voir `worldId`), sinon une Déchue tombée juste avant le coup fatal se
+ *    relèverait avec le joueur. Pris dans `RotMarsh`, l'instantané datait de
+ *    l'arrivée sur la carte et aurait dit « debout » pour toujours.
+ *
+ * `maleniaSlainAt` et non `bossState` : celui-ci décrit le gardien de la
+ * rotonde, et il vaut déjà `defeated` quand on arrive ici. S'en servir l'aurait
+ * fait naître morte.
+ */
+function MarshBoss() {
+  const [standing] = useState(() => useGameStore.getState().maleniaSlainAt === null)
+  return standing ? <Malenia /> : null
+}
+
+/**
+ * Le porte-clé de la Déchue, et il n'existe que pour porter cette clé.
+ *
+ * L'abonnement à `worldId` est confiné ici plutôt que posé dans `RotMarsh` :
+ * là-haut, il aurait fait re-rendre le marais entier — nappe, racines, ruines,
+ * flore et arbre — à chaque relèvement du joueur, pour ne remonter qu'un seul
+ * corps.
+ */
+function MarshBossSlot() {
+  const worldId = useGameStore((state) => state.worldId)
+  return <MarshBoss key={worldId} />
+}
+
 export default function RotMarsh() {
   const materials = useMarshMaterials()
   /*
-    Qui était debout **à l'arrivée sur la carte**, et non à cette frame-ci.
-
-    L'instantané est pris une fois au montage, exactement comme celui du gardien
-    de la rotonde, et pour la même raison : le Marais se démonte quand on rentre
-    par le portail, et le monter sur l'état vivant l'aurait emportée à la frame
-    suivant sa chute — sans l'écrasement, sans la détente, sans la fumée. Un
-    boss retire lui-même son corps ; personne n'a à le faire pour lui.
-
-    `maleniaSlainAt` et non `bossState` : celui-ci décrit le gardien de la
-    rotonde, et il vaut déjà `defeated` quand on arrive ici. S'en servir l'aurait
-    fait naître morte.
-  */
-  const [standing] = useState(() => useGameStore.getState().maleniaSlainAt === null)
-  /*
     Sa chute, lue en **abonnement vivant** et non en instantané — l'inverse
-    exact de la ligne au-dessus, et les deux ont raison.
+    exact de ce que fait `MarshBoss` juste au-dessus, et les deux ont raison.
 
     L'instantané sert à décider si elle est **montée** : la lire en direct
     l'aurait fait disparaître à la frame suivant sa mort, sans l'écrasement, sans
@@ -92,12 +114,12 @@ export default function RotMarsh() {
         centre du bassin. Le calque de combat ne montre une barre de vie que pour
         une bête engagée ou blessée récemment — elle n'affiche rien.
 
-        Le montage est conditionné à sa mort, comme le gardien de la rotonde :
-        l'instantané est pris **au montage de la carte** et non à la frame
-        courante, sans quoi elle disparaîtrait en pleine mort au lieu de retirer
-        son corps elle-même.
+        Le montage est conditionné à sa mort, comme le gardien de la rotonde, et
+        il est confié à `MarshBossSlot` — voir son en-tête : l'instantané n'est
+        plus pris au montage de la carte mais à celui du boss, ce qui la rend
+        entière quand le joueur se relève sans la laisser ressusciter.
       */}
-      {standing && <Malenia />}
+      <MarshBossSlot />
 
       {/* Ce qu'elle laisse en tombant : un réceptacle là où le corps est resté,
           et deux coffres qui encadrent l'axe du tronc. L'abonnement y est vivant
