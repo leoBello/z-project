@@ -154,6 +154,25 @@ describe('registerKill pendant un défi', () => {
     expect(store().challengeScore).toBe(0)
   })
 
+  /*
+    La Déchue à son barème, parce qu'elle y était tombée à côté.
+
+    Le cas au-dessus — « même sans barème connu » — est le comportement juste du
+    store, et c'est justement lui que la Déchue empruntait : `Malenia` appelait
+    `registerKill()` sans nommer sa cible, donc la meilleure prise de la carte
+    ajoutait une tête et zéro point. Les deux tests se lisent ensemble, et le
+    second dit lequel des deux chemins elle doit prendre.
+  */
+  it('paie la Déchue à son barème', () => {
+    run()
+
+    store().registerKill('malenia')
+
+    expect(store().challengeKills).toBe(1)
+    expect(store().challengeScore).toBe(KILL_POINTS.malenia)
+    expect(store().challengeScore).toBeGreaterThan(KILL_POINTS.lynel)
+  })
+
   it('ne compte rien hors du continent quand aucun défi ne court', () => {
     goBeyond()
 

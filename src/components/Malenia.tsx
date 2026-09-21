@@ -760,12 +760,19 @@ export function Malenia({
         Ce que sa mort vaut, et c'est le seul embranchement de la boucle sur le
         rôle. La Lame de Miquella clôt une partie ; la Déchue avance un compteur
         de deux minutes. Ce fichier sait la faire tomber, pas ce que sa chute
-        vaut — c'est le store qui décide, comme pour les quatre rôles du Lynel.
+        vaut — il nomme sa cible, et le barème répond, comme pour le Lynel.
+
+        **La cible se nomme, sinon la victime ne vaut rien.** L'argument de
+        `registerKill` est optionnel, donc l'oublier compilait : la Déchue
+        montait le compte de victimes de un et le score de zéro, alors que le
+        barème lui donne cinq Lynels. C'est le seul des trois appelants — avec
+        `Enemy` et `Lynel` — qui l'avait oublié, et le seul dont la cible ne se
+        déduit d'aucune espèce : elle est à elle seule la sienne.
       */
       if (role === 'aeonia') {
         store.endMaleniaFight(true, [position.x, position.y, position.z])
       } else {
-        store.registerKill()
+        store.registerKill('malenia')
       }
       return true
     }
