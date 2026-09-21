@@ -296,6 +296,59 @@ export interface Item {
 }
 
 /**
+ * Les deux encres possibles sur un aplat d'accent : la crème, et le prune sombre.
+ *
+ * La crème est très légèrement plus claire que celle du reste de l'interface
+ * (`#fdf6ea`), et ce quart de ton n'est pas une coquetterie : c'est lui qui
+ * fait passer le pire cas de la table — le cramoisi du plastron, où aucune des
+ * deux encres n'est confortable — de 4,49 à 4,74, donc au-dessus du seuil AA de
+ * 4,5. Voir le test qui garde ce seuil.
+ */
+const ACCENT_INK_LIGHT = '#fffdf8'
+const ACCENT_INK_DARK = '#1d1726'
+
+/** Luminance relative WCAG d'une couleur `#rrggbb`. */
+function luminance(hex: string): number {
+  const channel = (offset: number) => {
+    const value = parseInt(hex.slice(offset, offset + 2), 16) / 255
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+  }
+
+  return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5)
+}
+
+/**
+ * L'encre du bouton « Équiper », choisie d'après l'accent qu'il a sous lui.
+ *
+ * Le bouton était en crème quel que soit l'accent, et l'accent est libre : le
+ * manteau de Kuroro a le blanc cassé de sa fourrure, ce qui donnait du crème
+ * sur du crème — un rapport de contraste de 1,1, c'est-à-dire un bouton dont on
+ * devine le texte. Le jade, le céladon et la nacre n'allaient guère mieux.
+ *
+ * Corrigé **par le calcul et non à la main**, pour deux raisons. L'accent est
+ * choisi pour le glyphe de l'inventaire et l'éclat du coffre, jamais pour le
+ * bouton ; lui imposer d'être sombre l'aurait soumis à un usage qui n'est pas
+ * le sien. Et la table s'allonge à chaque coffre ajouté : une liste d'exceptions
+ * aurait oublié le douzième objet, celui qu'on n'a pas encore écrit.
+ *
+ * La règle est celle de WCAG : des deux encres, on garde celle dont le rapport
+ * de contraste avec l'accent est le plus élevé. Elle rend la crème aux rouges —
+ * le cramoisi du plastron, le sang séché, la lame rouge — et le prune à tout ce
+ * qui est clair ou moyen.
+ */
+export function inkOn(accent: string): string {
+  const background = luminance(accent)
+  const contrast = (ink: string) => {
+    const other = luminance(ink)
+    return (Math.max(background, other) + 0.05) / (Math.min(background, other) + 0.05)
+  }
+
+  return contrast(ACCENT_INK_DARK) > contrast(ACCENT_INK_LIGHT)
+    ? ACCENT_INK_DARK
+    : ACCENT_INK_LIGHT
+}
+
+/**
  * Tenue du Chasseur de Pirates — le second skin.
  *
  * Il change le personnage lui-même, et pas seulement ses vêtements : manteau,
