@@ -492,12 +492,29 @@ export function Minimap({ markers = [] }: MinimapProps) {
         alors même que `ENEMIES.lynel` justifie son entrée dans la table commune
         par la couleur que la minimap y prend.
       */
+      /*
+        Chaque point est **cerclé de sombre**, comme les losanges des monuments.
+
+        Un disque de couleur pure disparaît dès que le fond porte la sienne, et
+        le fond la porte souvent : le roux du bokoblin sur la terre aride, l'ocre
+        du moblin sur le sable, l'argent du Lynel sur le dallage de l'île. Le
+        contour ne dépend d'aucune de ces teintes — il est toujours plus sombre
+        que le point qu'il entoure, puisque les trois couleurs d'ennemi sont
+        claires — donc la silhouette tient quel que soit ce qu'il y a dessous.
+
+        `arc` puis `fill` puis `stroke` sur le **même** tracé : le contour est
+        centré sur le bord du disque, il mord donc autant vers l'intérieur que
+        vers l'extérieur et le point ne grossit que d'un demi-pixel.
+      */
       for (const enemy of enemyRegistry.values()) {
         const { px, py } = toPixels(enemy.x, enemy.z)
-        context.fillStyle = ENEMIES[enemy.kind].minimapColor
         context.beginPath()
         context.arc(px, py, 2.6, 0, Math.PI * 2)
+        context.fillStyle = ENEMIES[enemy.kind].minimapColor
         context.fill()
+        context.strokeStyle = 'rgba(16, 20, 26, 0.9)'
+        context.lineWidth = 1.2
+        context.stroke()
       }
 
       /*

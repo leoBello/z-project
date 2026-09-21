@@ -3,6 +3,7 @@ import {
   INVENTORY_SLOTS,
   ITEMS,
   hasEffect,
+  inkOn,
   itemById,
   outfitOf,
   slotOf,
@@ -239,5 +240,48 @@ describe('traitsOf', () => {
       expect(traits.jump, item.id).toBeGreaterThan(0)
       expect(traits.water, item.id).toBeGreaterThan(0)
     }
+  })
+})
+
+/**
+ * L'encre du bouton « Équiper », sur l'aplat d'accent de chaque objet.
+ *
+ * Le piège que ce bloc garde est celui qui s'est déjà produit : le manteau de
+ * Kuroro a pour accent le blanc cassé de sa fourrure, et le bouton écrivait
+ * dessus en crème — texte invisible. Il se reproduira au prochain objet clair
+ * si personne ne vérifie, parce que l'accent est choisi pour le glyphe de
+ * l'inventaire, où toute teinte claire va bien.
+ */
+describe("l'encre lisible sur un accent", () => {
+  /** Luminance relative WCAG — la même formule que l'implémentation. */
+  const luminance = (hex: string) => {
+    const channel = (offset: number) => {
+      const value = parseInt(hex.slice(offset, offset + 2), 16) / 255
+      return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+    }
+
+    return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5)
+  }
+
+  const contrast = (a: string, b: string) => {
+    const [x, y] = [luminance(a), luminance(b)]
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)
+  }
+
+  it('atteint le seuil AA sur tous les accents de la table', () => {
+    for (const item of ITEMS) {
+      expect(contrast(item.accent, inkOn(item.accent)), item.id).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it('écrit sombre sur un accent clair', () => {
+    // Le manteau de Kuroro, justement : l'accent le plus clair de la table.
+    expect(inkOn('#eceae3')).toBe(inkOn('#ffffff'))
+    expect(contrast('#eceae3', inkOn('#eceae3'))).toBeGreaterThan(10)
+  })
+
+  it('écrit clair sur un accent sombre', () => {
+    expect(inkOn('#000000')).toBe(inkOn('#b03a3a'))
+    expect(contrast('#000000', inkOn('#000000'))).toBeGreaterThan(10)
   })
 })

@@ -2859,13 +2859,18 @@ body:has(.lightbox) .teleport-menu {
   filter: drop-shadow(0 0 4px rgba(242, 193, 74, 0.6));
 }
 
+/*
+  Le libellé n'est pas d'une couleur fixe : il prend celle que `inkOn` juge
+  lisible sur l'accent de l'objet. Le repli en crème ne sert que si la variable
+  manque — un bouton rendu hors de la carte d'objet.
+*/
 .item-card__action {
   margin-top: 20px;
   padding: 11px 26px;
   border: none;
   border-radius: 999px;
   background: var(--item-accent);
-  color: #fdf6ea;
+  color: var(--item-ink, #fffdf8);
   font: inherit;
   font-size: 14px;
   font-weight: 600;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { hasEffect, itemById, slotOf } from '../../config/items'
+import { hasEffect, inkOn, itemById, slotOf } from '../../config/items'
 import { useI18n } from '../../i18n/useI18n'
 import { useGameStore } from '../../store/useGameStore'
 import type { ItemId } from '../../types/game'
@@ -132,7 +132,15 @@ export function ItemCard({ id, context, onClose, onEquip }: ItemCardProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="item-card-title"
-        style={{ '--item-accent': item.accent } as React.CSSProperties}
+        style={
+          {
+            '--item-accent': item.accent,
+            /* L'encre du bouton se déduit de l'accent — voir `inkOn`. Calculée
+               ici et non en CSS : le rapport de contraste n'est pas une
+               fonction que la feuille de style sait écrire. */
+            '--item-ink': inkOn(item.accent),
+          } as React.CSSProperties
+        }
       >
         <button
           ref={closeButton}
