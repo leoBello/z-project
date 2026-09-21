@@ -355,6 +355,14 @@
       "label": "Language",
       "fr": "Français",
       "en": "English"
+    },
+    "consent": {
+      "label": "Audience measurement",
+      "body": "Google Analytics sets a cookie to recognise return visits.",
+      "aside": "Declining changes nothing in the game: anonymous, cookie-free measurement carries on.",
+      "accept": "Accept",
+      "deny": "Decline",
+      "reopen": "Change the cookie choice"
     }
   },
   "about": {

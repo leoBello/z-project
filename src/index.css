@@ -22,6 +22,29 @@
   --settings-pill: 29px;
   --settings-gap: 8px;
   --inventory-size: 44px;
+  /*
+    Hauteur d'une rangée de la légende des touches (`.hud__controls`), mesurée.
+
+    Elle existe pour le bandeau de consentement, qui se pose **au-dessus** de
+    cette légende : posé au ras du bas, il recouvrait « Espace — sauter » et
+    « E — attaquer », c'est-à-dire le mode d'emploi, devant quelqu'un qui
+    découvre le jeu à la seconde où on lui parle de cookies.
+
+    La légende peut passer sur deux rangées sur une fenêtre de bureau très
+    étroite (elle enveloppe à partir de ~700px) ; le bandeau chevaucherait
+    alors la rangée du haut. C'est assumé : la contrepartie serait de le poser
+    assez haut pour ce cas rare, donc flottant au milieu de l'écran dans tous
+    les autres.
+  */
+  --controls-row: 33px;
+  /*
+    Hauteur de la grappe de boutons tactiles : deux rangées de 64px et 12px
+    d'écart. Le bandeau de consentement se pose au-dessus d'elle sur téléphone,
+    et ce n'est pas qu'une question d'esthétique — posé dessus, il mettait
+    « Accepter » exactement là où se trouve le bouton d'attaque. Un accord
+    donné en voulant frapper un Moblin n'est pas un accord.
+  */
+  --touch-cluster: 140px;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
@@ -2113,6 +2136,7 @@ body:has(.lightbox) .teleport-menu {
     display: none;
   }
 
+
   /*
     Carte resserrée : à 176px de large, elle occupait près de la moitié d'un
     écran de 390px et passait sous les cœurs centrés. Le cadre suit tout seul.
@@ -3627,9 +3651,197 @@ body:has(.lightbox) .teleport-menu {
   100% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(1); }
 }
 
+/* --- Bandeau de consentement ---------------------------------------------- */
+
+/*
+  En bas et centré, jamais en plein écran.
+
+  Le haut de l'écran est pris par les réglages et les cœurs, le centre par le
+  jeu ; le bas est la seule bande où un bandeau ne recouvre rien de ce qui se
+  regarde. `max-width` en `ch` plutôt qu'en pixels : la mesure suit la taille du
+  texte, et les deux traductions n'ont pas la même longueur.
+
+  `pointer-events: auto` explicite parce que le bandeau flotte au-dessus du
+  Canvas, qui capte tout ce qui n'est pas réclamé.
+*/
+.consent {
+  position: fixed;
+  left: 50%;
+  /* 16px de marge du HUD, la légende des touches, puis l'écart entre les deux.
+     La légende disparaît au tactile, et le bandeau redescend avec elle — voir
+     la règle sous `(pointer: coarse)`. */
+  bottom: calc(16px + var(--controls-row) + 10px);
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: min(72ch, calc(100vw - 32px));
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--hud-bg);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  color: var(--hud-fg);
+  pointer-events: auto;
+}
+
+.consent__text {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* La phrase qui désamorce, en retrait : elle rassure sans peser autant que la
+   première, et c'est elle qu'on lit en second. */
+.consent__aside {
+  opacity: 0.72;
+}
+
+.consent__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/*
+  Les deux boutons sont **identiques**, et c'est la règle de ce bandeau.
+
+  Refuser doit être aussi simple qu'accepter : un « Accepter » plein et un
+  « Refuser » fantôme fabriquent un accord qui ne vaut rien juridiquement, et
+  qui ne dit rien de vrai statistiquement. Aucun modificateur n'est prévu ici —
+  s'il en apparaît un, c'est que la règle a été oubliée.
+*/
+.consent__button {
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  padding: 7px 14px;
+  border: 1px solid rgba(246, 242, 228, 0.35);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--hud-fg);
+  opacity: 0.85;
+  transition: opacity 140ms ease, border-color 140ms ease;
+}
+
+.consent__button:hover {
+  opacity: 1;
+  border-color: rgba(246, 242, 228, 0.7);
+}
+
+.consent__button:focus-visible {
+  outline: 2px solid #f6f2e4;
+  outline-offset: 2px;
+}
+
+/*
+  La pastille de réouverture, une fois la réponse donnée.
+
+  En bas à gauche et non dans la colonne de réglages en haut à droite : cette
+  colonne est mesurée au pixel par le HUD mobile (voir `--settings-pill`), et
+  surtout ces trois pastilles règlent le *jeu*. Le choix des cookies règle la
+  page — il se range là où était le bandeau, à l'endroit où le visiteur l'a vu
+  la première fois.
+*/
+.consent-recall {
+  position: fixed;
+  left: 16px;
+  /* Alignée sur le bandeau qu'elle rouvre, et au-dessus de la légende pour la
+     même raison que lui. */
+  bottom: calc(16px + var(--controls-row) + 10px);
+  z-index: 40;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  border: none;
+  border-radius: 999px;
+  background: var(--hud-bg);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  color: var(--hud-fg);
+  /* Très effacée : c'est une porte de sortie, pas une invitation. Elle se
+     révèle au survol et au focus, comme tout le reste du HUD. */
+  opacity: 0.35;
+  transition: opacity 140ms ease;
+  pointer-events: auto;
+}
+
+.consent-recall:hover,
+.consent-recall:focus-visible {
+  opacity: 0.9;
+}
+
+.consent-recall:focus-visible {
+  outline: 2px solid #f6f2e4;
+  outline-offset: 2px;
+}
+
+/*
+  Placement vertical au tactile.
+
+  **Cette requête doit rester après les règles ci-dessus, et c'est tout sauf
+  décoratif.** Une media query n'ajoute aucune spécificité : entre deux règles
+  qui se valent, c'est la dernière écrite qui gagne. Groupée avec les autres
+  ajustements mobiles, huit cents lignes plus haut, elle était proprement
+  ignorée — le bandeau retombait sur le bouton d'attaque, et rien ne le disait.
+*/
+@media (pointer: coarse) and (hover: none) {
+  /*
+    La légende des touches a disparu, mais le bas de l'écran est pris par bien
+    pire : la zone du joystick occupe toute la moitié gauche sous le milieu, et
+    la grappe de boutons le coin droit. Le bandeau se pose donc **au-dessus des
+    boutons** — 26px de marge, la grappe, puis l'écart.
+  */
+  .consent {
+    bottom: calc(26px + var(--touch-cluster) + 12px);
+  }
+
+  /*
+    La pastille, elle, ne peut aller nulle part en bas : tout ce qui traîne dans
+    la moitié gauche vole un appui destiné au joystick. Elle se range sous la
+    minimap, seul coin de l'écran qui ne serve à rien — d'où la hauteur calculée
+    sur le côté de la carte (voir `--minimap-map`, qui rétrécit ici) plutôt que
+    posée en dur.
+  */
+  .consent-recall {
+    bottom: auto;
+    left: 12px;
+    top: calc(var(--settings-top) + var(--minimap-map) + 35px + 10px);
+  }
+}
+
 /* Écran étroit : le bandeau de chronomètre passe sous les cœurs, et le titre
    d'arrivée doit tenir sur la largeur d'un téléphone. */
 @media (max-width: 560px) {
+  /*
+    Le bandeau passe en colonne et prend toute la largeur utile : côte à côte,
+    le texte tombait à trois mots par ligne pour laisser la place aux deux
+    boutons. Ceux-ci s'étirent alors à parts égales — l'égalité des deux
+    réponses reste vraie à toutes les tailles d'écran.
+
+    Largeur seulement : sa hauteur dépend de ce qu'il doit enjamber, légende des
+    touches ou boutons tactiles, et c'est le type de pointeur qui le dit — pas
+    la largeur de la fenêtre. Voir la règle sous `(pointer: coarse)`.
+  */
+  .consent {
+    left: 12px;
+    right: 12px;
+    transform: none;
+    max-width: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .consent__actions > .consent__button {
+    flex: 1;
+  }
+
   /* Le classement garde ses huit colonnes et les fait défiler à l'horizontale :
      en retirer aurait demandé de choisir laquelle des huit ne compte pas, et la
      réponse dépend de ce que le joueur est venu comparer. */

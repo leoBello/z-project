@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useProgress } from '@react-three/drei'
 import { track } from '../analytics'
+import { useConsentStore } from '../store/useConsentStore'
 
 /**
  * Retrait de l'écran de chargement `#boot` (défini dans `index.html`).
@@ -45,6 +46,18 @@ export function BootScreen() {
         sécurité qui a expiré — deux issues que la seule durée confondrait.
       */
       track('boot_complete', { ms: Math.round(performance.now()), outcome })
+      /*
+        Le seul endroit du projet qui sache que la scène est visible, d'où ce
+        signal posé ici plutôt qu'une seconde lecture de `useProgress` ailleurs.
+        Il n'ouvre rien à lui seul : le bandeau de consentement s'en sert pour
+        ne pas paraître devant l'écran de chargement, et ne paraît de toute
+        façon que si le visiteur n'a jamais répondu.
+
+        Émis aussi quand `outcome` vaut `timeout` : le filet de sécurité efface
+        l'écran, donc le visiteur voit bien quelque chose, et un chargement qui
+        n'a pas abouti n'est pas une raison de ne plus jamais demander.
+      */
+      useConsentStore.getState().markReady()
       const el = document.getElementById('boot')
       if (!el) return
       el.classList.add('boot--done')
