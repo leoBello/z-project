@@ -15,7 +15,7 @@
       "parry": "parer",
       "jump": "sauter",
       "interact": "interagir",
-      "hint": "Touchez l'écran pour faire apparaître le joystick"
+      "hint": "Posez le pouce ici, puis faites-le glisser pour vous déplacer"
     },
     "gameover": {
       "title": "Vous êtes tombé",

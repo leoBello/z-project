@@ -129,8 +129,11 @@ function TouchControlsOverlay() {
             strokeLinecap="round"
             aria-hidden="true"
           >
-            <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />
-            <path d="M6.7 17.3a7.5 7.5 0 010-10.6M17.3 6.7a7.5 7.5 0 010 10.6" />
+            {/* Base fixe du joystick : le contour ne bouge pas, seule la tête
+                (cercle plein ci-dessous) décrit un cercle en boucle — le geste
+                de glisser le pouce tout autour, pas un tapotement. */}
+            <circle cx="12" cy="12" r="8" />
+            <circle className="touch-hint__thumb" cx="12" cy="12" r="3" fill="currentColor" stroke="none" />
           </svg>
           {dict.ui.touch.hint}
         </p>

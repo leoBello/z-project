@@ -2066,8 +2066,15 @@ body:has(.lightbox) .teleport-menu {
   max-width: min(230px, 62vw);
 }
 
-.touch-hint--joystick .touch-hint__icon {
-  animation: touch-hint-tap 2.4s ease-in-out infinite;
+/* La tête (cercle plein) glisse tout autour de la base (cercle contour, fixe) :
+   c'est le geste attendu — poser le pouce puis le faire glisser — qui se
+   montre, pas seulement le texte qui le décrit. `transform-box: fill-box` pour
+   que la rotation/translation tourne autour du centre du cercle lui-même et
+   non de l'origine du viewBox SVG. */
+.touch-hint--joystick .touch-hint__thumb {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: touch-hint-drag 2.4s ease-in-out infinite;
 }
 
 /* Bulle des lieux : enfant flex de `.teleport-menu`, donc posée à droite de
@@ -2144,11 +2151,15 @@ body:has(.lightbox) .teleport-menu {
   to { opacity: 1; transform: none; }
 }
 
-/* Battement du doigt qui tapote, et chevrons qui poussent vers la droite : la
-   bulle dit le geste, l'icône le montre. */
-@keyframes touch-hint-tap {
-  0%, 100% { opacity: 0.5; transform: scale(0.88); }
-  50% { opacity: 1; transform: scale(1.06); }
+/* Tour complet de la tête autour de la base, comme le pouce autour du centre
+   du joystick réel. Une boucle plutôt qu'un aller-retour : le geste n'a pas de
+   sens privilégié, il faut le montrer dans toutes les directions. */
+@keyframes touch-hint-drag {
+  0% { transform: translate(0, -4.5px); }
+  25% { transform: translate(4.5px, 0); }
+  50% { transform: translate(0, 4.5px); }
+  75% { transform: translate(-4.5px, 0); }
+  100% { transform: translate(0, -4.5px); }
 }
 
 @keyframes touch-hint-slide {
@@ -2159,9 +2170,10 @@ body:has(.lightbox) .teleport-menu {
 @media (prefers-reduced-motion: reduce) {
   .touch-button { transition: none; }
   /* Les bulles restent — c'est leur texte qui informe, pas leur mouvement.
-     Seules l'apparition et la respiration de l'icône s'arrêtent. */
+     Seules l'apparition et les animations d'icône s'arrêtent. */
   .touch-hint,
-  .touch-hint__icon { animation: none; }
+  .touch-hint__icon,
+  .touch-hint__thumb { animation: none; }
 }
 
 /* --- Ajustements mobiles -------------------------------------------------- */
