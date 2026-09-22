@@ -15,7 +15,7 @@
       "parry": "parry",
       "jump": "jump",
       "interact": "interact",
-      "hint": "Touch the screen to bring up the joystick"
+      "hint": "Put your thumb here, then slide it to move"
     },
     "gameover": {
       "title": "You have fallen",
