@@ -404,12 +404,36 @@
       "tagline": "Prospection automatisée de bout en bout",
       "screenshots": [
         {
-          "src": "/projects/prospeo.png",
-          "caption": "Fiche prospect — SIRET apparié au registre SIRENE, coordonnées, présence web, et le détail du score sur 100 ligne par ligne."
+          "src": "/projects/prospeo.webp",
+          "caption": "Le tableau de bord du jour : les prospects à contacter, les relances dues, et le goulot de l'appariement Google."
         },
         {
-          "src": "/projects/prospeo2.png",
-          "caption": "Le même écran en thème sombre : le produit suit le thème du système."
+          "src": "/projects/prospeo-2.webp",
+          "caption": "Fiche prospect — le score sur 100 détaillé ligne par ligne, puis le SIRET, l'adresse et le téléphone trouvés."
+        },
+        {
+          "src": "/projects/prospeo-3.webp",
+          "caption": "Toute la veille : chaque prospect avec son score, sa présence web, son téléphone et l'état de son site."
+        },
+        {
+          "src": "/projects/prospeo-4.webp",
+          "caption": "La campagne : site, mail et envoi pour chaque prospect, ce qui bloque, et le coût réel au centime."
+        },
+        {
+          "src": "/projects/prospeo-5.webp",
+          "caption": "La relecture d'un mail rédigé par LLM avant envoi — uniquement des faits vérifiés, rien d'inventé."
+        },
+        {
+          "src": "/projects/prospeo-6.webp",
+          "caption": "Les déploiements : un site par prospect, généré depuis le gabarit puis construit par Vercel, suivi étape par étape."
+        },
+        {
+          "src": "/projects/prospeo-7.webp",
+          "caption": "Le gabarit des sites : le dépôt GitHub qui sert de modèle, et les exceptions par métier."
+        },
+        {
+          "src": "/projects/prospeo-8.webp",
+          "caption": "Le même tableau de bord en thème clair : le produit suit le thème du système."
         }
       ],
       "period": "2026",
@@ -424,12 +448,32 @@
       "tagline": "Veille d'offres triée par IA",
       "screenshots": [
         {
-          "src": "/projects/signflow.png",
-          "caption": "Le brief du matin : les offres du jour au-dessus du seuil, puis toute la veille avec ses filtres."
+          "src": "/projects/signflow.webp",
+          "caption": "Le brief du matin : les offres du jour au-dessus du seuil, chacune avec son rang, sa correspondance au CV et ce qui l'a fait monter ou descendre."
         },
         {
-          "src": "/projects/signflow-2.png",
-          "caption": "Le détail d'une offre — son rang, les critères qui l'ont produit, et où en est la candidature."
+          "src": "/projects/signflow-2.webp",
+          "caption": "Le détail d'une offre — le jugement de l'IA, puis le rang décomposé ligne par ligne, du CV aux préférences."
+        },
+        {
+          "src": "/projects/signflow-3.webp",
+          "caption": "Toute la veille : chaque offre jugée, filtrable par étape, télétravail ou contrat, triée par rang."
+        },
+        {
+          "src": "/projects/signflow-4.webp",
+          "caption": "Le suivi des candidatures : de la collecte à l'envoi, les relances dues, et où en est chaque piste."
+        },
+        {
+          "src": "/projects/signflow-5.webp",
+          "caption": "Le marché : collecte et jugement jour par jour, la provenance des offres et la répartition des rangs."
+        },
+        {
+          "src": "/projects/signflow-6.webp",
+          "caption": "Les poids du classement : changer une préférence reclasse le brief en direct, sans repayer un seul jugement."
+        },
+        {
+          "src": "/projects/signflow-7.webp",
+          "caption": "Le même brief en thème clair : le produit suit le thème du système."
         }
       ],
       "period": "2026",
@@ -444,6 +488,24 @@
       "id": "saisoneo",
       "featured": true,
       "company": "Saisoneo",
+      "screenshots": [
+        {
+          "src": "/projects/saisoneo.webp",
+          "caption": "Le tableau de bord du matin : les urgences triées par gravité, puis les arrivées et départs du jour avec l'état de chaque dossier."
+        },
+        {
+          "src": "/projects/saisoneo-2.webp",
+          "caption": "La fiche d'un séjour — les pièces manquantes par occupant, la caution et les paiements, et un journal où rien n'est effacé."
+        },
+        {
+          "src": "/projects/saisoneo-3.webp",
+          "caption": "Le planning de la semaine : séjours par canal, ménages assignés, et les rotations restées sans personne signalées d'emblée."
+        },
+        {
+          "src": "/projects/saisoneo-4.webp",
+          "caption": "Le même tableau de bord en thème sombre : le produit suit le thème du système."
+        }
+      ],
       "role": "Développeur Full-Stack React / Next.js — conception from scratch, freelance",
       "period": "Février 2026 — Aujourd'hui",
       "location": "Marseille · à distance",

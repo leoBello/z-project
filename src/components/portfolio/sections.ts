@@ -117,6 +117,9 @@ export function buildSlides(section: PortfolioSection, dict: Dictionary): Portfo
           accentIndex: products.length + position,
           title: entry.company,
           meta: `${entry.role} · ${entry.period}`,
+          // Facultatif côté mission : la plupart n'ont pas d'écran publiable,
+          // et gardent alors leur illustration.
+          photos: entry.screenshots?.length ? entry.screenshots : undefined,
           // Même découpage que la biographie : une mission se raconte en
           // contexte, construction, puis ce qu'elle démontre — le même gabarit
           // que les produits personnels juste au-dessus. Les missions courtes

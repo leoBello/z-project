@@ -404,12 +404,36 @@
       "tagline": "End-to-end automated prospecting",
       "screenshots": [
         {
-          "src": "/projects/prospeo.png",
-          "caption": "Prospect record — SIRET matched against the SIRENE registry, contact details, web presence, and the score broken down line by line."
+          "src": "/projects/prospeo.webp",
+          "caption": "Today's dashboard: prospects to contact, follow-ups due, and the Google matching bottleneck."
         },
         {
-          "src": "/projects/prospeo2.png",
-          "caption": "The same screen in dark theme: the product follows the system theme."
+          "src": "/projects/prospeo-2.webp",
+          "caption": "A prospect's file — the score out of 100 broken down line by line, then the SIRET, address and phone found."
+        },
+        {
+          "src": "/projects/prospeo-3.webp",
+          "caption": "The whole pipeline: every prospect with its score, web presence, phone and site status."
+        },
+        {
+          "src": "/projects/prospeo-4.webp",
+          "caption": "The campaign: site, email and sending for each prospect, what's blocking, and the actual cost to the cent."
+        },
+        {
+          "src": "/projects/prospeo-5.webp",
+          "caption": "Reviewing an LLM-written email before it goes out — verified facts only, nothing made up."
+        },
+        {
+          "src": "/projects/prospeo-6.webp",
+          "caption": "Deployments: one site per prospect, generated from the template then built by Vercel, tracked step by step."
+        },
+        {
+          "src": "/projects/prospeo-7.webp",
+          "caption": "The site template: the GitHub repository used as the model, and per-trade exceptions."
+        },
+        {
+          "src": "/projects/prospeo-8.webp",
+          "caption": "The same dashboard in light mode: the product follows the system theme."
         }
       ],
       "period": "2026",
@@ -424,12 +448,32 @@
       "tagline": "Job-listing watch, sorted by AI",
       "screenshots": [
         {
-          "src": "/projects/signflow.png",
-          "caption": "The morning brief: today's listings above the threshold, then the whole watch list with its filters."
+          "src": "/projects/signflow.webp",
+          "caption": "The morning brief: today's offers above the threshold, each with its rank, its CV match and what pushed it up or down."
         },
         {
-          "src": "/projects/signflow-2.png",
-          "caption": "One listing in detail — its rank, the criteria that produced it, and where the application stands."
+          "src": "/projects/signflow-2.webp",
+          "caption": "An offer's detail — the AI's judgement, then the rank broken down line by line, from the CV to the preferences."
+        },
+        {
+          "src": "/projects/signflow-3.webp",
+          "caption": "The whole watch: every judged offer, filterable by stage, remote policy or contract, sorted by rank."
+        },
+        {
+          "src": "/projects/signflow-4.webp",
+          "caption": "Application tracking: from collection to sending, the follow-ups due, and where each lead stands."
+        },
+        {
+          "src": "/projects/signflow-5.webp",
+          "caption": "The market: collection and judgement day by day, where offers come from and how ranks are spread."
+        },
+        {
+          "src": "/projects/signflow-6.webp",
+          "caption": "Ranking weights: changing a preference re-ranks the brief live, without paying for a single judgement again."
+        },
+        {
+          "src": "/projects/signflow-7.webp",
+          "caption": "The same brief in light mode: the product follows the system theme."
         }
       ],
       "period": "2026",
@@ -444,6 +488,24 @@
       "id": "saisoneo",
       "featured": true,
       "company": "Saisoneo",
+      "screenshots": [
+        {
+          "src": "/projects/saisoneo.webp",
+          "caption": "The morning dashboard: urgent items ranked by severity, then today's arrivals and departures with the status of each file."
+        },
+        {
+          "src": "/projects/saisoneo-2.webp",
+          "caption": "A stay's file — missing documents per guest, deposit and payments, and a log where nothing is ever erased."
+        },
+        {
+          "src": "/projects/saisoneo-3.webp",
+          "caption": "The weekly schedule: stays by channel, assigned cleanings, and turnovers with nobody on them flagged up front."
+        },
+        {
+          "src": "/projects/saisoneo-4.webp",
+          "caption": "The same dashboard in dark mode: the product follows the system theme."
+        }
+      ],
       "role": "Full-Stack Developer React / Next.js — built from scratch, freelance",
       "period": "February 2026 — Present",
       "location": "Marseille · Remote",
